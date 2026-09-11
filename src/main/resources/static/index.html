@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Sudoku</title>
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<div class="app">
+  <h1>Sudoku</h1>
+
+  <p id="modeHint" class="hint"></p>
+
+  <div id="board" class="board"></div>
+
+  <div class="numpad" id="numpad">
+    <button class="num-btn" data-num="1">1</button>
+    <button class="num-btn" data-num="2">2</button>
+    <button class="num-btn" data-num="3">3</button>
+    <button class="num-btn" data-num="4">4</button>
+    <button class="num-btn" data-num="5">5</button>
+    <button class="num-btn" data-num="6">6</button>
+    <button class="num-btn" data-num="7">7</button>
+    <button class="num-btn" data-num="8">8</button>
+    <button class="num-btn" data-num="9">9</button>
+    <button class="num-btn erase-btn" data-num="0">Apagar</button>
+  </div>
+
+  <div class="controls">
+    <button id="playBtn" class="primary-btn">Jogar</button>
+
+    <button id="notesBtn" class="secondary-btn hidden">Anotações: Off</button>
+    <button id="resetBtn" class="secondary-btn hidden">Reiniciar</button>
+    <button id="newBoardBtn" class="secondary-btn hidden">Nova Grade</button>
+  </div>
+</div>
+
+<div id="popupOverlay" class="popup-overlay hidden">
+  <div class="popup">
+    <p id="popupMessage"></p>
+    <button id="popupCloseBtn" class="primary-btn">OK</button>
+  </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
