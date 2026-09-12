@@ -41,22 +41,22 @@ export function mountApplication(
   const mark = el("span", "▦", "brand-mark");
   mark.setAttribute("aria-hidden", "true");
   brand.replaceChildren(mark, el("span", "Sudoku Engine", "brand-name"));
-  nav.setAttribute("aria-label", "Navegação principal");
+  nav.setAttribute("aria-label", "Main navigation");
   const navItems = [
     {
-      label: "Início",
+      label: "Home",
       screen: "home",
       path: "M3 10 12 3l9 7M5 9v12h5v-7h4v7h5V9",
       route: { screen: "home" } as const,
     },
     {
-      label: "Biblioteca",
+      label: "Library",
       screen: "library",
       path: "M4 4h6v16H4zM14 4h6v16h-6z",
       route: { screen: "library", tab: "puzzles" } as const,
     },
     {
-      label: "Configurações",
+      label: "Settings",
       screen: "settings",
       path: "M4 7h16M4 17h16M9 4v6M15 14v6",
       route: { screen: "settings" } as const,
@@ -77,14 +77,14 @@ export function mountApplication(
   });
   status.dataset.testid = "save-status";
   status.setAttribute("role", "status");
-  const retry = button("Tentar salvar novamente", () => {
+  const retry = button("Retry saving", () => {
       void controller.retry().catch(() => {});
     }),
-    backup = button("Exportar trabalho", () => downloadBackup(services));
+    backup = button("Export work", () => downloadBackup(services));
   saveArea.append(status, retry, backup, error);
   sidebar.append(
     brand,
-    el("p", "SEU ESPAÇO DE JOGO", "sidebar-caption"),
+    el("p", "YOUR SPACE TO PLAY", "sidebar-caption"),
     nav,
     saveArea,
   );
@@ -93,10 +93,10 @@ export function mountApplication(
     const s = controller.status();
     status.textContent =
       s.kind === "saved"
-        ? "Salvo"
+        ? "Saved"
         : s.kind === "saving"
-          ? "Salvando…"
-          : "Não salvo";
+          ? "Saving…"
+          : "Not saved";
     retry.hidden = backup.hidden = error.hidden = s.kind !== "error";
     error.textContent = s.kind === "error" ? s.error.message : "";
   };

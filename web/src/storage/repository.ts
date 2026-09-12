@@ -16,7 +16,7 @@ export function openRepository(
     const request = factory.open(name, 1);
     request.onblocked = onBlocked;
     request.onerror = () =>
-      reject(request.error ?? new Error("Não foi possível abrir os dados."));
+      reject(request.error ?? new Error("Could not open your data."));
     request.onupgradeneeded = () => {
       request.result.createObjectStore("library");
     };
@@ -35,11 +35,9 @@ export function openRepository(
           tx.oncomplete = () =>
             result
               ? resolve(result)
-              : reject(new Error("A transação não foi concluída."));
+              : reject(new Error("The transaction did not complete."));
           tx.onabort = () =>
-            reject(
-              failure ?? tx.error ?? new Error("Não foi possível salvar."),
-            );
+            reject(failure ?? tx.error ?? new Error("Could not save."));
           tx.onerror = () => {
             failure ??= tx.error;
           };
@@ -56,7 +54,7 @@ export function openRepository(
               }
               if (current.revision !== expected)
                 throw new RevisionConflictError(
-                  "Os dados foram alterados em outra aba. Exporte seu trabalho e recarregue para recuperar.",
+                  "Your data changed in another tab. Export your work and reload to recover.",
                 );
               result = { ...data, revision: current.revision + 1 };
               store.put(result, "current");

@@ -25,9 +25,7 @@ test("hidden notes, redo, reset and selection survive refresh and reopened page"
   await cell(reopened, 0).click();
   await reopened.keyboard.press("Delete");
   await expect(cell(reopened, 0).locator("[data-notes]")).toHaveText("2");
-  await reopened
-    .getByRole("button", { name: "Reiniciar", exact: true })
-    .click();
+  await reopened.getByRole("button", { name: "Reset", exact: true }).click();
   await expect(cell(reopened, 0).locator("[data-notes]")).toBeEmpty();
   await reopened.keyboard.press("Control+z");
   await expect(cell(reopened, 0).locator("[data-notes]")).toHaveText("2");
@@ -36,7 +34,7 @@ test("hidden notes, redo, reset and selection survive refresh and reopened page"
     const other = await isolated.newPage();
     await other.goto(url);
     await expect(
-      other.getByText("Registro não encontrado", { exact: true }),
+      other.getByText("Record not found", { exact: true }),
     ).toBeVisible();
   } finally {
     await isolated.close();
@@ -50,7 +48,7 @@ test("library survives a true browser restart with history in an isolated tempor
   try {
     let page = await context.newPage();
     await page.goto("http://127.0.0.1:5174/");
-    await page.getByRole("button", { name: "Criar", exact: true }).click();
+    await page.getByRole("button", { name: "Create", exact: true }).click();
     await cell(page, 0).click();
     await page.keyboard.press("8");
     await saved(page);
@@ -75,7 +73,7 @@ test("stale browser tab shows recovery and never overwrites the winning save", a
   context,
 }) => {
   await page.goto("/");
-  await page.getByRole("button", { name: "Criar", exact: true }).click();
+  await page.getByRole("button", { name: "Create", exact: true }).click();
   await saved(page);
   const url = page.url(),
     other = await context.newPage();
@@ -86,8 +84,8 @@ test("stale browser tab shows recovery and never overwrites the winning save", a
   await saved(page);
   await cell(other, 0).click();
   await other.keyboard.press("2");
-  await expect(other.getByTestId("save-status")).toHaveText("Não salvo");
-  await expect(other.getByText(/outra aba/)).toBeVisible();
+  await expect(other.getByTestId("save-status")).toHaveText("Not saved");
+  await expect(other.getByText(/another tab/)).toBeVisible();
   await page.reload();
   await expect(cell(page, 0).locator("[data-value]")).toHaveText("1");
   await other.close();

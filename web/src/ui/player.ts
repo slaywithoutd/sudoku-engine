@@ -24,31 +24,28 @@ export function mountPlayer(
   completion.setAttribute("role", "status");
   completion.hidden = true;
   completion.append(
-    el("h2", "Sudoku concluído!"),
-    el(
-      "p",
-      "Todas as linhas, colunas e caixas obedecem às regras do Sudoku clássico.",
-    ),
-    button("Fechar mensagem", () => {
+    el("h2", "Sudoku complete!"),
+    el("p", "Every row, column and box follows the rules of classic Sudoku."),
+    button("Dismiss message", () => {
       completion.hidden = true;
     }),
   );
   side.append(
-    el("span", "JOGAR · CLÁSSICO 9 × 9", "eyebrow"),
+    el("span", "PLAY · CLASSIC 9 × 9", "eyebrow"),
     title,
-    el("p", "Existência de solução e unicidade não verificadas.", "muted"),
+    el("p", "Solvability and uniqueness have not been checked.", "muted"),
     completion,
     el("hr"),
     controls,
     el("hr"),
-    el("h2", "No seu ritmo"),
+    el("h2", "At your own pace"),
     el(
       "p",
-      "Setas movem a seleção. Shift + número faz uma nota de canto. Ou ative o botão Notas.",
+      "Arrow keys move the selection. Shift + number toggles a note in its 3 × 3 position. Or turn on Notes.",
     ),
     el(
       "p",
-      "Apagar revela as notas guardadas sob um número. Reiniciar limpa seu progresso em uma ação que pode ser desfeita.",
+      "Enter the same number again or use Erase to reveal the notes beneath it. Reset clears your progress in one undoable action.",
       "muted",
     ),
   );

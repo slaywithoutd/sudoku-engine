@@ -4,12 +4,12 @@ test("draft name autosaves while focused and refresh retains it", async ({
   page,
 }) => {
   await page.goto("/");
-  await page.getByRole("button", { name: "Criar", exact: true }).click();
-  await page.getByLabel("Nome do rascunho").fill("Nome sem sair do campo");
-  await expect(page.getByLabel("Nome do rascunho")).toBeFocused();
-  await expect(page.getByTestId("save-status")).toHaveText("Salvo");
+  await page.getByRole("button", { name: "Create", exact: true }).click();
+  await page.getByLabel("Draft name").fill("Nome sem sair do campo");
+  await expect(page.getByLabel("Draft name")).toBeFocused();
+  await expect(page.getByTestId("save-status")).toHaveText("Saved");
   await page.reload();
-  await expect(page.getByLabel("Nome do rascunho")).toHaveValue(
+  await expect(page.getByLabel("Draft name")).toHaveValue(
     "Nome sem sair do campo",
   );
 });
@@ -17,18 +17,18 @@ test("conflicting draft saves, cannot finish, and playable clues remain locked",
   page,
 }) => {
   await page.goto("/");
-  await page.getByRole("button", { name: "Criar", exact: true }).click();
+  await page.getByRole("button", { name: "Create", exact: true }).click();
   await page.locator('[data-cell-index="0"]').click();
   await page.keyboard.press("1");
   await page.keyboard.press("ArrowRight");
   await page.keyboard.press("1");
   await expect(
-    page.getByRole("button", { name: "Finalizar", exact: true }),
+    page.getByRole("button", { name: "Finish", exact: true }),
   ).toBeDisabled();
-  await expect(page.getByTestId("save-status")).toHaveText("Salvo");
+  await expect(page.getByTestId("save-status")).toHaveText("Saved");
   await page.reload();
   await expect(
-    page.getByRole("button", { name: "Finalizar", exact: true }),
+    page.getByRole("button", { name: "Finish", exact: true }),
   ).toBeDisabled();
   await expect(page.locator('[data-cell-index="1"]')).toHaveAttribute(
     "aria-selected",
@@ -36,8 +36,8 @@ test("conflicting draft saves, cannot finish, and playable clues remain locked",
   );
   await page.locator('[data-cell-index="1"]').click();
   await page.keyboard.press("Backspace");
-  await page.getByRole("button", { name: "Finalizar", exact: true }).click();
-  await page.getByRole("button", { name: "Jogar agora", exact: true }).click();
+  await page.getByRole("button", { name: "Finish", exact: true }).click();
+  await page.getByRole("button", { name: "Play now", exact: true }).click();
   await page.locator('[data-cell-index="0"]').click();
   await page.keyboard.press("9");
   await expect(page.locator('[data-cell-index="0"] [data-value]')).toHaveText(
@@ -46,10 +46,8 @@ test("conflicting draft saves, cannot finish, and playable clues remain locked",
   await page.locator('[data-cell-index="1"]').click();
   await page.keyboard.press("1");
   await expect(page.locator(".cell.conflict")).toHaveCount(0);
-  await page
-    .getByRole("button", { name: "Configurações", exact: true })
-    .click();
-  await page.getByLabel("Destacar conflitos durante o jogo").check();
+  await page.getByRole("button", { name: "Settings", exact: true }).click();
+  await page.getByLabel("Highlight conflicts during play").check();
   await page.goBack();
   await expect(page.locator(".cell.conflict")).toHaveCount(2);
 });
@@ -57,26 +55,26 @@ test("string import preserves current draft; copy and confirmed deletion preserv
   page,
 }) => {
   await page.goto("/");
-  await page.getByRole("button", { name: "Criar", exact: true }).click();
-  await page.getByLabel("Nome do rascunho").fill("Meu rascunho");
-  await page.getByLabel("Nome do rascunho").press("Tab");
-  await page.getByRole("button", { name: "Colar puzzle", exact: true }).click();
-  await page.getByLabel("81 células").fill("bad");
+  await page.getByRole("button", { name: "Create", exact: true }).click();
+  await page.getByLabel("Draft name").fill("Meu rascunho");
+  await page.getByLabel("Draft name").press("Tab");
+  await page.getByRole("button", { name: "Paste puzzle", exact: true }).click();
+  await page.getByLabel("81 cells").fill("bad");
   await page
-    .getByRole("button", { name: "Importar puzzle", exact: true })
+    .getByRole("button", { name: "Import puzzle", exact: true })
     .click();
-  await expect(page.getByRole("dialog")).toContainText("81 células");
-  await page.getByLabel("81 células").fill(PUZZLE);
+  await expect(page.getByRole("dialog")).toContainText("81 cells");
+  await page.getByLabel("81 cells").fill(PUZZLE);
   await page
-    .getByRole("button", { name: "Importar puzzle", exact: true })
+    .getByRole("button", { name: "Import puzzle", exact: true })
     .click();
-  await page.getByRole("button", { name: "Finalizar", exact: true }).click();
-  await page.getByRole("button", { name: "Jogar agora", exact: true }).click();
+  await page.getByRole("button", { name: "Finish", exact: true }).click();
+  await page.getByRole("button", { name: "Play now", exact: true }).click();
   await page.locator('[data-cell-index="2"]').click();
   await page.keyboard.press("4");
   const playUrl = page.url();
-  await page.getByRole("button", { name: "Biblioteca", exact: true }).click();
-  await page.getByRole("button", { name: "Editar cópia", exact: true }).click();
+  await page.getByRole("button", { name: "Library", exact: true }).click();
+  await page.getByRole("button", { name: "Edit copy", exact: true }).click();
   await page.locator('[data-cell-index="0"]').click();
   await page.keyboard.press("9");
   await page.goto(playUrl);
@@ -86,19 +84,19 @@ test("string import preserves current draft; copy and confirmed deletion preserv
   await expect(page.locator('[data-cell-index="2"] [data-value]')).toHaveText(
     "4",
   );
-  await page.getByRole("button", { name: "Biblioteca", exact: true }).click();
-  await page.getByRole("button", { name: "Excluir", exact: true }).click();
-  await page.getByRole("button", { name: "Cancelar", exact: true }).click();
+  await page.getByRole("button", { name: "Library", exact: true }).click();
+  await page.getByRole("button", { name: "Delete", exact: true }).click();
+  await page.getByRole("button", { name: "Cancel", exact: true }).click();
   await expect(
-    page.getByRole("button", { name: "Continuar", exact: true }),
+    page.getByRole("button", { name: "Continue", exact: true }),
   ).toBeVisible();
-  await page.getByRole("button", { name: "Excluir", exact: true }).click();
+  await page.getByRole("button", { name: "Delete", exact: true }).click();
   await page
-    .getByRole("button", { name: "Confirmar exclusão", exact: true })
+    .getByRole("button", { name: "Confirm deletion", exact: true })
     .click();
   await expect(
-    page.getByRole("button", { name: "Continuar", exact: true }),
+    page.getByRole("button", { name: "Continue", exact: true }),
   ).toHaveCount(0);
-  await page.getByRole("button", { name: "Rascunhos", exact: true }).click();
+  await page.getByRole("button", { name: "Drafts", exact: true }).click();
   await expect(page.getByText("Meu rascunho", { exact: true })).toBeVisible();
 });

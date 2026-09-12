@@ -26,7 +26,7 @@ export interface RestorePreview {
 }
 function requireValid(
   condition: unknown,
-  message = "Dados de backup inválidos.",
+  message = "Invalid backup data.",
 ): asserts condition {
   if (!condition) throw new Error(message);
 }
@@ -123,7 +123,7 @@ function editor(
             state[change.index],
             backward ? change.after : change.before,
           ),
-          "Histórico inconsistente.",
+          "Inconsistent history.",
         );
         state[change.index] = backward ? change.before : change.after;
       }
@@ -134,7 +134,7 @@ function editor(
 }
 export function validateLibrary(input: unknown): LibraryData {
   const x = object(input);
-  requireValid(x.formatVersion === 1, "Versão de dados não suportada.");
+  requireValid(x.formatVersion === 1, "Unsupported data version.");
   const revision = integer(x.revision, 0, Number.MAX_SAFE_INTEGER - 1),
     puzzles: Record<string, Puzzle> = {},
     drafts: Record<string, Draft> = {},
@@ -198,7 +198,7 @@ export function validateLibrary(input: unknown): LibraryData {
   const settings = object(x.settings);
   requireValid(
     typeof settings.showConflicts === "boolean" &&
-      settings.language === "pt-BR",
+      (settings.language === "pt-BR" || settings.language === "en"),
   );
   return {
     formatVersion: 1,
@@ -206,14 +206,14 @@ export function validateLibrary(input: unknown): LibraryData {
     drafts,
     puzzles,
     sessions,
-    settings: { showConflicts: settings.showConflicts, language: "pt-BR" },
+    settings: { showConflicts: settings.showConflicts, language: "en" },
   };
 }
 export function parseBackup(text: string): BackupEnvelope {
   const x = object(JSON.parse(text));
   requireValid(
     x.format === "sudoku-engine-backup" && x.version === 1,
-    "Formato ou versão de backup não suportado.",
+    "Backup format or version is not supported.",
   );
   return {
     format: "sudoku-engine-backup",
@@ -261,7 +261,7 @@ export function previewRestore(
         return fresh;
       }
     }
-    throw new Error("Não foi possível criar identificadores para as cópias.");
+    throw new Error("Could not create identifiers for the copies.");
   };
   const puzzleIds = new Map<string, string>();
   for (const p of Object.values(source.puzzles)) {

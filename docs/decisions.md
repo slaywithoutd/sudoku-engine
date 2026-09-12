@@ -475,3 +475,13 @@ Record each answer here with its rationale and consequences. If an answer change
 - Rationale: detector fixtures or production output alone cannot grade solver correctness independently. Oracle timeouts are inconclusive tests, not proofs. Benchmark evidence must distinguish measured facts from proposed targets.
 - Contract: specification §11 and the plan's task-to-spec coverage map. A future `docs/m2-solver-verification.md` will record execution evidence; it is not claimed during design.
 
+## D053 — English interface, fixed note positions and repeat-value erasing
+
+- Status: Confirmed by the user and implemented on 2026-09-12.
+- Presentation: English throughout the application, including navigation, dialogs, feedback, errors and accessible labels. Use Sudoku Engine as the name. Keep the sidebar, straight continuous grid and no outer frame. Paint every thick box separator above every thin line. Increase number sizes and use squircle curves for buttons and cell highlights; the user explicitly confirmed that the grid itself should remain straight.
+- Notes: place 1–3, 4–6 and 7–9 in fixed rows of a 3 × 3 grid inside the cell. Removing candidates leaves their positions empty. This supersedes the original packed corner-note presentation while keeping the existing sorted notes data and manual-note rules.
+- Input: in value-entry mode, entering the selected cell's current editable digit again is an erase action. Retain hidden notes, record an undoable erase and support redo. This applies to pointer buttons and keyboard/numpad input in creator/player. Givens remain locked; the Notes tool continues to operate only on empty cells. Ignore repeated numeric keydown events so holding a key cannot oscillate values.
+- Compatibility: new/in-memory settings use `language: "en"`; the shared library/backup validator accepts both legacy `pt-BR` and `en`, normalizing to `en`. Keep the version-1 record graph, names and histories intact. No bulk renaming of existing records. Earlier releases may not accept newly exported English-language backups; backward reading in the current release is covered.
+- Precedence: this user instruction supersedes earlier Portuguese UI requirements, including Portuguese labels/examples in pending M2 documents. It does not authorize solver implementation or change the remaining M2 recommendations.
+- Evidence: [UI refinement verification](ui-refinement-2026-09-12.md). Squircle CSS is verified in Chromium; unsupported browsers retain rounded corners.
+

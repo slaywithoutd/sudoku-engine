@@ -7,7 +7,7 @@ export function emptyLibrary(): LibraryData {
     drafts: {},
     puzzles: {},
     sessions: {},
-    settings: { showConflicts: false, language: "pt-BR" },
+    settings: { showConflicts: false, language: "en" },
   };
 }
 export function safeId(id: string): boolean {
@@ -19,7 +19,7 @@ function available(data: LibraryData, id: string): void {
     Object.hasOwn(data.drafts, id) ||
     Object.hasOwn(data.puzzles, id)
   )
-    throw new Error("Identificador já existe ou é inválido.");
+    throw new Error("The identifier already exists or is invalid.");
 }
 export function createDraft(
   data: LibraryData,
@@ -32,14 +32,14 @@ export function createDraft(
     values.length !== 81 ||
     !values.every((v) => Number.isInteger(v) && v >= 0 && v <= 9)
   )
-    throw new Error("Células inválidas.");
+    throw new Error("Invalid cells.");
   const editor = emptyEditor();
   editor.cells = values.map((value) => ({ value, notes: [] }));
   return {
     ...data,
     drafts: {
       ...data.drafts,
-      [id]: { id, name: "Sem título", createdAt: now, updatedAt: now, editor },
+      [id]: { id, name: "Untitled", createdAt: now, updatedAt: now, editor },
     },
   };
 }
@@ -51,11 +51,11 @@ export function finishDraft(
 ): LibraryData {
   const draft = data.drafts[draftId];
   if (!draft || draft.finishedPuzzleId)
-    throw new Error("Rascunho indisponível para edição.");
+    throw new Error("This draft is not available for editing.");
   available(data, puzzleId);
   const givens = draft.editor.cells.map((c) => c.value);
   if (conflictingCells(givens).length)
-    throw new Error("Resolva os conflitos antes de finalizar.");
+    throw new Error("Resolve conflicts before finishing.");
   return {
     ...data,
     drafts: {
@@ -84,7 +84,7 @@ export function startPlay(
   puzzleId: string,
   now: string,
 ): LibraryData {
-  if (!data.puzzles[puzzleId]) throw new Error("Jogo não encontrado.");
+  if (!data.puzzles[puzzleId]) throw new Error("Puzzle not found.");
   if (data.sessions[puzzleId]) return data;
   return {
     ...data,
@@ -101,7 +101,7 @@ export function copyPuzzleToDraft(
   now: string,
 ): LibraryData {
   const puzzle = data.puzzles[puzzleId];
-  if (!puzzle) throw new Error("Jogo não encontrado.");
+  if (!puzzle) throw new Error("Puzzle not found.");
   const next = createDraft(data, draftId, now, puzzle.definition.givens);
   return {
     ...next,
@@ -122,11 +122,11 @@ export function renameRecord(
   name: string,
   now: string,
 ): LibraryData {
-  name = name.trim() || "Sem título";
+  name = name.trim() || "Untitled";
   if (kind === "draft") {
     const draft = data.drafts[id];
     if (!draft || draft.finishedPuzzleId)
-      throw new Error("Rascunho indisponível para edição.");
+      throw new Error("This draft is not available for editing.");
     if (name === draft.name) return data;
     return {
       ...data,
@@ -134,7 +134,7 @@ export function renameRecord(
     };
   }
   const puzzle = data.puzzles[id];
-  if (!puzzle) throw new Error("Jogo não encontrado.");
+  if (!puzzle) throw new Error("Puzzle not found.");
   return name === puzzle.name
     ? data
     : { ...data, puzzles: { ...data.puzzles, [id]: { ...puzzle, name } } };
@@ -146,12 +146,12 @@ export function deleteRecord(
 ): LibraryData {
   if (kind === "draft") {
     if (!data.drafts[id] || data.drafts[id].finishedPuzzleId)
-      throw new Error("Rascunho indisponível.");
+      throw new Error("Draft unavailable.");
     const drafts = { ...data.drafts };
     delete drafts[id];
     return { ...data, drafts };
   }
-  if (!data.puzzles[id]) throw new Error("Jogo não encontrado.");
+  if (!data.puzzles[id]) throw new Error("Puzzle not found.");
   const puzzles = { ...data.puzzles },
     sessions = { ...data.sessions },
     drafts = { ...data.drafts };

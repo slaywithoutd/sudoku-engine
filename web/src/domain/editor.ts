@@ -111,8 +111,9 @@ export function reduceEditor(
       };
       label = "note";
     } else {
-      after = { ...before, value: action.digit };
-      label = "digit";
+      const erase = before.value === action.digit;
+      after = { ...before, value: erase ? 0 : action.digit };
+      label = erase ? "erase" : "digit";
     }
   }
   return sameCell(before, after)

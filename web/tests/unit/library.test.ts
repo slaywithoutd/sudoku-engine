@@ -63,6 +63,6 @@ test("delete removes session/archive, drops provenance and preserves active copy
   d = renameRecord(d, "draft", "copy", "  Novo  ", NOW);
   expect(d.drafts.copy.name).toBe("Novo");
   d = renameRecord(d, "draft", "copy", "  ", NOW);
-  expect(d.drafts.copy.name).toBe("Sem título");
+  expect(d.drafts.copy.name).toBe("Untitled");
   expect(deleteRecord(d, "draft", "copy").drafts).toEqual({});
 });

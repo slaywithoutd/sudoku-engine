@@ -2,7 +2,7 @@
 
 Last updated: 2026-09-12.
 
-**Latest UI update:** the user-requested Sudoku Engine sidebar and larger, frameless continuous grid are implemented. Fresh verification passed: 54 unit/storage/controller tests, 20 browser tests, typecheck and build. See the [layout decision and verification record](ui-sidebar-update-2026-09-12.md). No layout implementation work remains; the M2 design remains a separate workstream.
+**Latest UI update:** Sudoku Engine now uses English throughout, squircle buttons/cell highlights, larger digits, fixed 3 × 3 notes and repeat-value erasing. Thick grid strokes cover thin strokes. Fresh verification passed: 59 unit/storage/controller tests, 22 browser tests, typecheck and build. See the [refinement verification record](ui-refinement-2026-09-12.md) and [earlier sidebar update](ui-sidebar-update-2026-09-12.md). No work remains for these UI requests. D053 supersedes earlier Portuguese UI and corner-note presentation requirements, including language references in the separate M2 design workstream.
 
 ## Current state
 
@@ -12,7 +12,7 @@ Implementation is on local branch `release/first-release`, based on planning com
 
 **M2 design is written and ready for review; the solver is not implemented.** The [solver specification](superpowers/specs/2026-09-12-m2-classic-solver-design.md) and [ten-task implementation plan](superpowers/plans/2026-09-12-m2-classic-solver.md) are on local branch `docs/m2-solver-design`, based on the clean `2507adc` first-release documentation head. The release branch is preserved. D046 records design-only authorization; D047–D052 are recommendations awaiting design approval.
 
-Concurrent uncommitted UI/layout edits appeared under `web/` during drafting and were preserved outside the M2 documentation commits. The spec/plan note the current sidebar and `BoardOptions.controlsContainer` integration points. Reinspect these edits before implementation; the historical first-release verification below does not certify them.
+The sidebar update was committed separately as `09887f4` on `docs/m2-solver-design`. The current refinements retain the sidebar and `BoardOptions.controlsContainer` integration points. Reinspect the current implementation before M2; the latest verification below covers these M1 refinements, not a solver.
 
 ## Run it
 
@@ -30,9 +30,9 @@ Open exactly **http://localhost:5173**. The [root README](../README.md) explains
 
 - `npm ci`: passed; 45 packages installed, audit reported zero vulnerabilities.
 - `npm run typecheck`: passed.
-- `npm test`: **54 passed**, seven unit/storage/controller/route test files.
+- `npm test`: **59 passed**, seven unit/storage/controller/route test files.
 - `npm run build`: passed; production assets emitted to `web/dist/`.
-- `npm run test:e2e`: **20 passed**, seven Chromium browser suites; latest complete run took 13.5 seconds.
+- `npm run test:e2e`: **22 passed**, seven Chromium browser suites; latest complete run took 25.5 seconds.
 - Real same-context refresh/reopen, true browser restart with an isolated temporary profile, and stale-tab conflict recovery passed.
 - Home, creator, player and Settings screenshots inspected at 1280×800 and 1920×1080; nine corner notes, selection, fixed clues and conflicts checked. Creator/player board controls fit the 800-pixel viewport.
 - Independent reviews found three issues: inherited record-key collisions, concurrent Retry status and focused name autosave. All were reproduced and fixed with regressions. Final review had no remaining critical/important findings.
@@ -40,9 +40,9 @@ Open exactly **http://localhost:5173**. The [root README](../README.md) explains
 
 ## Implemented behavior
 
-- Portuguese Home, personal library with Drafts/Puzzles, classic creator/player and Settings. Solver and community Explore are marked as future features.
+- English Home, personal library with Drafts/Puzzles, classic creator/player and Settings. Solver and community Explore are marked as future features. Legacy Portuguese libraries/backups remain readable; existing user-authored names are preserved.
 - Manual/81-cell string creation, autosaved conflicting drafts, conflict-blocked Finish, immutable playable definitions, edit-copy, rename and confirmed deletion.
-- Locked/selectable givens, wrapping arrows, physical numpad/Shift input, sorted corner notes, hidden note retention, layered erase, undo/redo/reset and saved selection/tool.
+- Locked/selectable givens, wrapping arrows, physical numpad/Shift input, notes in fixed 3 × 3 positions, hidden note retention, layered erase, repeat-value erasing, undo/redo/reset and saved selection/tool.
 - Immediate in-memory edits with serialized atomic saves of the entire library and histories. Separate draft/play history, no silent history cap, error indicators and live-work export/retry.
 - Versioned JSON backups, whole-graph validation, history replay validation, linked copies for collisions, preview freshness checks, settings opt-in and atomic restore.
 - Optional play conflicts off by default, mandatory creation conflicts, dismissible valid-board completion without solver claims.

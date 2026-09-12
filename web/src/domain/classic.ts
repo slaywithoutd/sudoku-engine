@@ -2,7 +2,7 @@ import type { EditorState, Value } from "./model";
 export function parsePuzzleString(text: string): Value[] {
   const normalized = text.replace(/\s/g, "");
   if (!/^[1-9.0]{81}$/.test(normalized))
-    throw new Error("Informe exatamente 81 células: 1–9, 0 ou ponto.");
+    throw new Error("Enter exactly 81 cells: 1–9, 0 or a dot.");
   return [...normalized].map((c) => (c === "." ? 0 : (Number(c) as Value)));
 }
 const units: number[][] = [];

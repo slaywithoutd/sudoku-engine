@@ -8,11 +8,13 @@ test("valid completion is dismissible and reappears only on a new complete trans
   await cell(page, 80).click();
   await page.keyboard.press("9");
   await expect(
-    page.getByText("Sudoku concluído!", { exact: true }),
+    page.getByText("Sudoku complete!", { exact: true }),
   ).toBeVisible();
-  await expect(page.locator(".completion")).not.toContainText(/únic|perfeit/i);
+  await expect(page.locator(".completion")).not.toContainText(
+    /unique|perfect/i,
+  );
   await page
-    .getByRole("button", { name: "Fechar mensagem", exact: true })
+    .getByRole("button", { name: "Dismiss message", exact: true })
     .click();
   await cell(page, 79).click();
   await expect(page.locator(".completion")).toBeHidden();
@@ -29,10 +31,8 @@ test("full conflicting board stays editable without unsolicited error when highl
   await expect(page.locator(".completion")).toBeHidden();
   await expect(page.locator(".cell.conflict")).toHaveCount(0);
   await expect(page.getByRole("dialog")).toHaveCount(0);
-  await page
-    .getByRole("button", { name: "Configurações", exact: true })
-    .click();
-  await page.getByLabel("Destacar conflitos durante o jogo").check();
+  await page.getByRole("button", { name: "Settings", exact: true }).click();
+  await page.getByLabel("Highlight conflicts during play").check();
   await page.goBack();
   await expect(cell(page, 80)).toHaveClass(/conflict/);
   await cell(page, 80).click();

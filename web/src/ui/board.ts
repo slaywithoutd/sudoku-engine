@@ -24,7 +24,7 @@ export function mountBoard(
     toolbar = el("div", undefined, "board-toolbar");
   const controls = el("div", undefined, "board-controls");
   grid.setAttribute("role", "grid");
-  grid.setAttribute("aria-label", "Tabuleiro de Sudoku");
+  grid.setAttribute("aria-label", "Sudoku board");
   grid.setAttribute("aria-rowcount", "9");
   grid.setAttribute("aria-colcount", "9");
   const rows = Array.from({ length: 9 }, (_, index) => {
@@ -62,6 +62,8 @@ export function mountBoard(
   lines.classList.add("grid-lines");
   lines.setAttribute("viewBox", "0 0 900 900");
   lines.setAttribute("aria-hidden", "true");
+  const thin = document.createElementNS(lines.namespaceURI, "g"),
+    thick = document.createElementNS(lines.namespaceURI, "g");
   for (let i = 1; i < 9; i++) {
     for (const vertical of [false, true]) {
       const line = document.createElementNS(lines.namespaceURI, "line");
@@ -71,9 +73,11 @@ export function mountBoard(
       line.setAttribute("y2", String(vertical ? 898 : i * 100));
       line.setAttribute("vector-effect", "non-scaling-stroke");
       if (i % 3 === 0) line.classList.add("box-line");
-      lines.append(line);
+      (i % 3 === 0 ? thick : thin).append(line);
     }
   }
+  // SVG paints in document order: every box separator covers every thin line.
+  lines.append(thin, thick);
   grid.append(lines);
   for (let n = 1; n <= 9; n++) {
     const key = button(String(n), (event) =>
@@ -83,23 +87,23 @@ export function mountBoard(
         corner: event.shiftKey || state.tool === "corner",
       }),
     );
-    key.setAttribute("aria-label", `Número ${n}`);
+    key.setAttribute("aria-label", `Number ${n}`);
     keypad.append(key);
   }
-  const notesButton = button("Notas", () =>
+  const notesButton = button("Notes", () =>
     dispatch({
       type: "tool",
       tool: state.tool === "corner" ? "value" : "corner",
     }),
   );
   if (options.context.mode === "play") toolbar.append(notesButton);
-  const undo = button("Desfazer", () => dispatch({ type: "undo" })),
-    redo = button("Refazer", () => dispatch({ type: "redo" }));
+  const undo = button("Undo", () => dispatch({ type: "undo" })),
+    redo = button("Redo", () => dispatch({ type: "redo" }));
   toolbar.append(
-    button("Apagar", () => dispatch({ type: "erase" })),
+    button("Erase", () => dispatch({ type: "erase" })),
     undo,
     redo,
-    button("Reiniciar", () => dispatch({ type: "reset" })),
+    button("Reset", () => dispatch({ type: "reset" })),
   );
   wrapper.append(grid);
   controls.append(keypad, toolbar);
@@ -129,12 +133,17 @@ export function mountBoard(
       node.classList.toggle("conflict", conflicts.has(i));
       node.setAttribute(
         "aria-label",
-        `Linha ${Math.floor(i / 9) + 1}, coluna ${(i % 9) + 1}, ${values[i] || "vazia"}${given ? ", pista fixa" : ""}${conflicts.has(i) ? ", conflito" : ""}${!values[i] && state.cells[i].notes.length ? ", notas " + state.cells[i].notes.join(", ") : ""}`,
+        `Row ${Math.floor(i / 9) + 1}, column ${(i % 9) + 1}, ${values[i] || "empty"}${given ? ", fixed clue" : ""}${conflicts.has(i) ? ", conflict" : ""}${!values[i] && state.cells[i].notes.length ? ", notes " + state.cells[i].notes.join(", ") : ""}`,
       );
       value.textContent = values[i] ? String(values[i]) : "";
       notes.hidden = !!values[i];
       notes.replaceChildren(
-        ...state.cells[i].notes.map((n) => el("span", String(n))),
+        ...state.cells[i].notes.map((n) => {
+          const note = el("span", String(n));
+          note.style.gridColumn = String(((n - 1) % 3) + 1);
+          note.style.gridRow = String(Math.floor((n - 1) / 3) + 1);
+          return note;
+        }),
       );
     });
     notesButton.setAttribute("aria-pressed", String(state.tool === "corner"));

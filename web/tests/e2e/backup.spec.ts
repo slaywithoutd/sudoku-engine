@@ -2,53 +2,45 @@ import { expect, test, type Page } from "@playwright/test";
 import { readFile } from "node:fs/promises";
 import { cell, playString, saved } from "./helpers";
 async function upload(page: Page, data: unknown) {
-  await page
-    .getByLabel("Importar backup", { exact: true })
-    .setInputFiles({
-      name: "backup.json",
-      mimeType: "application/json",
-      buffer: Buffer.from(JSON.stringify(data)),
-    });
+  await page.getByLabel("Import backup", { exact: true }).setInputFiles({
+    name: "backup.json",
+    mimeType: "application/json",
+    buffer: Buffer.from(JSON.stringify(data)),
+  });
 }
 test("download and restore skip identical records, copy conflicts, reject invalid input and render names safely", async ({
   page,
 }) => {
   await page.goto("/");
-  await page.getByRole("button", { name: "Criar", exact: true }).click();
+  await page.getByRole("button", { name: "Create", exact: true }).click();
   await page.locator('[data-cell-index="0"]').click();
   await page.keyboard.press("5");
-  await page
-    .getByRole("button", { name: "Configurações", exact: true })
-    .click();
+  await page.getByRole("button", { name: "Settings", exact: true }).click();
   const promise = page.waitForEvent("download");
   await page
-    .getByRole("button", { name: "Exportar backup", exact: true })
+    .getByRole("button", { name: "Export backup", exact: true })
     .click();
   const download = await promise;
   expect(download.suggestedFilename()).toMatch(/^sudoku-backup-.*\.json$/);
   const file = await download.path();
   if (!file) throw new Error("Missing download");
   const data = JSON.parse(await readFile(file, "utf8"));
-  await page.getByLabel("Importar backup", { exact: true }).setInputFiles(file);
-  await expect(page.getByRole("dialog")).toContainText("1 ignorados");
-  await page
-    .getByRole("button", { name: "Aplicar importação", exact: true })
-    .click();
+  await page.getByLabel("Import backup", { exact: true }).setInputFiles(file);
+  await expect(page.getByRole("dialog")).toContainText("Skipped: 1");
+  await page.getByRole("button", { name: "Apply import", exact: true }).click();
   const draft = Object.values(data.data.drafts)[0] as any;
   draft.name = "<img src=x onerror=alert(1)>";
   await upload(page, data);
-  await expect(page.getByRole("dialog")).toContainText("1 cópias");
-  await page.getByRole("button", { name: "Cancelar", exact: true }).click();
+  await expect(page.getByRole("dialog")).toContainText("Copies: 1");
+  await page.getByRole("button", { name: "Cancel", exact: true }).click();
   await upload(page, data);
-  await page
-    .getByRole("button", { name: "Aplicar importação", exact: true })
-    .click();
-  await expect(page.getByTestId("save-status")).toHaveText("Salvo");
+  await page.getByRole("button", { name: "Apply import", exact: true }).click();
+  await expect(page.getByTestId("save-status")).toHaveText("Saved");
   data.version = 2;
   await upload(page, data);
-  await expect(page.getByRole("alert")).toContainText("não suportado");
-  await page.getByRole("button", { name: "Biblioteca", exact: true }).click();
-  await page.getByRole("button", { name: "Rascunhos", exact: true }).click();
+  await expect(page.getByRole("alert")).toContainText("not supported");
+  await page.getByRole("button", { name: "Library", exact: true }).click();
+  await page.getByRole("button", { name: "Drafts", exact: true }).click();
   await expect(page.getByRole("article")).toHaveCount(2);
   await expect(
     page.getByText("<img src=x onerror=alert(1)>", { exact: true }),
@@ -59,9 +51,7 @@ test("restore settings is opt-in and malformed data never partially imports", as
   page,
 }) => {
   await page.goto("/");
-  await page
-    .getByRole("button", { name: "Configurações", exact: true })
-    .click();
+  await page.getByRole("button", { name: "Settings", exact: true }).click();
   const data = {
     format: "sudoku-engine-backup",
     version: 1,
@@ -76,19 +66,15 @@ test("restore settings is opt-in and malformed data never partially imports", as
     },
   };
   await upload(page, data);
-  await page
-    .getByRole("button", { name: "Aplicar importação", exact: true })
-    .click();
+  await page.getByRole("button", { name: "Apply import", exact: true }).click();
   await expect(
-    page.getByLabel("Destacar conflitos durante o jogo"),
+    page.getByLabel("Highlight conflicts during play"),
   ).not.toBeChecked();
   await upload(page, data);
-  await page.getByLabel("Restaurar configurações do backup").check();
-  await page
-    .getByRole("button", { name: "Aplicar importação", exact: true })
-    .click();
+  await page.getByLabel("Restore settings from backup").check();
+  await page.getByRole("button", { name: "Apply import", exact: true }).click();
   await expect(
-    page.getByLabel("Destacar conflitos durante o jogo"),
+    page.getByLabel("Highlight conflicts during play"),
   ).toBeChecked();
   await upload(page, {
     ...data,
@@ -96,7 +82,7 @@ test("restore settings is opt-in and malformed data never partially imports", as
   });
   await expect(page.getByRole("alert")).toBeVisible();
   await expect(
-    page.getByLabel("Destacar conflitos durante o jogo"),
+    page.getByLabel("Highlight conflicts during play"),
   ).toBeChecked();
 });
 test("conflicting session restore copies its puzzle branch and preserves hidden notes and redo", async ({
@@ -109,12 +95,10 @@ test("conflicting session restore copies its puzzle branch and preserves hidden 
   await page.keyboard.press("Control+z");
   await saved(page);
   const url = page.url();
-  await page
-    .getByRole("button", { name: "Configurações", exact: true })
-    .click();
+  await page.getByRole("button", { name: "Settings", exact: true }).click();
   const promise = page.waitForEvent("download");
   await page
-    .getByRole("button", { name: "Exportar backup", exact: true })
+    .getByRole("button", { name: "Export backup", exact: true })
     .click();
   const file = await (await promise).path();
   if (!file) throw new Error("Missing download");
@@ -122,19 +106,15 @@ test("conflicting session restore copies its puzzle branch and preserves hidden 
   await cell(page, 0).click();
   await page.keyboard.press("Control+y");
   await saved(page);
-  await page
-    .getByRole("button", { name: "Configurações", exact: true })
-    .click();
-  await page.getByLabel("Importar backup", { exact: true }).setInputFiles(file);
-  await expect(page.getByRole("dialog")).toContainText("3 cópias");
-  await page
-    .getByRole("button", { name: "Aplicar importação", exact: true })
-    .click();
+  await page.getByRole("button", { name: "Settings", exact: true }).click();
+  await page.getByLabel("Import backup", { exact: true }).setInputFiles(file);
+  await expect(page.getByRole("dialog")).toContainText("Copies: 3");
+  await page.getByRole("button", { name: "Apply import", exact: true }).click();
   await saved(page);
-  await page.getByRole("button", { name: "Biblioteca", exact: true }).click();
+  await page.getByRole("button", { name: "Library", exact: true }).click();
   await expect(page.getByRole("article")).toHaveCount(2);
   await page
-    .getByRole("button", { name: "Continuar", exact: true })
+    .getByRole("button", { name: "Continue", exact: true })
     .last()
     .click();
   await expect(cell(page, 0).locator("[data-notes]")).toHaveText("2");
@@ -149,17 +129,15 @@ test("a save completing under a restore preview requires an updated summary ackn
 }) => {
   await page.goto("/tests/browser/failure.html");
   await page
-    .getByRole("button", { name: "Permitir gravação de teste", exact: true })
+    .getByRole("button", { name: "Allow test saves", exact: true })
     .click();
-  await page.getByRole("button", { name: "Criar", exact: true }).click();
+  await page.getByRole("button", { name: "Create", exact: true }).click();
   await saved(page);
+  await page.getByRole("button", { name: "Settings", exact: true }).click();
   await page
-    .getByRole("button", { name: "Configurações", exact: true })
+    .getByRole("button", { name: "Pause test saves", exact: true })
     .click();
-  await page
-    .getByRole("button", { name: "Pausar gravação de teste", exact: true })
-    .click();
-  await page.getByLabel("Destacar conflitos durante o jogo").check();
+  await page.getByLabel("Highlight conflicts during play").check();
   await upload(page, {
     format: "sudoku-engine-backup",
     version: 1,
@@ -176,15 +154,11 @@ test("a save completing under a restore preview requires an updated summary ackn
   await expect(page.getByRole("dialog")).toBeVisible();
   await page.locator("#release").evaluate((e: HTMLButtonElement) => e.click());
   await saved(page);
-  await page
-    .getByRole("button", { name: "Aplicar importação", exact: true })
-    .click();
-  await expect(page.getByRole("dialog")).toContainText("A biblioteca mudou");
-  await page
-    .getByRole("button", { name: "Aplicar importação", exact: true })
-    .click();
+  await page.getByRole("button", { name: "Apply import", exact: true }).click();
+  await expect(page.getByRole("dialog")).toContainText("The library changed");
+  await page.getByRole("button", { name: "Apply import", exact: true }).click();
   await expect(page.getByRole("dialog")).toHaveCount(0);
   await expect(
-    page.getByLabel("Destacar conflitos durante o jogo"),
+    page.getByLabel("Highlight conflicts during play"),
   ).toBeChecked();
 });

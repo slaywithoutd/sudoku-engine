@@ -41,6 +41,6 @@ export function keyboardAction(
   const digit = digitFromEvent(event);
   if (!digit) return null;
   const notes = event.shiftKey || corner;
-  if (notes && event.repeat) return null;
+  if (event.repeat) return null;
   return { type: "digit", digit, corner: notes };
 }

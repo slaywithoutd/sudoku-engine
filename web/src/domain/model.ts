@@ -54,7 +54,7 @@ export interface PlaySession {
 }
 export interface Settings {
   showConflicts: boolean;
-  language: "pt-BR";
+  language: "en";
 }
 export interface LibraryData {
   formatVersion: 1;

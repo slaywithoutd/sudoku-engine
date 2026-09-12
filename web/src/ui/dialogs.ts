@@ -28,17 +28,17 @@ export function dialog(title: string): {
   return { node, body, actions, close };
 }
 export function confirmDelete(name: string, apply: () => void): void {
-  const d = dialog("Excluir este registro?");
+  const d = dialog("Delete this record?");
   d.body.append(
     el(
       "p",
-      `“${name}” será excluído. Para um jogo, isso inclui seu progresso. A recuperação depende de um backup.`,
+      `“${name}” will be deleted, including any play progress. You will need a backup to recover it.`,
     ),
   );
   d.actions.append(
-    button("Cancelar", d.close),
+    button("Cancel", d.close),
     button(
-      "Confirmar exclusão",
+      "Confirm deletion",
       () => {
         apply();
         d.close();
@@ -51,14 +51,14 @@ export function renameDialog(
   name: string,
   apply: (name: string) => void,
 ): void {
-  const d = dialog("Renomear"),
+  const d = dialog("Rename"),
     input = el("input");
   input.value = name;
-  d.body.append(field("Novo nome", input));
+  d.body.append(field("New name", input));
   d.actions.append(
-    button("Cancelar", d.close),
+    button("Cancel", d.close),
     button(
-      "Salvar nome",
+      "Save name",
       () => {
         apply(input.value);
         d.close();

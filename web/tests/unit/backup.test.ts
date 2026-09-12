@@ -21,6 +21,31 @@ const fixture = () =>
     NOW,
   );
 const envelope = (data = fixture()) => parseBackup(exportBackup(data, NOW));
+
+test.each(["pt-BR", "en"])(
+  "loads %s data in English without changing names or history",
+  (language) => {
+    const original = fixture();
+    original.drafts.d.name = "Meu Sudoku";
+    const stored = { ...original, settings: { showConflicts: true, language } };
+    const loaded = validateLibrary(stored);
+    expect(loaded.settings).toEqual({ showConflicts: true, language: "en" });
+    expect(loaded.drafts).toEqual(original.drafts);
+    expect(loaded.sessions).toEqual(original.sessions);
+    const imported = parseBackup(
+      JSON.stringify({
+        format: "sudoku-engine-backup",
+        version: 1,
+        exportedAt: NOW,
+        data: stored,
+      }),
+    );
+    expect(imported.data).toEqual(loaded);
+    expect(JSON.parse(exportBackup(loaded, NOW)).data.settings.language).toBe(
+      "en",
+    );
+  },
+);
 test.each(["toString", "valueOf", "hasOwnProperty", "__defineGetter__"])(
   "rejects inherited dictionary key %s throughout lifecycle and restore",
   (key) => {
@@ -91,7 +116,7 @@ test("changed puzzle remaps two draft links and retries generated collisions", (
   );
   expect(result.data.drafts.copy.sourcePuzzleId).toBe("fresh-p");
   expect(result.data.drafts["fresh-d"].finishedPuzzleId).toBe("fresh-p");
-  expect(result.data.puzzles.p.name).toBe("Sem título");
+  expect(result.data.puzzles.p.name).toBe("Untitled");
 });
 test("settings remain local unless requested; revision remains local", () => {
   const current = emptyLibrary();

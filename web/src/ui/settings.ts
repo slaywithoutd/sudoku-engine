@@ -8,8 +8,8 @@ export function mountSettings(
   services: ScreenServices,
 ): () => void {
   container.append(
-    el("h1", "Configurações"),
-    el("p", "Seu jeito de jogar, neste navegador.", "muted"),
+    el("h1", "Settings"),
+    el("p", "Your way to play, in this browser.", "muted"),
   );
   const panel = el("section", undefined, "settings-panel"),
     input = el("input");
@@ -22,11 +22,11 @@ export function mountSettings(
     })),
   );
   panel.append(
-    el("h2", "Durante o jogo"),
-    field("Destacar conflitos durante o jogo", input),
+    el("h2", "During play"),
+    field("Highlight conflicts during play", input),
     el(
       "p",
-      "A criação sempre mostra conflitos. Este ajuste afeta apenas o modo de jogo.",
+      "The creator always shows conflicts. This setting only affects play mode.",
       "muted",
     ),
   );
@@ -40,13 +40,13 @@ export function mountSettings(
   error.hidden = true;
   let active = true;
   backup.append(
-    el("h2", "Sua biblioteca, com você"),
+    el("h2", "Take your library with you"),
     el(
       "p",
-      "O backup inclui seus rascunhos, jogos, notas, históricos e configurações. Ao importar, registros diferentes são preservados como cópias.",
+      "Backups include your drafts, puzzles, notes, histories and settings. Different records are preserved as copies when imported.",
     ),
-    button("Exportar backup", () => downloadBackup(services)),
-    field("Importar backup", file),
+    button("Export backup", () => downloadBackup(services)),
+    field("Import backup", file),
     error,
   );
   container.append(backup);
@@ -58,7 +58,7 @@ export function mountSettings(
     try {
       const incoming = parseBackup(await selected.text());
       if (!active) return;
-      const d = dialog("Resumo da importação"),
+      const d = dialog("Import preview"),
         summary = el("p"),
         restore = el("input"),
         notice = el("p", undefined, "error");
@@ -73,24 +73,24 @@ export function mountSettings(
           services.newId,
           restore.checked,
         );
-        summary.textContent = `${preview.added} novos · ${preview.copied} cópias · ${preview.skipped} ignorados`;
+        summary.textContent = `New: ${preview.added} · Copies: ${preview.copied} · Skipped: ${preview.skipped}`;
       };
       d.body.append(
         summary,
-        field("Restaurar configurações do backup", restore),
+        field("Restore settings from backup", restore),
         notice,
       );
       restore.addEventListener("change", refresh);
       refresh();
       d.actions.append(
-        button("Cancelar", d.close),
+        button("Cancel", d.close),
         button(
-          "Aplicar importação",
+          "Apply import",
           () => {
             if (services.controller.snapshot() !== captured) {
               refresh();
               notice.textContent =
-                "A biblioteca mudou. Confira o resumo atualizado e aplique novamente.";
+                "The library changed. Review the updated summary and apply again.";
               return;
             }
             services.controller.update(() => preview.data);

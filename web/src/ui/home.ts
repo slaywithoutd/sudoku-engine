@@ -12,11 +12,11 @@ export function mountHome(
 ): () => void {
   const hero = el("section", undefined, "hero");
   hero.append(
-    el("p", "UM ESPAÇO PARA PENSAR", "eyebrow"),
-    el("h1", "Um número de cada vez."),
+    el("p", "A SPACE TO THINK", "eyebrow"),
+    el("h1", "One number at a time."),
     el(
       "p",
-      "Crie seus próprios desafios. Encontre seu ritmo.\nSeu próximo Sudoku começa aqui.",
+      "Create your own challenges. Find your rhythm.\nYour next Sudoku starts here.",
       "intro",
     ),
   );
@@ -26,29 +26,29 @@ export function mountHome(
     () => services.navigate({ screen: "library", tab: "puzzles" }),
     "home-card",
   );
-  play.setAttribute("aria-label", "Jogar");
+  play.setAttribute("aria-label", "Play");
   play.append(
     el("span", "01", "card-number"),
-    el("h2", "Jogar"),
-    el("p", "Abra sua biblioteca e continue de onde parou."),
-    el("span", "Minha biblioteca →", "card-link"),
+    el("h2", "Play"),
+    el("p", "Open your library and pick up where you left off."),
+    el("span", "My library →", "card-link"),
   );
   const create = button("", () => newDraft(services), "home-card");
-  create.setAttribute("aria-label", "Criar");
+  create.setAttribute("aria-label", "Create");
   create.append(
     el("span", "02", "card-number"),
-    el("h2", "Criar"),
-    el("p", "Monte um clássico, célula por célula, ou cole um puzzle."),
-    el("span", "Novo rascunho →", "card-link"),
+    el("h2", "Create"),
+    el("p", "Build a classic, cell by cell, or paste a puzzle."),
+    el("span", "New draft →", "card-link"),
   );
-  const solve = button("Resolver — em breve", () => {}, "home-card future");
+  const solve = button("Solve — coming soon", () => {}, "home-card future");
   solve.disabled = true;
   cards.append(play, create, solve);
   hero.append(
     cards,
     el(
       "p",
-      "Clássico 9 × 9 · Salvo neste navegador · Sem pressa",
+      "Classic 9 × 9 · Saved in this browser · Take your time",
       "home-caption",
     ),
   );

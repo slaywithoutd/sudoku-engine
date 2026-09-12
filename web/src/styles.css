@@ -22,7 +22,8 @@ textarea {
 }
 button {
   border: 1px solid var(--line);
-  border-radius: 10px;
+  border-radius: 18px;
+  corner-shape: squircle;
   background: white;
   color: var(--ink);
   padding: 11px 17px;
@@ -131,9 +132,10 @@ small,
   height: 100%;
   padding: 0;
   border: 0;
-  border-radius: 9px;
+  border-radius: 50%;
+  corner-shape: squircle;
   background: transparent;
-  font-size: clamp(24px, 5cqw, 58px);
+  font-size: clamp(28px, 5.8cqw, 66px);
   font-weight: 400;
   color: #286650;
   line-height: 1;
@@ -159,12 +161,12 @@ small,
 }
 .cell [data-notes] {
   position: absolute;
-  inset: 9%;
+  inset: 8%;
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  grid-template-rows: 1.4em 1.4em;
-  align-content: space-between;
-  font-size: clamp(10px, 1.75cqw, 18px);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-rows: repeat(3, minmax(0, 1fr));
+  align-items: center;
+  font-size: clamp(10px, 1.9cqw, 21px);
   font-weight: 500;
   line-height: 1.4;
   color: #46533b;
@@ -182,6 +184,7 @@ small,
 }
 .keypad button {
   padding: 12px 0;
+  border-radius: 50%;
   font-size: 21px;
   font-weight: 600;
 }
@@ -379,7 +382,7 @@ small,
 }
 .editor-layout .keypad button {
   padding: 12px 0;
-  font-size: 24px;
+  font-size: 28px;
 }
 .editor-layout .board-toolbar {
   display: grid;

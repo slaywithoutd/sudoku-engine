@@ -10,9 +10,9 @@ export function missing(
   services: ScreenServices,
 ): () => void {
   container.append(
-    el("h1", "Registro não encontrado"),
-    el("p", "Este registro não está disponível nesta biblioteca."),
-    button("Voltar à biblioteca", () =>
+    el("h1", "Record not found"),
+    el("p", "This record is not available in this library."),
+    button("Back to library", () =>
       services.navigate({ screen: "library", tab: "puzzles" }),
     ),
   );
@@ -45,29 +45,29 @@ export function mountCreator(
   const feedback = el("p", undefined, "feedback");
   feedback.setAttribute("role", "status");
   const finish = button(
-    "Finalizar",
+    "Finish",
     () => {
       const puzzleId = services.newId();
       services.controller.update((d) =>
         finishDraft(d, id, puzzleId, services.now()),
       );
-      const d = dialog("Seu jogo está pronto");
+      const d = dialog("Your puzzle is ready");
       d.body.append(
         el(
           "p",
-          "Pistas finalizadas. Existência de solução e unicidade não foram verificadas.",
+          "Clues finalized. Solvability and uniqueness have not been checked.",
         ),
       );
       d.actions.append(
         button(
-          "Jogar agora",
+          "Play now",
           () => {
             d.close();
             services.navigate({ screen: "play", id: puzzleId });
           },
           "primary",
         ),
-        button("Voltar à biblioteca", () => {
+        button("Back to library", () => {
           d.close();
           services.navigate({ screen: "library", tab: "puzzles" });
         }),
@@ -78,23 +78,23 @@ export function mountCreator(
     },
     "primary",
   );
-  const paste = button("Colar puzzle", () => {
-    const d = dialog("Colar puzzle"),
+  const paste = button("Paste puzzle", () => {
+    const d = dialog("Paste puzzle"),
       input = el("textarea"),
       error = el("p", undefined, "error");
     error.setAttribute("role", "alert");
     d.body.append(
       el(
         "p",
-        "Use 1–9 para pistas e 0 ou ponto para vazias. A importação cria um novo rascunho.",
+        "Use 1–9 for clues and 0 or a dot for empty cells. Importing creates a new draft.",
       ),
-      field("81 células", input),
+      field("81 cells", input),
       error,
     );
     d.actions.append(
-      button("Cancelar", d.close),
+      button("Cancel", d.close),
       button(
-        "Importar puzzle",
+        "Import puzzle",
         () => {
           try {
             const values = parsePuzzleString(input.value),
@@ -114,23 +114,23 @@ export function mountCreator(
     input.focus();
   });
   side.append(
-    el("span", "SEU RASCUNHO", "eyebrow"),
-    el("h1", "Crie um desafio."),
-    field("Nome do rascunho", name),
+    el("span", "YOUR DRAFT", "eyebrow"),
+    el("h1", "Create a challenge."),
+    field("Draft name", name),
     feedback,
     finish,
     paste,
     el("hr"),
     controls,
     el("hr"),
-    el("h2", "Comece pelas pistas"),
+    el("h2", "Start with the clues"),
     el(
       "p",
-      "Selecione uma célula e digite de 1 a 9. Você pode salvar um rascunho com conflitos e voltar depois.",
+      "Select a cell and enter 1–9. Enter the same number again to erase it. Drafts with conflicts are saved so you can return later.",
     ),
     el(
       "p",
-      "As pistas ficam fixas ao finalizar. Para alterá-las depois, crie uma cópia.",
+      "Clues are locked when you finish. To change them later, edit a copy.",
       "muted",
     ),
   );
@@ -168,8 +168,8 @@ export function mountCreator(
     paste.disabled = !!draft.finishedPuzzleId;
     name.disabled = !!draft.finishedPuzzleId;
     feedback.textContent = conflicts.length
-      ? "Resolva os conflitos destacados antes de finalizar."
-      : `${draft.editor.cells.filter((c) => c.value).length} pistas · Sem conflitos visíveis.`;
+      ? "Resolve the highlighted conflicts before finishing."
+      : `${draft.editor.cells.filter((c) => c.value).length} clues · No visible conflicts.`;
     feedback.classList.toggle("error", !!conflicts.length);
     if (document.activeElement !== name) name.value = draft.name;
   };

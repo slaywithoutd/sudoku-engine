@@ -20,7 +20,7 @@ mountApplication(
   {
     ...repo,
     commit: async (d, r) => {
-      if (fail) throw new Error("Falha simulada de armazenamento.");
+      if (fail) throw new Error("Simulated storage failure.");
       if (held) await new Promise<void>((resolve) => pending.push(resolve));
       return repo.commit(d, r);
     },

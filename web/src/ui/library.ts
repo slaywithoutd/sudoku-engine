@@ -15,13 +15,13 @@ export function mountLibrary(
 ): () => void {
   const heading = el("div", undefined, "page-heading");
   heading.append(
-    el("h1", "Sua biblioteca"),
-    button("Criar", () => newDraft(services), "primary"),
+    el("h1", "Your library"),
+    button("Create", () => newDraft(services), "primary"),
   );
   const tabs = el("div", undefined, "tabs");
   for (const [key, label] of [
-    ["puzzles", "Jogos"],
-    ["drafts", "Rascunhos"],
+    ["puzzles", "Puzzles"],
+    ["drafts", "Drafts"],
   ] as const) {
     const b = button(label, () =>
       services.navigate({ screen: "library", tab: key }),
@@ -29,7 +29,7 @@ export function mountLibrary(
     b.setAttribute("aria-pressed", String(tab === key));
     tabs.append(b);
   }
-  const future = button("Explorar — em breve", () => {});
+  const future = button("Explore — coming soon", () => {});
   future.disabled = true;
   tabs.append(future);
   const list = el("div", undefined, "library-list");
@@ -57,8 +57,8 @@ export function mountLibrary(
         el(
           "div",
           tab === "drafts"
-            ? "Nenhum rascunho por aqui. Crie seu primeiro Sudoku."
-            : "Sua biblioteca está pronta para o primeiro jogo. Crie e finalize um rascunho para começar.",
+            ? "No drafts yet. Create your first Sudoku."
+            : "Your library is ready for its first puzzle. Create and finish a draft to get started.",
           "empty-state",
         ),
       );
@@ -68,31 +68,33 @@ export function mountLibrary(
       const row = el("article", undefined, "library-item"),
         info = el("div"),
         actions = el("div", undefined, "actions");
-      let status = "Rascunho";
+      let status = "Draft";
       if (tab === "puzzles") {
         const session = data.sessions[record.id];
         status = !session
-          ? "Pronto"
+          ? "Ready"
           : isComplete(
                 effectiveValues(
                   session.editor,
                   data.puzzles[record.id].definition.givens,
                 ),
               )
-            ? "Concluído"
-            : "Em andamento";
+            ? "Completed"
+            : "In progress";
       }
       info.append(el("span", status, "badge"), el("h2", record.name));
       if (tab === "puzzles")
-        info.append(el("small", "Existência de solução e unicidade não verificadas."));
+        info.append(
+          el("small", "Solvability and uniqueness have not been checked."),
+        );
       const kind = tab === "drafts" ? "draft" : "puzzle";
       actions.append(
         button(
           tab === "drafts"
-            ? "Abrir"
+            ? "Open"
             : data.sessions[record.id]
-              ? "Continuar"
-              : "Jogar",
+              ? "Continue"
+              : "Play",
           () =>
             services.navigate({
               screen: tab === "drafts" ? "create" : "play",
@@ -102,7 +104,7 @@ export function mountLibrary(
         ),
       );
       actions.append(
-        button("Renomear", () =>
+        button("Rename", () =>
           renameDialog(record.name, (name) =>
             services.controller.update((d) =>
               renameRecord(d, kind, record.id, name, services.now()),
@@ -112,7 +114,7 @@ export function mountLibrary(
       );
       if (tab === "puzzles")
         actions.append(
-          button("Editar cópia", () => {
+          button("Edit copy", () => {
             const id = services.newId();
             services.controller.update((d) =>
               copyPuzzleToDraft(d, record.id, id, services.now()),
@@ -121,7 +123,7 @@ export function mountLibrary(
           }),
         );
       actions.append(
-        button("Excluir", () =>
+        button("Delete", () =>
           confirmDelete(record.name, () =>
             services.controller.update((d) => deleteRecord(d, kind, record.id)),
           ),

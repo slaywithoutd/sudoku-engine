@@ -47,7 +47,7 @@ test("givens lock edits but permit selection; malformed moves and indices ignore
 });
 test("no-op keeps redo, navigation is outside history, new edits discard redo", () => {
   let s = reduceEditor(ctx, emptyEditor(), digit(5));
-  expect(reduceEditor(ctx, s, digit(5))).toBe(s);
+  expect(reduceEditor(ctx, s, { type: "select", index: 0 })).toBe(s);
   s = reduceEditor(ctx, s, { type: "undo" });
   expect(reduceEditor(ctx, s, { type: "erase" })).toBe(s);
   s = reduceEditor(ctx, s, { type: "move", dr: 0, dc: 1 });
@@ -57,6 +57,31 @@ test("no-op keeps redo, navigation is outside history, new edits discard redo", 
   s = reduceEditor(ctx, s, { type: "undo" });
   s = reduceEditor(ctx, s, digit(2));
   expect(s.future).toEqual([]);
+});
+test.each(["play", "create"] as const)(
+  "reentering a value erases it in %s and remains undoable",
+  (mode) => {
+    const context = { ...ctx, mode };
+    let state = emptyEditor();
+    if (mode === "play") state = reduceEditor(context, state, digit(2, true));
+    state = reduceEditor(context, state, digit(5));
+    const filled = state;
+    state = reduceEditor(context, state, digit(5));
+    expect(state.cells[0]).toEqual({
+      value: 0,
+      notes: mode === "play" ? [2] : [],
+    });
+    expect(state.past.at(-1)?.label).toBe("erase");
+    state = reduceEditor(context, state, { type: "undo" });
+    expect(state.cells).toEqual(filled.cells);
+    state = reduceEditor(context, state, { type: "redo" });
+    expect(state.cells[0].value).toBe(0);
+  },
+);
+test("reentering a fixed clue never erases it or adds history", () => {
+  const context = { ...ctx, givens: [5, ...Array(80).fill(0)] };
+  const state = emptyEditor();
+  expect(reduceEditor(context, state, digit(5))).toBe(state);
 });
 test("reset is one undoable edit, keeps selection/tool and never cleans peers", () => {
   let s = reduceEditor(ctx, emptyEditor(), digit(2, true));
