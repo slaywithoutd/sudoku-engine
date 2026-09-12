@@ -356,7 +356,7 @@ export interface BackupEnvelope {
 export interface RestorePreview { data: LibraryData; added: number; copied: number; skipped: number }
 ```
 
-- [ ] Add failing tests for complete round-trip and atomic rejection before writing the parser:
+- [x] Add failing tests for complete round-trip and atomic rejection before writing the parser:
 
 ```ts
 import { expect, test } from 'vitest';
@@ -377,8 +377,8 @@ test('identical backup is skipped and malformed history is rejected', () => {
 });
 ```
 
-- [ ] Run `npm test -- tests/unit/backup.test.ts` and confirm failure. Validate discriminants, schema versions, ordinary object structure, record key/ID agreement, timestamps, 81 cells, integers 0–9, sorted unique notes 1–9, selection 0–80, tool, booleans, definition shape and references. Reject unsupported newer versions without partial import. Produce validated objects field-by-field; reject dangerous record IDs such as `__proto__`, `prototype`, and `constructor`, and never trust imported prototypes.
-- [ ] Validate history as executable data: unique valid cell indices per edit, allowed labels, valid before/after cells, nonempty changes, no edits to play givens, and consistency when replaying past backward from present and future forward. Draft cells/history contain no notes. Verify finished draft values match their linked definition. Reject an envelope with invalid references or impossible history before any storage call.
+- [x] Run `npm test -- tests/unit/backup.test.ts` and confirm failure. Validate discriminants, schema versions, ordinary object structure, record key/ID agreement, timestamps, 81 cells, integers 0–9, sorted unique notes 1–9, selection 0–80, tool, booleans, definition shape and references. Reject unsupported newer versions without partial import. Produce validated objects field-by-field; reject dangerous record IDs such as `__proto__`, `prototype`, and `constructor`, and never trust imported prototypes.
+- [x] Validate history as executable data: unique valid cell indices per edit, allowed labels, valid before/after cells, nonempty changes, no edits to play givens, and consistency when replaying past backward from present and future forward. Draft cells/history contain no notes. Verify finished draft values match their linked definition. Reject an envelope with invalid references or impossible history before any storage call.
 
 ```ts
 function sameCell(a: CellState, b: CellState): boolean {
@@ -390,9 +390,9 @@ function sameCell(a: CellState, b: CellState): boolean {
 // reverse stack order, require before to match, then replace with after.
 ```
 
-- [ ] Implement graph-aware merge. Allocate unique IDs before remapping references. Exact same-ID/content records skip; same-ID/different-content records copy. If an imported session conflicts with the local session of an otherwise identical puzzle, copy its puzzle branch too, so both sessions remain attached to different puzzle identities. Remap session keys/puzzle IDs and draft provenance/finished links. Identical imported archived drafts whose linked puzzle branch is copied must also copy/remap. Use the current library revision; imported revision cannot overwrite the repository's revision.
-- [ ] Retain current settings unless `restoreSettings` is true. Cover changed-session collisions, changed-puzzle collisions, two drafts referencing one copied puzzle, duplicate IDs produced by the supplied generator (retry), invalid versions, given edits hidden in history, and preservation of hidden notes/redo. Assert the current library never mutates during preview.
-- [ ] Run the backup/domain tests and typecheck; commit validated backup logic. No browser download/upload UI yet.
+- [x] Implement graph-aware merge. Allocate unique IDs before remapping references. Exact same-ID/content records skip; same-ID/different-content records copy. If an imported session conflicts with the local session of an otherwise identical puzzle, copy its puzzle branch too, so both sessions remain attached to different puzzle identities. Remap session keys/puzzle IDs and draft provenance/finished links. Identical imported archived drafts whose linked puzzle branch is copied must also copy/remap. Use the current library revision; imported revision cannot overwrite the repository's revision.
+- [x] Retain current settings unless `restoreSettings` is true. Cover changed-session collisions, changed-puzzle collisions, two drafts referencing one copied puzzle, duplicate IDs produced by the supplied generator (retry), invalid versions, given edits hidden in history, and preservation of hidden notes/redo. Assert the current library never mutates during preview.
+- [x] Run the backup/domain tests and typecheck; commit validated backup logic. No browser download/upload UI yet.
 
 ## Task 5 — Atomic IndexedDB state/history persistence
 

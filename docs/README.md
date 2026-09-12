@@ -71,3 +71,5 @@ Task 1 complete: pinned packages installed; classic tests 5/5, typecheck and bui
 Task 2 complete: 14 domain tests passed. Initial typecheck found an action-union narrowing error; split the discriminants and reran typecheck successfully. Next: Task 3 lifecycle.
 
 Task 3 complete: 17 domain tests and typecheck passed. Next: Task 4 backup validation and merge.
+
+Task 4 complete: 35 domain tests and typecheck passed (test fixture literal typing corrected). Next: Task 5 IndexedDB adapter. Independent domain review requested.
