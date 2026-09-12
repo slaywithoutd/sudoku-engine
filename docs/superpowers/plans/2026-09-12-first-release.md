@@ -295,7 +295,7 @@ test('navigation does not consume undo and givens are immutable', () => {
 
 **Produces:** `emptyLibrary(): LibraryData`, `createDraft(data, id, now, values?): LibraryData`, `finishDraft(data, draftId, puzzleId, now): LibraryData`, `startPlay(data, puzzleId, now): LibraryData`, `copyPuzzleToDraft(data, puzzleId, draftId, now): LibraryData`, `renameRecord(data, kind: 'draft'|'puzzle', id, name, now): LibraryData`, `deleteRecord(data, kind, id): LibraryData`. Every unannotated argument is `LibraryData`, string ID/ISO time, or `readonly Value[]` as applicable; returns are immutable library snapshots. IDs and clock values are supplied by the caller for deterministic tests.
 
-- [ ] Write the failing lifecycle test and run `npm test -- tests/unit/library.test.ts`:
+- [x] Write the failing lifecycle test and run `npm test -- tests/unit/library.test.ts`:
 
 ```ts
 import { expect, test } from 'vitest';
@@ -316,7 +316,7 @@ test('finish and copy preserve immutable puzzle identity and play state', () => 
 });
 ```
 
-- [ ] Implement initial settings and draft creation. Name blank records `Sem título`; use a trimmed nonempty name when renaming. A parsed import starts a new draft with the imported givens as its initial state, not a mutation of the current draft.
+- [x] Implement initial settings and draft creation. Name blank records `Sem título`; use a trimmed nonempty name when renaming. A parsed import starts a new draft with the imported givens as its initial state, not a mutation of the current draft.
 
 ```ts
 export function emptyLibrary(): LibraryData {
@@ -325,7 +325,7 @@ export function emptyLibrary(): LibraryData {
 }
 ```
 
-- [ ] Implement Finish as an immutable transition. Reject missing/already-finished drafts, duplicate destination IDs, and conflicts. Create `ClassicDefinition` from draft cell values; retain the source draft/history with `finishedPuzzleId` and exclude it from active Drafts. Reopening that archived authoring route goes to its finished puzzle, never edits it. Empty drafts may Finish. Keep solution properties unverified; do not infer them from local checks.
+- [x] Implement Finish as an immutable transition. Reject missing/already-finished drafts, duplicate destination IDs, and conflicts. Create `ClassicDefinition` from draft cell values; retain the source draft/history with `finishedPuzzleId` and exclude it from active Drafts. Reopening that archived authoring route goes to its finished puzzle, never edits it. Empty drafts may Finish. Keep solution properties unverified; do not infer them from local checks.
 
 ```ts
 const givens = draft.editor.cells.map(cell => cell.value);
@@ -337,9 +337,9 @@ const puzzle: Puzzle = {
 };
 ```
 
-- [ ] Implement resume without overwriting an existing session; new sessions have empty player values/notes/history and read givens from the definition. Copy-to-draft copies definition values and metadata name, sets `sourcePuzzleId`, and starts a fresh authoring history. Reset calls the editor's one-action reset, not session replacement.
-- [ ] Implement deletion through domain functions without UI prompts: deleting a puzzle deletes its session and associated archived authoring records. Independent active draft copies retain their clue data but lose the deleted puzzle's provenance link. Deleting an active draft only removes that draft. This prevents orphaned archived history from reappearing as an editable draft. UI confirmation belongs in Task 8. Add tests for no duplicate active sessions, conflicting/zero-clue Finish, archived draft immutability, rename, and reference cleanup.
-- [ ] Run lifecycle/classic/editor suites and typecheck; commit the lifecycle layer. Later tasks must not recreate these transitions in UI code.
+- [x] Implement resume without overwriting an existing session; new sessions have empty player values/notes/history and read givens from the definition. Copy-to-draft copies definition values and metadata name, sets `sourcePuzzleId`, and starts a fresh authoring history. Reset calls the editor's one-action reset, not session replacement.
+- [x] Implement deletion through domain functions without UI prompts: deleting a puzzle deletes its session and associated archived authoring records. Independent active draft copies retain their clue data but lose the deleted puzzle's provenance link. Deleting an active draft only removes that draft. This prevents orphaned archived history from reappearing as an editable draft. UI confirmation belongs in Task 8. Add tests for no duplicate active sessions, conflicting/zero-clue Finish, archived draft immutability, rename, and reference cleanup.
+- [x] Run lifecycle/classic/editor suites and typecheck; commit the lifecycle layer. Later tasks must not recreate these transitions in UI code.
 
 ## Task 4 — Runtime validation and lossless backup merge
 
