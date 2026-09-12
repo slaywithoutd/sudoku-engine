@@ -65,7 +65,7 @@ Files are assigned by responsibility, not a requirement to fill every file with 
 
 **Produces:** domain types below; `emptyEditor(): EditorState`, `parsePuzzleString(text: string): Value[]`, `conflictingCells(values: readonly Value[]): number[]`, `isComplete(values: readonly Value[]): boolean`, `effectiveValues(editor: EditorState, givens: readonly Value[]): Value[]`.
 
-- [ ] Create `web/` without altering the Spring tree. Initialize the package as private ESM, then install exact development pins inside `web/`:
+- [x] Create `web/` without altering the Spring tree. Initialize the package as private ESM, then install exact development pins inside `web/`:
 
 ```powershell
 npm install --save-dev --save-exact typescript@7.0.2 vite@8.3.0 vitest@5.0.0 @playwright/test@1.63.0 fake-indexeddb@6.2.5 @types/node@24.13.4
@@ -131,7 +131,7 @@ export default defineConfig({
 });
 ```
 
-- [ ] Define the serializable model. Arrays have runtime shape validation; do not rely on TypeScript to validate imported JSON. The `finishedPuzzleId` link retains completed authoring history without allowing mutation of a finished puzzle.
+- [x] Define the serializable model. Arrays have runtime shape validation; do not rely on TypeScript to validate imported JSON. The `finishedPuzzleId` link retains completed authoring history without allowing mutation of a finished puzzle.
 
 ```ts
 export type Digit = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
@@ -168,7 +168,7 @@ export function emptyEditor(): EditorState {
 }
 ```
 
-- [ ] Add independent fixtures and failing rule/import tests. Put fixture constants in `tests/fixtures.ts` for later tasks:
+- [x] Add independent fixtures and failing rule/import tests. Put fixture constants in `tests/fixtures.ts` for later tasks:
 
 ```ts
 export const SOLUTION = '534678912672195348198342567859761423426853791713924856961537284287419635345286179';
@@ -190,7 +190,7 @@ test('import and classic validity are distinct contracts', () => {
 });
 ```
 
-- [ ] Run `npm test -- tests/unit/classic.test.ts`; expect failure because the parser/checker behavior is absent. Implement the parser and unit-based duplicate collection; add cases for column-only/box-only conflicts and whitespace.
+- [x] Run `npm test -- tests/unit/classic.test.ts`; expect failure because the parser/checker behavior is absent. Implement the parser and unit-based duplicate collection; add cases for column-only/box-only conflicts and whitespace.
 
 ```ts
 export function parsePuzzleString(text: string): Value[] {
@@ -215,7 +215,7 @@ for (let n = 0; n < 9; n++) {
 }
 ```
 
-- [ ] Run the focused tests, `npm run typecheck`, and `npm run build`. `index.html` uses `lang="pt-BR"` and imports `/src/main.ts`; bootstrap only the app root at this task. Add `web/node_modules/`, `web/dist/`, `web/test-results/`, and `web/playwright-report/` to `.gitignore`, preserving existing entries. Commit this testable foundation with an explicit file list.
+- [x] Run the focused tests, `npm run typecheck`, and `npm run build`. `index.html` uses `lang="pt-BR"` and imports `/src/main.ts`; bootstrap only the app root at this task. Add `web/node_modules/`, `web/dist/`, `web/test-results/`, and `web/playwright-report/` to `.gitignore`, preserving existing entries. Commit this testable foundation with an explicit file list.
 
 ## Task 2 — Reversible board edits and navigation
 

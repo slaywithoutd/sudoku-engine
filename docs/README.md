@@ -63,3 +63,7 @@ The current plan is an implementation artifact, not evidence of an implemented a
 ## New-chat starter
 
 > Read docs/README.md, docs/superpowers/specs/2026-09-12-first-release-design.md, and docs/superpowers/plans/2026-09-12-first-release.md. Continue implementation from the first unchecked task, preserving the recorded decisions. The architecture and first-release behavior are approved; do not restart brainstorming.
+
+## Implementation progress
+
+Task 1 complete: pinned packages installed; classic tests 5/5, typecheck and build passed. Work is on release/first-release. Next: Task 2. Spring files unchanged.
