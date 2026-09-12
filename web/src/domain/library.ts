@@ -3,7 +3,7 @@ import { conflictingCells } from './classic';
 export function emptyLibrary(): LibraryData {
   return {formatVersion:1,revision:0,drafts:{},puzzles:{},sessions:{},settings:{showConflicts:false,language:'pt-BR'}};
 }
-export function safeId(id: string): boolean { return !!id && !['__proto__','prototype','constructor'].includes(id); }
+export function safeId(id: string): boolean { return !!id && id!=='prototype' && !Object.hasOwn(Object.prototype,id); }
 function available(data: LibraryData,id:string): void {
   if (!safeId(id) || Object.hasOwn(data.drafts,id) || Object.hasOwn(data.puzzles,id)) throw new Error('Identificador já existe ou é inválido.');
 }

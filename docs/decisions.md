@@ -409,3 +409,10 @@ Current status: all 38 interview questions are answered. Entries are chronologic
 All 38 interview questions are answered. There are no pending proposals for this planning scope. Historical entries retain the context of questions that were open when recorded; subsequent decisions and the approved specifications supersede those open details. Remaining later-phase questions are explicitly deferred to the roadmap checkpoints under D044.
 
 Record each answer here with its rationale and consequences. If an answer changes a confirmed decision, retain and mark the older entry superseded.
+
+## D045 — Reserve inherited object keys for record IDs
+
+- Status: implementation detail under D038, 2026-09-12.
+- Decision: runtime validation and ID allocation reject all own Object.prototype property names plus prototype, not only the three example dangerous IDs in the plan.
+- Reason: independent review reproduced inherited-key collisions in session lookup and restore. UUID-generated product IDs are unaffected; malformed backups reject atomically.
+

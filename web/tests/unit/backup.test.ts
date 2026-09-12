@@ -5,6 +5,14 @@ import { reduceEditor } from '../../src/domain/editor';
 import { NOW } from '../fixtures';
 const fixture=() => startPlay(finishDraft(createDraft(emptyLibrary(),'d',NOW),'d','p',NOW),'p',NOW);
 const envelope=(data=fixture()) => parseBackup(exportBackup(data,NOW));
+test.each(['toString','valueOf','hasOwnProperty','__defineGetter__'])('rejects inherited dictionary key %s throughout lifecycle and restore',key=>{
+  expect(()=>createDraft(emptyLibrary(),key,NOW)).toThrow();
+  expect(()=>finishDraft(createDraft(emptyLibrary(),'d',NOW),'d',key,NOW)).toThrow();
+  const x=JSON.parse(exportBackup(fixture(),NOW));
+  x.data.puzzles[key]={...x.data.puzzles.p,id:key};delete x.data.puzzles.p;
+  x.data.drafts.d.finishedPuzzleId=key;delete x.data.sessions.p;
+  expect(()=>parseBackup(JSON.stringify(x))).toThrow();
+});
 test('roundtrip keeps hidden notes, redo, settings; identical records skip', () => {
   const d=fixture(),ctx={mode:'play' as const,givens:d.puzzles.p.definition.givens};
   let s=reduceEditor(ctx,d.sessions.p.editor,{type:'digit',digit:2,corner:true});
