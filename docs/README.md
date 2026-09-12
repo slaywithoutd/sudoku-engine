@@ -81,3 +81,5 @@ Task 6 complete: controller/route tests pass; combined suite 53/53 and typecheck
 Task 7 complete: 3 real Chromium board tests, typecheck/build and domain tests passed. Fixed numpad event precedence, equal grid rows and font line-box overflow. Nine-note desktop screenshot reviewed. Next: Task 8 application screens.
 
 Task 8 complete: 5 browser tests and 53 domain/storage/controller tests passed; typecheck/build passed. Creator, player, library, settings, completion and save status are wired. Next: Task 9 backup interface and recovery tests; Task 10 remains for final durability/visual acceptance.
+
+Task 9 complete: download/upload, copies/skips, settings, validation, safe text and save-failure/retry browser checks passed; 53 unit/storage tests and typecheck passed. Next: Task 10 full durability, completion, expanded backup acceptance, visual QA and release documentation.

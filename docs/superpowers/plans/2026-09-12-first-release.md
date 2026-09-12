@@ -696,7 +696,7 @@ Always show conflicts and a reason when Finish is blocked. Finish calls the doma
 
 **Produces:** actual JSON download/upload, restore preview with counts/settings choice, one atomic apply, and recovery export of unsaved live work.
 
-- [ ] Add a browser test that downloads a library containing a draft with history, imports it unchanged (skip), then imports a modified conflicting record (copy), preserving the original. Capture the download using Playwright rather than assuming a file was written:
+- [x] Add a browser test that downloads a library containing a draft with history, imports it unchanged (skip), then imports a modified conflicting record (copy), preserving the original. Capture the download using Playwright rather than assuming a file was written:
 
 ```ts
 const downloadPromise = page.waitForEvent('download');
@@ -709,7 +709,7 @@ await page.getByLabel('Importar backup').setInputFiles(file);
 await expect(page.getByRole('dialog')).toContainText('Resumo da importação');
 ```
 
-- [ ] Run the failing browser test, then implement export from `controller.snapshot()`, including dirty in-memory work if a save failed. The export must not reload stale IndexedDB first. Use a JSON Blob, download link, and revoke the object URL after the click has been processed.
+- [x] Run the failing browser test, then implement export from `controller.snapshot()`, including dirty in-memory work if a save failed. The export must not reload stale IndexedDB first. Use a JSON Blob, download link, and revoke the object URL after the click has been processed.
 
 ```ts
 const json = exportBackup(services.controller.snapshot(), services.now());
@@ -721,10 +721,10 @@ link.click();
 setTimeout(() => URL.revokeObjectURL(url), 0);
 ```
 
-- [ ] Read a chosen file, parse/validate it, and compute a pure preview. Show additions/copies/skips and a default-unchecked `Restaurar configurações do backup` checkbox. Cancel closes with no state mutation. Capture the current edit generation/revision; if it changes before Apply, recompute the preview and require the updated summary to be acknowledged rather than applying stale merged state.
-- [ ] Apply the preview through the controller as one library update/transaction, outside board history. Existing histories remain attached to their copied/remapped records. Avoid calling per-record save in a loop. If commit fails, retain the complete proposed state as unsaved and show recovery controls; on refresh only a completed transaction is restored.
-- [ ] Test malformed/newer-version backup rejection, cancellation, changed-session branch copying, setting retention/restoration, XSS-like names displayed as text, and backup of hidden notes plus redo. Simulate repository failure at the adapter boundary in a test-only harness and verify live edits remain exportable and Retry clears the failure only after commit. Do not inject test hooks into public product Settings.
-- [ ] Run backup browser/unit tests plus controller/storage suites and typecheck; commit recovery and backup UI.
+- [x] Read a chosen file, parse/validate it, and compute a pure preview. Show additions/copies/skips and a default-unchecked `Restaurar configurações do backup` checkbox. Cancel closes with no state mutation. Capture the current edit generation/revision; if it changes before Apply, recompute the preview and require the updated summary to be acknowledged rather than applying stale merged state.
+- [x] Apply the preview through the controller as one library update/transaction, outside board history. Existing histories remain attached to their copied/remapped records. Avoid calling per-record save in a loop. If commit fails, retain the complete proposed state as unsaved and show recovery controls; on refresh only a completed transaction is restored.
+- [x] Test malformed/newer-version backup rejection, cancellation, changed-session branch copying, setting retention/restoration, XSS-like names displayed as text, and backup of hidden notes plus redo. Simulate repository failure at the adapter boundary in a test-only harness and verify live edits remain exportable and Retry clears the failure only after commit. Do not inject test hooks into public product Settings.
+- [x] Run backup browser/unit tests plus controller/storage suites and typecheck; commit recovery and backup UI.
 
 ## Task 10 — End-to-end durability, visual QA, and delivery documentation
 

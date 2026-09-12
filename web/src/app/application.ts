@@ -8,11 +8,7 @@ import {mountCreator} from '../ui/creator';
 import {mountPlayer} from '../ui/player';
 import {mountSettings} from '../ui/settings';
 import {el,button} from '../ui/dom';
-import {exportBackup} from '../domain/backup';
-export function downloadBackup(services:ScreenServices):void {
-  const text=exportBackup(services.controller.snapshot(),services.now()),url=URL.createObjectURL(new Blob([text],{type:'application/json'})),link=el('a');
-  link.href=url;link.download=`sudoku-backup-${services.now().slice(0,10)}.json`;link.click();setTimeout(()=>URL.revokeObjectURL(url),0);
-}
+import {downloadBackup} from '../ui/backup';
 export function mountApplication(root:HTMLElement,repository:Repository,initial:LibraryData,initialError?:Error):()=>void {
   root.replaceChildren();const controller=createController(repository,initial),services:ScreenServices={controller,navigate:route=>{location.hash=routeHash(route);},newId:()=>crypto.randomUUID(),now:()=>new Date().toISOString()};
   const header=el('header'),bar=el('div',undefined,'header-inner'),brand=button('▦  sudoku',()=>services.navigate({screen:'home'}),'brand'),nav=el('nav'),main=el('main'),saveArea=el('div',undefined,'save-area'),status=el('span'),error=el('p',undefined,'error');status.dataset.testid='save-status';status.setAttribute('role','status');
