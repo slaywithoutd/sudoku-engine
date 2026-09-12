@@ -406,7 +406,7 @@ Current status: all 38 interview questions are answered. Entries are chronologic
 
 ## Current unresolved scope
 
-All 38 interview questions are answered. There are no pending proposals for this planning scope. Historical entries retain the context of questions that were open when recorded; subsequent decisions and the approved specifications supersede those open details. Remaining later-phase questions are explicitly deferred to the roadmap checkpoints under D044.
+All 38 interview questions are answered. There are no pending proposals for the completed first-release planning scope. M2 now has a concrete proposed specification and implementation plan under D046; D047–D052 await design approval. No additional blocking product question was found during M2 drafting. Performance defaults still need implementation benchmarks. Historical entries retain the context of questions that were open when recorded; subsequent decisions and approved specifications supersede those open details. Other later-phase questions remain deferred to roadmap checkpoints under D044.
 
 Record each answer here with its rationale and consequences. If an answer changes a confirmed decision, retain and mark the older entry superseded.
 
@@ -415,4 +415,63 @@ Record each answer here with its rationale and consequences. If an answer change
 - Status: implementation detail under D038, 2026-09-12.
 - Decision: runtime validation and ID allocation reject all own Object.prototype property names plus prototype, not only the three example dangerous IDs in the plan.
 - Reason: independent review reproduced inherited-key collisions in session lookup and restore. UUID-generated product IDs are unaffected; malformed backups reject atomically.
+
+## D046 — M2 design authorization and preserved requirements
+
+- Status: Confirmed, 2026-09-12.
+- Source: user's M2 continuation request after verified implementation `66b8381` and documentation `2507adc`.
+- Decision: produce a reviewable classic solver specification and detailed implementation plan, update Markdown progress/decisions and make focused local commits. Do not implement the solver before design approval or restart the completed first-release interview.
+- Confirmed scope: browser-first TypeScript/Vite/plain views/IndexedDB; worker execution; human-first baseline singles/intersections/pairs; ordered expandable trace and solved board; separate evidence-backed count classification; configurable limits/Cancel with honest incomplete status; isolated snapshot with no play-progress overwrite. Search-assisted completion cannot certify Perfect. Hints wait for M5; construction, variants, community and AI are outside M2.
+- Repository inspection: clean `release/first-release` at `2507adc`, no applicable AGENTS.md; documentation branch `docs/m2-solver-design` preserves that release head.
+- Later inspection: concurrent uncommitted UI/layout changes appeared under `web/`; they were preserved and excluded from the M2 documentation commits. The spec/plan account for the observed sidebar and optional board controls container without approving or reverting that work.
+- Deliverables: [M2 specification](superpowers/specs/2026-09-12-m2-classic-solver-design.md) and [implementation plan](superpowers/plans/2026-09-12-m2-classic-solver.md). D047–D052 are recommendations, not newly confirmed user behavior.
+
+## D047 — Temporary original-clue solver workspace
+
+- Status: Proposed for M2 review.
+- Decision: Home Solve opens a dedicated temporary workspace with manual/string input or copied live draft/finished-puzzle clues. Never read player entries/notes as solver constraints. Input/results survive in-app navigation; leaving cancels active work; refresh clears the workspace. Optional Save Clues creates a normal independent draft.
+- Persistence recommendation: results, trace and limit preference remain memory-only. No IndexedDB/library/backup version changes and no saved puzzle verification metadata. Existing draft/play autosaving remains intact. Clearly label temporary analysis and clarify library/player copy about the absence of saved analysis.
+- Rationale: fits the inspected controller/repository boundaries and avoids introducing certificate lifecycle/restore semantics before M2 evidence is tested. Durable result storage would need a later explicit migration/backup design.
+- Contract: specification §§2–4 and 10; plan Tasks 1, 8–10.
+
+## D048 — Deterministic candidate and explanation baseline
+
+- Status: Proposed for M2 review.
+- Decision: 9-bit masks separate from manual notes; monotone checked candidate state; ordered naked single → hidden single → locked pointing → locked claiming → naked pair → hidden pair. Restart at singles after every productive pattern; define precise unit/cell/digit tie breaks, all row/column/box pair coverage and both intersection directions.
+- Explanation contract: versioned typed premises/effects/revisions with explicit peer eliminations; no hidden cascading placements. Retain full human prefix and labeled search boundary/completion, successful guess path and failed-branch summary counts. Exact count enumeration is separate from the human explanation trace.
+- Rationale: deterministic replay and soundness checks are practical for the approved small initial technique set. No advanced techniques, technique selector or full search-tree trace in M2.
+- Contract: specification §§4–6; plan Tasks 1, 3–5, 7, 9.
+
+## D049 — Exact evidence checked against original clues
+
+- Status: Proposed implementation method; evidence requirements remain Confirmed by D011/D030/D042/D046.
+- Decision: resumable MRV depth-first exact enumeration with singles propagation starts from original givens after the human pass. Count at most two distinct validated witnesses; unique/zero requires exhausted root search except direct duplicate-clue zero proof. A human solution establishes existence but is not pre-added to the exact enumeration counter.
+- Consequence: one witness with unfinished checking remains unknown with lower bound one; two witnesses establish at least two, never exactly two. Count-only search does not mark a complete human path search-assisted. Perfect evidence requires independent unique classification and complete replay-valid baseline deductions with no fallback, and is not a quality label for already-complete input.
+- Inconsistency policy: quarantine incompatible human evidence; discard exhaustion that contradicts a validated witness. Preserve independently validated evidence without silently selecting a contradictory conclusion.
+- Rationale: counting from human-pruned candidates would allow a bad deduction to create false uniqueness. Runtime DFS plus a separate test-only exact-cover oracle gives distinct correctness checks without multiple production engines.
+- Contract: specification §§7 and 11; plan Tasks 2, 6, 7.
+
+## D050 — Identity-bound checkpoints and immediate cancellation
+
+- Status: Proposed for M2 review.
+- Decision: one dedicated worker per run; exact snapshot content key, local input revision, snapshot UUID and fresh request UUID accompany versioned sequenced messages. Source library revision is provenance, not the freshness authority for unrelated saves. Accept complete immutable checkpoints only for the active request.
+- Cancellation: controller terminalizes the request before terminating the worker; preserve only previously accepted evidence and ignore every late message. Navigation and total-budget watchdog use the same ordering. No acknowledgement-dependent Cancel protocol or shared memory. Typed startup/runtime/protocol errors preserve prior valid evidence.
+- Rationale: a worker may be aborted without flushing its discoveries; a blocked worker cannot acknowledge a cancellation message promptly. Immediate identity invalidation resolves result/Cancel races without writes to the original record.
+- Contract: specification §8; plan Tasks 7–10. Browser-standard/Vite sources are linked in the specification.
+
+## D051 — Proposed total time budget and benchmark gate
+
+- Status: Proposed and unmeasured; configurable limits/Cancel remain Confirmed under D042/D046.
+- Decision: one total 1–120 integer-second limit, default 10 seconds, covering validation/human/exact work and startup; rerun restarts from original clues. Target 8 ms worker slices and 100 ms routine progress; emit evidence milestones immediately. Main watchdog plus worker-local deadline stop unfinished checks without inventing conclusions.
+- Validation required: independent labeled corpus, production Chromium measurements on the user's PC, separate documented slower CPU-throttle profile, cold/warm trials, first-witness versus final-count latency, cancellation/deadline latency, payload/UI cost and cleanup stability. Specification §9 defines proposed numeric targets; they are not measured performance promises.
+- Consequence: actual benchmarks and any revised defaults must be recorded before release. No research-source timings substitute for this implementation's measurements.
+- Contract: specification §§8–9; plan Tasks 7–10.
+
+## D052 — Independent solver correctness and acceptance evidence
+
+- Status: Proposed verification method under confirmed solver-correctness requirements.
+- Decision: test-only set-based Algorithm X oracle and separate plain grid checker, neither importing production solver/checking internals. Use independently labeled original-clue fixtures, satisfiable candidate-state technique fixtures, per-elimination forcing/per-placement forbidding, trace replay mutation tests and seeded differential transformations.
+- Acceptance: real worker tests plus deterministic injected-clock/race tests; duplicate/unsatisfiable/unique/multiple/full/empty cases; no false uniqueness/Perfect on interruption or search; source and session/history/backup isolation; Portuguese accessible result/trace and production-build verification.
+- Rationale: detector fixtures or production output alone cannot grade solver correctness independently. Oracle timeouts are inconclusive tests, not proofs. Benchmark evidence must distinguish measured facts from proposed targets.
+- Contract: specification §11 and the plan's task-to-spec coverage map. A future `docs/m2-solver-verification.md` will record execution evidence; it is not claimed during design.
 
