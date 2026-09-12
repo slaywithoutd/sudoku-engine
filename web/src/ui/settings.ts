@@ -3,6 +3,7 @@ import { el, field, button } from "./dom";
 import { downloadBackup } from "./backup";
 import { parseBackup, previewRestore } from "../domain/backup";
 import { dialog } from "./dialogs";
+import { COLOR_MODES, THEMES } from "../domain/model";
 export function mountSettings(
   container: HTMLElement,
   services: ScreenServices,
@@ -11,6 +12,60 @@ export function mountSettings(
     el("h1", "Settings"),
     el("p", "Your way to play, in this browser.", "muted"),
   );
+  const appearance = el(
+    "section",
+    undefined,
+    "settings-panel appearance-panel",
+  );
+  appearance.append(
+    el("h2", "Appearance"),
+    el(
+      "p",
+      "Choose a mode and a soft pastel color. Your choices are saved in this browser.",
+    ),
+  );
+  const appearanceInputs: {
+    input: HTMLInputElement;
+    key: "colorMode" | "theme";
+    value: string;
+  }[] = [];
+  for (const { key, title, values } of [
+    { key: "colorMode", title: "Display mode", values: COLOR_MODES },
+    { key: "theme", title: "Pastel theme", values: THEMES },
+  ] as const) {
+    const group = el("fieldset", undefined, "appearance-group");
+    const choices = el("div", undefined, "appearance-choices");
+    group.append(el("legend", title), choices);
+    for (const value of values) {
+      const label = el("label", undefined, "appearance-option");
+      const radio = el("input");
+      radio.type = "radio";
+      radio.name = key;
+      radio.value = value;
+      radio.checked = services.controller.snapshot().settings[key] === value;
+      radio.addEventListener("change", () => {
+        if (radio.checked)
+          services.controller.update((data) => ({
+            ...data,
+            settings: { ...data.settings, [key]: value },
+          }));
+      });
+      label.append(radio);
+      if (key === "theme") {
+        label.dataset.theme = value;
+        const swatch = el("span", undefined, "theme-swatch");
+        swatch.setAttribute("aria-hidden", "true");
+        label.append(swatch);
+      }
+      const check = el("span", "✓", "choice-check");
+      check.setAttribute("aria-hidden", "true");
+      label.append(el("span", value[0].toUpperCase() + value.slice(1)), check);
+      choices.append(label);
+      appearanceInputs.push({ input: radio, key, value });
+    }
+    appearance.append(group);
+  }
+  container.append(appearance);
   const panel = el("section", undefined, "settings-panel"),
     input = el("input");
   input.type = "checkbox";
@@ -107,7 +162,10 @@ export function mountSettings(
     }
   });
   const off = services.controller.subscribe(() => {
-    input.checked = services.controller.snapshot().settings.showConflicts;
+    const settings = services.controller.snapshot().settings;
+    input.checked = settings.showConflicts;
+    for (const choice of appearanceInputs)
+      choice.input.checked = settings[choice.key] === choice.value;
   });
   return () => {
     active = false;

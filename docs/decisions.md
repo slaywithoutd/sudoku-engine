@@ -522,3 +522,12 @@ Record each answer here with its rationale and consequences. If an answer change
 - Validation: independently checked technique fixtures, proof mutation tests, scheduling ablations, held-out/adversarial corpora, mock multi-constraint contracts, worker backpressure/races and no play-state writes. Reference sources demonstrate related ideas, not a measured speedup or complete technique coverage for this project.
 - Next checkpoint: review the proposal, specify advanced proof-family bounds and concrete interfaces, revise the detailed implementation plan, then obtain implementation authorization. No application code changed in this research/design pass.
 
+## D058 — Light and dark modes with five pastel themes
+
+- Status: Confirmed by the user and implemented on 2026-09-12.
+- Choices: independent Light/Dark mode and Blue/Green/Pink/Purple/Gray theme controls in Settings → Appearance. Switching mode retains the chosen color; all ten combinations are available. Default to light green to preserve the existing appearance preference. No additional system mode or custom colors.
+- Presentation: soft tinted surfaces and pastel accents with readable text, shared across the sidebar, board, controls, fields, dialogs, feedback and recovery states. Preserve the inset squircles and grid geometry. Radio groups have text labels, visible selected/focus indicators and native keyboard navigation.
+- Persistence: `settings.colorMode` and `settings.theme` use the existing atomic IndexedDB save path. Changes apply immediately to the document root. Version-1 libraries/backups without either field receive its default; explicit invalid values are rejected. Names, puzzle data and histories are preserved. Existing backup settings opt-in also controls appearance restoration.
+- Scope: appearance only; preserve the separate M2 design work and legacy Spring files. No solver functionality or appearance-specific storage service was added.
+- Evidence: [appearance verification](appearance-verification.md).
+

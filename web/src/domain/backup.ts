@@ -196,6 +196,18 @@ export function validateLibrary(input: unknown): LibraryData {
     };
   }
   const settings = object(x.settings);
+  // Missing fields belong to older version-1 libraries; invalid explicit values do not.
+  const colorMode =
+    settings.colorMode === undefined ? "light" : settings.colorMode;
+  const theme = settings.theme === undefined ? "green" : settings.theme;
+  requireValid(colorMode === "light" || colorMode === "dark");
+  requireValid(
+    theme === "blue" ||
+      theme === "green" ||
+      theme === "pink" ||
+      theme === "purple" ||
+      theme === "gray",
+  );
   requireValid(
     typeof settings.showConflicts === "boolean" &&
       (settings.language === "pt-BR" || settings.language === "en"),
@@ -206,7 +218,12 @@ export function validateLibrary(input: unknown): LibraryData {
     drafts,
     puzzles,
     sessions,
-    settings: { showConflicts: settings.showConflicts, language: "en" },
+    settings: {
+      showConflicts: settings.showConflicts,
+      language: "en",
+      colorMode,
+      theme,
+    },
   };
 }
 export function parseBackup(text: string): BackupEnvelope {

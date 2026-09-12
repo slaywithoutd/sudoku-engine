@@ -90,6 +90,9 @@ export function mountApplication(
   );
   root.append(sidebar, main);
   const updateStatus = () => {
+    const appearance = controller.snapshot().settings;
+    document.documentElement.dataset.mode = appearance.colorMode;
+    document.documentElement.dataset.theme = appearance.theme;
     const s = controller.status();
     status.textContent =
       s.kind === "saved"

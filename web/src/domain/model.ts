@@ -52,9 +52,15 @@ export interface PlaySession {
   updatedAt: string;
   editor: EditorState;
 }
+export const COLOR_MODES = ["light", "dark"] as const;
+export const THEMES = ["blue", "green", "pink", "purple", "gray"] as const;
+export type ColorMode = (typeof COLOR_MODES)[number];
+export type Theme = (typeof THEMES)[number];
 export interface Settings {
   showConflicts: boolean;
   language: "en";
+  colorMode: ColorMode;
+  theme: Theme;
 }
 export interface LibraryData {
   formatVersion: 1;

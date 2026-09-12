@@ -21,7 +21,8 @@ Data belongs to the browser, profile and origin you use. Another browser, `127.0
 - **Create** opens an autosaved draft, including drafts with conflicts. **Paste puzzle** accepts 81 cells: `1–9` for clues and `0` or `.` for empty cells; whitespace is ignored. Importing creates another draft.
 - **Finish** requires no visible conflicts and creates a puzzle with fixed clues. Solvability and uniqueness are not checked. Empty boards can be finished.
 - **Library** supports opening, continuing, renaming, editing a copy and confirmed deletion. Each puzzle has one current play session. Editing a copy preserves the original progress.
-- **Settings** offers optional conflict highlighting during play. The creator always shows conflicts.
+- **Settings → Appearance** offers Light/Dark modes and five pastel themes: Blue, Green, Pink, Purple and Gray. Changes apply immediately and are saved in this browser. Switching mode keeps your chosen color; older libraries start in light green.
+- **Settings** also offers optional conflict highlighting during play. The creator always shows conflicts.
 
 | Control | Action |
 | --- | --- |

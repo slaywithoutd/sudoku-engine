@@ -2,7 +2,9 @@
 
 Last updated: 2026-09-12.
 
-**Latest visual adjustment:** cell squircles now sit 5% inside each cell, making the shape visibly separate from the grid. The full rectangular cell remains clickable. Fresh checks: eight board/desktop browser tests, typecheck, build and a corner-click/input smoke check passed. See the [inset follow-up](ui-refinement-2026-09-12.md#cell-highlight-inset-follow-up).
+**Latest feature:** Settings → Appearance now offers Light/Dark plus Blue, Green, Pink, Purple and Gray pastel themes. All ten combinations apply throughout the application and persist in IndexedDB. Legacy libraries default to light green; backup appearance restores only with settings opt-in. Fresh verification: 64 application tests, 23 browser tests, typecheck and build passed. See [appearance verification](appearance-verification.md) and D058. No appearance implementation work remains.
+
+**Earlier visual adjustment:** cell squircles now sit 5% inside each cell, making the shape visibly separate from the grid. The full rectangular cell remains clickable. Fresh checks: eight board/desktop browser tests, typecheck, build and a corner-click/input smoke check passed. See the [inset follow-up](ui-refinement-2026-09-12.md#cell-highlight-inset-follow-up).
 
 **Latest UI update:** Sudoku Engine now uses English throughout, squircle buttons/cell highlights, larger digits, fixed 3 × 3 notes and repeat-value erasing. Thick grid strokes cover thin strokes. Fresh verification passed: 59 unit/storage/controller tests, 22 browser tests, typecheck and build. See the [refinement verification record](ui-refinement-2026-09-12.md) and [earlier sidebar update](ui-sidebar-update-2026-09-12.md). No work remains for these UI requests. D053 supersedes earlier Portuguese UI and corner-note presentation requirements, including language references in the separate M2 design workstream.
 
@@ -32,9 +34,9 @@ Open exactly **http://localhost:5173**. The [root README](../README.md) explains
 
 - `npm ci`: passed; 45 packages installed, audit reported zero vulnerabilities.
 - `npm run typecheck`: passed.
-- `npm test`: **59 passed**, seven unit/storage/controller/route test files.
+- `npm test`: **64 passed**, seven unit/storage/controller/route test files.
 - `npm run build`: passed; production assets emitted to `web/dist/`.
-- `npm run test:e2e`: **22 passed**, seven Chromium browser suites; latest complete run took 25.5 seconds.
+- `npm run test:e2e`: **23 passed**, eight Chromium browser suites; latest complete run took 17.0 seconds.
 - Real same-context refresh/reopen, true browser restart with an isolated temporary profile, and stale-tab conflict recovery passed.
 - Home, creator, player and Settings screenshots inspected at 1280×800 and 1920×1080; nine corner notes, selection, fixed clues and conflicts checked. Creator/player board controls fit the 800-pixel viewport.
 - Independent reviews found three issues: inherited record-key collisions, concurrent Retry status and focused name autosave. All were reproduced and fixed with regressions. Final review had no remaining critical/important findings.

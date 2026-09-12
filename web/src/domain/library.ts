@@ -7,7 +7,12 @@ export function emptyLibrary(): LibraryData {
     drafts: {},
     puzzles: {},
     sessions: {},
-    settings: { showConflicts: false, language: "en" },
+    settings: {
+      showConflicts: false,
+      language: "en",
+      colorMode: "light",
+      theme: "green",
+    },
   };
 }
 export function safeId(id: string): boolean {

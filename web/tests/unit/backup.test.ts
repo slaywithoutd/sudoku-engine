@@ -29,7 +29,12 @@ test.each(["pt-BR", "en"])(
     original.drafts.d.name = "Meu Sudoku";
     const stored = { ...original, settings: { showConflicts: true, language } };
     const loaded = validateLibrary(stored);
-    expect(loaded.settings).toEqual({ showConflicts: true, language: "en" });
+    expect(loaded.settings).toEqual({
+      showConflicts: true,
+      language: "en",
+      colorMode: "light",
+      theme: "green",
+    });
     expect(loaded.drafts).toEqual(original.drafts);
     expect(loaded.sessions).toEqual(original.sessions);
     const imported = parseBackup(
@@ -46,6 +51,47 @@ test.each(["pt-BR", "en"])(
     );
   },
 );
+test("appearance survives backup roundtrip and only restores with settings opt-in", () => {
+  const original = fixture();
+  const incoming = validateLibrary({
+    ...original,
+    settings: {
+      ...original.settings,
+      colorMode: "dark",
+      theme: "purple",
+    },
+  });
+  const backup = parseBackup(exportBackup(incoming, NOW));
+  expect(backup.data.settings).toMatchObject({
+    colorMode: "dark",
+    theme: "purple",
+  });
+  expect(
+    previewRestore(original, backup, () => "new", false).data.settings,
+  ).toMatchObject({ colorMode: "light", theme: "green" });
+  expect(
+    previewRestore(original, backup, () => "new", true).data.settings,
+  ).toMatchObject({ colorMode: "dark", theme: "purple" });
+});
+
+test.each([
+  { colorMode: "system" },
+  { colorMode: null },
+  { theme: "red" },
+  { theme: null },
+])(
+  "rejects malformed appearance instead of silently restoring it: %j",
+  (appearance) => {
+    const original = fixture();
+    expect(() =>
+      validateLibrary({
+        ...original,
+        settings: { ...original.settings, ...appearance },
+      }),
+    ).toThrow();
+  },
+);
+
 test.each(["toString", "valueOf", "hasOwnProperty", "__defineGetter__"])(
   "rejects inherited dictionary key %s throughout lifecycle and restore",
   (key) => {
