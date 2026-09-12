@@ -73,3 +73,5 @@ Task 2 complete: 14 domain tests passed. Initial typecheck found an action-union
 Task 3 complete: 17 domain tests and typecheck passed. Next: Task 4 backup validation and merge.
 
 Task 4 complete: 35 domain tests and typecheck passed (test fixture literal typing corrected). Next: Task 5 IndexedDB adapter. Independent domain review requested.
+
+Task 5 complete: 4 storage tests pass, including aborted writes, restored notes/redo, competing revisions and reopen; typecheck passed. These tests use fake IndexedDB, not browser quota/eviction evidence. Next: Task 6 controller.

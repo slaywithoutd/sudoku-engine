@@ -413,7 +413,7 @@ export class RevisionConflictError extends Error {}
 
 Use IndexedDB database `sudoku-engine`, database version 1, object store `library`, root key `current`. The initial personal dataset can be one versioned aggregate: it makes backups and state/history transitions atomic. The adapter hides this choice so a later measured migration can introduce per-record stores without changing domain APIs. Do not introduce a separate database per puzzle.
 
-- [ ] Write a failing test using a fresh fake factory per test. Run `npm test -- tests/storage/repository.test.ts`:
+- [x] Write a failing test using a fresh fake factory per test. Run `npm test -- tests/storage/repository.test.ts`:
 
 ```ts
 import { expect, test } from 'vitest';
@@ -434,8 +434,8 @@ test('reopen retains complete state and stale revisions cannot overwrite it', as
 });
 ```
 
-- [ ] Open/create the store in `onupgradeneeded`, report blocked opening through the callback, close the connection on `versionchange`, and reject failed opens without clearing existing data. `load()` returns a validated current record or `emptyLibrary()` when absent. A corrupt stored record is an error with a recovery path, not a reason to reset the database.
-- [ ] Implement commit in one readwrite transaction. Validate the proposed data before opening the transaction. After reading current revision, compare with `expectedRevision`, allocate the next revision, and put the full aggregate. Only resolve after `oncomplete`; request success alone must never announce Saved.
+- [x] Open/create the store in `onupgradeneeded`, report blocked opening through the callback, close the connection on `versionchange`, and reject failed opens without clearing existing data. `load()` returns a validated current record or `emptyLibrary()` when absent. A corrupt stored record is an error with a recovery path, not a reason to reset the database.
+- [x] Implement commit in one readwrite transaction. Validate the proposed data before opening the transaction. After reading current revision, compare with `expectedRevision`, allocate the next revision, and put the full aggregate. Only resolve after `oncomplete`; request success alone must never announce Saved.
 
 ```ts
 function commit(db: IDBDatabase, data: LibraryData, expectedRevision: number): Promise<LibraryData> {
@@ -464,8 +464,8 @@ function commit(db: IDBDatabase, data: LibraryData, expectedRevision: number): P
 
 Catch synchronous exceptions inside request callbacks, assign `failure`, and abort; never leave a promise pending when `put` throws. Implement readonly load completion/error handling with the same transaction-lifecycle discipline. Do not perform timers or network work inside the transaction.
 
-- [ ] Add persistence tests containing real editor history/hidden notes and restored backup data. Test malformed data rejection leaves the previous record unchanged, competing revisions retain the winner, close/reopen works, and a failed/aborted write does not resolve as saved. Use explicit fake failure injection in the test adapter layer where browser quota cannot be simulated; do not claim that fake tests prove quota/eviction behavior.
-- [ ] Run storage tests, domain tests, and typecheck. Commit the adapter. The real-browser durability check is scheduled in Task 10.
+- [x] Add persistence tests containing real editor history/hidden notes and restored backup data. Test malformed data rejection leaves the previous record unchanged, competing revisions retain the winner, close/reopen works, and a failed/aborted write does not resolve as saved. Use explicit fake failure injection in the test adapter layer where browser quota cannot be simulated; do not claim that fake tests prove quota/eviction behavior.
+- [x] Run storage tests, domain tests, and typecheck. Commit the adapter. The real-browser durability check is scheduled in Task 10.
 
 ## Task 6 — Application state, save queue, and navigation contracts
 
