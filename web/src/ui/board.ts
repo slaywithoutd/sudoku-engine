@@ -8,6 +8,7 @@ export interface BoardOptions {
   state: EditorState;
   showConflicts: boolean;
   onAction: (action: BoardAction) => void;
+  controlsContainer?: HTMLElement;
 }
 export interface BoardView {
   update(state: EditorState, showConflicts: boolean): void;
@@ -21,14 +22,15 @@ export function mountBoard(
     grid = el("div", undefined, "sudoku-grid"),
     keypad = el("div", undefined, "keypad"),
     toolbar = el("div", undefined, "board-toolbar");
+  const controls = el("div", undefined, "board-controls");
   grid.setAttribute("role", "grid");
   grid.setAttribute("aria-label", "Tabuleiro de Sudoku");
   grid.setAttribute("aria-rowcount", "9");
   grid.setAttribute("aria-colcount", "9");
   const rows = Array.from({ length: 9 }, (_, index) => {
-    const row = el('div', undefined, 'board-row');
-    row.setAttribute('role', 'row');
-    row.setAttribute('aria-rowindex', String(index + 1));
+    const row = el("div", undefined, "board-row");
+    row.setAttribute("role", "row");
+    row.setAttribute("aria-rowindex", String(index + 1));
     grid.append(row);
     return row;
   });
@@ -44,9 +46,6 @@ export function mountBoard(
     node.type = "button";
     node.setAttribute("role", "gridcell");
     node.dataset.cellIndex = String(index);
-    if (index % 9 === 2 || index % 9 === 5) node.classList.add("box-right");
-    if (Math.floor(index / 9) === 2 || Math.floor(index / 9) === 5)
-      node.classList.add("box-bottom");
     const value = el("span"),
       notes = el("span");
     value.dataset.value = "";
@@ -58,6 +57,24 @@ export function mountBoard(
     rows[Math.floor(index / 9)].append(node);
     return { node, value, notes };
   });
+  // Whole-board strokes stay continuous across cells, highlights and box crossings.
+  const lines = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  lines.classList.add("grid-lines");
+  lines.setAttribute("viewBox", "0 0 900 900");
+  lines.setAttribute("aria-hidden", "true");
+  for (let i = 1; i < 9; i++) {
+    for (const vertical of [false, true]) {
+      const line = document.createElementNS(lines.namespaceURI, "line");
+      line.setAttribute("x1", String(vertical ? i * 100 : 2));
+      line.setAttribute("x2", String(vertical ? i * 100 : 898));
+      line.setAttribute("y1", String(vertical ? 2 : i * 100));
+      line.setAttribute("y2", String(vertical ? 898 : i * 100));
+      line.setAttribute("vector-effect", "non-scaling-stroke");
+      if (i % 3 === 0) line.classList.add("box-line");
+      lines.append(line);
+    }
+  }
+  grid.append(lines);
   for (let n = 1; n <= 9; n++) {
     const key = button(String(n), (event) =>
       dispatch({
@@ -84,19 +101,20 @@ export function mountBoard(
     redo,
     button("Reiniciar", () => dispatch({ type: "reset" })),
   );
-  wrapper.append(grid, keypad, toolbar);
+  wrapper.append(grid);
+  controls.append(keypad, toolbar);
+  (options.controlsContainer ?? wrapper).append(controls);
   container.append(wrapper);
-  wrapper.addEventListener(
-    "keydown",
-    (event) => {
-      const action = keyboardAction(event, state.tool === "corner");
-      if (action) {
-        event.preventDefault();
-        dispatch(action);
-      }
-    },
-    { signal: abort.signal },
-  );
+  const onKey = (event: KeyboardEvent) => {
+    const action = keyboardAction(event, state.tool === "corner");
+    if (action) {
+      event.preventDefault();
+      dispatch(action);
+    }
+  };
+  wrapper.addEventListener("keydown", onKey, { signal: abort.signal });
+  if (options.controlsContainer)
+    controls.addEventListener("keydown", onKey, { signal: abort.signal });
   function update(next: EditorState, showConflicts: boolean): void {
     state = next;
     const values = effectiveValues(state, options.context.givens),
@@ -129,6 +147,7 @@ export function mountBoard(
     destroy() {
       abort.abort();
       wrapper.remove();
+      controls.remove();
     },
   };
 }

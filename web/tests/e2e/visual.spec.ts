@@ -10,6 +10,14 @@ for (const [width, height] of [
   }, info) => {
     await page.setViewportSize({ width, height });
     await page.goto("/");
+    await expect(page).toHaveTitle("Sudoku Engine");
+    const navigation = await page
+      .getByRole("navigation", { name: "Navegação principal" })
+      .boundingBox();
+    expect(navigation!.x).toBeLessThan(200);
+    await expect(
+      page.getByRole("button", { name: "Sudoku Engine", exact: true }),
+    ).toBeVisible();
     await expect(
       page.getByRole("button", { name: "Resolver — em breve", exact: true }),
     ).toBeDisabled();
@@ -28,6 +36,32 @@ for (const [width, height] of [
     ).toBe(true);
     const bounds = await page.locator(".board-panel").boundingBox();
     expect(bounds!.y + bounds!.height).toBeLessThanOrEqual(height);
+    const grid = await page.getByRole("grid").boundingBox();
+    expect(grid!.height).toBeGreaterThan(height * 0.9);
+    expect(Math.abs(grid!.width - grid!.height)).toBeLessThan(1);
+    const numbers = await page
+      .getByRole("button", { name: "Número 1", exact: true })
+      .boundingBox();
+    expect(numbers!.x).toBeGreaterThanOrEqual(grid!.x + grid!.width);
+    await page
+      .getByRole("button", { name: "Número 5", exact: true })
+      .click({ modifiers: ["Shift"] });
+    await expect(cell(page, 2).locator("[data-notes]")).toHaveText("12346789");
+    await page
+      .getByRole("button", { name: "Número 5", exact: true })
+      .click({ modifiers: ["Shift"] });
+    expect(
+      await page
+        .getByRole("grid")
+        .evaluate((e) => getComputedStyle(e).borderWidth),
+    ).toBe("0px");
+    await page.getByRole("button", { name: "Número 1", exact: true }).focus();
+    await page.keyboard.press("6");
+    await expect(cell(page, 2).locator("[data-value]")).toHaveText("6");
+    await page.getByRole("button", { name: "Desfazer", exact: true }).focus();
+    await page.keyboard.press("Control+z");
+    await expect(cell(page, 2).locator("[data-value]")).toBeEmpty();
+    await expect(cell(page, 2).locator("[data-notes]")).toHaveText("123456789");
     await page.screenshot({
       path: info.outputPath("player.png"),
       fullPage: true,
@@ -39,8 +73,10 @@ for (const [width, height] of [
     await cell(page, 2).click();
     await page.keyboard.press("5");
     await expect(cell(page, 2)).toHaveClass(/conflict/);
-    const creatorBounds = await page.locator('.board-panel').boundingBox();
-    expect(creatorBounds!.y + creatorBounds!.height).toBeLessThanOrEqual(height);
+    const creatorBounds = await page.locator(".board-panel").boundingBox();
+    expect(creatorBounds!.y + creatorBounds!.height).toBeLessThanOrEqual(
+      height,
+    );
     await page.screenshot({
       path: info.outputPath("creator-conflicts.png"),
       fullPage: true,

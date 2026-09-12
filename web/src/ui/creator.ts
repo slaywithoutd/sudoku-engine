@@ -34,6 +34,7 @@ export function mountCreator(
   const layout = el("div", undefined, "editor-layout"),
     boardHost = el("div"),
     side = el("aside", undefined, "side-panel"),
+    controls = el("div"),
     name = el("input");
   name.value = initial.name;
   name.addEventListener("input", () =>
@@ -120,6 +121,8 @@ export function mountCreator(
     finish,
     paste,
     el("hr"),
+    controls,
+    el("hr"),
     el("h2", "Comece pelas pistas"),
     el(
       "p",
@@ -135,6 +138,7 @@ export function mountCreator(
   container.append(layout);
   const context = { mode: "create" as const, givens: Array(81).fill(0) };
   const board = mountBoard(boardHost, {
+    controlsContainer: controls,
     context,
     state: initial.editor,
     showConflicts: true,

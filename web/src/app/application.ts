@@ -25,10 +25,10 @@ export function mountApplication(
       newId: () => crypto.randomUUID(),
       now: () => new Date().toISOString(),
     };
-  const header = el("header"),
-    bar = el("div", undefined, "header-inner"),
+  root.classList.add("application");
+  const sidebar = el("aside", undefined, "sidebar"),
     brand = button(
-      "▦  sudoku",
+      "Sudoku Engine",
       () => services.navigate({ screen: "home" }),
       "brand",
     ),
@@ -37,28 +37,58 @@ export function mountApplication(
     saveArea = el("div", undefined, "save-area"),
     status = el("span"),
     error = el("p", undefined, "error");
+  brand.setAttribute("aria-label", "Sudoku Engine");
+  const mark = el("span", "▦", "brand-mark");
+  mark.setAttribute("aria-hidden", "true");
+  brand.replaceChildren(mark, el("span", "Sudoku Engine", "brand-name"));
+  nav.setAttribute("aria-label", "Navegação principal");
+  const navItems = [
+    {
+      label: "Início",
+      screen: "home",
+      path: "M3 10 12 3l9 7M5 9v12h5v-7h4v7h5V9",
+      route: { screen: "home" } as const,
+    },
+    {
+      label: "Biblioteca",
+      screen: "library",
+      path: "M4 4h6v16H4zM14 4h6v16h-6z",
+      route: { screen: "library", tab: "puzzles" } as const,
+    },
+    {
+      label: "Configurações",
+      screen: "settings",
+      path: "M4 7h16M4 17h16M9 4v6M15 14v6",
+      route: { screen: "settings" } as const,
+    },
+  ].map((item) => {
+    const control = button(item.label, () => services.navigate(item.route));
+    control.setAttribute("aria-label", item.label);
+    control.title = item.label;
+    const icon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    icon.setAttribute("viewBox", "0 0 24 24");
+    icon.setAttribute("aria-hidden", "true");
+    const path = document.createElementNS(icon.namespaceURI, "path");
+    path.setAttribute("d", item.path);
+    icon.append(path);
+    control.replaceChildren(icon, el("span", item.label));
+    nav.append(control);
+    return { ...item, control };
+  });
   status.dataset.testid = "save-status";
   status.setAttribute("role", "status");
-  nav.append(
-    button("Início", () => services.navigate({ screen: "home" })),
-    button("Biblioteca", () =>
-      services.navigate({ screen: "library", tab: "puzzles" }),
-    ),
-    button("Configurações", () => services.navigate({ screen: "settings" })),
-  );
   const retry = button("Tentar salvar novamente", () => {
       void controller.retry().catch(() => {});
     }),
     backup = button("Exportar trabalho", () => downloadBackup(services));
   saveArea.append(status, retry, backup, error);
-  bar.append(brand, nav);
-  header.append(bar);
-  root.append(
-    header,
+  sidebar.append(
+    brand,
+    el("p", "SEU ESPAÇO DE JOGO", "sidebar-caption"),
+    nav,
     saveArea,
-    main,
-    el("footer", "Seu espaço de Sudoku. Feito para pensar com calma."),
   );
+  root.append(sidebar, main);
   const updateStatus = () => {
     const s = controller.status();
     status.textContent =
@@ -77,6 +107,15 @@ export function mountApplication(
     document.querySelectorAll("dialog").forEach((d) => d.remove());
     main.replaceChildren();
     const r = parseRoute(location.hash);
+    main.classList.toggle(
+      "editor-screen",
+      r.screen === "create" || r.screen === "play",
+    );
+    for (const item of navItems) {
+      if (item.screen === r.screen)
+        item.control.setAttribute("aria-current", "page");
+      else item.control.removeAttribute("aria-current");
+    }
     switch (r.screen) {
       case "home":
         dispose = mountHome(main, services);

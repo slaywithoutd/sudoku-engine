@@ -18,6 +18,7 @@ export function mountPlayer(
   const layout = el("div", undefined, "editor-layout"),
     host = el("div"),
     side = el("aside", undefined, "side-panel"),
+    controls = el("div"),
     completion = el("div", undefined, "completion"),
     title = el("h1", puzzle.name);
   completion.setAttribute("role", "status");
@@ -38,6 +39,8 @@ export function mountPlayer(
     el("p", "Existência de solução e unicidade não verificadas.", "muted"),
     completion,
     el("hr"),
+    controls,
+    el("hr"),
     el("h2", "No seu ritmo"),
     el(
       "p",
@@ -54,6 +57,7 @@ export function mountPlayer(
   const context = { mode: "play" as const, givens: puzzle.definition.givens };
   let wasComplete = false;
   const board = mountBoard(host, {
+    controlsContainer: controls,
     context,
     state: services.controller.snapshot().sessions[id].editor,
     showConflicts: services.controller.snapshot().settings.showConflicts,
