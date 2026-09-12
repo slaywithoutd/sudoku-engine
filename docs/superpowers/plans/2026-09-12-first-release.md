@@ -563,8 +563,8 @@ export function digitFromEvent(event: KeyboardEvent): Digit | null {
 }
 ```
 
-- [ ] Create a dedicated browser harness under `tests/browser/`, serving the actual board module with `emptyEditor()` and a reducer-backed callback. It is not a production app route or a duplicate renderer. Add a text field in the harness to test input focus isolation.
-- [ ] Write failing browser assertions and run `npm run test:e2e -- board.spec.ts` before implementing the handlers:
+- [x] Create a dedicated browser harness under `tests/browser/`, serving the actual board module with `emptyEditor()` and a reducer-backed callback. It is not a production app route or a duplicate renderer. Add a text field in the harness to test input focus isolation.
+- [x] Write failing browser assertions and run `npm run test:e2e -- board.spec.ts` before implementing the handlers:
 
 ```ts
 import { expect, test } from '@playwright/test';
@@ -587,7 +587,7 @@ test('wrap, shifted corner entry, hidden notes and undo use real keyboard events
 });
 ```
 
-- [ ] Render a grid with 81 reusable cell nodes, clear 3×3 boundaries, a separate value/notes span, `data-cell-index`, `aria-selected`, and a Portuguese label containing row/column/value/given status. Use roving focus for the selected cell. Givens render definition values and stay selectable. Update nodes in place so typing and focus are not lost on each edit. All metadata/names use `textContent`, never interpolated HTML.
+- [x] Render a grid with 81 reusable cell nodes, clear 3×3 boundaries, a separate value/notes span, `data-cell-index`, `aria-selected`, and a Portuguese label containing row/column/value/given status. Use roving focus for the selected cell. Givens render definition values and stay selectable. Update nodes in place so typing and focus are not lost on each edit. All metadata/names use `textContent`, never interpolated HTML.
 
 ```ts
 const button = document.createElement('button');
@@ -599,10 +599,10 @@ button.setAttribute('aria-selected', String(index === state.selected));
 button.setAttribute('aria-label', `Linha ${Math.floor(index / 9) + 1}, coluna ${index % 9 + 1}`);
 ```
 
-- [ ] Map keyboard and number buttons to the same actions. Handle Ctrl+Z/Y/Shift+Z before digit parsing; do not steal other Ctrl/Meta/Alt shortcuts. Shift or selected corner tool requests notes; creation always enters clues. Ignore repeated keydown toggles for notes/undo while allowing arrow repeat. Erase keys are 0/Backspace/Delete. A number-button click uses `MouseEvent.shiftKey`, avoiding a sticky global Shift flag. Selecting a cell/using keypad returns focus to the selected cell; updates from other controls must not steal input-field focus.
-- [ ] Limit shortcut handling to the mounted board/keypad when they own interaction. Exclude `input`, `textarea`, `select`, and contenteditable targets. Remove listeners with an `AbortController` on destroy. A name or import textarea must accept normal keys and native text undo.
-- [ ] Test shifted symbols on the number row, numpad codes, Shift+button, persistent note mode, note toggle/erasure layers, all wraps, no duplicate actions, locked givens, input focus isolation, and remount cleanup. Add a screenshot/manual visual check at a desktop viewport with all nine corner notes, selection, and conflicts. Unit tests remain focused on domain semantics rather than duplicating DOM classes.
-- [ ] Run the board browser suite, domain tests, typecheck, and build. Commit board rendering/input with its harness; do not expose the harness in app navigation.
+- [x] Map keyboard and number buttons to the same actions. Handle Ctrl+Z/Y/Shift+Z before digit parsing; do not steal other Ctrl/Meta/Alt shortcuts. Shift or selected corner tool requests notes; creation always enters clues. Ignore repeated keydown toggles for notes/undo while allowing arrow repeat. Erase keys are 0/Backspace/Delete. A number-button click uses `MouseEvent.shiftKey`, avoiding a sticky global Shift flag. Selecting a cell/using keypad returns focus to the selected cell; updates from other controls must not steal input-field focus.
+- [x] Limit shortcut handling to the mounted board/keypad when they own interaction. Exclude `input`, `textarea`, `select`, and contenteditable targets. Remove listeners with an `AbortController` on destroy. A name or import textarea must accept normal keys and native text undo.
+- [x] Test shifted symbols on the number row, numpad codes, Shift+button, persistent note mode, note toggle/erasure layers, all wraps, no duplicate actions, locked givens, input focus isolation, and remount cleanup. Add a screenshot/manual visual check at a desktop viewport with all nine corner notes, selection, and conflicts. Unit tests remain focused on domain semantics rather than duplicating DOM classes.
+- [x] Run the board browser suite, domain tests, typecheck, and build. Commit board rendering/input with its harness; do not expose the harness in app navigation.
 
 ## Task 8 — Creator, library, player, and local application shell
 

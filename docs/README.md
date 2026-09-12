@@ -77,3 +77,5 @@ Task 4 complete: 35 domain tests and typecheck passed (test fixture literal typi
 Task 5 complete: 4 storage tests pass, including aborted writes, restored notes/redo, competing revisions and reopen; typecheck passed. These tests use fake IndexedDB, not browser quota/eviction evidence. Next: Task 6 controller.
 
 Task 6 complete: controller/route tests pass; combined suite 53/53 and typecheck passed. Review finding fixed with four regressions (D045). Next: Task 7 real board input.
+
+Task 7 complete: 3 real Chromium board tests, typecheck/build and domain tests passed. Fixed numpad event precedence, equal grid rows and font line-box overflow. Nine-note desktop screenshot reviewed. Next: Task 8 application screens.
