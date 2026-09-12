@@ -628,7 +628,7 @@ export declare function mountPlayer(container: HTMLElement, services: ScreenServ
 export declare function mountSettings(container: HTMLElement, services: ScreenServices): () => void;
 ```
 
-- [ ] Write the browser lifecycle test using actual Portuguese controls. Run `npm run test:e2e -- lifecycle.spec.ts` and see the missing-screen failures:
+- [x] Write the browser lifecycle test using actual Portuguese controls. Run `npm run test:e2e -- lifecycle.spec.ts` and see the missing-screen failures:
 
 ```ts
 import { expect, test } from '@playwright/test';
@@ -653,7 +653,7 @@ test('conflicting draft saves, cannot finish, and valid puzzle locks clues', asy
 });
 ```
 
-- [ ] Bootstrap repository/load/controller once. Mount a screen on hash changes and dispose the previous screen/listeners. Each screen subscribes to update its existing nodes; do not remount the whole screen for every save-status notification. If storage opening fails, offer an in-memory session with an explicit unsaved indicator and export recovery; never claim persistence or clear an inaccessible database. Inject `crypto.randomUUID` and ISO time through services.
+- [x] Bootstrap repository/load/controller once. Mount a screen on hash changes and dispose the previous screen/listeners. Each screen subscribes to update its existing nodes; do not remount the whole screen for every save-status notification. If storage opening fails, offer an in-memory session with an explicit unsaved indicator and export recovery; never claim persistence or clear an inaccessible database. Inject `crypto.randomUUID` and ISO time through services.
 
 ```ts
 const repository = await openRepository(indexedDB, 'sudoku-engine', () => {
@@ -666,8 +666,8 @@ const services: ScreenServices = {
 };
 ```
 
-- [ ] Implement Home buttons `Jogar`, `Criar`, `Resolver — em breve`, and `Configurações`. Library has `Rascunhos`/`Jogos` tabs and `Explorar — em breve`. Future features are explanatory disabled controls, not fake working screens. Create allocates/saves a draft before navigation; Paste Puzzle validates into a new draft without replacing current work.
-- [ ] Wire creator edits through the domain reducer, retaining no-op identity so selection/edits have the intended save semantics:
+- [x] Implement Home buttons `Jogar`, `Criar`, `Resolver — em breve`, and `Configurações`. Library has `Rascunhos`/`Jogos` tabs and `Explorar — em breve`. Future features are explanatory disabled controls, not fake working screens. Create allocates/saves a draft before navigation; Paste Puzzle validates into a new draft without replacing current work.
+- [x] Wire creator edits through the domain reducer, retaining no-op identity so selection/edits have the intended save semantics:
 
 ```ts
 function onDraftAction(action: BoardAction): void {
@@ -683,10 +683,10 @@ function onDraftAction(action: BoardAction): void {
 ```
 
 Always show conflicts and a reason when Finish is blocked. Finish calls the domain transition, then offers Play Now or Library. Mark solvability/uniqueness unverified, including for a zero-clue puzzle. Keep archived source history but never reopen it as a mutable definition.
-- [ ] Implement playable list open/resume, rename, `Editar cópia`, and delete confirmation. Player reads immutable givens, edits only its session, and has Notes, Erase, Undo, Redo, Reset, and Home/Library navigation. Apply reset through the reducer so it is one undoable action. Derive lifecycle badges from records/current board rather than storing contradictory duplicated flags.
-- [ ] Settings edits `showConflicts` in live state and persists it. Display save status (`Salvando…`, `Salvo`, or `Não salvo`) globally. Save failure exposes Retry/Export while retaining memory. Do not rebuild name/import fields on every saving-status notification; preserve cursor/focus and input composition.
-- [ ] Add full-board completion checking: valid full classic board shows a dismissible success message once per transition from incomplete/invalid to complete. Undo/redo can transition again. A full conflicting board stays editable; when highlighting is off, no unsolicited mistake popup appears. Completion says nothing about uniqueness.
-- [ ] Run lifecycle/board browser tests, all unit/storage tests, typecheck, and build. Commit the working create/play shell. Add tests for saved selection, returning Home without losing work, deleting with cancel/confirm, finished-copy independence, and configurable play conflicts versus mandatory creation conflicts.
+- [x] Implement playable list open/resume, rename, `Editar cópia`, and delete confirmation. Player reads immutable givens, edits only its session, and has Notes, Erase, Undo, Redo, Reset, and Home/Library navigation. Apply reset through the reducer so it is one undoable action. Derive lifecycle badges from records/current board rather than storing contradictory duplicated flags.
+- [x] Settings edits `showConflicts` in live state and persists it. Display save status (`Salvando…`, `Salvo`, or `Não salvo`) globally. Save failure exposes Retry/Export while retaining memory. Do not rebuild name/import fields on every saving-status notification; preserve cursor/focus and input composition.
+- [x] Add full-board completion checking: valid full classic board shows a dismissible success message once per transition from incomplete/invalid to complete. Undo/redo can transition again. A full conflicting board stays editable; when highlighting is off, no unsolicited mistake popup appears. Completion says nothing about uniqueness.
+- [x] Run lifecycle/board browser tests, all unit/storage tests, typecheck, and build. Commit the working create/play shell. Add tests for saved selection, returning Home without losing work, deleting with cancel/confirm, finished-copy independence, and configurable play conflicts versus mandatory creation conflicts.
 
 ## Task 9 — Backup/restore and failure recovery in the interface
 
