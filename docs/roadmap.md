@@ -1,6 +1,6 @@
 # Sudoku platform roadmap
 
-Updated: 2026-09-12. Status: **M1a + M1b implemented and verified**; see [release evidence](release-verification.md). Delivery constraints are approved through D044; later implementation details remain deferred to the checkpoints below.
+Updated: 2026-09-12. Status: **M1a + M1b implemented and verified**; see [release evidence](release-verification.md). **M2 specification and implementation plan are ready for review; implementation is not authorized.** Delivery constraints are approved through D044; M2 design authorization and proposals are D046–D052.
 
 ## Delivery sequence
 
@@ -8,7 +8,7 @@ Updated: 2026-09-12. Status: **M1a + M1b implemented and verified**; see [releas
 | --- | --- | --- | --- |
 | M1a | Classic creator, autosaved drafts, manual/string entry, conflict checks, Finish into personal library. | Conflicting drafts survive reopen; Finish rejects conflicts; finished definitions are immutable. | Approved first-release specification and detailed plan. |
 | M1b | Classic play, notes, arrows, undo/redo, personal library, settings, JSON backups. First usable release includes M1a + M1b. | First-release acceptance checks and a local startup guide pass. | Approved first-release specification and detailed plan. |
-| M2 | Classic human-first solver plus exact solving/count classification and expandable trace. | Sound deductions; reliable 0/1/2+ classification when conclusive; search identified; cancellation/timeout handled. | Define technique ordering, step schema, worker protocol, evidence, and measured limits. No gameplay hints yet. |
+| M2 | Classic human-first solver plus exact solving/count classification and expandable trace. | Sound deductions; reliable 0/1/2+ classification when conclusive; search identified; cancellation/timeout handled. | [Specification](superpowers/specs/2026-09-12-m2-classic-solver-design.md) and [plan](superpowers/plans/2026-09-12-m2-classic-solver.md) proposed; await design approval. Defaults need implementation benchmarks. No gameplay hints yet. |
 | M3 | Classic construction assistant. | Existing clues preserved; additions-only proposal; target evidence; honest removability status; applying proposal undoable. | Define target evaluator and irreducibility evidence, resource budgets, deterministic/randomized construction, and impossible input handling. |
 | M4 | Diagonal, killer, and thermometer creation/play on classic 9×9; combinable constraints. | Rule definitions round-trip; graphics match declared semantics; support limitations visible. | Set exact variant semantics, editing gestures, overlaps/coverage, capability display, and file version migration. |
 | M5 | Solver support for the initial variants and their supported combinations. | Exact and logical fixtures for individual/mixed constraints; trace replay; unsupported rules never ignored in full-puzzle claims. | Define shared propagation, mixed-rule techniques, soundness checks, and performance budgets. |
@@ -57,6 +57,6 @@ For Perfect minimality, define the verification contract at M3 before promising 
 
 ## First release and continuation
 
-M1 is complete under the [approved behavior specification](superpowers/specs/2026-09-12-first-release-design.md) and [implementation plan](superpowers/plans/2026-09-12-first-release.md). **M2 is the next design checkpoint.** M2–M6 and later branches remain planned product direction, not work included in M1.
+M1 is complete under the [approved behavior specification](superpowers/specs/2026-09-12-first-release-design.md) and [implementation plan](superpowers/plans/2026-09-12-first-release.md). **M2 design review is the next checkpoint; its specification and plan are drafted, not implemented.** M2–M6 and later branches remain planned product direction, not work included in M1.
 
 At each later checkpoint: read the decision log, inspect the implemented state, research any changing tool/format behavior, settle that stage's deferred choices, write its specification and implementation plan, and record results in this folder. Preserve earlier user decisions unless the user changes them.
