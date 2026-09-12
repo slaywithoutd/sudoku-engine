@@ -1,6 +1,6 @@
 # Sudoku platform roadmap
 
-Updated: 2026-09-12. Status: delivery constraints approved through D044; later implementation details are intentionally deferred to the checkpoints below. No application milestone described here has been implemented in this planning session.
+Updated: 2026-09-12. Status: **M1a + M1b implemented and verified**; see [release evidence](release-verification.md). Delivery constraints are approved through D044; later implementation details remain deferred to the checkpoints below.
 
 ## Delivery sequence
 
@@ -57,6 +57,6 @@ For Perfect minimality, define the verification contract at M3 before promising 
 
 ## First release and continuation
 
-Use the [approved behavior specification](superpowers/specs/2026-09-12-first-release-design.md) and [implementation plan](superpowers/plans/2026-09-12-first-release.md). M1 is the next implementation task. M2–M6 and later branches are planned product direction, not work authorized for inclusion in M1.
+M1 is complete under the [approved behavior specification](superpowers/specs/2026-09-12-first-release-design.md) and [implementation plan](superpowers/plans/2026-09-12-first-release.md). **M2 is the next design checkpoint.** M2–M6 and later branches remain planned product direction, not work included in M1.
 
 At each later checkpoint: read the decision log, inspect the implemented state, research any changing tool/format behavior, settle that stage's deferred choices, write its specification and implementation plan, and record results in this folder. Preserve earlier user decisions unless the user changes them.

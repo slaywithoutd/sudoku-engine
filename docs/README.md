@@ -4,82 +4,62 @@ Last updated: 2026-09-12.
 
 ## Current state
 
-Planning is complete for the agreed scope. The user answered all 38 interview questions, approved the browser-first architecture and first-release behavior, and requested a detailed first-release plan plus a roadmap with later design checkpoints. Decisions D001–D044 record the outcome.
+**The approved first release (M1a + M1b) is implemented and verified.** The active application is in `web/`: TypeScript + Vite, plain TypeScript views, native IndexedDB, and no server dependency. Existing Spring/Java files are unchanged legacy references.
 
-Only Markdown documentation was created/updated during planning. Application code remains at the original Spring/Java/static-JavaScript baseline; the TypeScript application has not been implemented, installed, compiled, or tested.
+Implementation is on local branch `release/first-release`, based on planning commit `7c9512b`. Work was committed task by task. All ten tasks in the [implementation plan](superpowers/plans/2026-09-12-first-release.md) are complete. See the [release verification record](release-verification.md) for implementation commit, acceptance coverage, fixes, evidence and limitations.
 
-## Start here
+## Run it
 
-1. [First-release implementation plan](superpowers/plans/2026-09-12-first-release.md): ten ordered tasks, interfaces, test examples, commands, and coverage map.
-2. [Approved first-release specification](superpowers/specs/2026-09-12-first-release-design.md): exact product behavior and acceptance checks.
-3. [Platform architecture](superpowers/specs/2026-09-12-platform-design.md): subsystem boundaries and engine direction.
-4. [Roadmap](roadmap.md): delivery order, exit evidence, and explicitly deferred design checkpoints.
-5. [Decision log](decisions.md): confirmed requirements and how recommendations were accepted or replaced.
-6. [Product vision](product-vision.md): the complete long-term ambition.
-7. [Interview history](design-tree.md): all five rounds and their answers; do not repeat settled questions.
-8. [Existing application baseline](current-application.md): what the current source actually implements.
-9. [Reference research](references/reference-research.md), [architecture research](references/architecture-research.md), and [toolchain evidence](references/toolchain.md): sources and limits of verification.
-10. [Planning verification](planning-verification.md): document checks and their limits.
+From the repository root:
 
-## Key decisions
+```powershell
+cd web
+npm ci
+npm run dev
+```
 
-- Desktop browser, personal use first, initially at localhost.
-- TypeScript + Vite with plain TypeScript views, IndexedDB, and a later solver worker.
-- First release: menu, classic creator/player, personal library, basic Settings; Solve and community Explore identify future features.
-- Creation allows conflicting drafts to autosave; Finish rejects conflicts. Finished clues are locked during play; editing creates a draft copy.
-- Manual or 81-cell string entry; Shift corner notes; single-cell selection; wrapping arrows; selectable givens.
-- Values hide notes, erasure reveals them; no automatic peer-note cleanup initially.
-- Undo/redo includes edit/erase/reset, excludes navigation, and persists with each separate draft/play history.
-- Play conflict highlighting off by default; creation highlighting always on.
-- Versioned JSON backups include histories/settings, with validated graph-aware merge/copies. Portuguese UI and simple light design.
-- Perfect is the default assistant target: unique plus a complete allowed logical path. Explainable contradiction techniques may count; fallback search does not certify perfection.
-- Unique and Open are alternatives. Open means at least one solution, with uniqueness optional.
-- First assistant preserves every entered clue and only adds digits; seek no removable added clue, without a global-minimum guarantee.
-- Configurable solving/construction limits and Cancel; incomplete checks remain explicitly unknown.
-- AI rule support requires examples, automated validation, and user review before trusted registration.
+Open exactly **http://localhost:5173**. The [root README](../README.md) explains prerequisites, controls, backups and test commands. Node 24.19.0 / npm 11.17.0 and the exact planned dependency pins were exercised successfully.
 
-## Delivery order
+## Verification results
 
-Classic creation → classic play (first usable release) → classic solver → classic construction assistance → initial variant creation/play → variant solving → gameplay hints.
+- `npm ci`: passed; 45 packages installed, audit reported zero vulnerabilities.
+- `npm run typecheck`: passed.
+- `npm test`: **54 passed**, seven unit/storage/controller/route test files.
+- `npm run build`: passed; production assets emitted to `web/dist/`.
+- `npm run test:e2e`: **20 passed**, seven Chromium browser suites; latest complete run took 13.5 seconds.
+- Real same-context refresh/reopen, true browser restart with an isolated temporary profile, and stale-tab conflict recovery passed.
+- Home, creator, player and Settings screenshots inspected at 1280×800 and 1920×1080; nine corner notes, selection, fixed clues and conflicts checked. Creator/player board controls fit the 800-pixel viewport.
+- Independent reviews found three issues: inherited record-key collisions, concurrent Retry status and focused name autosave. All were reproduced and fixed with regressions. Final review had no remaining critical/important findings.
+- `git diff --check` passed. Spring paths, generated dependencies/builds and test profiles were excluded from commits.
 
-The first variants are diagonal, killer cages, and thermometers, combinable on the classic 9×9 base. Broader customization, extended gameplay, richer imports/library, community, variant assistance, and AI have explicit later checkpoints. Their listing order is not an additional agreed total delivery order.
+## Implemented behavior
 
-## How to continue
+- Portuguese Home, personal library with Drafts/Puzzles, classic creator/player and Settings. Solver and community Explore are marked as future features.
+- Manual/81-cell string creation, autosaved conflicting drafts, conflict-blocked Finish, immutable playable definitions, edit-copy, rename and confirmed deletion.
+- Locked/selectable givens, wrapping arrows, physical numpad/Shift input, sorted corner notes, hidden note retention, layered erase, undo/redo/reset and saved selection/tool.
+- Immediate in-memory edits with serialized atomic saves of the entire library and histories. Separate draft/play history, no silent history cap, error indicators and live-work export/retry.
+- Versioned JSON backups, whole-graph validation, history replay validation, linked copies for collisions, preview freshness checks, settings opt-in and atomic restore.
+- Optional play conflicts off by default, mandatory creation conflicts, dismissible valid-board completion without solver claims.
 
-The next implementation task is Task 1 in the first-release plan. Read that plan and its linked specifications, inspect current Git status and applicable repository instructions, then implement task-by-task when the user resumes implementation. Do not restart the interview or implement solver/variant/community/AI work inside the first release.
+## Known limits
 
-Keep task checkboxes and this handoff current with actual results. Preserve prior decisions unless the user changes them; record replacements and rationale. Later-stage design questions belong at the roadmap checkpoints, not as hidden assumptions or prerequisites for beginning the approved first release.
+Desktop Chromium is the verified browser. Other browsers and assistive technologies have not received manual compatibility certification. Persistence uses one aggregate transaction and full history validation; histories are retained without a cap, and very large libraries have not been benchmarked. Quota/abort/open failures are simulated at adapter/browser boundaries; real quota eviction and power-loss durability are not guaranteed. Data remains browser/profile/origin-local; use JSON backups for recovery and transfer.
 
-The current plan is an implementation artifact, not evidence of an implemented app. At execution, record actual install/build/test results and limitations before claiming completion.
+## Next checkpoint
 
-## Planning checks
+There is no remaining M1 implementation task. **M2 is the next design checkpoint**, not authorization to implement a solver in this release. Define technique ordering, deduction-step schema, exact/count evidence, worker protocol, cancellation and measured limits before its implementation. Gameplay hints wait until variant solving (M5) is complete. Variants, construction assistance, community and AI remain outside M1.
 
-- Repository and primary references inspected.
-- All 38 interview questions answered; architecture and first-release defaults approved.
-- Decisions recorded; later details explicitly deferred.
-- First-release task plan and full roadmap written.
-- Documentation QA checks links, decision/question continuity, fixture validity, and plan/spec coverage. Application verification is reserved for execution.
+The 38-question interview and approved architecture/first-release review are complete; do not restart them. Preserve D001–D044 and the implementation clarification D045. Any future change to an approved behavior must be recorded with rationale.
 
-## New-chat starter
+## Reference map
 
-> Read docs/README.md, docs/superpowers/specs/2026-09-12-first-release-design.md, and docs/superpowers/plans/2026-09-12-first-release.md. Continue implementation from the first unchecked task, preserving the recorded decisions. The architecture and first-release behavior are approved; do not restart brainstorming.
-
-## Implementation progress
-
-Task 1 complete: pinned packages installed; classic tests 5/5, typecheck and build passed. Work is on release/first-release. Next: Task 2. Spring files unchanged.
-
-Task 2 complete: 14 domain tests passed. Initial typecheck found an action-union narrowing error; split the discriminants and reran typecheck successfully. Next: Task 3 lifecycle.
-
-Task 3 complete: 17 domain tests and typecheck passed. Next: Task 4 backup validation and merge.
-
-Task 4 complete: 35 domain tests and typecheck passed (test fixture literal typing corrected). Next: Task 5 IndexedDB adapter. Independent domain review requested.
-
-Task 5 complete: 4 storage tests pass, including aborted writes, restored notes/redo, competing revisions and reopen; typecheck passed. These tests use fake IndexedDB, not browser quota/eviction evidence. Next: Task 6 controller.
-
-Task 6 complete: controller/route tests pass; combined suite 53/53 and typecheck passed. Review finding fixed with four regressions (D045). Next: Task 7 real board input.
-
-Task 7 complete: 3 real Chromium board tests, typecheck/build and domain tests passed. Fixed numpad event precedence, equal grid rows and font line-box overflow. Nine-note desktop screenshot reviewed. Next: Task 8 application screens.
-
-Task 8 complete: 5 browser tests and 53 domain/storage/controller tests passed; typecheck/build passed. Creator, player, library, settings, completion and save status are wired. Next: Task 9 backup interface and recovery tests; Task 10 remains for final durability/visual acceptance.
-
-Task 9 complete: download/upload, copies/skips, settings, validation, safe text and save-failure/retry browser checks passed; 53 unit/storage tests and typecheck passed. Next: Task 10 full durability, completion, expanded backup acceptance, visual QA and release documentation.
+1. [First-release implementation plan](superpowers/plans/2026-09-12-first-release.md)
+2. [Approved first-release behavior](superpowers/specs/2026-09-12-first-release-design.md)
+3. [Platform architecture](superpowers/specs/2026-09-12-platform-design.md)
+4. [Roadmap and later design checkpoints](roadmap.md)
+5. [Decision log](decisions.md)
+6. [Product vision](product-vision.md)
+7. [Interview history](design-tree.md)
+8. [Original application baseline](current-application.md)
+9. [Reference research](references/reference-research.md), [architecture research](references/architecture-research.md), [toolchain evidence](references/toolchain.md)
+10. [Historical planning verification](planning-verification.md) and [actual release verification](release-verification.md)

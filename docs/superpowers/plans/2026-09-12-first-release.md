@@ -10,7 +10,7 @@
 
 **Spec:** [Approved first-release behavior](../specs/2026-09-12-first-release-design.md) and [platform architecture](../specs/2026-09-12-platform-design.md).
 
-**Status:** Ready for implementation; none of the task checkboxes represent completed application work. This document is an execution plan, not a report of passing tests. Package pins were checked against official metadata, not installed or exercised; see [toolchain evidence](../../references/toolchain.md).
+**Status:** COMPLETE, 2026-09-12. All ten tasks were implemented on local branch release/first-release, based on 7c9512b. Verified implementation commit: 66b8381. Clean install, typecheck, 54 unit/storage/controller tests, production build and 20 Chromium tests passed. See [actual release evidence](../../release-verification.md) and [resume handoff](../../README.md). The steps and examples below retain the execution contract; checked boxes record completed work.
 
 ## Global Constraints
 
@@ -734,8 +734,8 @@ setTimeout(() => URL.revokeObjectURL(url), 0);
 
 **Produces:** verified local release, repeatable startup/test instructions, and an accurate resume record.
 
-- [ ] Add a real refresh/reopen test in the same browser context: enter notes/value, undo once, wait for `Salvo`, reload, redo, close page, open a new page at the same origin, and confirm editor/history/selection. A new isolated context is expected to be empty; do not mistake that for a persistence failure.
-- [ ] Add one true browser-restart persistence check with a temporary profile under the test output directory. Launch, save, close, relaunch the same profile, and verify state/history. Never point tests at a personal browser profile. Use Playwright's temporary artifact lifecycle to clean up only the test profile; verify its absolute path before any recursive cleanup on Windows.
+- [x] Add a real refresh/reopen test in the same browser context: enter notes/value, undo once, wait for `Salvo`, reload, redo, close page, open a new page at the same origin, and confirm editor/history/selection. A new isolated context is expected to be empty; do not mistake that for a persistence failure.
+- [x] Add one true browser-restart persistence check with a temporary profile under the test output directory. Launch, save, close, relaunch the same profile, and verify state/history. Never point tests at a personal browser profile. Use Playwright's temporary artifact lifecycle to clean up only the test profile; verify its absolute path before any recursive cleanup on Windows.
 
 ```ts
 import { chromium, expect, test } from '@playwright/test';
@@ -763,8 +763,8 @@ test('library survives a browser restart', async ({}, testInfo) => {
 
 Use `try/finally` in the implementation to close contexts if assertions fail; do not leave hidden browser processes behind.
 
-- [ ] Cover completion with a nearly full valid fixture, ordinary conflicting full entries with highlights off/on, and no false uniqueness wording. Verify keyboard and pointer controls, numeric keypad, normal text-field undo, and disabled future actions. Inspect desktop screenshots at 1280×800 and 1920×1080 for overflow, all nine corner notes, crisp 3×3 boundaries, focus, and legibility.
-- [ ] Execute the release gates from `web/`, separately, and inspect every result:
+- [x] Cover completion with a nearly full valid fixture, ordinary conflicting full entries with highlights off/on, and no false uniqueness wording. Verify keyboard and pointer controls, numeric keypad, normal text-field undo, and disabled future actions. Inspect desktop screenshots at 1280×800 and 1920×1080 for overflow, all nine corner notes, crisp 3×3 boundaries, focus, and legibility.
+- [x] Execute the release gates from `web/`, separately, and inspect every result:
 
 ```powershell
 npm ci
@@ -776,8 +776,8 @@ npm run test:e2e
 
 Expected: installation succeeds with locked dependencies; typecheck exits 0; all unit/storage and browser tests pass; Vite emits a production build. If new failures require fixes, rerun the affected checks and the necessary final gates. Do not report browser quota/eviction guarantees from fake IndexedDB tests.
 
-- [ ] Write root startup instructions: install Node matching the baseline; `cd web`, `npm ci`, then `npm run dev`; open exactly `http://localhost:5173`. Explain that another port/hostname has separate browser data, provide backup instructions, list keyboard controls, and identify solver/variants/community as future stages. Document each test command and that existing Spring files are retained as a legacy reference, not the active runtime. Do not delete them merely to tidy the repository.
-- [ ] Check `git diff --check`, review changed paths, and ensure no generated dependencies, build output, personal data, secrets, or test profiles are staged. Commit the finished release with relevant docs. Update this plan's checkboxes and `docs/README.md` with actual results, commit identifier, known limitations, and the next checkpoint M2. Only claim completed behavior verified by the executed checks.
+- [x] Write root startup instructions: install Node matching the baseline; `cd web`, `npm ci`, then `npm run dev`; open exactly `http://localhost:5173`. Explain that another port/hostname has separate browser data, provide backup instructions, list keyboard controls, and identify solver/variants/community as future stages. Document each test command and that existing Spring files are retained as a legacy reference, not the active runtime. Do not delete them merely to tidy the repository.
+- [x] Check `git diff --check`, review changed paths, and ensure no generated dependencies, build output, personal data, secrets, or test profiles are staged. Commit the finished release with relevant docs. Update this plan's checkboxes and `docs/README.md` with actual results, commit identifier, known limitations, and the next checkpoint M2. Only claim completed behavior verified by the executed checks.
 
 ## Coverage map and execution order
 

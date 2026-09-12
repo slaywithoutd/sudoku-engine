@@ -1,6 +1,6 @@
 # Sudoku platform architecture
 
-Date: 2026-09-12. Status: APPROVED architecture under Q31/D037, refined by D038–D044. First-release behavior is approved; later subsystem details have explicit roadmap checkpoints. Confirmed decisions are in `../../decisions.md`. No application code has been changed.
+Date: 2026-09-12. Status: APPROVED architecture under Q31/D037, refined by D038–D044. First-release behavior is implemented and verified in `web/`; later subsystem details have explicit roadmap checkpoints. Confirmed decisions are in `../../decisions.md`; actual first-release evidence is in [release verification](../../release-verification.md).
 
 ## Product and delivery order
 
@@ -101,4 +101,4 @@ Ordinary browser workers are useful for responsiveness but are not a sufficient 
 - Variants: individual and mixed-rule fixtures; unsupported-rule behavior; definition round trips.
 - Assistant: preserved locks, target verification, removability evidence, and atomic proposal application.
 
-Architecture and first-release behavior are approved. Produce the detailed first-release plan and milestone roadmap under D044. Later subsystems receive their own detailed designs before code; checkpoints preserve the full ambition without silently deciding unspecified behavior.
+Architecture and first-release behavior are approved, and M1 implementation is complete. The detailed first-release plan and milestone roadmap record delivery under D044. M2 is the next design checkpoint. Later subsystems receive their own detailed designs before code; checkpoints preserve the full ambition without silently deciding unspecified behavior.
