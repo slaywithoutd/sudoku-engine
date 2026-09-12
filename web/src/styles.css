@@ -127,36 +127,58 @@ small,
 }
 .cell {
   position: relative;
+  isolation: isolate;
   min-width: 0;
   width: 100%;
   height: 100%;
   padding: 0;
   border: 0;
-  border-radius: 50%;
-  corner-shape: squircle;
+  border-radius: 0;
   background: transparent;
   font-size: clamp(28px, 5.8cqw, 66px);
   font-weight: 400;
   color: #286650;
   line-height: 1;
 }
+.cell::before {
+  content: "";
+  position: absolute;
+  inset: 5%;
+  border-radius: 50%;
+  corner-shape: squircle;
+  pointer-events: none;
+  z-index: -1;
+  transition: background 0.12s;
+}
+.cell:hover:not(:disabled) {
+  background: transparent;
+}
+.cell:hover::before {
+  background: #eaf1e7;
+}
 .cell.given {
   font-weight: 700;
   color: #263b31;
 }
 .cell[aria-selected="true"] {
+  z-index: 1;
+}
+.cell[aria-selected="true"]::before {
   background: #dceacb;
   box-shadow: inset 0 0 0 2px #90ab76;
-  z-index: 1;
 }
 .cell.conflict {
   color: #a33131;
-  background: #fce3dd;
   text-decoration: underline;
   text-decoration-thickness: 2px;
 }
+.cell.conflict::before {
+  background: #fce3dd;
+}
 .cell:focus-visible {
   outline: none;
+}
+.cell:focus-visible::before {
   box-shadow: inset 0 0 0 3px #497531;
 }
 .cell [data-notes] {

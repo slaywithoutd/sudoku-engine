@@ -484,4 +484,5 @@ Record each answer here with its rationale and consequences. If an answer change
 - Compatibility: new/in-memory settings use `language: "en"`; the shared library/backup validator accepts both legacy `pt-BR` and `en`, normalizing to `en`. Keep the version-1 record graph, names and histories intact. No bulk renaming of existing records. Earlier releases may not accept newly exported English-language backups; backward reading in the current release is covered.
 - Precedence: this user instruction supersedes earlier Portuguese UI requirements, including Portuguese labels/examples in pending M2 documents. It does not authorize solver implementation or change the remaining M2 recommendations.
 - Evidence: [UI refinement verification](ui-refinement-2026-09-12.md). Squircle CSS is verified in Chromium; unsupported browsers retain rounded corners.
+- User follow-up: inset the cell squircle by 5% on every edge so its contour looks intentional. Apply the gap to hover, selection, focus and conflict backgrounds while preserving the full rectangular hit area, centered digits and fixed note positions.
 

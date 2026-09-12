@@ -25,3 +25,9 @@ Date: 2026-09-12. Status: implemented and verified. Decision: [D053](decisions.m
 - The development server at `http://localhost:5173` returned HTTP 200. Tests used isolated profiles on port 5174.
 
 No implementation work remains for this request. The existing M2 design documents and legacy Spring files remain separate; no solver, hints, variants, community or AI functionality was added. The original first-release plan remains fully checked; this follow-up supersedes only the behavior documented in D053.
+
+## Cell highlight inset follow-up
+
+The user requested a slightly smaller squircle so the shape is visibly intentional. Cell backgrounds and focus/selection rings now render on a decorative layer inset by 5% on each side. Hover and conflict states use the same contour. The full cell remains clickable, and digits/notes retain their positions.
+
+Fresh verification for this CSS-only follow-up: all eight board and desktop visual tests passed (10.1 seconds), typecheck and production build passed, and an isolated Chromium smoke check selected a cell one pixel from its corner and entered a value successfully. Creator/player screenshots at 1280 × 800 were inspected for the gap, focus ring, nine notes and conflicts; desktop acceptance also passed at 1920 × 1080. The earlier full 59-unit/22-browser results above belong to the preceding refinement. No remaining work for this follow-up.

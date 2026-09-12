@@ -2,6 +2,8 @@
 
 Last updated: 2026-09-12.
 
+**Latest visual adjustment:** cell squircles now sit 5% inside each cell, making the shape visibly separate from the grid. The full rectangular cell remains clickable. Fresh checks: eight board/desktop browser tests, typecheck, build and a corner-click/input smoke check passed. See the [inset follow-up](ui-refinement-2026-09-12.md#cell-highlight-inset-follow-up).
+
 **Latest UI update:** Sudoku Engine now uses English throughout, squircle buttons/cell highlights, larger digits, fixed 3 × 3 notes and repeat-value erasing. Thick grid strokes cover thin strokes. Fresh verification passed: 59 unit/storage/controller tests, 22 browser tests, typecheck and build. See the [refinement verification record](ui-refinement-2026-09-12.md) and [earlier sidebar update](ui-sidebar-update-2026-09-12.md). No work remains for these UI requests. D053 supersedes earlier Portuguese UI and corner-note presentation requirements, including language references in the separate M2 design workstream.
 
 ## Current state
