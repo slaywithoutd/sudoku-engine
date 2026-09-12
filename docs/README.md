@@ -67,3 +67,5 @@ The current plan is an implementation artifact, not evidence of an implemented a
 ## Implementation progress
 
 Task 1 complete: pinned packages installed; classic tests 5/5, typecheck and build passed. Work is on release/first-release. Next: Task 2. Spring files unchanged.
+
+Task 2 complete: 14 domain tests passed. Initial typecheck found an action-union narrowing error; split the discriminants and reran typecheck successfully. Next: Task 3 lifecycle.

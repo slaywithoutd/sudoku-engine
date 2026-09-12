@@ -234,7 +234,7 @@ export type BoardAction =
   | { type: 'tool'; tool: Tool };
 ```
 
-- [ ] Add a failing regression test for hidden notes, layered erasure, and undo before implementing actions:
+- [x] Add a failing regression test for hidden notes, layered erasure, and undo before implementing actions:
 
 ```ts
 import { expect, test } from 'vitest';
@@ -253,7 +253,7 @@ test('a value hides notes; erase reveals; undo restores value and notes', () => 
 });
 ```
 
-- [ ] Run `npm test -- tests/unit/editor.test.ts` and confirm the behavioral failure. Implement edits as changed-cell deltas, cloning before/after values; no-op edits return the original state and do not discard redo.
+- [x] Run `npm test -- tests/unit/editor.test.ts` and confirm the behavioral failure. Implement edits as changed-cell deltas, cloning before/after values; no-op edits return the original state and do not discard redo.
 
 ```ts
 function applyEdit(state: EditorState, label: Edit['label'], changes: CellChange[]): EditorState {
@@ -271,7 +271,7 @@ function move(state: EditorState, dr: number, dc: number): EditorState {
 
 Digit action: block if a play given. In play, a corner action toggles a sorted unique note only in an empty cell; on a filled cell it is a no-op, never a replacement digit. Ordinary digit actions replace the value and retain notes. Creation interprets digit actions as clue entry regardless of the modifier. Erase: clear nonzero value first; if no value, clear notes. Reset: one edit clearing every editable cell's value and notes. Undo: pop `past`, apply `before`, push to `future`; redo pops `future`, applies `after`, and pushes to `past`. Preserve `selected`/`tool` through undo/redo. Validate indices and ignore unsupported move increments from malformed callers.
 
-- [ ] Add tests for all four edge wraps, selectable locked givens, same-digit/no-op history, note toggle repeats, notes ignored on filled cells, create mode rejecting corner-note interpretation, reset restoring multiple hidden notes in one undo, redo after navigation, and fresh edits discarding redo.
+- [x] Add tests for all four edge wraps, selectable locked givens, same-digit/no-op history, note toggle repeats, notes ignored on filled cells, create mode rejecting corner-note interpretation, reset restoring multiple hidden notes in one undo, redo after navigation, and fresh edits discarding redo.
 
 ```ts
 test('navigation does not consume undo and givens are immutable', () => {
@@ -285,7 +285,7 @@ test('navigation does not consume undo and givens are immutable', () => {
 });
 ```
 
-- [ ] Run focused editor/classic tests and typecheck. Commit the domain reducer and regression tests; do not add UI or storage logic here.
+- [x] Run focused editor/classic tests and typecheck. Commit the domain reducer and regression tests; do not add UI or storage logic here.
 
 ## Task 3 — Draft, puzzle, and play-session lifecycle
 
