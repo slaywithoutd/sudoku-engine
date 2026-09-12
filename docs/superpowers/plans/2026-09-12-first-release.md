@@ -491,7 +491,7 @@ export type Route =
   | { screen: 'settings' };
 ```
 
-- [ ] Write a test showing that edits are visible before asynchronous commit completes and later edits are not lost. Use a controlled fake repository with the actual `Repository` contract:
+- [x] Write a test showing that edits are visible before asynchronous commit completes and later edits are not lost. Use a controlled fake repository with the actual `Repository` contract:
 
 ```ts
 import { expect, test } from 'vitest';
@@ -521,7 +521,7 @@ test('UI state updates immediately while durable saves are serialized', async ()
 });
 ```
 
-- [ ] Run focused tests to establish the missing behavior. Maintain live in-memory state, an edit generation, saved generation, and last committed revision. One save loop captures the latest immutable snapshot and serially commits it; coalescing pending snapshots is allowed because the latest includes the full history. Do not mark newer work saved when only an older generation completed.
+- [x] Run focused tests to establish the missing behavior. Maintain live in-memory state, an edit generation, saved generation, and last committed revision. One save loop captures the latest immutable snapshot and serially commits it; coalescing pending snapshots is allowed because the latest includes the full history. Do not mark newer work saved when only an older generation completed.
 
 ```ts
 // Core save-loop ordering, inside createController:
@@ -538,9 +538,9 @@ while (savedGeneration < generation) {
 
 Define these closure variables explicitly in the implementation; `notify` calls a Set of subscribed listeners. Catch failures outside the loop, keep live work, expose error status, and leave work dirty. `retry()` restarts the queue for the same work. On revision conflict, require reload or export recovery instead of silently replacing the expected revision and overwriting another tab. `flush()` waits for the current dirty generation or rejects with the save error.
 
-- [ ] Add tests for old completion versus newer edits, save rejection retaining work/history, successful retry, listener unsubscribe, no-op updates not writing, and stale-revision errors remaining visible. Do not add an automatic discard/reset path.
-- [ ] Implement hash routes `#/`, `#/library/puzzles`, `#/library/drafts`, `#/create/<encoded-id>`, `#/play/<encoded-id>`, and `#/settings`. Unknown/malformed paths resolve Home; missing record IDs show a Portuguese message and a Library link at screen mounting. Route changes never clear unsaved in-memory edits.
-- [ ] Run controller/router tests and typecheck; commit the controller and routing contracts.
+- [x] Add tests for old completion versus newer edits, save rejection retaining work/history, successful retry, listener unsubscribe, no-op updates not writing, and stale-revision errors remaining visible. Do not add an automatic discard/reset path.
+- [x] Implement hash routes `#/`, `#/library/puzzles`, `#/library/drafts`, `#/create/<encoded-id>`, `#/play/<encoded-id>`, and `#/settings`. Unknown/malformed paths resolve Home; missing record IDs show a Portuguese message and a Library link at screen mounting. Route changes never clear unsaved in-memory edits.
+- [x] Run controller/router tests and typecheck; commit the controller and routing contracts.
 
 ## Task 7 — Accessible board and unified keyboard/mouse input
 
