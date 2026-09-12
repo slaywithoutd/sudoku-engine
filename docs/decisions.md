@@ -406,7 +406,7 @@ Current status: all 38 interview questions are answered. Entries are chronologic
 
 ## Current unresolved scope
 
-All 38 interview questions are answered. There are no pending proposals for the completed first-release planning scope. M2 now has a concrete proposed specification and implementation plan under D046; D047–D052 await design approval. No additional blocking product question was found during M2 drafting. Performance defaults still need implementation benchmarks. Historical entries retain the context of questions that were open when recorded; subsequent decisions and approved specifications supersede those open details. Other later-phase questions remain deferred to roadmap checkpoints under D044.
+All 38 interview questions are answered. There are no pending proposals for the completed first-release planning scope. M2's initial specification and plan under D046 now require expansion under D054–D057. The two questions raised during the researched engine revision are answered: Explain is the default of two modes, and Perfect excludes uniqueness-dependent paths. Remaining technical design work includes advanced-family contracts/bounds, concrete mixed-constraint/proof interfaces, revised detailed tasks and benchmark calibration. Historical entries retain their original context; subsequent decisions and approved specifications supersede earlier details. Other later-phase questions remain deferred to roadmap checkpoints under D044.
 
 Record each answer here with its rationale and consequences. If an answer changes a confirmed decision, retain and mark the older entry superseded.
 
@@ -437,6 +437,7 @@ Record each answer here with its rationale and consequences. If an answer change
 ## D048 — Deterministic candidate and explanation baseline
 
 - Status: Proposed for M2 review.
+- Revision: the fixed six-technique-only scope and flat-only proof/order contract are superseded by D054–D057. Keep this entry as the initial kernel proposal, not the final requested engine capability.
 - Decision: 9-bit masks separate from manual notes; monotone checked candidate state; ordered naked single → hidden single → locked pointing → locked claiming → naked pair → hidden pair. Restart at singles after every productive pattern; define precise unit/cell/digit tie breaks, all row/column/box pair coverage and both intersection directions.
 - Explanation contract: versioned typed premises/effects/revisions with explicit peer eliminations; no hidden cascading placements. Retain full human prefix and labeled search boundary/completion, successful guess path and failed-branch summary counts. Exact count enumeration is separate from the human explanation trace.
 - Rationale: deterministic replay and soundness checks are practical for the approved small initial technique set. No advanced techniques, technique selector or full search-tree trace in M2.
@@ -445,6 +446,7 @@ Record each answer here with its rationale and consequences. If an answer change
 ## D049 — Exact evidence checked against original clues
 
 - Status: Proposed implementation method; evidence requirements remain Confirmed by D011/D030/D042/D046.
+- Revision: independent count evidence remains required; the logical profile expands under D054 and Perfect's exclusion of uniqueness-dependent paths is confirmed in D056.
 - Decision: resumable MRV depth-first exact enumeration with singles propagation starts from original givens after the human pass. Count at most two distinct validated witnesses; unique/zero requires exhausted root search except direct duplicate-clue zero proof. A human solution establishes existence but is not pre-added to the exact enumeration counter.
 - Consequence: one witness with unfinished checking remains unknown with lower bound one; two witnesses establish at least two, never exactly two. Count-only search does not mark a complete human path search-assisted. Perfect evidence requires independent unique classification and complete replay-valid baseline deductions with no fallback, and is not a quality label for already-complete input.
 - Inconsistency policy: quarantine incompatible human evidence; discard exhaustion that contradicts a validated witness. Preserve independently validated evidence without silently selecting a contradictory conclusion.
@@ -485,4 +487,38 @@ Record each answer here with its rationale and consequences. If an answer change
 - Precedence: this user instruction supersedes earlier Portuguese UI requirements, including Portuguese labels/examples in pending M2 documents. It does not authorize solver implementation or change the remaining M2 recommendations.
 - Evidence: [UI refinement verification](ui-refinement-2026-09-12.md). Squircle CSS is verified in Chromium; unsupported browsers retain rounded corners.
 - User follow-up: inset the cell squircle by 5% on every edge so its contour looks intentional. Apply the gap to hover, selection, focus and conflict backgrounds while preserving the full rectangular hit area, centered digits and fixed note positions.
+
+## D054 — Broaden the solver into a researched deduction engine
+
+- Status: Confirmed direction, 2026-09-12; implementation remains unauthorized.
+- Source: user objected to limiting the solver to the six baseline techniques, requested research and inclusion of logical deduction techniques, and proposed board/technique scoring inspired by chess engines. The user also requires the architecture to anticipate interacting constraints now.
+- Decision: expand the design target beyond the initial kernel to an explicit technique-family/alias/coverage catalogue; investigate adaptive scheduling and choosing useful deductions. Do not silently substitute the original small M2 scope for this request. The future variant UI remains in its existing milestones, but the shared constraint/proof boundary belongs in the engine design now.
+- Consequence: D048's fixed-only scope/order and the initial ten-task plan need revision. Preserve their isolation/count/cancellation safeguards. “All techniques” is a coverage goal, not an unverified universal completeness claim; state supported families and finite proof/search bounds explicitly.
+- Research artifact: [expanded engine proposal](superpowers/specs/2026-09-12-m2-engine-expansion-design.md), including primary-source findings, catalogue, scheduler alternatives, mixed-constraint contracts and planning impact.
+
+## D055 — Explain and Analyze modes, defaulting to Explain
+
+- Status: Confirmed by explicit user answer, 2026-09-12.
+- Question: when the easiest explanation and fastest solving path differ, what should the solver prioritize?
+- Answer: offer Explain and Analyze modes, defaulting to Explain.
+- Interpretation proposed for review: Explain favors simpler checked proofs, with useful detector ordering inside complexity tiers. Analyze favors expected verified progress per computational budget and may compare bounded continuations of proven deductions. Both retain explanations, honest count evidence, human-first behavior, limits and Cancel.
+- Unconfirmed technical details: exact ranking formula, weights, proof tiers and rollout budgets. Benchmark these against simple deterministic policies before claiming a benefit.
+
+## D056 — Perfect excludes uniqueness-dependent deductions
+
+- Status: Confirmed by explicit user answer, 2026-09-12.
+- Question: whether a path using uniqueness-dependent techniques after independent uniqueness verification should qualify as Perfect.
+- Answer: require Perfect deductions to follow from clues and rules alone; show uniqueness-dependent paths separately.
+- Consequence: Unique Rectangles, BUG-style techniques and any derived proof inheriting a uniqueness assumption cannot supply Perfect's logical-path requirement. They may be shown in separate analysis after independent uniqueness and their other premises are established. No circular uniqueness proof and no hiding the dependency inside a chain.
+- Preserved direction: named, fully explained contradiction techniques remain eligible under D029 when their temporary assumptions are discharged using clues/rules. A search-assisted completion remains ineligible; independently proven uniqueness remains separately necessary.
+- Variant implication: even proven full-puzzle uniqueness does not automatically validate a classic rectangle-swap argument under extra constraints. Require a valid rule-preserving proof or declare the technique classic-only.
+
+## D057 — Adaptive scheduling with independently checked proofs
+
+- Status: Proposed architecture/implementation approach for D054–D056.
+- Decision: event-driven work queues and sound precondition filters, followed by estimated utility/cost ordering; score already proven deductions separately from deciding which detector to run. Compare optional bounded deduction-path rollout against simpler policies. Scores rank computation and cannot validate a candidate, prove count properties or justify skipping active rules.
+- Engine boundary: one normalized constraint problem, shared candidate/fact indexes, versioned rule capabilities, reusable reasoning families and a separate proof checker. Distinguish small all-different scopes from full digit-covering houses. Mixed-rule deductions cite every needed constraint. Exact counting continues from the complete original problem in separate state.
+- Proof/evidence: graph-shaped proofs with explicit assumption scopes and provenance; mode/profile/scheduler/rule identities; fair scheduling and honest bounded-stall/incomplete statuses. Revise full-trace worker checkpoints to bounded proof batches with atomic acceptance and cancellation during verification. Numerical limits remain proposals.
+- Validation: independently checked technique fixtures, proof mutation tests, scheduling ablations, held-out/adversarial corpora, mock multi-constraint contracts, worker backpressure/races and no play-state writes. Reference sources demonstrate related ideas, not a measured speedup or complete technique coverage for this project.
+- Next checkpoint: review the proposal, specify advanced proof-family bounds and concrete interfaces, revise the detailed implementation plan, then obtain implementation authorization. No application code changed in this research/design pass.
 

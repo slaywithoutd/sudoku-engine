@@ -10,7 +10,7 @@
 
 **Spec:** [M2 classic solver design](../specs/2026-09-12-m2-classic-solver-design.md). Read the entire spec and [decision log](../../decisions.md) before execution.
 
-**Status:** PROPOSED, not started. All checkboxes below are future work. The user authorized this specification and plan, and explicitly withheld solver implementation until design approval.
+**Status:** INITIAL PLAN, not started; **requires revision before execution**. The [expanded engine proposal](../specs/2026-09-12-m2-engine-expansion-design.md) revises technique scope, Explain/Analyze scheduling, the multi-constraint interface, proof structure and transport. Its §10 maps the required planning expansion. D053 also supersedes Portuguese examples below with English. Preserve this initial plan as the original detailed baseline; do not execute it as the final broader scope. Implementation still requires design approval.
 
 ## Global constraints
 

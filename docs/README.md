@@ -12,7 +12,7 @@ Last updated: 2026-09-12.
 
 Implementation is on local branch `release/first-release`, based on planning commit `7c9512b`. Work was committed task by task. All ten tasks in the [implementation plan](superpowers/plans/2026-09-12-first-release.md) are complete. See the [release verification record](release-verification.md) for implementation commit, acceptance coverage, fixes, evidence and limitations.
 
-**M2 design is written and ready for review; the solver is not implemented.** The [solver specification](superpowers/specs/2026-09-12-m2-classic-solver-design.md) and [ten-task implementation plan](superpowers/plans/2026-09-12-m2-classic-solver.md) are on local branch `docs/m2-solver-design`, based on the clean `2507adc` first-release documentation head. The release branch is preserved. D046 records design-only authorization; D047–D052 are recommendations awaiting design approval.
+**M2 is undergoing an expanded engine design review; the solver is not implemented.** Start with the [researched engine proposal and technique catalogue](superpowers/specs/2026-09-12-m2-engine-expansion-design.md). The user requested broad logical coverage and scoring, and confirmed Explain/Analyze modes (Explain default) plus Perfect paths derived from clues/rules alone. See D054–D057. The [initial solver specification](superpowers/specs/2026-09-12-m2-classic-solver-design.md) and [initial ten-task plan](superpowers/plans/2026-09-12-m2-classic-solver.md) remain as the baseline but require revision before execution. Work remains on `docs/m2-solver-design`; the release branch is preserved.
 
 The sidebar update was committed separately as `09887f4` on `docs/m2-solver-design`. The current refinements retain the sidebar and `BoardOptions.controlsContainer` integration points. Reinspect the current implementation before M2; the latest verification below covers these M1 refinements, not a solver.
 
@@ -55,9 +55,9 @@ Desktop Chromium is the verified browser. Other browsers and assistive technolog
 
 ## Next checkpoint
 
-There is no remaining M1 implementation task. **Review the M2 specification before authorizing solver implementation.** It now defines input/result flow, masks and exact technique ordering, deduction/replay contracts, independent original-clue counting, worker identity/progress/cancellation, timeout behavior, persistence and acceptance evidence.
+There is no remaining M1 implementation task. **Review the expanded M2 engine proposal, then revise the detailed plan before authorizing implementation.** The new catalogue includes subsets, fish, wings, coloring, chains/loops, ALS, forcing/net/generalized proof families, specialized patterns, templates and separately gated uniqueness techniques. It proposes event-driven technique selection and scoring of proven deductions, a shared multi-constraint fact/proof interface, and bounded proof transport. These capabilities are researched/proposed, not implemented.
 
-Proposed choices ready for review: a temporary solver workspace using original clues only; optional Save Clues as a normal draft; memory-only results/limit preference with no backup migration; a fixed six-technique baseline; summarized, explicitly identified fallback search; one configurable 1–120 second total budget, initially 10 seconds. No additional blocking product question was found. The budget/slice/progress targets require the planned implementation benchmarks and are **not yet measured**. These recommendations are not confirmed user decisions until approved.
+Both product questions from the research pass are answered: Explain is the default mode, and uniqueness-dependent paths are shown separately and never qualify as Perfect. Remaining technical design work is exact advanced-family proof/coverage bounds, concrete shared interfaces, detailed plan revision and benchmark calibration of scheduler/proof/time budgets. Initial temporary input/results, optional Save Clues, independent original-clue counting and configurable 1–120 seconds with a proposed 10-second default remain recommendations; the expanded workload needs fresh benchmarks. No “all deductions” completeness or speedup has been established.
 
 The design session changes Markdown only. Its review checks cover requirement/interface consistency, source attribution, local document links and whitespace; M1 test results above remain the recorded release results, not newly executed solver tests. Gameplay hints still wait until variant solving (M5); construction assistance, variants, community and AI remain outside M2.
 
@@ -65,7 +65,7 @@ The 38-question interview and approved architecture/first-release review are com
 
 ## Reference map
 
-Start M2 review with the [solver specification](superpowers/specs/2026-09-12-m2-classic-solver-design.md) and [implementation plan](superpowers/plans/2026-09-12-m2-classic-solver.md). Primary-source references are linked beside their supported claims in the specification.
+Start M2 review with the [expanded engine proposal and researched catalogue](superpowers/specs/2026-09-12-m2-engine-expansion-design.md), then the [initial specification](superpowers/specs/2026-09-12-m2-classic-solver-design.md) and [plan requiring revision](superpowers/plans/2026-09-12-m2-classic-solver.md). Primary-source references are linked beside their supported claims.
 
 1. [First-release implementation plan](superpowers/plans/2026-09-12-first-release.md)
 2. [Approved first-release behavior](superpowers/specs/2026-09-12-first-release-design.md)

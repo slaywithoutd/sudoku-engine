@@ -1,6 +1,8 @@
 # M2 classic Sudoku solver: design for review
 
-Date: 2026-09-12. Status: **PROPOSED — ready for review; implementation is not authorized.**
+Date: 2026-09-12. Status: **INITIAL PROPOSAL — superseded in part by the expanded engine design; implementation is not authorized.**
+
+Read the [expanded technique/engine proposal](2026-09-12-m2-engine-expansion-design.md) first. D054–D057 expand the technique target and architecture; Explain/Analyze with Explain default and separate uniqueness-dependent paths are confirmed. Fixed six-technique-only coverage, single ordering, flat-only proofs and full-trace progress messages below require revision. English D053 supersedes the historical Portuguese examples. Snapshot isolation and honest independent count evidence remain required.
 
 Companion: [implementation plan](../plans/2026-09-12-m2-classic-solver.md). Decisions: [D046–D052](../../decisions.md#d046--m2-design-authorization-and-preserved-requirements).
 
