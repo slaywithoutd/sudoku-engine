@@ -5,7 +5,7 @@ import { M2_ROOT_LIMITS } from "../limits";
 import type { CheckContext, CheckedInference, PrimitiveInput } from "./types";
 import type { Literal, Proposition } from "../state/types";
 import { AssumptionStrategy, ConjunctionStrategy, ContradictionStrategy, DischargeStrategy, CasesStrategy } from "./assumptions";
-import { SupportStrategy, HallStrategy, CoverCountStrategy } from "./counts";
+import { SupportStrategy, HallStrategy, CoverCountStrategy, AllDifferentSubsetStrategy } from "./counts";
 import { TableChecker } from "./tables";
 import type { TableDefinition } from "./tables";
 import type { ProofNode } from "./types";
@@ -268,7 +268,8 @@ export class PrimitiveRegistry {
     ["domain-restrict@1", restrictDomain], ["weak-link@1", weakLink],
     ["cover-clause@1", coverClause], ["resolution@1", resolve],
     ...[new AssumptionStrategy(), new ConjunctionStrategy(), new ContradictionStrategy(),
-      new DischargeStrategy(), new CasesStrategy(), new SupportStrategy(), new HallStrategy(), new CoverCountStrategy()].map(strategy => [strategy.id,
+      new DischargeStrategy(), new CasesStrategy(), new SupportStrategy(), new HallStrategy(), new CoverCountStrategy(),
+      new AllDifferentSubsetStrategy()].map(strategy => [strategy.id,
         (input: PrimitiveInput, context: CheckContext) => strategy.check(input, context)] as const),
   ]);
   constructor(tables: Iterable<readonly [ProofNode, TableDefinition]> = []) {

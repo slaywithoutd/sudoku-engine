@@ -1,6 +1,19 @@
 import { derived, domainAssertion, premises, requireProof, sameValue, validLiteral } from "./primitives";
 import type { CheckContext, CheckedInference, PrimitiveInput, Proposition } from "./types";
 
+/** Scope reduction preserves exclusion only; it never establishes existence. */
+export class AllDifferentSubsetStrategy {
+  readonly id = "all-different-subset@1";
+  check(input: PrimitiveInput, context: CheckContext): CheckedInference {
+    const [source] = premises(input, context, 1), claim = input.conclusion;
+    requireProof(source.kind === "all-different" && claim.kind === "all-different" &&
+      claim.cells.length > 0 && claim.cells.every((cell, index) => source.cells.includes(cell) &&
+        (index === 0 || cell > claim.cells[index-1])) &&
+      sameValue(claim, { kind: "all-different", cells: claim.cells }), "invalid-all-different-subset");
+    return derived(input, context);
+  }
+}
+
 /** Every scoped cell appears once; a cached support list cannot stand in for evidence. */
 export function provedDomains(sources: readonly Proposition[], cells: readonly number[]): Map<number, number> {
   const domains = sources.map(domainAssertion);
