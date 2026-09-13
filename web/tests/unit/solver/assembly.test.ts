@@ -211,6 +211,30 @@ describe("capability assembly", () => {
     );
   });
 
+  test("rejects a well-formed primitive version without a registered checker", () => {
+    const base = mockRuleRegistry.find(({ type }) => type === "order@1")!;
+    const unknownPrimitive: RuleModule = {
+      ...base,
+      capabilities() {
+        return {
+          allDifferent: [],
+          covers: [],
+          relations: [],
+          primitiveIds: ["unregistered@1"],
+        };
+      },
+    };
+    expectFailure(
+      assemble(
+        makeMockProblem(),
+        mockRuleRegistry.map((rule) =>
+          rule.type === "order@1" ? unknownPrimitive : rule,
+        ),
+      ),
+      "unsupported-primitive",
+    );
+  });
+
   test("exposes immutable capability data and a map without mutation methods", () => {
     const result = assemble(makeMockProblem(), mockRuleRegistry);
     expect(result.ok).toBe(true);

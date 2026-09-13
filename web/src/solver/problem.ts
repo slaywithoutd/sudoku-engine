@@ -126,8 +126,18 @@ function normalizeJsonValue(value: unknown, path: string, active: WeakSet<object
     }
     assertPlainObject(value, path);
     const normalized: Record<string, Json> = {};
-    for (const key of Object.keys(value).sort())
-      normalized[key] = normalizeJsonValue(value[key], `${path}.${key}`, active);
+    for (const key of Object.keys(value).sort()) {
+      const normalizedValue = normalizeJsonValue(value[key], `${path}.${key}`, active);
+      // Assignment to "__proto__" on an ordinary object invokes a legacy
+      // inherited setter. Defining a data property preserves it as JSON data
+      // and prevents distinct semantic parameters from sharing one key.
+      Object.defineProperty(normalized, key, {
+        value: normalizedValue,
+        enumerable: true,
+        configurable: true,
+        writable: true,
+      });
+    }
     return Object.freeze(normalized);
   } finally {
     active.delete(value);

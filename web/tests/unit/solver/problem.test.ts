@@ -56,6 +56,11 @@ describe("canonical JSON", () => {
     expect(() => canonicalJson(hidden as Json)).toThrow();
     expect(() => canonicalJson(symbolProperty as Json)).toThrow();
   });
+
+  test("retains an own __proto__ key as ordinary canonical JSON data", () => {
+    const value = JSON.parse('{"a":2,"__proto__":{"x":1}}') as Json;
+    expect(canonicalJson(value)).toBe('{"__proto__":{"x":1},"a":2}');
+  });
 });
 
 describe("classic normalization", () => {
@@ -145,6 +150,18 @@ describe("problem identity and snapshots", () => {
       nested: { a: 4, z: 3 },
       weights: [2, 1],
     });
+  });
+
+  test("includes an own __proto__ rule parameter in complete problem identity", () => {
+    const parameters = JSON.parse('{"__proto__":{"enabled":true}}') as Json;
+    const withProto = makeMockProblem([
+      { id: "custom:0", type: "custom@1", cells: [0], parameters },
+    ]);
+    const empty = makeMockProblem([
+      { id: "custom:0", type: "custom@1", cells: [0], parameters: {} },
+    ]);
+    expect(withProto.key).not.toBe(empty.key);
+    expect(Object.hasOwn(withProto.constraints[0].parameters as object, "__proto__")).toBe(true);
   });
 
   test("rejects duplicate IDs, unknown fields, and forged keys", () => {

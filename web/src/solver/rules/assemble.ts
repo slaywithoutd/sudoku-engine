@@ -289,6 +289,14 @@ function validateCapabilities(
     )
   )
     issues.push(capabilityIssue(rule, "primitive IDs must be unique versioned identifiers"));
+  else if (capabilities.primitiveIds.length > 0)
+    issues.push(
+      issue(
+        "unsupported-primitive",
+        rule.id,
+        `no checker is registered for primitive ${capabilities.primitiveIds[0]}`,
+      ),
+    );
   return issues;
 }
 
@@ -365,7 +373,6 @@ export class CapabilityAssembler {
     const allDifferent: AllDifferent[] = [];
     const covers: Cover[] = [];
     const relations: Relation[] = [];
-    const primitiveIds = new Set<string>();
     const usedCapabilityIds = new Set<string>();
     const capabilityIssues: RuleIssue[] = [];
     for (const rule of normalized.constraints) {
@@ -385,7 +392,6 @@ export class CapabilityAssembler {
           allDifferent.push(...capabilities.allDifferent.map(freezeAllDifferent));
           covers.push(...capabilities.covers.map(freezeCover));
           relations.push(...capabilities.relations.map(freezeRelation));
-          capabilities.primitiveIds.forEach((primitive) => primitiveIds.add(primitive));
         }
       } catch (error) {
         capabilityIssues.push(
@@ -403,7 +409,7 @@ export class CapabilityAssembler {
     relations.sort((left, right) => compareText(left.id, right.id));
     const moduleTypes = [...new Set(modules.map(([, module]) => module.type))].sort();
     const supportSignature = canonicalJson({
-      primitiveIds: [...primitiveIds].sort(),
+      primitiveIds: [],
       ruleTypes: moduleTypes,
     } as Json);
     return Object.freeze({
