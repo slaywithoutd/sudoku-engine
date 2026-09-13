@@ -1,6 +1,6 @@
 # Sudoku platform: resume here
 
-Last updated: 2026-09-12.
+Last updated: 2026-09-13.
 
 **Latest feature:** Settings → Appearance now offers Light/Dark plus Blue, Green, Pink, Purple and Gray pastel themes. All ten combinations apply throughout the application and persist in IndexedDB. Legacy libraries default to light green; backup appearance restores only with settings opt-in. Fresh verification: 64 application tests, 23 browser tests, typecheck and build passed. See [appearance verification](appearance-verification.md) and D058. No appearance implementation work remains.
 
@@ -57,13 +57,13 @@ Desktop Chromium is the verified browser. Other browsers and assistive technolog
 
 ## Next checkpoint
 
-There is no remaining M1 implementation task. **Execute and verify the approved M2 plan; track each batch in the implementation record.** The plan includes subsets, fish, wings, coloring, chains/loops, ALS, forcing/nets/generalized families, specialized patterns, templates and separately gated uniqueness techniques. It specifies normalized multi-constraint capabilities, proof/fact provenance, invalidation, deterministic fair Explain/Analyze scheduling, independent counting and bounded worker transport with separate chunk ACK and atomic step acceptance. These capabilities are specified, not implemented.
+There is no remaining M1 implementation task. **Execute and verify the approved M2 plan; track each batch in the implementation record.** The plan includes subsets, fish, wings, coloring, chains/loops, ALS, forcing/nets/generalized families, specialized patterns, templates and separately gated uniqueness techniques. It specifies normalized multi-constraint capabilities, proof/fact provenance, invalidation, deterministic fair Explain/Analyze scheduling, independent counting and bounded worker transport with separate chunk ACK and atomic step acceptance. The implementation record distinguishes completed foundations from the remaining technique and runtime gates; the expanded application profile is not available yet.
 
 Both product questions remain answered: Explain is the default mode, and uniqueness-dependent paths are separate and never qualify as Perfect. No new product question blocks the proposal. Technical bounds/interfaces/tasks are now concrete. Key recommendations are memory-only input/results/options, optional Save Clues, separate conditional analysis, a 70% human-phase ceiling within the total budget, configurable work/proof caps and a proposed 10-second default (1–120 seconds). Cost tables, phase share, practical resource defaults and rollout value have explicit production/held-out benchmark gates; rollout is initially off. No universal logical completeness, validated default or speedup is claimed.
 
-The design session changes Markdown only. See [M2 planning verification](m2-design-verification.md) for requirement/interface coverage, source checks, links, whitespace and documentation-only evidence. M1 test results above remain recorded application results, not newly executed solver tests. Gameplay hints still wait until variant solving (M5); construction assistance, variants, community and AI remain outside M2.
+The earlier design session changed Markdown only; the approved implementation now adds code and tests in the isolated worktree. See [M2 planning verification](m2-design-verification.md) for requirement/interface coverage, source checks, links, whitespace and documentation-only evidence. M1 test results above remain recorded application results, not newly executed solver tests. Gameplay hints still wait until variant solving (M5); construction assistance, variants, community and AI remain outside M2.
 
-The 38-question interview and approved architecture/first-release review are complete; do not restart them. Preserve D001–D045 and the M2 design-only boundary in D046. Any future change to an approved behavior must be recorded with rationale.
+The 38-question interview and approved architecture/first-release review are complete; do not restart them. Preserve D001–D045 and the D046 approval history; D065 records the subsequent authorization to implement. Any future change to an approved behavior must be recorded with rationale.
 
 ## Reference map
 

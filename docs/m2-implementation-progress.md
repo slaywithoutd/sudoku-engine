@@ -18,8 +18,9 @@ Approved design/plan: `0e98c2b`, 2026-09-12. Authorization and coding convention
 | T04 Candidate state and invalidation | Complete | `f7cf56f`; 203 tests and typecheck passed; independent task review passed. |
 | T05 Proof composition and replay | Complete | `10c2a52`; 242 tests and typecheck passed; independent task review passed. |
 | T06 Exact counting and quality | Complete | `27f856c`; 280 tests and typecheck passed; independent task review passed. |
-| T07 Manifest and foundation techniques | In progress | Cataloguing all 38 rows; C01-C05 implementation and evidence gates. |
-| T08-T27 | Pending | Approved requirements remain in the implementation plan; no family dropped. |
+| T07 Manifest and foundation techniques | Complete | `f072846`, `56cf5bf`; initial 391 tests, post-fix 113 focused tests and typecheck passed; independent review and fix review passed. |
+| T08 Shared implication/group/ALS indexes | Next | Resource reservations and explicit proof recipes; no authority inferred from an index entry. |
+| T09-T27 | Pending | Approved requirements remain in the implementation plan; no family dropped. |
 
 ## Coding conventions
 
@@ -38,3 +39,5 @@ T04 adds CandidateOwner/CandidateIndexes, exact checked domain facts, atomic eff
 T05 adds scoped proof composition, complete finite table DAGs, incidence counts, mixed-rule acceptance and original-clue replay. Its 39 focused tests include a 6,561-row table, incomplete/forged proofs and cumulative replay budgets. The complete suite passed 242 tests. Independent review found no blocking issue; Git line-ending notices and an occasional Vitest caching recommendation are informational tooling noise. D068 records representation bounds; named family grammars, exact counting and runtime operation accounting remain later gates.
 
 T06 adds original-clue MRV exact enumeration, local evidence authority, private accepted-path lineage and explicit primary-operation quality gating. All 38 focused tests and the full 280-test suite passed; independent review found no blocking issue. The second-witness/forged-view regression checks lineage rejection; an isolated authentic-domain compatibility fault test remains a T25 defense-in-depth follow-up. Exact setup and synchronous evidence validation require T20/T23 resource accounting and T26 measurement.
+
+T07 records all 38 rows and independently verifies C01-C05 using 61 fixture records, 19 alias replays and 133 certificate mutations. Review reproduced a getter/proxy view-substitution bypass; the fix authenticates exact published views and preserves trusted cold rebuilds. It also repairs catalogue UTF-8 and removes argument-spread failure at the supported 262,144 retained-key bound. The post-fix 113 focused tests passed; the earlier full 391-test result belongs to the original implementation commit. D070/D071 document naming and certificate authority. Expanded profile readiness remains blocked until later family gates pass; no timing/default validation is claimed.

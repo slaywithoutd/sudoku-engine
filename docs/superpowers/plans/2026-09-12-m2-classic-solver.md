@@ -196,7 +196,7 @@ expect(deriveQuality(snapshot, "solved", conditionalSteps, unique, false, condit
 
 **Interfaces:** TechniqueDescriptor/Discovery/Ledger, `getTechniques(profile: VersionId): readonly TechniqueDescriptor[]`, `coverageEntries`. Register all 38 matrix rows as specified, promote only passing implemented rows. Foundation `discover` yields work/proposal/exhausted and checks exact matrix grammar. Add `fixtureCase(id)`, `discoverFixture(id)` and `checkFixtureMutation(id, mutation)` to `tests/solver/acceptance.ts` now; this file is part of the task allowlist. Fixture discovery returns `{view, proposals, proposal, status}`: `proposal` is the sole expected productive proposal or throws if a productive fixture has none; negative fixtures inspect `proposals`/`status` without reading that accessor. Status is `productive | reject | out-of-profile | interrupted`. Mutation helpers clone the independently authored certificate, apply the named change, then drain checkProposal; they do not rerun discovery.
 
-- [ ] Write named discovery and coverage tests:
+- [x] Write named discovery and coverage tests:
 
 ```ts
 for (const id of ["C01-one-hole", "C02-row", "C03-claim-column", "C04-naked-4", "C05-triple"]) {
@@ -208,10 +208,10 @@ expect(coverageEntries.map(e => e.id)).toHaveLength(38);
 expect(validateCoverage(fakeVerifiedWithoutOracle)).toContain("missing-independent-evidence");
 ```
 
-- [ ] Run `npm test -- tests/unit/solver/foundation.test.ts tests/unit/solver/coverage.test.ts`.
-- [ ] First register mandatory `rule-propagation@1` jobs from RuleModule.propagate (semantic maintenance outside the 38 named rows), with checked preamble effects and the same acceptance barrier. Then implement canonical cell/cover/symbol/subset iteration, bounded yields, Hall/support proofs, intersections with explicit targets and complementary alias detection. Locked subsets combine separately valid roots. No automatic single placement after an elimination. `validateCoverage` is implemented in manifest and rejects unknown aliases/missing evidence; copy all exact bounds and tiers from matrix, not a six-entry union.
-- [ ] Run all per-row named/boundary/negative fixtures from matrix and force/forbid assertions, typecheck and replay an independently labeled original-clue prefix per alias. Reject no-effect/three-cells-two-values cases as useful deductions.
-- [ ] Commit listed files: `feat: add broad coverage ledger and elementary subset kernel`.
+- [x] Run `npm test -- tests/unit/solver/foundation.test.ts tests/unit/solver/coverage.test.ts`.
+- [x] First register mandatory `rule-propagation@1` jobs from RuleModule.propagate (semantic maintenance outside the 38 named rows), with checked preamble effects and the same acceptance barrier. Then implement canonical cell/cover/symbol/subset iteration, bounded yields, Hall/support proofs, intersections with explicit targets and complementary alias detection. Locked subsets combine separately valid roots. No automatic single placement after an elimination. `validateCoverage` is implemented in manifest and rejects unknown aliases/missing evidence; copy all exact bounds and tiers from matrix, not a six-entry union.
+- [x] Run all per-row named/boundary/negative fixtures from matrix and force/forbid assertions, typecheck and replay an independently labeled original-clue prefix per alias. Reject no-effect/three-cells-two-values cases as useful deductions.
+- [x] Commit listed files: `feat: add broad coverage ledger and elementary subset kernel`.
 
 ## T08 — Shared implication, group and ALS indexes
 
@@ -250,7 +250,7 @@ expect(discoverFixture("C12-n7").status).toBe("out-of-profile");
 ```
 
 - [ ] Run `npm test -- tests/unit/solver/short-patterns.test.ts tests/unit/solver/wings.test.ts`.
-- [ ] Implement four-link single-digit named shapes, ER exhaustive arm groups, bivalue/trivalue wing joins, identical-pair bridge, remote-pair parity and bounded bent-set table certificates. Local assignment enumeration is restricted to declared cells/conflicts, with all surviving assignments checked for z coverage. Yield between tuple/path extensions.
+- [ ] Implement four-vertex single-digit named shapes (three internal strong/weak/strong links; D070), ER exhaustive arm groups, bivalue/trivalue wing joins, identical-pair bridge, remote-pair parity and bounded bent-set table certificates. Local assignment enumeration is restricted to declared cells/conflicts, with all surviving assignments checked for z coverage. Yield between tuple/path extensions.
 - [ ] Run every alias/orientation/negative and 4/5/6-cell fixture in matrix, force/forbid, replay original-clue examples and typecheck. AIC equivalence alone does not pass named coverage.
 - [ ] Commit listed files: `feat: explain short patterns wings and bent subsets`.
 

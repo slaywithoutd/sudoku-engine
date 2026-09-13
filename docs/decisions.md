@@ -627,3 +627,18 @@ Record each answer here with its rationale and consequences. If an answer change
 - Evidence merging receives explicit active primary exact run/phase context before accepting process exhaustion, validates full identity/method/statistics and preserves independently valid witnesses when inconsistent claims are rejected. One witness still proves existence only.
 - Exact startup uses bounded preflight before canonical traversal and an explicit conservative work/workspace reservation before iterator construction. Charge its first setup event once; this finite synchronous boundary requires deadline checks and T26 measurement. Functional tests do not validate browser slice targets.
 - Actual implementation and verification remain recorded in [M2 implementation progress](m2-implementation-progress.md).
+
+## D070 — Clarify coverage ordering and short-pattern link counts
+
+- Status: Technical catalogue clarification during T07, 2026-09-13; no named family removed.
+- The conditional matrix omitted numeric tiers. Assign U01–U05 tier 6 in the conditional profile as a provisional explanation preference, not measured difficulty. Primary operation still excludes uniqueness-dependent techniques.
+- Correct C10's ambiguous “four-link” wording: the scalar pattern has four candidate vertices connected strong/weak/strong, plus target conflicts. Empty Rectangle can replace endpoints with disjoint exhaustive groups. This matches the [author's original single-digit pattern description](https://hodoku.sourceforge.net/en/tech_sdp.php); the clarification preserves named coverage and prevents counting vertices as edges.
+
+## D071 — Separate general certificate verification from named deduction acceptance
+
+- Status: Technical implementation refinement during T07, 2026-09-13; preserves the approved proof and named-grammar requirements.
+- Problem: the temporary foundation proof-test grammar accepted arbitrary primitive bundles under a maintenance label. Tightening production named grammars must preserve mathematical tests without creating a test-mode acceptance bypass.
+- Decision: expose non-applying certificate verification with a distinct opaque CheckedCertificate and isolated CertificateSession prefix authority. It can verify explicit effects as mathematical conclusions but cannot issue CheckedStep, accepted candidate facts or quality authority. Only the closed named-grammar path plus primitive checking can issue CheckedStep. Admission mode is internal; no caller-set bypass or injectable checker registry.
+- Migrate low-level algebra tests to non-applying verification and keep state/replay/quality tests on real named singles and direct rule maintenance. Independently authored fixture states follow original-given peer exclusions; no fabricated local candidate axioms are introduced.
+- Production checking also authenticates the exact published ReadView identity before capturing context; matching state/fact references alone is insufficient against accessors or proxies. Trusted cold index rebuilds retain explicit owned publication and accepted lineage. Structurally forged values must not relabel a sound deduction as a different named technique. A readonly ownership query may create a function-only checker/candidate-module cycle; neither module may call across that cycle during top-level initialization. Non-applying certificate contexts retain their separate algebra role.
+- Discovery indexes may carry provenance and proof recipes, but those recipes enter named checking before acceptance. Standalone certificates and index caches cannot overwrite owned candidate state.
