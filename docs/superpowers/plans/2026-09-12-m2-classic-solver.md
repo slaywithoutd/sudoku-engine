@@ -318,11 +318,11 @@ expect(checkFixtureMutation("C19-blossom-4", "remove-petal").kind).toBe("rejecte
 
 ## T13 — Set/count and aligned exclusion C20–C21
 
-**Files:** create `src/solver/techniques/sue-de-coq.ts`, `aligned-exclusion.ts`, `subset-counting.ts`; fixtures `C20.json`, `C21.json`; test `tests/unit/solver/set-arguments.test.ts`; `docs/solver/techniques/set-arguments.md`; update registry/manifest/provenance.
+**Files:** create `src/solver/techniques/sue-de-coq.ts`, `aligned-exclusion.ts`, `subset-counting.ts`; fixtures `C20.json`, `C21.json`; test `tests/unit/solver/set-arguments.test.ts`; `docs/solver/techniques/set-arguments.md`; add `src/solver/proof/subset-count.ts` and its registry integration under D085; update registry/manifest/provenance. Split runtime, certificate and independent grammar helpers where needed.
 
-**Interfaces:** descriptors using complete table-filter/Hall/count primitives. Certificates specify local cells, complete domains, auxiliary ALS premises and every rejected combination or coefficient inequality.
+**Interfaces:** descriptors using complete table-filter/Hall/count primitives. Certificates specify local cells, complete domains, auxiliary ALS premises and every rejected combination or coefficient inequality. D085 adds cooperative `subset-count@1`: reconstruct each symbol's exact maximum occupancy across at most twelve counted cells/four cited scopes under a checked target assumption; sum all original symbols, including zero capacities, then discharge contradiction. Preserve the independent existing weighted-cover primitive.
 
-- [ ] Test enumeration completeness and scope limits:
+- [x] Test enumeration completeness and scope limits:
 
 ```ts
 for (const id of ["C20-intersection-3", "C21-aligned-2", "C21-aligned-3", "C21-aligned-4", "C21-count"]) {
@@ -331,10 +331,10 @@ for (const id of ["C20-intersection-3", "C21-aligned-2", "C21-aligned-3", "C21-a
 expect(checkFixtureMutation("C21-aligned-4", "drop-surviving-tuple").kind).toBe("rejected");
 ```
 
-- [ ] Run `npm test -- tests/unit/solver/set-arguments.test.ts`.
-- [ ] Implement Sue de Coq box-line intersection and disjoint side ALS allocation within matrix bounds; aligned exclusion enumerates only 2…4 selected cells, rejects direct conflicts or explicitly empty auxiliary matchings, then projects. Subset counting reconstructs <=4-scope/12-cell incidence inequalities. Enumeration must cover every tuple; no whole-board solve Boolean accepted.
-- [ ] Run min/max intersection/side/selected-cell forms, overlap/double-count negatives, force/forbid, original-clue replay and typecheck.
-- [ ] Commit listed files: `feat: add finite set-count and aligned exclusion proofs`.
+- [x] Run `npm test -- tests/unit/solver/set-arguments.test.ts`.
+- [x] Implement Sue de Coq box-line intersection and disjoint side ALS allocation within matrix bounds; aligned exclusion enumerates only 2…4 selected cells, rejects direct conflicts or explicitly empty auxiliary matchings, then projects. Subset counting reconstructs <=4-scope/12-cell incidence inequalities and the multi-symbol Extended Subset Principle (D085), with complete per-symbol occupancy subsets. Authenticated singleton counted cells are permitted and any padded boundary fixture is identified as such. D084 requires extended side allocations, including the unused third intersection cell and shared outside symbols. Enumeration must cover every tuple; no whole-board solve Boolean accepted.
+- [x] Run min/max intersection/side/selected-cell forms, overlap/double-count negatives, force/forbid, original-clue replay and typecheck.
+- [x] Commit listed files: `feat: add finite set-count and aligned exclusion proofs`.
 
 ## T14 — Forcing, nets, nested proofs and Kraken C22–C24
 
