@@ -1,6 +1,7 @@
 import type { ReadView, Literal } from "../state/types";
 import type { DeductionProposal, Effect, ProofNode } from "../proof/types";
 import { clause, literals, requireProof, sameValue } from "../proof/primitives";
+import { requireBentEffectLineage, requireDualRootLineage } from "./pattern-proof-lineage";
 
 export interface ShortPath { symbol:number; vertices:number[][]; strongHouses:string[]; emptyIntersection?:number }
 export type ShortPattern = {alias:string;paths:ShortPath[]};
@@ -18,6 +19,11 @@ export const pos=(cell:number,symbol:number):Literal=>({cell,symbol,positive:tru
 export const neg=(cell:number,symbol:number):Literal=>({cell,symbol,positive:false});
 export const digits=(view:ReadView,cell:number)=>view.assembly.problem.symbols.filter(s=>view.state.domains[cell]&(1<<(s-1)));
 export const row=(c:number)=>Math.floor(c/9), column=(c:number)=>c%9, box=(c:number)=>Math.floor(c/27)*3+Math.floor(c%9/3);
+/** Empty-corner labels do not create another inference with the same vertices and covers. */
+export function shortPathIdentity(view:ReadView,path:ShortPath):string {
+  return JSON.stringify({symbol:path.symbol,vertices:path.vertices,strongScopes:path.strongHouses.map(id=>
+    view.assembly.allDifferent.find(h=>h.id===id)?.cells??null)});
+}
 function exact(p:object,keys:string[]) { requireProof(sameValue(Object.keys(p).sort(),keys.sort()),"invalid-technique-pattern"); }
 function distinct(cells:number[],min:number,max:number,view:ReadView) {
   requireProof(Array.isArray(cells)&&cells.length>=min&&cells.length<=max&&new Set(cells).size===cells.length&&
@@ -68,7 +74,7 @@ function targets(r:PatternRequirements,view:ReadView,effects:readonly Effect[],o
 export function validateShortPattern(view:ReadView,p:ShortPattern,effects:readonly Effect[]):PatternRequirements {
   exact(p,["alias","paths"]);requireProof(["Turbot Fish","Skyscraper","Two-String Kite","Empty Rectangle","Dual Empty Rectangle"].includes(p.alias),"unknown-alias");
   requireProof(Array.isArray(p.paths)&&p.paths.length===(p.alias==="Dual Empty Rectangle"?2:1),"invalid-short-paths");
-  requireProof(new Set(p.paths.map(path=>JSON.stringify(path))).size===p.paths.length,"duplicate-short-root");
+  requireProof(new Set(p.paths.map(path=>shortPathIdentity(view,path))).size===p.paths.length,"duplicate-short-root");
   const r=requirement(), paths:Literal[][][]=[]; const covered=new Set<string>();
   for(const path of p.paths) {
     const er=p.alias.includes("Empty Rectangle");
@@ -229,5 +235,8 @@ export function checkPatternProof(proposal:DeductionProposal,view:ReadView,avail
   // cover must occur, and effects must be reached from these elementary clauses.
   for(const c of r.clauses.filter(c=>c.source!=="weak"))
     if(!r.table) requireProof(seenClauses.has(JSON.stringify(clause(c.literals))),"missing-pattern-premise");
+  if(r.table) requireBentEffectLineage(proposal,view,available,r.table);
+  if(proposal.technique==="c10@1"&&(p as ShortPattern).alias==="Dual Empty Rectangle")
+    requireDualRootLineage(proposal,view,available,p as ShortPattern);
   requireProof(proposal.proof.nodes.length<=512+proposal.effects.length*160,"technique-work-bound");
 }

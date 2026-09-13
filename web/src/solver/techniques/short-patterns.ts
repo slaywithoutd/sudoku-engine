@@ -1,7 +1,7 @@
 import type { Json } from "../problem";
 import type { ReadView } from "../state/types";
 import type { Effect } from "../proof/types";
-import { row,column,box,pos,type ShortPath,type ShortPattern } from "./pattern-contracts";
+import { row,column,box,pos,shortPathIdentity,type ShortPath,type ShortPattern } from "./pattern-contracts";
 import { descriptor,PatternBuilder,type PatternGraph,type PatternStrategy } from "./pattern-runtime";
 
 type PathEvent={kind:"work";units:number}|{kind:"path";path:ShortPath;effects:Effect[];aliases:string[]};
@@ -49,7 +49,7 @@ export class ShortPatterns implements PatternStrategy {
       for(const alias of event.aliases)yield {kind:"candidate" as const,pattern:{alias,paths:[event.path]} as unknown as Json,effects:event.effects};
       if(event.aliases.includes("Empty Rectangle"))for(const other of this.paths(view,graph,true)) {
         if(other.kind==="work"){yield other;continue;}
-        yield {kind:"work" as const,units:1};if(event.path.symbol!==other.path.symbol||JSON.stringify(event.path)>=JSON.stringify(other.path))continue;
+        yield {kind:"work" as const,units:1};if(event.path.symbol!==other.path.symbol||shortPathIdentity(view,event.path)>=shortPathIdentity(view,other.path))continue;
         const effects=[...new Map([...event.effects,...other.effects].map(e=>[`${e.cell}:${e.symbol}`,e])).values()].sort((a,b)=>a.cell-b.cell||a.symbol-b.symbol);
         yield {kind:"candidate" as const,pattern:{alias:"Dual Empty Rectangle",paths:[event.path,other.path]} as unknown as Json,effects};
       }

@@ -33,7 +33,7 @@ type Term={cell:number;symbol:number;positive:boolean};
  * Original seed geometry and effects supply every premise. Resolution eliminates
  * local variables; pruning keeps only nodes used by the independently selected roots.
  */
-class FixtureProof {
+export class FixtureProof {
   readonly nodes:ProofNode[]=[];readonly memo=new Map<string,number>();next:number;
   constructor(readonly view:ReadView) {this.next=Math.max(...view.facts.keys())+1;}
   add(rule:string,premises:number[],conclusion:Proposition,parameters:Json={}) {
@@ -55,6 +55,19 @@ class FixtureProof {
     const cells=scope.filter(c=>Math.floor(this.view.state.domains[c]/2**(symbol-1))%2);
     const support=this.add("support@1",[source.id,...scope.map(c=>this.view.state.domainFacts[c])],{kind:"cover",symbol,cells});
     return this.add("cover-clause@1",[support],this.clause(cells.map(cell=>({cell,symbol,positive:true}))));
+  }
+  resolve(a:number,b:number,cell:number,symbol:number) {
+    return this.add("resolution@1",[a,b],this.clause([...this.terms(a),...this.terms(b)].filter(l=>l.cell!==cell||l.symbol!==symbol)));
+  }
+  shortEndpoint(path:{symbol:number;vertices:number[][];strongHouses:string[]}) {
+    const first=this.house(path.strongHouses[0],path.symbol);let end=this.house(path.strongHouses[1],path.symbol);
+    for(const y of path.vertices[2]) {
+      let notY=first;
+      for(const x of path.vertices[1])notY=this.resolve(notY,this.weak({cell:x,symbol:path.symbol,positive:true},
+        {cell:y,symbol:path.symbol,positive:true}),x,path.symbol);
+      end=this.resolve(end,notY,y,path.symbol);
+    }
+    return end;
   }
   eliminate(ids:number[],target:Term):number {
     let clauses=ids.map(id=>({id,terms:this.terms(id)}));

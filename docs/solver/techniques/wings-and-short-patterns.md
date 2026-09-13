@@ -29,6 +29,26 @@ vocabulary. The ordinary checker still verifies every primitive, imported fact,
 scope, root, domain closure, and effect. There is no generic named-certificate
 acceptance switch.
 
+`pattern-proof-lineage.ts` adds independent mandatory proof checks after ordinary
+primitive admission. `BentTableLineage` walks the local filter/union DAG iteratively
+and memoizes exact node identities. Every leaf uses every current selected-cell
+domain fact and exactly one authenticated constraint for every declared pair.
+Union children must retain identical source premise IDs and reconstruct disjoint,
+complete Cartesian partitions. The final nonempty table projects the exact Z
+occurrence clause, and that projection must be an ancestor of every supplied
+negative effect root. Auxiliary relation-conflict tables cannot replace this local table;
+an unused local table cannot decorate a smaller proof.
+
+Dual ER identity includes the symbol, ordered vertices and strong-scope cell sets.
+The empty-intersection label is presentation data and does not distinguish an
+inference. The first strong scope is always the box, fixing path orientation.
+`ShortComponentLineage` separately binds each component's endpoint clause to its
+two exact current house covers and every middle conflict. Its target roots then
+use only that endpoint clause and the component's outer target conflicts. Every
+effect needs such a local root, and the two components must contribute distinct
+root node IDs. Shared premises and coincident endpoint clauses are permitted;
+pooled cross-component resolution does not satisfy either component's grammar.
+
 ## Implemented named geometry
 
 | Family | Construction and bounds |
@@ -111,6 +131,16 @@ scratch allowance. T19/T20 must account for these atomic sections; T26 must
 measure their worst observed slices. Cooperative outer loops and proposal caps
 alone do not establish UI responsiveness.
 
+The additional lineage checks are also synchronous. C12 retains a memo and work
+stack linear in its admitted local table nodes, with at most six masks and 21
+source IDs per memo entry, plus a linear set of projection descendants. Dual ER
+uses two bounded component scans and one node scan per component/effect, retaining
+one integer mask per admitted node rather than complete ancestor sets. Its ER
+groups bound middle conflicts to three and outer target conflicts to four.
+Semantic identity serializes four groups and two nine-cell scopes per comparison.
+These temporary allocations and scans require T19/T20 accounting and T26 slice
+measurement; this fix does not add cooperative yields to named admission.
+
 ## Independent acceptance and reproduction
 
 `C10.json`–`C13.json` contain repository-owned original clues, exact given-peer
@@ -143,6 +173,15 @@ odd/overlong paths, chute boundaries, primitive/premise/pattern mutations,
 shared leases, cancellation and proof caps. The relation regression separately
 expands both the unconditional clause recipe and the original discharged T08
 recipe inside a non-applying `CertificateSession`.
+
+Review regressions independently construct primitive-valid substitutions: the
+C12 four-cell table with one declared conflict omitted and five recounted
+survivors, a ten-node two-cell proof with no table, an unrelated complete table
+root, and an independent effect root beside a genuine table-derived effect root.
+Dual regressions cover the same inference under two empty-corner
+labels, exhaustive discovery on that prestate, genuinely distinct paths with
+coincident endpoint clauses, and a pooled proof using both components' covers
+without both component-local roots.
 
 Run from `web`:
 

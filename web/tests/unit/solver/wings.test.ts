@@ -2,11 +2,11 @@ import type { Json } from "../../../src/solver/problem";
 import { createHash } from "node:crypto";
 import { oracle } from "../../solver/oracle";
 import { expect,test } from "vitest";
-import { shortFixtures,findShort,independentShortCertificate } from "../../solver/short-pattern-acceptance";
+import { shortFixtures,findShort,independentShortCertificate,FixtureProof } from "../../solver/short-pattern-acceptance";
 import { fixtureView,assertSound } from "../../solver/acceptance";
 import { originalCluePrefix } from "../../solver/acceptance";
 import { allShortFixtures } from "../../solver/short-pattern-acceptance";
-import { checkProposal } from "../../../src/solver/proof/checker";
+import { checkProposal,verifyCertificate } from "../../../src/solver/proof/checker";
 import { retainedProof } from "../../../src/solver/state/candidates";
 import { initialize,commitChecked } from "../../../src/solver/state/candidates";
 import { canonicalProblem } from "../../../src/solver/problem";
@@ -141,3 +141,31 @@ test("C12 partitions a 5000-assignment original-clue local table and checks all 
     expect(events.at(-1)?.kind).toBe("checked");
   }
 },30000);
+
+test.each(["omitted-conflict","no-table","unrelated-table-root","unrelated-effect-root"])("C12 rejects a primitive-valid %s substitution for its mandatory local table",substitution=>{
+  const f=shortFixtures.find(f=>f.id==="C12-n4")!,view=fixtureView(f),b=new FixtureProof(view),p=f.expectedPattern as Record<string,any>;
+  const positive=(cell:number,symbol:number)=>({cell,symbol,positive:true}),effect=f.expectedEffects[0],target=positive(effect.cell,effect.symbol);
+  const clauses:number[]=[];
+  if(substitution==="omitted-conflict") {
+    const reduced={...p,conflicts:p.conflicts.filter(([a,c]:number[])=>a!==19||c!==37)};
+    clauses.push(b.table(reduced));
+    expect(b.nodes.find(n=>n.rule==="table-filter@1")?.conclusion).toMatchObject({kind:"table",count:5});
+    clauses.push(...p.occurrences[p.nonrestrictedSymbol].map((cell:number)=>b.weak(positive(cell,effect.symbol),target)));
+  } else {
+    clauses.push(b.cell(2),b.cell(19),b.weak(positive(2,9),positive(19,9)),
+      b.weak(positive(2,4),target),b.weak(positive(19,4),target));
+  }
+  const roots=[b.eliminate(clauses,target)];
+  if(substitution==="unrelated-table-root")roots.push(b.table(p));
+  if(substitution==="unrelated-effect-root")roots.push(b.eliminate([b.table(p),
+    ...p.occurrences[p.nonrestrictedSymbol].map((cell:number)=>b.weak(positive(cell,effect.symbol),target))],target));
+  const proposal=b.finish(f,roots),context={view,retained:retainedProof(view),limits:discoveryContext().limits,policy:"discharged" as const,uniqueEvidenceId:null};
+  if(substitution==="no-table") {expect(proposal.proof.nodes).toHaveLength(10);expect(proposal.proof.nodes.some(n=>n.rule.startsWith("table-"))).toBe(false);}
+  // With an extra clause root the generic effect grammar already rejects the
+  // decoration. Verify its algebra separately, then isolate named ancestry too.
+  const primitive=[...verifyCertificate(substitution==="unrelated-table-root"?{...proposal,effects:[]}:proposal,context)].at(-1);
+  expect(primitive?.kind,primitive?.kind==="rejected"?primitive.code:undefined).toBe("verified");
+  if(substitution==="unrelated-table-root")expect(()=>checkPatternProof(proposal,view,
+    new Map([...retainedProof(view),...proposal.proof.nodes.map(n=>[n.id,n] as const)]))).toThrow("missing-bent-effect-lineage");
+  expect([...checkProposal(proposal,context)].at(-1)).toMatchObject({kind:"rejected"});
+});
