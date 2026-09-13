@@ -126,11 +126,11 @@ expect(checkRoot({ kind: "given", cell: 0, symbol: 5 }, problem).ok).toBe(true);
 
 ## T04 — Shared candidates, supports and invalidation
 
-**Files:** create `src/solver/state/candidates.ts`, `indexes.ts`, `events.ts`; modify `facts.ts`; tests `tests/unit/solver/candidates.test.ts`, `events.test.ts`. Bring forward the minimal `proof/primitives.ts` and `proof/checker.ts` elementary domain/link/resolution inference needed by authentic state-edit tests; T05 retains the remaining proof algebra.
+**Files:** create `src/solver/state/candidates.ts`, `indexes.ts`, `events.ts`; reuse `facts.ts` original-root authority and retain derived facts in the candidate owner; tests `tests/unit/solver/candidates.test.ts`, `events.test.ts`. Bring forward the minimal `proof/primitives.ts` and `proof/checker.ts` elementary domain/link/resolution inference needed by authentic state-edit tests; T05 retains the remaining proof algebra. Create the minimal type-only `src/solver/techniques/types.ts` for LedgerEntry/Ledger; T07 extends this existing owner with descriptor contracts. Watch/ChangeSet remain in state/events.
 
 **Interfaces:** `initialize`, `commitChecked`, `invalidate`, CandidateState/ChangeSet/ReadView per contracts §3. `rebuildIndexes(view: ReadView): ReadView` is the cold correctness baseline. Expose no mutable arrays; filled domains are singleton masks.
 
-- [ ] Assert sound initialization, atomic placement and cold/incremental equality:
+- [x] Assert sound initialization, atomic placement and cold/incremental equality:
 
 ```ts
 const before = initialize(assembly, "primary");
@@ -142,10 +142,10 @@ expect(next.view.state).toEqual(rebuildIndexes(next.view).state);
 expect(next.changes.cells).toContain(cell);
 ```
 
-- [ ] Run `npm test -- tests/unit/solver/candidates.test.ts tests/unit/solver/events.test.ts`.
-- [ ] Initialize clue/rule roots and full unresolved domains only; preamble peer exclusions use subsequent checked rule-propagation proposals. Commit via cloned local buffers, reconstruct exact effects/peer removals, reject no-op/stale/wrong-branch/given overwrite; publish only after complete validation. Build cell→constraint/cover/relation incidence; conservatively invalidate graph and transitive dependent caches. Check duplicates/empty domain/missing cover without turning human diagnostic into exact count evidence.
-- [ ] Rerun tests/typecheck; compare cold rebuild after seeded monotone edits and ensure unrelated scopes retain only dependency-valid exhaustion.
-- [ ] Commit listed files: `feat: add shared candidate state and sound event invalidation`.
+- [x] Run `npm test -- tests/unit/solver/candidates.test.ts tests/unit/solver/events.test.ts`.
+- [x] Initialize clue/rule roots and full unresolved domains only; preamble peer exclusions use subsequent checked rule-propagation proposals. Commit via cloned local buffers, reconstruct exact effects/peer removals, reject no-op/stale/wrong-branch/given overwrite; publish only after complete validation. Build cell→constraint/cover/relation incidence; conservatively invalidate graph and transitive dependent caches. Check duplicates/empty domain/missing cover without turning human diagnostic into exact count evidence.
+- [x] Rerun tests/typecheck; compare cold rebuild after seeded monotone edits and ensure unrelated scopes retain only dependency-valid exhaustion.
+- [x] Commit listed files: `feat: add shared candidate state and sound event invalidation`.
 
 ## T05 — Proof DAGs, assumptions, finite tables and replay
 

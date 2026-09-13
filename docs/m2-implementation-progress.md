@@ -15,8 +15,9 @@ Approved design/plan: `0e98c2b`, 2026-09-12. Authorization and coding convention
 | T01 Independent oracle and fixtures | Complete | `f01fa70`; 26 focused tests and typecheck passed; independent task review passed. |
 | T02 Normalization and capabilities | Complete | `c0f93ca`, `8eb00d9`; 35 focused tests and typecheck passed; independent review and fix review passed. |
 | T03 Proof roots and checking boundary | Complete | `4427544`, `40a2603`; 64 focused tests and typecheck passed; independent review and fix review passed. |
-| T04 Candidate state and invalidation | In progress | Atomic edits from authentic checked steps, proof-backed domains and immutable snapshots. |
-| T05-T27 | Pending | Approved requirements remain in the implementation plan; no family dropped. |
+| T04 Candidate state and invalidation | Complete | `f7cf56f`; 203 tests and typecheck passed; independent task review passed. |
+| T05 Proof composition and replay | In progress | Assumptions, finite tables, cross-rule provenance and independent acceptance. |
+| T06-T27 | Pending | Approved requirements remain in the implementation plan; no family dropped. |
 
 ## Coding conventions
 
@@ -29,3 +30,5 @@ T01 uses an encapsulated set-based Algorithm X session and a separate plain-loop
 T02 adds documented RuleRegistry/CapabilityAssembler and AllDifferentRule objects, strict complete semantic keys, isolated immutable snapshots and separate all-different/cover capabilities. Review regression tests preserve own `__proto__` JSON keys and reject unregistered primitive versions. Full suite before review hardening: 122 tests passed; post-fix focused suite: 35 tests passed. No logical technique is exposed by this foundation yet.
 
 T03 adds PrimitiveRegistry/ProofChecker, authentic immutable roots and proof-only checked certificates. Regression checks cover retained-premise substitution, M2 preflight bounds, UTF-8 accounting and cooperative node staging. Full suite before review fixes: 161 tests passed; post-fix focused suite: 64 tests passed. No effectful deduction is accepted by the T03 boundary yet. D067 records the resulting implementation refinements; timing targets remain unmeasured.
+
+T04 adds CandidateOwner/CandidateIndexes, exact checked domain facts, atomic effects and cold/incremental support checks. Diagnostics remain separate from count evidence; newly exposed singles stay unresolved. A real 4,097-node proof verifies larger configured step limits. T07 must migrate internal placement certificates to named grammar; T19/T20 must reserve initialization work/workspace before synchronous initialization.
