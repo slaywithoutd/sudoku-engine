@@ -13,7 +13,7 @@ export type DiscoveryEvent = { readonly kind: "work"; readonly units: number }
   | { readonly kind: "proposal"; readonly proposal: DeductionProposal }
   | { readonly kind: "exhausted" }
   | { readonly kind: "excluded"; readonly reason:string; readonly dependencies:readonly Watch[] }
-  | { readonly kind: "interrupted"; readonly reason: IndexInterruption | "proof-step-limit" | "work-limit" };
+  | { readonly kind: "interrupted"; readonly reason: IndexInterruption | "proof-step-limit" | "work-limit" | "time-limit" };
 export type Discovery = Generator<DiscoveryEvent, void, void>;
 export interface TechniqueBounds {
   readonly maxLength: number; readonly maxBranchDepth: number; readonly maxAlternatives: number;

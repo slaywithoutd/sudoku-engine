@@ -1,10 +1,13 @@
+import { IndexWorkspace } from "../../../src/solver/indexes/workspace";
 import { describe, expect, test } from "vitest";
 import { canonicalProblem } from "../../../src/solver/problem";
 import { assemble } from "../../../src/solver/rules/assemble";
 import { AllDifferentRule } from "../../../src/solver/rules/all-different";
-import { initialize, commitChecked, retainedProof, diagnose, retainCheckedFacts } from "../../../src/solver/state/candidates";
+import { initialize, commitChecked, retainedProof, diagnose, retainCheckedFacts, forkView, HypotheticalSession, disposeFork } from "../../../src/solver/state/candidates";
 import { rebuildIndexes } from "../../../src/solver/state/indexes";
-import { checkProposal, verifyCertificate } from "../../../src/solver/proof/checker";
+import { checkProposal, verifyCertificate, verifyBranch } from "../../../src/solver/proof/checker";
+import { NakedSingles } from "../../../src/solver/techniques/singles";
+import { buildImplications, type ImplicationIndex } from "../../../src/solver/indexes/implications";
 import type { CheckContext, CheckedStep, DeductionProposal, Effect, ProofNode, Proposition } from "../../../src/solver/proof/types";
 import type { ReadView } from "../../../src/solver/state/types";
 
@@ -57,6 +60,88 @@ function check(view: ReadView, proposal: DeductionProposal): CheckedStep {
 }
 
 describe("shared candidate ownership", () => {
+  test("every borrowed branch cold rebuild reserves storage before allocation",()=>{
+    const parent=fixture(),workspace=new IndexWorkspace({entryLimit:10000,byteLimit:100000}),view=forkView(parent,"cold",workspace),usage=workspace.usage;
+    expect(()=>rebuildIndexes(view)).toThrow("workspace-byte-limit");expect(workspace.usage).toEqual(usage);
+    disposeFork(view);expect(()=>rebuildIndexes(view)).toThrow("inauthentic-candidate-view");expect(workspace.usage).toEqual({entries:0,bytes:0});
+  });
+  test("branch creation reserves before allocation and ordinary admission rejects even assumption-free forks",()=>{
+    const parent=fixture(),small=new IndexWorkspace({entryLimit:1,byteLimit:10});
+    expect(()=>forkView(parent,"x",small)).toThrow("workspace-byte-limit");expect(small.usage).toEqual({entries:0,bytes:0});
+    const workspace=new IndexWorkspace({entryLimit:10000,byteLimit:10000000}),view=forkView(parent,"x",workspace),p=firstRemoval(parent);
+    try {
+      expect([...checkProposal(p,{...context(parent),view})].at(-1)).toMatchObject({kind:"rejected",code:"hypothetical-primary-admission"});
+      expect([...verifyCertificate(p,{...context(parent),view})].at(-1)).toMatchObject({kind:"rejected",code:"hypothetical-primary-admission"});
+      expect(()=>commitChecked(view,check(parent,p))).toThrow("hypothetical-primary-admission");
+      let reads=0;const proxy=new Proxy(view,{get(t,k){reads++;return Reflect.get(t,k);}});
+      expect([...verifyBranch(p,{...context(parent),view:proxy})].at(-1)).toMatchObject({kind:"rejected",code:"inauthentic-candidate-view"});expect(reads).toBe(0);
+    }finally{disposeFork(view);}expect(workspace.usage).toEqual({entries:0,bytes:0});
+  });
+  test("checked branch domains create fresh local links and reject exact sibling-node substitution",()=>{
+    const assembly=assemble(canonicalProblem({schema:1,cells:[0,1,2],symbols:[1,2,3],givens:[0,0,0],constraints:[{id:"a",type:"all-different@1",cells:[0,1,2],parameters:{}}]}),[new AllDifferentRule()]);
+    if(!assembly.ok)throw Error("fixture");const parent=initialize(assembly.value,"primary"),workspace=new IndexWorkspace({entryLimit:100000,byteLimit:10000000});
+    const a=new HypotheticalSession(parent,"same",workspace),b=new HypotheticalSession(parent,"same",workspace);
+    let index:ImplicationIndex|undefined;
+    try {
+      expect([...a.assume({cell:0,symbol:1,positive:true},limits)].at(-1)?.kind).toBe("branch-checked");
+      expect([...b.assume({cell:0,symbol:2,positive:true},limits)].at(-1)?.kind).toBe("branch-checked");
+      const proposal=[...new NakedSingles().discover(a.view)].find(e=>e.kind==="proposal");if(proposal?.kind!=="proposal")throw Error("single");
+      const result=[...a.check(proposal.proposal,limits)].at(-1);expect(result?.kind).toBe("branch-checked");if(result?.kind!=="branch-checked")throw Error("single rejected");a.publish(result.certificate);
+      expect(a.view.state.domains).toEqual([1,6,6]);expect(parent.state.domains).toEqual([7,7,7]);expect(b.view.state.domains).toEqual([2,7,7]);
+      for(const event of buildImplications(a.view,workspace))if(event.kind==="ready")index=event.value;
+      const edge=index!.edges.find(e=>e.kind==="strong"&&e.recipe.kind==="cell-cover"&&e.literals[0].cell===1)!;
+      expect(edge.premiseFacts[0]).toBe(a.view.facts.get(a.view.state.domainFacts[1]));expect(edge.premiseFacts[0].openAssumptions.length).toBe(1);
+      expect(index!.acceptsView(b.view)).toBe(false);expect(index!.acceptsView(parent)).toBe(false);
+      const fakeRetained=new Map(retainedProof(a.view));for(const [id,node]of retainedProof(b.view))if(node.rule==="assume@1")fakeRetained.set(id,node);
+      expect([...verifyBranch(proposal.proposal,{view:a.view,retained:fakeRetained,policy:"discharged",uniqueEvidenceId:null,limits})].at(-1)).toMatchObject({kind:"rejected"});
+    }finally{index?.dispose();a.dispose();b.dispose();}expect(workspace.usage).toEqual({entries:0,bytes:0});
+  });
+  test("abandoning assumption verification cannot publish hypothetical facts",()=>{
+    const parent=fixture([0,0,0,0]),workspace=new IndexWorkspace({entryLimit:10000,byteLimit:10000000}),session=new HypotheticalSession(parent,"x",workspace),before=session.view;
+    const cursor=session.assume({cell:0,symbol:1,positive:true},limits);expect(cursor.next().value?.kind).toBe("work");cursor.return(undefined);
+    expect(session.view).toBe(before);session.dispose();expect(workspace.usage).toEqual({entries:0,bytes:0});
+  });
+  test("disposed branch publications cannot reuse released resource authority",()=>{
+    const parent=fixture([0,0,0,0]),workspace=new IndexWorkspace({entryLimit:10000,byteLimit:10000000}),session=new HypotheticalSession(parent,"x",workspace);
+    const e=[...session.assume({cell:0,symbol:1,positive:true},limits)].at(-1);if(e?.kind!=="branch-checked")throw Error("assume");
+    const view=session.view,retained=retainedProof(view);session.dispose();
+    expect([...verifyBranch(e.certificate.proposal,{view,retained,policy:"discharged",uniqueEvidenceId:null,limits})].at(-1)).toMatchObject({kind:"rejected",code:"inauthentic-candidate-view"});
+    expect(()=>[...buildImplications(view,workspace)]).toThrow("inauthentic-candidate-view");expect(()=>session.publish(e.certificate)).toThrow("disposed-hypothetical-session");
+    expect(workspace.usage).toEqual({entries:0,bytes:0});
+  });
+  test("checked empty-domain evidence never publishes an inconsistent branch",()=>{
+    const parent=fixture(),workspace=new IndexWorkspace({entryLimit:10000,byteLimit:10000000}),session=new HypotheticalSession(parent,"contradiction",workspace);
+    try {
+      expect([...session.assume({cell:1,symbol:1,positive:true},limits)].at(-1)?.kind).toBe("branch-checked");const before=session.view;
+      const b=builder(before);b.remove(before.state.domainFacts[0],0,1,1,[0,1]);const p={...b.proposal([{kind:"remove",cell:1,symbol:1}]),technique:"branch-graph@1",pattern:{}};
+      const result=[...session.check(p,limits)].at(-1);expect(result?.kind).toBe("branch-checked");if(result?.kind!=="branch-checked")throw Error("contradiction");
+      expect(()=>session.publish(result.certificate)).toThrow("contradictory-branch-publication");expect(session.view).toBe(before);expect(before.state.domains.every(m=>m>0)).toBe(true);
+    }finally{session.dispose();}expect(workspace.usage).toEqual({entries:0,bytes:0});
+  });
+  test("forks exact immutable prefixes with distinct branch identity and isolated domains", () => {
+    const parent = fixture(), w = new IndexWorkspace({ entryLimit: 10000, byteLimit: 10000000 }), a = forkView(parent, "same", w), b = forkView(parent, "same", w);
+    expect(a.state.key.branch).not.toBe(b.state.key.branch);
+    expect(a.state.domains).toEqual(parent.state.domains);
+    expect(a.state.domains).not.toBe(parent.state.domains);
+    for (const [id, fact] of parent.facts) expect(a.facts.get(id)).toBe(fact);
+    for (const [id, node] of retainedProof(parent)) expect(retainedProof(a).get(id)).toBe(node);
+    let reads = 0;
+    expect(() => forkView(new Proxy(parent, { get(t, k) { reads++; return Reflect.get(t,k); } }), "x", w)).toThrow("inauthentic-candidate-view");
+    expect(reads).toBe(0);
+    disposeFork(a); disposeFork(b); expect(w.usage).toEqual({entries:0,bytes:0});
+  });
+  test("hypothetical assumptions publish only in their confined session", () => {
+    const parent = fixture([0,0,0,0]), w = new IndexWorkspace({ entryLimit: 10000, byteLimit: 10000000 }), a = new HypotheticalSession(parent, "a", w), b = new HypotheticalSession(parent, "a", w);
+    const terminal = [...a.assume({ cell: 0, symbol: 1, positive: true }, limits)].at(-1);
+    expect(terminal?.kind).toBe("branch-checked");
+    expect(a.view.state.domains).toEqual([1,3,3,3]);
+    expect(parent.state.domains).toEqual([3,3,3,3]);
+    expect(b.view.state.domains).toEqual([3,3,3,3]);
+    if (terminal?.kind !== "branch-checked") throw Error("assumption rejected");
+    expect(() => commitChecked(parent, terminal.certificate as unknown as CheckedStep)).toThrow("inauthentic-checked-step");
+    expect(() => b.publish(terminal.certificate)).toThrow("foreign-branch-certificate");
+    a.dispose(); b.dispose(); expect(w.usage).toEqual({entries:0,bytes:0}); expect(() => a.view).toThrow("disposed-hypothetical-session");
+  });
   test("initializes only clue intersections with authentic singleton evidence", () => {
     const view = fixture();
     expect(view.state.domains).toEqual([1, 3, 3, 3]);

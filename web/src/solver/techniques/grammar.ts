@@ -7,6 +7,9 @@ import { checkChainPattern } from "./chains-grammar";
 import { checkColoringPattern } from "./coloring-grammar";
 import { checkAlsPattern } from "./als-grammar";
 import { checkSetPattern } from "./set-grammar";
+import { checkForcingPattern } from "./forcing-grammar";
+import { checkKrakenPattern } from "./kraken-grammar";
+import { checkNetPattern } from "./nets-grammar";
 
 function fields(p: Record<string, unknown>, names: string[]): void {
   requireProof(sameValue(Object.keys(p).sort(), names.sort()), "invalid-technique-pattern");
@@ -41,6 +44,9 @@ export function checkTechniqueGrammar(proposal: DeductionProposal, view: ReadVie
     const fact = view.facts.get(view.state.domainFacts[cell]);
     requireProof(fact && sameValue(domainAssertion(fact.proposition), { cell, mask: domains[cell] }), "unproved-current-domain");
   }
+  if (proposal.technique === "c22@1") { checkForcingPattern(proposal,view,available); return; }
+  if (proposal.technique === "c24@1") { checkKrakenPattern(proposal,view,available); return; }
+  if (proposal.technique === "c23@1") { checkNetPattern(proposal,view,available); return; }
   if (["c20@1", "c21@1"].includes(proposal.technique)) {
     checkSetPattern(proposal, view, available); return;
   }

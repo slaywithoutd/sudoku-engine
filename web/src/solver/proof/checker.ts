@@ -1,15 +1,17 @@
 import { canonicalProblem } from "../problem";
 import { checkTechniqueGrammar } from "../techniques/grammar";
-import { assertOwnedView } from "../state/candidates";
+import { assertOwnedView, isHypotheticalView, branchScope, ownsBranchNode } from "../state/candidates";
 import type { Json } from "../problem";
 import type { StateKey } from "../snapshot";
 import { ImmutableMap, originalFact, originalRootCount, originalPremises } from "../state/facts";
 import { assertM2RootAssemblyBounds, PrimitiveRegistry, ProofError, requireProof, sameValue } from "./primitives";
-import type { CheckContext, CheckEvent, CheckedInference, CheckedStep, DeductionProposal, ProofNode, CertificateEvent, CheckedCertificate } from "./types";
+import type { CheckContext, CheckEvent, CheckedInference, CheckedStep, DeductionProposal, ProofNode, CertificateEvent, CheckedCertificate, BranchCertificate, BranchEvent } from "./types";
 import type { ReadView } from "../state/types";
 import { checkScope } from "./assumptions";
 import type { TableDefinition } from "./tables";
 
+const branchSources = new WeakMap<BranchCertificate, ReadView>();
+const branchNodes = new WeakMap<ProofNode, CheckedNodeAuthority>();
 const authenticSteps = new WeakSet<object>();
 const authenticCertificates = new WeakSet<object>();
 const certificateAuthorities = new WeakMap<ProofNode, CheckedNodeAuthority>();
@@ -227,19 +229,23 @@ function ids(values: readonly number[], cap: number): void {
 export class ProofChecker {
   *checkProposal(input: DeductionProposal, source: CheckContext): Generator<CheckEvent, void, void> {
     for (const event of verifyGraph(input, source, "named")) {
-      if (event.kind === "verified") throw Error("internal-admission-error");
+      if (event.kind === "verified" || event.kind === "branch-checked") throw Error("internal-admission-error");
       yield event;
     }
   }
 }
 
 /** Admission mode is private, never a caller parameter or injectable strategy. */
-function* verifyGraph(input: DeductionProposal, source: CheckContext, admission: "named" | "certificate"): Generator<CheckEvent | CertificateEvent, void, void> {
+function* verifyGraph(input: DeductionProposal, source: CheckContext, admission: "named" | "certificate" | "branch"): Generator<CheckEvent | CertificateEvent | BranchEvent, void, void> {
     try {
       // Capture once before authentication: context accessors cannot swap a
       // forged view between the owner gate and later grammar reconstruction.
       const sourceView = source.view;
-      if (admission === "named") assertOwnedView(sourceView);
+      if (admission !== "certificate") assertOwnedView(sourceView);
+      if (admission === "branch") requireProof(isHypotheticalView(sourceView), "not-hypothetical-view");
+      else { try { requireProof(!isHypotheticalView(sourceView), "hypothetical-primary-admission"); }
+        catch (error) { if (!(error instanceof ProofError) || error.code !== "inauthentic-candidate-view") throw error; } }
+      const lexical = admission === "branch" ? branchScope(sourceView) : [];
       const limits = { ...source.limits };
       for (const value of Object.values(limits))
         requireProof(Number.isSafeInteger(value) && value >= 0, "invalid-proof-limit");
@@ -280,7 +286,7 @@ function* verifyGraph(input: DeductionProposal, source: CheckContext, admission:
       for (const [id, node] of retained) {
         tick();
         const original = originalFact(node);
-        const checked = acceptedNodes.get(node) ?? (admission === "certificate" ? certificateAuthorities.get(node) : undefined);
+        const checked = acceptedNodes.get(node) ?? (admission === "branch" && ownsBranchNode(sourceView, node) ? branchNodes.get(node) : undefined) ?? (admission === "certificate" ? certificateAuthorities.get(node) : undefined);
         const authority: CheckedNodeAuthority | undefined = original ? {
           state: original.state,
           premises: originalPremises(node)!,
@@ -289,8 +295,9 @@ function* verifyGraph(input: DeductionProposal, source: CheckContext, admission:
           conditional: original.conditional, rules: original.rules,
         }) } : checked;
         requireProof(authority && id === node.id && Number.isSafeInteger(id) && id >= 0 &&
-          authority.state.problemKey === state.problemKey && authority.state.branch === state.branch &&
+          authority.state.problemKey === state.problemKey && (authority.state.branch === state.branch || admission === "branch" && ownsBranchNode(sourceView, node)) &&
           authority.state.revision <= state.revision, "inauthentic-retained-node");
+        if (admission === "branch") requireProof(ownsBranchNode(sourceView, node), "foreign-branch-prefix");
         for (const [index, premise] of node.premises.entries()) {
           requireProof(premise < id && retained.has(premise), "missing-retained-dependency");
           // Every retained object may be authentic while its assembled prefix
@@ -373,14 +380,37 @@ function* verifyGraph(input: DeductionProposal, source: CheckContext, admission:
       requireProof([...available.keys()].every(id => reachable.has(id)), "unused-proof-node");
       tick();
       const consequences = Object.freeze(proof.roots.map(id => inferences.get(id)!));
-      requireProof(consequences.every(item => item.openAssumptions.length === 0 &&
+      const assumption = admission === "branch" && proposal.technique === "branch-assumption@1";
+      let resultScope = lexical;
+      if (assumption) {
+        requireProof(lexical.length < 2 && stagedNodes.length === 2 && stagedNodes[0].rule === "assume@1" &&
+          sameValue(stagedNodes[0].scope, lexical) && stagedNodes[1].rule === "domain-restrict@1" &&
+          sameValue(stagedNodes[1].scope, [...lexical, stagedNodes[0].id]) && sameValue(proof.roots, [stagedNodes[1].id]) &&
+          proposal.effects.length === 0, "invalid-branch-assumption");
+        resultScope = [...lexical, stagedNodes[0].id];
+      }
+      requireProof(consequences.every(item => (admission === "branch" ? item.openAssumptions.every(id => resultScope.includes(id)) : item.openAssumptions.length === 0) &&
         (!item.conditional || context.policy === "unique-only")), "open-proof-root");
       if (effectful) checkedEffectState(context.view, proposal, consequences);
+      if (admission === "branch" && !assumption) {
+        requireProof(stagedNodes.every(n => sameValue(n.scope, lexical)), "foreign-branch-scope");
+        requireProof(["c01@1", "c02@1", "c03@1", "c04@1", "c05@1", "branch-graph@1"].includes(proposal.technique), "branch-technique-out-of-profile");
+        if (proposal.technique === "branch-graph@1") requireProof(stagedNodes.every(n =>
+          ["support@1", "weak-link@1", "cover-clause@1", "resolution@1", "domain-restrict@1", "contradiction@1"].includes(n.rule)), "branch-graph-rule");
+        else checkTechniqueGrammar({ ...proposal, proof: { ...proof, nodes: stagedNodes.map(n => ({...n, scope: []})) } }, context.view, available);
+      }
       if (admission === "named") checkTechniqueGrammar({ ...proposal, proof: { ...proof, nodes: stagedNodes } }, context.view, available);
       // This sole private construction path follows all checks. The WeakSet,
       // not this internal type assertion, rejects casts/deserialized lookalikes.
       const checkedProposal = Object.freeze({ ...proposal,
         proof: Object.freeze({ ...proof, nodes: Object.freeze(stagedNodes) }) });
+      if (admission === "branch") {
+        const certificate = Object.freeze({ proposal: checkedProposal, consequences, scope: Object.freeze([...resultScope]) }) as BranchCertificate;
+        branchSources.set(certificate, sourceView);
+        for (const node of stagedNodes) branchNodes.set(node, { state, inference: inferences.get(node.id)!,
+          premises: Object.freeze(node.premises.map(id => available.get(id)!)), scopes: Object.freeze(node.scope.map(id => available.get(id)!)), table: registry.tableDefinition(node) });
+        yield { kind: "branch-checked", certificate }; return;
+      }
       if (admission === "certificate") {
         const certificate = Object.freeze({ proposal: checkedProposal, consequences }) as CheckedCertificate;
         authenticCertificates.add(certificate);
@@ -414,7 +444,7 @@ function* verifyGraph(input: DeductionProposal, source: CheckContext, admission:
 /** Non-applying proof infrastructure: these results cannot become owned facts. */
 export function* verifyCertificate(input: DeductionProposal, context: CheckContext): Generator<CertificateEvent, void, void> {
   for (const event of verifyGraph(input, context, "certificate")) {
-    if (event.kind === "checked") throw Error("internal-admission-error");
+    if (event.kind === "checked" || event.kind === "branch-checked") throw Error("internal-admission-error");
     yield event;
   }
 }
@@ -428,4 +458,15 @@ export function certificateImportsMatch(certificate: CheckedCertificate, retaine
 
 export function checkProposal(proposal: DeductionProposal, context: CheckContext): Generator<CheckEvent, void, void> {
   return new ProofChecker().checkProposal(proposal, context);
+}
+
+/** Read-only identities for the confined candidate issuer. */
+export function branchCertificateSource(certificate: BranchCertificate): ReadView | undefined { return branchSources.get(certificate); }
+export function branchNodeInference(node: ProofNode): CheckedInference | undefined { return branchNodes.get(node)?.inference; }
+/** No caller-selected admission mode; this entry always requires an authentic fork. */
+export function* verifyBranch(proposal: DeductionProposal, context: CheckContext): Generator<BranchEvent> {
+  for (const event of verifyGraph(proposal, context, "branch")) {
+    if (event.kind === "checked" || event.kind === "verified") throw Error("internal-admission-error");
+    yield event;
+  }
 }

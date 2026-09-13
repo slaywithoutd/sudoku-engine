@@ -8,10 +8,24 @@ import { createRoots, ImmutableMap, rootNode } from "./facts";
 import { CandidateIndexes } from "./indexes";
 import type { CandidateState, Fact, Literal, ReadView } from "./types";
 import type { ChangeSet } from "./events";
+import type { IndexWorkspace, WorkspaceReservation } from "../indexes/workspace";
+import type { BranchCertificate, BranchEvent, DeductionProposal, Limits } from "../proof/types";
+import { branchCertificateSource, branchNodeInference, verifyBranch } from "../proof/checker";
 
 // Authority belongs to the exact frozen publication, never a state-shaped
 // wrapper whose property accessors or Proxy traps can change after admission.
 const owners = new WeakMap<ReadView, CandidateOwner>();
+interface BranchOwnership {
+  readonly parent: CandidateOwner;
+  readonly scope: readonly number[];
+  readonly resource: BranchResource;
+}
+class BranchResource {
+  readonly views = new Set<ReadView>();
+  constructor(readonly lease: WorkspaceReservation) {}
+  dispose(): void { for (const view of this.views) owners.delete(view); this.views.clear(); this.lease.dispose(); }
+}
+let branchSequence = 0;
 
 interface AcceptedLineage {
   readonly anchor: object;
@@ -30,9 +44,11 @@ class CandidateOwner {
   readonly nodes: ReadonlyMap<NodeId, ProofNode>;
   readonly indexes: CandidateIndexes;
   readonly lineage: AcceptedLineage;
+  readonly branch?: BranchOwnership;
 
   constructor(assembly: Assembly, state: CandidateState, facts: ReadonlyMap<FactId, Fact>,
-    nodes: ReadonlyMap<NodeId, ProofNode>, previous?: CandidateOwner, cells?: readonly number[], step?: CheckedStep) {
+    nodes: ReadonlyMap<NodeId, ProofNode>, previous?: CandidateOwner, cells?: readonly number[], step?: CheckedStep, branch?: BranchOwnership) {
+    this.branch = branch;
     this.lineage = Object.freeze(previous && step
       ? { anchor: previous.lineage.anchor, parent: previous.lineage, step, length: previous.lineage.length + 1 }
       : { anchor: Object.freeze({}), parent: null, step: null, length: 0 });
@@ -41,10 +57,12 @@ class CandidateOwner {
     this.view = Object.freeze({ assembly, state, facts: new ImmutableMap(facts),
       supports: (id: string) => this.indexes.supports(id) });
     owners.set(this.view, this);
+    branch?.resource.views.add(this.view);
     Object.freeze(this);
   }
 
   commit(step: CheckedStep): { view: ReadView; changes: ChangeSet } {
+    requireProof(!this.branch, "hypothetical-primary-admission");
     requireProof(isCheckedStep(step), "inauthentic-checked-step");
     const before = this.view.state;
     requireProof(sameValue(before.key, step.proposal.state), "stale-step-state");
@@ -90,6 +108,7 @@ class CandidateOwner {
 
   /** Cache closed checked facts without changing any candidate or revision. */
   retain(step: CheckedStep): ReadView {
+    requireProof(!this.branch, "hypothetical-primary-admission");
     requireProof(isCheckedStep(step), "inauthentic-checked-step");
     requireProof(sameValue(this.view.state.key, step.proposal.state) && step.afterRevision === this.view.state.key.revision, "stale-step-state");
     requireProof(step.proposal.effects.length === 0, "effectful-fact-retention");
@@ -117,6 +136,86 @@ function owner(view: ReadView): CandidateOwner {
 /** Read-only authenticity gate; it cannot register a view or create authority. */
 export function assertOwnedView(view: ReadView): void { owner(view); }
 
+/** Exact publication gates; these queries confer no registration authority. */
+export function isHypotheticalView(view: ReadView): boolean { return !!owner(view).branch; }
+export function branchScope(view: ReadView): readonly number[] {
+  const branch = owner(view).branch; requireProof(branch, "not-hypothetical-view"); return branch.scope;
+}
+export function ownsBranchNode(view: ReadView, node: ProofNode): boolean {
+  const owned = owner(view); return !!owned.branch && owned.nodes.get(node.id) === node;
+}
+export function branchAllowsFact(view: ReadView, fact: Fact): boolean {
+  const owned = owner(view);
+  return owned.view.facts.get(fact.id) === fact && fact.openAssumptions.every(id => owned.branch?.scope.includes(id));
+}
+
+/** Reserve before allocating a fork. Labels never establish identity. */
+export function forkView(parent: ReadView, label: BranchId, workspace: IndexWorkspace): ReadView {
+  const previous = owner(parent);
+  requireProof(typeof label === "string" && label.length > 0 && label.length <= 128, "invalid-branch-label");
+  const lease = workspace.reserve(1, 65536 + parent.facts.size * 128 + parent.state.domains.length * 256);
+  const resource = new BranchResource(lease);
+  try {
+    const state = Object.freeze({ ...parent.state, key: Object.freeze({ ...parent.state.key, branch: `hypothetical:${++branchSequence}:${label}` }),
+      values: Object.freeze([...parent.state.values]), domains: Object.freeze([...parent.state.domains]), domainFacts: Object.freeze([...parent.state.domainFacts]) });
+    return new CandidateOwner(parent.assembly, state, parent.facts, previous.nodes, undefined, undefined, undefined,
+      { parent: previous, scope: previous.branch?.scope ?? Object.freeze([]), resource }).view;
+  } catch (error) { resource.dispose(); throw error; }
+}
+export function disposeFork(view: ReadView): void { const branch = owner(view).branch; requireProof(branch, "not-hypothetical-view"); branch.resource.dispose(); }
+
+/**
+ * Confined issuer: only branch-checked exact source publications may edit local
+ * domains. A false/empty-domain result remains a certificate, never a usable
+ * inconsistent view. Public primary reducers cannot accept its result brand.
+ */
+export class HypotheticalSession {
+  #view?: ReadView;
+  constructor(parent: ReadView, label: BranchId, workspace: IndexWorkspace) { this.#view = forkView(parent, label, workspace); }
+  get view(): ReadView { requireProof(this.#view, "disposed-hypothetical-session"); assertOwnedView(this.#view); return this.#view; }
+  *assume(value: Literal, limits: Limits): Generator<BranchEvent> {
+    const view = this.view, scope = branchScope(view), id = Math.max(...view.facts.keys()) + 1;
+    requireProof(scope.length < 2, "branch-depth-limit");
+    requireProof(view.assembly.problem.cells.includes(value.cell) && view.assembly.problem.symbols.includes(value.symbol) && !view.state.values[value.cell] && (view.state.domains[value.cell] & (1 << (value.symbol - 1))), "nonlive-branch-assumption");
+    const bit = 1 << (value.symbol - 1), mask = value.positive ? view.state.domains[value.cell] & bit : view.state.domains[value.cell] & ~bit;
+    const proposal: DeductionProposal = { technique: "branch-assumption@1", state: view.state.key, effects: [], pattern: {},
+      proof: { state: view.state.key, imports: [...new Set([view.state.domainFacts[value.cell], ...scope])], roots: [id + 1], nodes: [
+        { id, rule: "assume@1", premises: [], conclusion: { kind: "literal", value }, parameters: {}, scope },
+        { id: id + 1, rule: "domain-restrict@1", premises: [view.state.domainFacts[value.cell], id], conclusion: { kind: "domain", cell: value.cell, mask }, parameters: {}, scope: [...scope, id] }] } };
+    for (const event of verifyBranch(proposal, { view, retained: retainedProof(view), limits, policy: "discharged", uniqueEvidenceId: null })) {
+      if (event.kind === "branch-checked") this.publish(event.certificate);
+      yield event;
+    }
+  }
+  *check(proposal: DeductionProposal, limits: Limits): Generator<BranchEvent> {
+    const view = this.view, scope = branchScope(view);
+    const scoped = { ...proposal, proof: { ...proposal.proof, imports: [...new Set([...proposal.proof.imports, ...scope])], nodes: proposal.proof.nodes.map(node => ({ ...node, scope })) } };
+    yield* verifyBranch(scoped, { view, retained: retainedProof(view), limits, policy: "discharged", uniqueEvidenceId: null });
+  }
+  publish(certificate: BranchCertificate): void {
+    const view = this.view, previous = owner(view), branch = previous.branch!;
+    requireProof(branchCertificateSource(certificate) === view, "foreign-branch-certificate");
+    requireProof(!certificate.consequences.some(c => c.conclusion.kind === "false" || c.conclusion.kind === "domain" && c.conclusion.mask === 0), "contradictory-branch-publication");
+    branch.resource.lease.grow(1, 65536 + certificate.proposal.proof.nodes.length * 2048 + view.facts.size * 128);
+    const nodes = new Map(previous.nodes), facts = new Map(view.facts), domains = [...view.state.domains], domainFacts = [...view.state.domainFacts], values = [...view.state.values];
+    const key = Object.freeze({ ...view.state.key, revision: view.state.key.revision + 1 });
+    for (const node of certificate.proposal.proof.nodes) {
+      const inference = branchNodeInference(node); requireProof(inference, "inauthentic-branch-node");
+      nodes.set(node.id, node); facts.set(node.id, Object.freeze({ id: node.id, root: node.id, state: key, proposition: inference.conclusion,
+        openAssumptions: inference.openAssumptions, conditional: inference.conditional, rules: inference.rules }));
+    }
+    for (const id of certificate.proposal.proof.roots) {
+      const p = nodes.get(id)!.conclusion;
+      if (p.kind === "domain") { requireProof((p.mask & view.state.domains[p.cell]) === p.mask, "branch-domain-widening"); domains[p.cell] = p.mask; domainFacts[p.cell] = id; }
+    }
+    for (const effect of certificate.proposal.effects) if (effect.kind === "place") values[effect.cell] = effect.symbol;
+    const state = Object.freeze({ key, domains: Object.freeze(domains), domainFacts: Object.freeze(domainFacts), values: Object.freeze(values) });
+    this.#view = new CandidateOwner(view.assembly, state, facts, nodes, undefined, undefined, undefined,
+      { parent: branch.parent, scope: certificate.scope, resource: branch.resource }).view;
+  }
+  dispose(): void { if (this.#view) { disposeFork(this.#view); this.#view = undefined; } }
+}
+
 /**
  * Publish a cold index rebuild only from an authenticated publication. The
  * owner chooses every field and preserves the exact proof prefix and lineage;
@@ -125,9 +224,13 @@ export function assertOwnedView(view: ReadView): void { owner(view); }
 export function rebuildOwnedIndexes(view: ReadView): ReadView {
   const owned = owner(view);
   const { assembly, state, facts } = owned.view;
+  // A borrowed branch can request multiple cold indexes; each allocation stays
+  // charged to its revocable session instead of escaping the original fork cap.
+  owned.branch?.resource.lease.grow(1, 65536 + state.domains.length * 256);
   const indexes = new CandidateIndexes(assembly, state);
   const rebuilt = Object.freeze({ assembly, state, facts, supports: (id: string) => indexes.supports(id) });
   owners.set(rebuilt, owned);
+  owned.branch?.resource.views.add(rebuilt);
   return rebuilt;
 }
 

@@ -1,0 +1,2554 @@
+[
+  {
+    "id": "C24-kraken-mutant",
+    "rowId": "C24",
+    "givens": "534000902672000348000000000859700423426803790703904856000000000287409635345206079",
+    "preState": {
+      "values": [
+        5,
+        3,
+        4,
+        0,
+        0,
+        0,
+        9,
+        0,
+        2,
+        6,
+        7,
+        2,
+        0,
+        0,
+        0,
+        3,
+        4,
+        8,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        8,
+        5,
+        9,
+        7,
+        0,
+        0,
+        4,
+        2,
+        3,
+        4,
+        2,
+        6,
+        8,
+        0,
+        3,
+        7,
+        9,
+        0,
+        7,
+        0,
+        3,
+        9,
+        0,
+        4,
+        8,
+        5,
+        6,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        2,
+        8,
+        7,
+        4,
+        0,
+        9,
+        6,
+        3,
+        5,
+        3,
+        4,
+        5,
+        2,
+        0,
+        6,
+        0,
+        7,
+        9
+      ],
+      "domains": [
+        16,
+        4,
+        8,
+        33,
+        225,
+        193,
+        256,
+        33,
+        2,
+        32,
+        64,
+        2,
+        17,
+        273,
+        17,
+        4,
+        8,
+        128,
+        257,
+        257,
+        129,
+        53,
+        511,
+        211,
+        17,
+        33,
+        65,
+        128,
+        16,
+        256,
+        64,
+        33,
+        1,
+        8,
+        2,
+        4,
+        8,
+        2,
+        32,
+        128,
+        17,
+        4,
+        64,
+        256,
+        1,
+        64,
+        1,
+        4,
+        256,
+        3,
+        8,
+        128,
+        16,
+        32,
+        257,
+        289,
+        1,
+        21,
+        213,
+        209,
+        3,
+        129,
+        9,
+        2,
+        128,
+        64,
+        8,
+        1,
+        256,
+        32,
+        4,
+        16,
+        4,
+        8,
+        16,
+        2,
+        129,
+        32,
+        1,
+        64,
+        256
+      ]
+    },
+    "expectedPattern": {
+      "fish": {
+        "alias": "Mutant fish",
+        "size": 4,
+        "symbol": 1,
+        "bases": [
+          "box:0",
+          "box:6",
+          "box:8",
+          "column:3"
+        ],
+        "covers": [
+          "box:1",
+          "column:4",
+          "row:2",
+          "row:6"
+        ],
+        "fins": [
+          78
+        ],
+        "incidence": [
+          -1,
+          -1,
+          -1,
+          0,
+          2,
+          1,
+          0,
+          0,
+          0,
+          -1,
+          -1,
+          -1,
+          0,
+          2,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          1,
+          3,
+          2,
+          1,
+          1,
+          1,
+          0,
+          0,
+          0,
+          -1,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          -1,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          -1,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          2,
+          1,
+          0,
+          0,
+          0,
+          -1,
+          -1,
+          -1,
+          -1,
+          1,
+          0,
+          -1,
+          -1,
+          -1,
+          -1,
+          -1,
+          -1,
+          -1,
+          1,
+          0,
+          -1,
+          -1,
+          -1
+        ],
+        "form": "mutant"
+      },
+      "target": {
+        "cell": 4,
+        "symbol": 1
+      },
+      "finBranches": [
+        {
+          "fin": 78,
+          "assumption": {
+            "cell": 4,
+            "symbol": 1,
+            "positive": true
+          },
+          "path": [
+            {
+              "from": {
+                "cell": 4,
+                "symbol": 1,
+                "positive": true
+              },
+              "to": {
+                "cell": 4,
+                "symbol": 7,
+                "positive": false
+              },
+              "reason": {
+                "kind": "cell-conflict",
+                "cell": 4
+              }
+            },
+            {
+              "from": {
+                "cell": 4,
+                "symbol": 7,
+                "positive": false
+              },
+              "to": {
+                "cell": 5,
+                "symbol": 7,
+                "positive": true
+              },
+              "reason": {
+                "kind": "house-cover",
+                "house": "row:0",
+                "symbol": 7
+              }
+            },
+            {
+              "from": {
+                "cell": 5,
+                "symbol": 7,
+                "positive": true
+              },
+              "to": {
+                "cell": 5,
+                "symbol": 8,
+                "positive": false
+              },
+              "reason": {
+                "kind": "cell-conflict",
+                "cell": 5
+              }
+            },
+            {
+              "from": {
+                "cell": 5,
+                "symbol": 8,
+                "positive": false
+              },
+              "to": {
+                "cell": 4,
+                "symbol": 8,
+                "positive": true
+              },
+              "reason": {
+                "kind": "house-cover",
+                "house": "row:0",
+                "symbol": 8
+              }
+            },
+            {
+              "from": {
+                "cell": 4,
+                "symbol": 8,
+                "positive": true
+              },
+              "to": {
+                "cell": 76,
+                "symbol": 8,
+                "positive": false
+              },
+              "reason": {
+                "kind": "scope-conflict",
+                "house": "column:4",
+                "symbol": 8
+              }
+            },
+            {
+              "from": {
+                "cell": 76,
+                "symbol": 8,
+                "positive": false
+              },
+              "to": {
+                "cell": 76,
+                "symbol": 1,
+                "positive": true
+              },
+              "reason": {
+                "kind": "cell-cover",
+                "cell": 76
+              }
+            },
+            {
+              "from": {
+                "cell": 76,
+                "symbol": 1,
+                "positive": true
+              },
+              "to": {
+                "cell": 78,
+                "symbol": 1,
+                "positive": false
+              },
+              "reason": {
+                "kind": "scope-conflict",
+                "house": "row:8",
+                "symbol": 1
+              }
+            }
+          ]
+        }
+      ],
+      "incidence": [
+        -1,
+        -1,
+        -1,
+        0,
+        2,
+        1,
+        0,
+        0,
+        0,
+        -1,
+        -1,
+        -1,
+        0,
+        2,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1,
+        3,
+        2,
+        1,
+        1,
+        1,
+        0,
+        0,
+        0,
+        -1,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        -1,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        -1,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        2,
+        1,
+        0,
+        0,
+        0,
+        -1,
+        -1,
+        -1,
+        -1,
+        1,
+        0,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        1,
+        0,
+        -1,
+        -1,
+        -1
+      ]
+    },
+    "expectedEffects": [
+      {
+        "kind": "remove",
+        "cell": 4,
+        "symbol": 1
+      }
+    ],
+    "origin": {
+      "url": null,
+      "author": "Independent repository fixture author",
+      "license": "Repository-owned; no external puzzle copied",
+      "sourceRevision": "independent-kraken-seeds@1",
+      "reusedGeometry": "C08-mutant-4 fish geometry; independently constructed non-direct fin paths and changed target"
+    },
+    "prefix": "Only original-given peer exclusions; no solution-derived candidate axioms.",
+    "oracleRecord": {
+      "method": "independent-algorithm-x@1",
+      "command": "npm test -- tests/unit/solver/forcing.test.ts",
+      "satisfiable": true,
+      "forceForbidExhausted": true,
+      "input": "Exact replayed preState.values/domains; assertSound uses limit1/maxNodes1000000 and every proposed effect counterfactual."
+    },
+    "grammar": "c24-grammar@1",
+    "expectation": "productive",
+    "reachability": "original-clue-path",
+    "alias": "Kraken Fish"
+  },
+  {
+    "id": "C24-kraken-franken",
+    "rowId": "C24",
+    "givens": "534678000672095000098342000859760420426853790703924850960537280287409630345286070",
+    "preState": {
+      "values": [
+        5,
+        3,
+        4,
+        6,
+        7,
+        8,
+        0,
+        0,
+        0,
+        6,
+        7,
+        2,
+        0,
+        9,
+        5,
+        0,
+        0,
+        0,
+        0,
+        9,
+        8,
+        3,
+        4,
+        2,
+        0,
+        0,
+        0,
+        8,
+        5,
+        9,
+        7,
+        6,
+        0,
+        4,
+        2,
+        0,
+        4,
+        2,
+        6,
+        8,
+        5,
+        3,
+        7,
+        9,
+        0,
+        7,
+        0,
+        3,
+        9,
+        2,
+        4,
+        8,
+        5,
+        0,
+        9,
+        6,
+        0,
+        5,
+        3,
+        7,
+        2,
+        8,
+        0,
+        2,
+        8,
+        7,
+        4,
+        0,
+        9,
+        6,
+        3,
+        0,
+        3,
+        4,
+        5,
+        2,
+        8,
+        6,
+        0,
+        7,
+        0
+      ],
+      "domains": [
+        16,
+        4,
+        8,
+        32,
+        64,
+        128,
+        257,
+        1,
+        259,
+        32,
+        64,
+        2,
+        1,
+        256,
+        16,
+        5,
+        9,
+        141,
+        1,
+        256,
+        128,
+        4,
+        8,
+        2,
+        17,
+        33,
+        113,
+        128,
+        16,
+        256,
+        64,
+        32,
+        1,
+        8,
+        2,
+        5,
+        8,
+        2,
+        32,
+        128,
+        16,
+        4,
+        64,
+        256,
+        1,
+        64,
+        1,
+        4,
+        256,
+        2,
+        8,
+        128,
+        16,
+        33,
+        256,
+        32,
+        1,
+        16,
+        4,
+        64,
+        2,
+        128,
+        9,
+        2,
+        128,
+        64,
+        8,
+        1,
+        256,
+        32,
+        4,
+        17,
+        4,
+        8,
+        16,
+        2,
+        128,
+        32,
+        257,
+        64,
+        257
+      ]
+    },
+    "expectedPattern": {
+      "fish": {
+        "alias": "Franken fish",
+        "size": 2,
+        "symbol": 1,
+        "bases": [
+          "row:0",
+          "row:8"
+        ],
+        "covers": [
+          "box:2",
+          "column:8"
+        ],
+        "fins": [
+          78
+        ],
+        "incidence": [
+          -1,
+          -1,
+          -1,
+          -1,
+          -1,
+          -1,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          1,
+          1,
+          2,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          1,
+          1,
+          2,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          1,
+          -1,
+          -1,
+          -1,
+          -1,
+          -1,
+          -1,
+          -1,
+          -1,
+          0
+        ],
+        "form": "franken"
+      },
+      "target": {
+        "cell": 16,
+        "symbol": 1
+      },
+      "finBranches": [
+        {
+          "fin": 78,
+          "assumption": {
+            "cell": 16,
+            "symbol": 1,
+            "positive": true
+          },
+          "path": [
+            {
+              "from": {
+                "cell": 16,
+                "symbol": 1,
+                "positive": true
+              },
+              "to": {
+                "cell": 16,
+                "symbol": 4,
+                "positive": false
+              },
+              "reason": {
+                "kind": "cell-conflict",
+                "cell": 16
+              }
+            },
+            {
+              "from": {
+                "cell": 16,
+                "symbol": 4,
+                "positive": false
+              },
+              "to": {
+                "cell": 17,
+                "symbol": 4,
+                "positive": true
+              },
+              "reason": {
+                "kind": "house-cover",
+                "house": "row:1",
+                "symbol": 4
+              }
+            },
+            {
+              "from": {
+                "cell": 17,
+                "symbol": 4,
+                "positive": true
+              },
+              "to": {
+                "cell": 62,
+                "symbol": 4,
+                "positive": false
+              },
+              "reason": {
+                "kind": "scope-conflict",
+                "house": "column:8",
+                "symbol": 4
+              }
+            },
+            {
+              "from": {
+                "cell": 62,
+                "symbol": 4,
+                "positive": false
+              },
+              "to": {
+                "cell": 62,
+                "symbol": 1,
+                "positive": true
+              },
+              "reason": {
+                "kind": "cell-cover",
+                "cell": 62
+              }
+            },
+            {
+              "from": {
+                "cell": 62,
+                "symbol": 1,
+                "positive": true
+              },
+              "to": {
+                "cell": 78,
+                "symbol": 1,
+                "positive": false
+              },
+              "reason": {
+                "kind": "scope-conflict",
+                "house": "box:8",
+                "symbol": 1
+              }
+            }
+          ]
+        }
+      ],
+      "incidence": [
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1,
+        1,
+        2,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1,
+        1,
+        2,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        0
+      ]
+    },
+    "expectedEffects": [
+      {
+        "kind": "remove",
+        "cell": 16,
+        "symbol": 1
+      }
+    ],
+    "origin": {
+      "url": null,
+      "author": "Independent repository fixture author",
+      "license": "Repository-owned; no external puzzle copied",
+      "sourceRevision": "independent-kraken-seeds@1",
+      "reusedGeometry": "C08-franken-2 fish geometry; independently constructed non-direct fin paths and changed target"
+    },
+    "prefix": "Only original-given peer exclusions; no solution-derived candidate axioms.",
+    "oracleRecord": {
+      "method": "independent-algorithm-x@1",
+      "command": "npm test -- tests/unit/solver/forcing.test.ts",
+      "satisfiable": true,
+      "forceForbidExhausted": true,
+      "input": "Exact replayed preState.values/domains; assertSound uses limit1/maxNodes1000000 and every proposed effect counterfactual."
+    },
+    "grammar": "c24-grammar@1",
+    "expectation": "productive",
+    "reachability": "original-clue-path",
+    "alias": "Kraken Fish"
+  },
+  {
+    "id": "C24-kraken-basic",
+    "rowId": "C24",
+    "givens": "534070902672090348098342507859760403426853790713924856961537284287419635345286179",
+    "preState": {
+      "values": [
+        5,
+        3,
+        4,
+        0,
+        7,
+        0,
+        9,
+        0,
+        2,
+        6,
+        7,
+        2,
+        0,
+        9,
+        0,
+        3,
+        4,
+        8,
+        0,
+        9,
+        8,
+        3,
+        4,
+        2,
+        5,
+        0,
+        7,
+        8,
+        5,
+        9,
+        7,
+        6,
+        0,
+        4,
+        0,
+        3,
+        4,
+        2,
+        6,
+        8,
+        5,
+        3,
+        7,
+        9,
+        0,
+        7,
+        1,
+        3,
+        9,
+        2,
+        4,
+        8,
+        5,
+        6,
+        9,
+        6,
+        1,
+        5,
+        3,
+        7,
+        2,
+        8,
+        4,
+        2,
+        8,
+        7,
+        4,
+        1,
+        9,
+        6,
+        3,
+        5,
+        3,
+        4,
+        5,
+        2,
+        8,
+        6,
+        1,
+        7,
+        9
+      ],
+      "domains": [
+        16,
+        4,
+        8,
+        33,
+        64,
+        129,
+        256,
+        33,
+        2,
+        32,
+        64,
+        2,
+        1,
+        256,
+        17,
+        4,
+        8,
+        128,
+        1,
+        256,
+        128,
+        4,
+        8,
+        2,
+        16,
+        33,
+        64,
+        128,
+        16,
+        256,
+        64,
+        32,
+        1,
+        8,
+        3,
+        4,
+        8,
+        2,
+        32,
+        128,
+        16,
+        4,
+        64,
+        256,
+        1,
+        64,
+        1,
+        4,
+        256,
+        2,
+        8,
+        128,
+        16,
+        32,
+        256,
+        32,
+        1,
+        16,
+        4,
+        64,
+        2,
+        128,
+        8,
+        2,
+        128,
+        64,
+        8,
+        1,
+        256,
+        32,
+        4,
+        16,
+        4,
+        8,
+        16,
+        2,
+        128,
+        32,
+        1,
+        64,
+        256
+      ]
+    },
+    "expectedPattern": {
+      "fish": {
+        "alias": "Finned fish",
+        "form": "finned",
+        "size": 2,
+        "symbol": 1,
+        "bases": [
+          "row:0",
+          "row:3"
+        ],
+        "covers": [
+          "column:5",
+          "column:7"
+        ],
+        "fins": [
+          3
+        ]
+      },
+      "target": {
+        "cell": 25,
+        "symbol": 1
+      },
+      "finBranches": [
+        {
+          "fin": 3,
+          "assumption": {
+            "cell": 25,
+            "symbol": 1,
+            "positive": true
+          },
+          "path": [
+            {
+              "from": {
+                "cell": 25,
+                "symbol": 1,
+                "positive": true
+              },
+              "to": {
+                "cell": 34,
+                "symbol": 1,
+                "positive": false
+              },
+              "reason": {
+                "kind": "scope-conflict",
+                "house": "column:7",
+                "symbol": 1
+              }
+            },
+            {
+              "from": {
+                "cell": 34,
+                "symbol": 1,
+                "positive": false
+              },
+              "to": {
+                "cell": 32,
+                "symbol": 1,
+                "positive": true
+              },
+              "reason": {
+                "kind": "house-cover",
+                "house": "row:3",
+                "symbol": 1
+              }
+            },
+            {
+              "from": {
+                "cell": 32,
+                "symbol": 1,
+                "positive": true
+              },
+              "to": {
+                "cell": 14,
+                "symbol": 1,
+                "positive": false
+              },
+              "reason": {
+                "kind": "scope-conflict",
+                "house": "column:5",
+                "symbol": 1
+              }
+            },
+            {
+              "from": {
+                "cell": 14,
+                "symbol": 1,
+                "positive": false
+              },
+              "to": {
+                "cell": 12,
+                "symbol": 1,
+                "positive": true
+              },
+              "reason": {
+                "kind": "house-cover",
+                "house": "row:1",
+                "symbol": 1
+              }
+            },
+            {
+              "from": {
+                "cell": 12,
+                "symbol": 1,
+                "positive": true
+              },
+              "to": {
+                "cell": 3,
+                "symbol": 1,
+                "positive": false
+              },
+              "reason": {
+                "kind": "scope-conflict",
+                "house": "column:3",
+                "symbol": 1
+              }
+            }
+          ]
+        }
+      ],
+      "incidence": [
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        0,
+        -1,
+        0,
+        -1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        1,
+        0,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        0,
+        -1,
+        0,
+        -1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        1,
+        0
+      ]
+    },
+    "expectedEffects": [
+      {
+        "kind": "remove",
+        "cell": 25,
+        "symbol": 1
+      }
+    ],
+    "origin": {
+      "url": null,
+      "author": "Independent repository fixture author",
+      "license": "Repository-owned; no external puzzle copied",
+      "sourceRevision": "independent-kraken-seeds@1",
+      "reusedGeometry": "C07-finned-2-row fish geometry with explicitly reopened original clues; independently reconstructed domains/non-direct fin paths and changed target"
+    },
+    "prefix": "Only original-given peer exclusions; no solution-derived candidate axioms.",
+    "oracleRecord": {
+      "method": "independent-algorithm-x@1",
+      "command": "npm test -- tests/unit/solver/forcing.test.ts",
+      "satisfiable": true,
+      "forceForbidExhausted": true,
+      "input": "Exact replayed preState.values/domains; assertSound uses limit1/maxNodes1000000 and every proposed effect counterfactual."
+    },
+    "grammar": "c24-grammar@1",
+    "expectation": "productive",
+    "reachability": "original-clue-path",
+    "alias": "Kraken Fish"
+  },
+  {
+    "id": "C24-kraken-four-fins",
+    "rowId": "C24",
+    "givens": "534078000672095000098342507859761423426853790713924856961537284287419635345286079",
+    "preState": {
+      "values": [
+        5,
+        3,
+        4,
+        0,
+        7,
+        8,
+        0,
+        0,
+        0,
+        6,
+        7,
+        2,
+        0,
+        9,
+        5,
+        0,
+        0,
+        0,
+        0,
+        9,
+        8,
+        3,
+        4,
+        2,
+        5,
+        0,
+        7,
+        8,
+        5,
+        9,
+        7,
+        6,
+        1,
+        4,
+        2,
+        3,
+        4,
+        2,
+        6,
+        8,
+        5,
+        3,
+        7,
+        9,
+        0,
+        7,
+        1,
+        3,
+        9,
+        2,
+        4,
+        8,
+        5,
+        6,
+        9,
+        6,
+        1,
+        5,
+        3,
+        7,
+        2,
+        8,
+        4,
+        2,
+        8,
+        7,
+        4,
+        1,
+        9,
+        6,
+        3,
+        5,
+        3,
+        4,
+        5,
+        2,
+        8,
+        6,
+        0,
+        7,
+        9
+      ],
+      "domains": [
+        16,
+        4,
+        8,
+        33,
+        64,
+        128,
+        257,
+        33,
+        3,
+        32,
+        64,
+        2,
+        1,
+        256,
+        16,
+        5,
+        9,
+        129,
+        1,
+        256,
+        128,
+        4,
+        8,
+        2,
+        16,
+        33,
+        64,
+        128,
+        16,
+        256,
+        64,
+        32,
+        1,
+        8,
+        2,
+        4,
+        8,
+        2,
+        32,
+        128,
+        16,
+        4,
+        64,
+        256,
+        1,
+        64,
+        1,
+        4,
+        256,
+        2,
+        8,
+        128,
+        16,
+        32,
+        256,
+        32,
+        1,
+        16,
+        4,
+        64,
+        2,
+        128,
+        8,
+        2,
+        128,
+        64,
+        8,
+        1,
+        256,
+        32,
+        4,
+        16,
+        4,
+        8,
+        16,
+        2,
+        128,
+        32,
+        1,
+        64,
+        256
+      ]
+    },
+    "expectedPattern": {
+      "fish": {
+        "alias": "Finned fish",
+        "form": "finned",
+        "size": 2,
+        "symbol": 1,
+        "bases": [
+          "row:0",
+          "row:1"
+        ],
+        "covers": [
+          "column:3",
+          "column:7"
+        ],
+        "fins": [
+          6,
+          8,
+          15,
+          17
+        ]
+      },
+      "target": {
+        "cell": 25,
+        "symbol": 1
+      },
+      "finBranches": [
+        {
+          "fin": 6,
+          "assumption": {
+            "cell": 25,
+            "symbol": 1,
+            "positive": true
+          },
+          "path": [
+            {
+              "from": {
+                "cell": 25,
+                "symbol": 1,
+                "positive": true
+              },
+              "to": {
+                "cell": 6,
+                "symbol": 1,
+                "positive": false
+              },
+              "reason": {
+                "kind": "scope-conflict",
+                "house": "box:2",
+                "symbol": 1
+              }
+            }
+          ]
+        },
+        {
+          "fin": 8,
+          "assumption": {
+            "cell": 25,
+            "symbol": 1,
+            "positive": true
+          },
+          "path": [
+            {
+              "from": {
+                "cell": 25,
+                "symbol": 1,
+                "positive": true
+              },
+              "to": {
+                "cell": 8,
+                "symbol": 1,
+                "positive": false
+              },
+              "reason": {
+                "kind": "scope-conflict",
+                "house": "box:2",
+                "symbol": 1
+              }
+            }
+          ]
+        },
+        {
+          "fin": 15,
+          "assumption": {
+            "cell": 25,
+            "symbol": 1,
+            "positive": true
+          },
+          "path": [
+            {
+              "from": {
+                "cell": 25,
+                "symbol": 1,
+                "positive": true
+              },
+              "to": {
+                "cell": 15,
+                "symbol": 1,
+                "positive": false
+              },
+              "reason": {
+                "kind": "scope-conflict",
+                "house": "box:2",
+                "symbol": 1
+              }
+            }
+          ]
+        },
+        {
+          "fin": 17,
+          "assumption": {
+            "cell": 25,
+            "symbol": 1,
+            "positive": true
+          },
+          "path": [
+            {
+              "from": {
+                "cell": 25,
+                "symbol": 1,
+                "positive": true
+              },
+              "to": {
+                "cell": 17,
+                "symbol": 1,
+                "positive": false
+              },
+              "reason": {
+                "kind": "scope-conflict",
+                "house": "box:2",
+                "symbol": 1
+              }
+            }
+          ]
+        }
+      ],
+      "incidence": [
+        -1,
+        -1,
+        -1,
+        0,
+        -1,
+        -1,
+        -1,
+        0,
+        -1,
+        -1,
+        -1,
+        -1,
+        0,
+        -1,
+        -1,
+        -1,
+        0,
+        -1,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        1,
+        0
+      ]
+    },
+    "expectedEffects": [
+      {
+        "kind": "remove",
+        "cell": 25,
+        "symbol": 1
+      }
+    ],
+    "origin": {
+      "author": "Independent repository fixture author",
+      "license": "Repository-owned; no external puzzle copied",
+      "sourceRevision": "independent-fin-boundary-seeds@1"
+    },
+    "prefix": "Only original-given peer exclusions; no solution-derived candidate axioms.",
+    "oracleRecord": {
+      "method": "independent-algorithm-x@1",
+      "command": "npm test -- tests/unit/solver/forcing.test.ts",
+      "satisfiable": true,
+      "forceForbidExhausted": true,
+      "input": "Exact replayed preState.values/domains; assertSound uses limit1/maxNodes1000000 and every proposed effect counterfactual."
+    },
+    "grammar": "c24-grammar@1",
+    "alias": "Kraken Fish",
+    "expectation": "productive",
+    "reachability": "original-clue-path",
+    "discoveryRecord": {
+      "origin": "Post-implementation production observation; not independent seed expectation",
+      "pattern": {
+        "alias": "Finned fish",
+        "form": "finned",
+        "size": 2,
+        "symbol": 1,
+        "bases": [
+          "row:0",
+          "row:1"
+        ],
+        "covers": [
+          "column:3",
+          "column:7"
+        ],
+        "fins": [
+          6,
+          8,
+          15,
+          17
+        ]
+      },
+      "effects": [
+        {
+          "kind": "remove",
+          "cell": 25,
+          "symbol": 1
+        }
+      ],
+      "work": 759,
+      "proposals": 1,
+      "command": "npm test -- tests/unit/solver/fish-complex.test.ts -t 'actual discovery'"
+    }
+  },
+  {
+    "id": "C24-kraken-simple23",
+    "rowId": "C24",
+    "givens": "500070902670090348098302507800760003400803790710020856961537004087410030340286170",
+    "preState": {
+      "values": [
+        5,
+        0,
+        0,
+        0,
+        7,
+        0,
+        9,
+        0,
+        2,
+        6,
+        7,
+        0,
+        0,
+        9,
+        0,
+        3,
+        4,
+        8,
+        0,
+        9,
+        8,
+        3,
+        0,
+        2,
+        5,
+        0,
+        7,
+        8,
+        0,
+        0,
+        7,
+        6,
+        0,
+        0,
+        0,
+        3,
+        4,
+        0,
+        0,
+        8,
+        0,
+        3,
+        7,
+        9,
+        0,
+        7,
+        1,
+        0,
+        0,
+        2,
+        0,
+        8,
+        5,
+        6,
+        9,
+        6,
+        1,
+        5,
+        3,
+        7,
+        0,
+        0,
+        4,
+        0,
+        8,
+        7,
+        4,
+        1,
+        0,
+        0,
+        3,
+        0,
+        3,
+        4,
+        0,
+        2,
+        8,
+        6,
+        1,
+        7,
+        0
+      ],
+      "domains": [
+        16,
+        4,
+        12,
+        33,
+        64,
+        137,
+        256,
+        33,
+        2,
+        32,
+        64,
+        2,
+        1,
+        256,
+        17,
+        4,
+        8,
+        128,
+        1,
+        256,
+        128,
+        4,
+        8,
+        2,
+        16,
+        33,
+        64,
+        128,
+        18,
+        274,
+        64,
+        32,
+        281,
+        10,
+        3,
+        4,
+        8,
+        18,
+        50,
+        128,
+        16,
+        4,
+        64,
+        256,
+        1,
+        64,
+        1,
+        260,
+        256,
+        2,
+        264,
+        128,
+        16,
+        32,
+        256,
+        32,
+        1,
+        16,
+        4,
+        64,
+        2,
+        130,
+        8,
+        2,
+        128,
+        64,
+        8,
+        1,
+        256,
+        34,
+        4,
+        272,
+        4,
+        8,
+        16,
+        2,
+        128,
+        32,
+        1,
+        64,
+        272
+      ]
+    },
+    "expectedPattern": {
+      "fish": {
+        "alias": "Finned fish",
+        "form": "finned",
+        "size": 2,
+        "symbol": 1,
+        "bases": [
+          "row:0",
+          "row:3"
+        ],
+        "covers": [
+          "column:5",
+          "column:7"
+        ],
+        "fins": [
+          3
+        ]
+      },
+      "target": {
+        "cell": 25,
+        "symbol": 1
+      },
+      "finBranches": [
+        {
+          "fin": 3,
+          "assumption": {
+            "cell": 25,
+            "symbol": 1,
+            "positive": true
+          },
+          "path": [
+            {
+              "from": {
+                "cell": 25,
+                "symbol": 1,
+                "positive": true
+              },
+              "to": {
+                "cell": 25,
+                "symbol": 6,
+                "positive": false
+              },
+              "reason": {
+                "kind": "cell-conflict",
+                "cell": 25
+              }
+            },
+            {
+              "from": {
+                "cell": 25,
+                "symbol": 6,
+                "positive": false
+              },
+              "to": {
+                "cell": 7,
+                "symbol": 6,
+                "positive": true
+              },
+              "reason": {
+                "kind": "house-cover",
+                "house": "column:7",
+                "symbol": 6
+              }
+            },
+            {
+              "from": {
+                "cell": 7,
+                "symbol": 6,
+                "positive": true
+              },
+              "to": {
+                "cell": 3,
+                "symbol": 6,
+                "positive": false
+              },
+              "reason": {
+                "kind": "scope-conflict",
+                "house": "row:0",
+                "symbol": 6
+              }
+            },
+            {
+              "from": {
+                "cell": 3,
+                "symbol": 6,
+                "positive": false
+              },
+              "to": {
+                "cell": 3,
+                "symbol": 1,
+                "positive": true
+              },
+              "reason": {
+                "kind": "cell-cover",
+                "cell": 3
+              }
+            },
+            {
+              "from": {
+                "cell": 3,
+                "symbol": 1,
+                "positive": true
+              },
+              "to": {
+                "cell": 12,
+                "symbol": 1,
+                "positive": false
+              },
+              "reason": {
+                "kind": "scope-conflict",
+                "house": "column:3",
+                "symbol": 1
+              }
+            },
+            {
+              "from": {
+                "cell": 12,
+                "symbol": 1,
+                "positive": false
+              },
+              "to": {
+                "cell": 14,
+                "symbol": 1,
+                "positive": true
+              },
+              "reason": {
+                "kind": "house-cover",
+                "house": "row:1",
+                "symbol": 1
+              }
+            },
+            {
+              "from": {
+                "cell": 14,
+                "symbol": 1,
+                "positive": true
+              },
+              "to": {
+                "cell": 14,
+                "symbol": 5,
+                "positive": false
+              },
+              "reason": {
+                "kind": "cell-conflict",
+                "cell": 14
+              }
+            },
+            {
+              "from": {
+                "cell": 14,
+                "symbol": 5,
+                "positive": false
+              },
+              "to": {
+                "cell": 32,
+                "symbol": 5,
+                "positive": true
+              },
+              "reason": {
+                "kind": "house-cover",
+                "house": "column:5",
+                "symbol": 5
+              }
+            },
+            {
+              "from": {
+                "cell": 32,
+                "symbol": 5,
+                "positive": true
+              },
+              "to": {
+                "cell": 32,
+                "symbol": 1,
+                "positive": false
+              },
+              "reason": {
+                "kind": "cell-conflict",
+                "cell": 32
+              }
+            },
+            {
+              "from": {
+                "cell": 32,
+                "symbol": 1,
+                "positive": false
+              },
+              "to": {
+                "cell": 34,
+                "symbol": 1,
+                "positive": true
+              },
+              "reason": {
+                "kind": "house-cover",
+                "house": "row:3",
+                "symbol": 1
+              }
+            },
+            {
+              "from": {
+                "cell": 34,
+                "symbol": 1,
+                "positive": true
+              },
+              "to": {
+                "cell": 25,
+                "symbol": 1,
+                "positive": false
+              },
+              "reason": {
+                "kind": "scope-conflict",
+                "house": "column:7",
+                "symbol": 1
+              }
+            },
+            {
+              "from": {
+                "cell": 25,
+                "symbol": 1,
+                "positive": false
+              },
+              "to": {
+                "cell": 25,
+                "symbol": 6,
+                "positive": true
+              },
+              "reason": {
+                "kind": "cell-cover",
+                "cell": 25
+              }
+            },
+            {
+              "from": {
+                "cell": 25,
+                "symbol": 6,
+                "positive": true
+              },
+              "to": {
+                "cell": 7,
+                "symbol": 6,
+                "positive": false
+              },
+              "reason": {
+                "kind": "scope-conflict",
+                "house": "column:7",
+                "symbol": 6
+              }
+            },
+            {
+              "from": {
+                "cell": 7,
+                "symbol": 6,
+                "positive": false
+              },
+              "to": {
+                "cell": 7,
+                "symbol": 1,
+                "positive": true
+              },
+              "reason": {
+                "kind": "cell-cover",
+                "cell": 7
+              }
+            },
+            {
+              "from": {
+                "cell": 7,
+                "symbol": 1,
+                "positive": true
+              },
+              "to": {
+                "cell": 34,
+                "symbol": 1,
+                "positive": false
+              },
+              "reason": {
+                "kind": "scope-conflict",
+                "house": "column:7",
+                "symbol": 1
+              }
+            },
+            {
+              "from": {
+                "cell": 34,
+                "symbol": 1,
+                "positive": false
+              },
+              "to": {
+                "cell": 34,
+                "symbol": 2,
+                "positive": true
+              },
+              "reason": {
+                "kind": "cell-cover",
+                "cell": 34
+              }
+            },
+            {
+              "from": {
+                "cell": 34,
+                "symbol": 2,
+                "positive": true
+              },
+              "to": {
+                "cell": 28,
+                "symbol": 2,
+                "positive": false
+              },
+              "reason": {
+                "kind": "scope-conflict",
+                "house": "row:3",
+                "symbol": 2
+              }
+            },
+            {
+              "from": {
+                "cell": 28,
+                "symbol": 2,
+                "positive": false
+              },
+              "to": {
+                "cell": 28,
+                "symbol": 5,
+                "positive": true
+              },
+              "reason": {
+                "kind": "cell-cover",
+                "cell": 28
+              }
+            },
+            {
+              "from": {
+                "cell": 28,
+                "symbol": 5,
+                "positive": true
+              },
+              "to": {
+                "cell": 32,
+                "symbol": 5,
+                "positive": false
+              },
+              "reason": {
+                "kind": "scope-conflict",
+                "house": "row:3",
+                "symbol": 5
+              }
+            },
+            {
+              "from": {
+                "cell": 32,
+                "symbol": 5,
+                "positive": false
+              },
+              "to": {
+                "cell": 14,
+                "symbol": 5,
+                "positive": true
+              },
+              "reason": {
+                "kind": "house-cover",
+                "house": "column:5",
+                "symbol": 5
+              }
+            },
+            {
+              "from": {
+                "cell": 14,
+                "symbol": 5,
+                "positive": true
+              },
+              "to": {
+                "cell": 14,
+                "symbol": 1,
+                "positive": false
+              },
+              "reason": {
+                "kind": "cell-conflict",
+                "cell": 14
+              }
+            },
+            {
+              "from": {
+                "cell": 14,
+                "symbol": 1,
+                "positive": false
+              },
+              "to": {
+                "cell": 12,
+                "symbol": 1,
+                "positive": true
+              },
+              "reason": {
+                "kind": "house-cover",
+                "house": "row:1",
+                "symbol": 1
+              }
+            },
+            {
+              "from": {
+                "cell": 12,
+                "symbol": 1,
+                "positive": true
+              },
+              "to": {
+                "cell": 3,
+                "symbol": 1,
+                "positive": false
+              },
+              "reason": {
+                "kind": "scope-conflict",
+                "house": "column:3",
+                "symbol": 1
+              }
+            }
+          ]
+        }
+      ],
+      "incidence": [
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        0,
+        -1,
+        0,
+        -1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        1,
+        0,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        0,
+        -1,
+        0,
+        -1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        1,
+        0
+      ]
+    },
+    "expectedEffects": [
+      {
+        "kind": "remove",
+        "cell": 25,
+        "symbol": 1
+      }
+    ],
+    "origin": {
+      "author": "Independent repository fixture author",
+      "license": "Repository-owned; no external puzzle copied",
+      "sourceRevision": "independent-kraken23@2",
+      "construction": "Thin original clues while retaining every fish-symbol domain occurrence; separate simple23-link path from positive target to negative fin. Every weak/conjugate edge reconstructed from original-given domains, distinct signed vertices. Shorter paths may remain: boundary admission, not essential23-link difficulty."
+    },
+    "prefix": "Only original-given peer exclusions; no solution-derived candidate axioms.",
+    "oracleRecord": {
+      "method": "independent-algorithm-x@1",
+      "command": "npm test -- tests/unit/solver/forcing.test.ts",
+      "satisfiable": true,
+      "forceForbidExhausted": true,
+      "input": "Exact replayed preState.values/domains; assertSound uses limit1/maxNodes1000000 and every proposed effect counterfactual."
+    },
+    "alias": "Kraken Fish",
+    "grammar": "c24-grammar@1",
+    "expectation": "productive",
+    "reachability": "original-clue-path"
+  }
+]

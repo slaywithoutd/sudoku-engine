@@ -1,4 +1,4 @@
-import { assertOwnedView } from "../state/candidates";
+import { assertOwnedView, branchAllowsFact } from "../state/candidates";
 import type { FactId } from "../rules/types";
 import type { Fact, ReadView } from "../state/types";
 import type { StateKey } from "../snapshot";
@@ -182,7 +182,7 @@ Generator<{ kind: "work"; units: number } | { kind: "source"; fact: Fact }> {
   for (const fact of view.facts.values()) {
     yield* work(workspace);
     if ((fact.proposition.kind === "all-different" || fact.proposition.kind === "cover" ||
-      fact.proposition.kind === "relation") && fact.openAssumptions.length === 0)
+      fact.proposition.kind === "relation") && branchAllowsFact(view, fact))
       yield { kind: "source", fact };
   }
 }

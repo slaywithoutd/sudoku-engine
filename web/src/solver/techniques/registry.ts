@@ -18,6 +18,9 @@ import { alsPatternTechniques } from "./als-patterns";
 import { deathBlossomTechniques } from "./death-blossom";
 import { sueDeCoqTechniques } from "./sue-de-coq";
 import { alignedExclusionTechniques } from "./aligned-exclusion";
+import { forcingTechniques } from "./forcing";
+import { netTechniques } from "./nets";
+import { krakenTechniques } from "./kraken";
 
 const detectors = new Map<string, { discover(view: ReadView, context: DiscoveryContext): Discovery }>([
   ["C01", new NakedSingles()], ["C02", new HiddenSingles()],
@@ -34,7 +37,7 @@ const dimensions: Record<string, readonly [number,number,number,number,number]> 
   C28:[24,1,4,81,4],C29:[0,0,9,4,4],C30:[0,0,9,16,3],C31:[0,0,9,81,4],C32:[0,1,6,12,4],C33:[0,0,9,81,3],
   U01:[24,1,2,4,2],U02:[24,1,3,6,3],U03:[12,0,4,12,2],U04:[0,0,1,81,2],U05:[24,1,4,81,4],
 };
-const advanced=[...fishTechniques,...shortPatternTechniques,...wingTechniques,...bentSubsetTechniques,...remotePairTechniques,...coloringTechniques,...chainTechniques,...loopTechniques,...alsPatternTechniques,...deathBlossomTechniques,...sueDeCoqTechniques,...alignedExclusionTechniques];
+const advanced=[...fishTechniques,...shortPatternTechniques,...wingTechniques,...bentSubsetTechniques,...remotePairTechniques,...coloringTechniques,...chainTechniques,...loopTechniques,...alsPatternTechniques,...deathBlossomTechniques,...sueDeCoqTechniques,...alignedExclusionTechniques,...forcingTechniques,...netTechniques,...krakenTechniques];
 const descriptors: readonly TechniqueDescriptor[] = Object.freeze(coverageEntries.map(entry => advanced.find(d=>d.id===entry.version)??Object.freeze({
   id: entry.version, aliases: entry.aliases, tier: entry.tier, requires: entry.capabilities,
   assumptionPolicy: entry.assumptionPolicy,

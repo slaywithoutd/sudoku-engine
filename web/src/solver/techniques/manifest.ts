@@ -4544,7 +4544,6 @@ export const coverageEntries: readonly CoverageEntry[] = Object.freeze((
       }
     ]
   },
-
   {
     "id": "C19",
     "version": "c19@1",
@@ -4640,7 +4639,6 @@ export const coverageEntries: readonly CoverageEntry[] = Object.freeze((
       }
     ]
   },
-
   {
     "id": "C20",
     "version": "c20@1",
@@ -4911,15 +4909,139 @@ export const coverageEntries: readonly CoverageEntry[] = Object.freeze((
     "grammarId": "c22-grammar@1",
     "detectorId": "c22@1",
     "checkerId": "c22-grammar@1",
-    "descriptionPath": "docs/superpowers/specs/2026-09-12-m2-technique-coverage.md",
+    "descriptionPath": "docs/solver/techniques/forcing.md",
     "fixtureIds": [
+      "C22-cell2",
+      "C22-cell9",
+      "C22-unit2",
       "C22-digit",
-      "C22-cell",
-      "C22-unit",
-      "C22-nishio"
+      "C22-unit9",
+      "C22-nishio",
+      "C22-digit-positive-24"
     ],
-    "status": "specified",
-    "evidence": []
+    "status": "independently-verified",
+    "evidence": [
+      {
+        "kind": "positive",
+        "fixtureId": "C22-digit",
+        "alias": "Digit forcing chains",
+        "record": "web/tests/unit/solver/forcing.test.ts#independent-and-production-certificates"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "C22-digit",
+        "alias": "Digit forcing chains",
+        "record": "web/tests/unit/solver/forcing.test.ts#scope-source-case-root-substitution"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "C22-digit",
+        "alias": "Digit forcing chains",
+        "record": "web/tests/unit/solver/forcing.test.ts#declared-profile-boundaries"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C22-digit",
+        "alias": "Digit forcing chains",
+        "record": "web/tests/unit/solver/forcing.test.ts#replays-original-clue-prefix"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C22-digit",
+        "alias": "Digit forcing chains",
+        "record": "web/tests/unit/solver/forcing.test.ts#assertSound-both-certificates"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "C22-cell2",
+        "alias": "Cell forcing chains",
+        "record": "web/tests/unit/solver/forcing.test.ts#independent-and-production-certificates"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "C22-cell2",
+        "alias": "Cell forcing chains",
+        "record": "web/tests/unit/solver/forcing.test.ts#scope-source-case-root-substitution"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "C22-cell2",
+        "alias": "Cell forcing chains",
+        "record": "web/tests/unit/solver/forcing.test.ts#declared-profile-boundaries"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C22-cell2",
+        "alias": "Cell forcing chains",
+        "record": "web/tests/unit/solver/forcing.test.ts#replays-original-clue-prefix"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C22-cell2",
+        "alias": "Cell forcing chains",
+        "record": "web/tests/unit/solver/forcing.test.ts#assertSound-both-certificates"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "C22-unit2",
+        "alias": "Unit forcing chains",
+        "record": "web/tests/unit/solver/forcing.test.ts#independent-and-production-certificates"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "C22-unit2",
+        "alias": "Unit forcing chains",
+        "record": "web/tests/unit/solver/forcing.test.ts#scope-source-case-root-substitution"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "C22-unit2",
+        "alias": "Unit forcing chains",
+        "record": "web/tests/unit/solver/forcing.test.ts#declared-profile-boundaries"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C22-unit2",
+        "alias": "Unit forcing chains",
+        "record": "web/tests/unit/solver/forcing.test.ts#replays-original-clue-prefix"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C22-unit2",
+        "alias": "Unit forcing chains",
+        "record": "web/tests/unit/solver/forcing.test.ts#assertSound-both-certificates"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "C22-nishio",
+        "alias": "Nishio",
+        "record": "web/tests/unit/solver/forcing.test.ts#independent-and-production-certificates"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "C22-nishio",
+        "alias": "Nishio",
+        "record": "web/tests/unit/solver/forcing.test.ts#scope-source-case-root-substitution"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "C22-nishio",
+        "alias": "Nishio",
+        "record": "web/tests/unit/solver/forcing.test.ts#declared-profile-boundaries"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C22-nishio",
+        "alias": "Nishio",
+        "record": "web/tests/unit/solver/forcing.test.ts#replays-original-clue-prefix"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C22-nishio",
+        "alias": "Nishio",
+        "record": "web/tests/unit/solver/forcing.test.ts#assertSound-both-certificates"
+      }
+    ]
   },
   {
     "id": "C23",
@@ -4942,14 +5064,106 @@ export const coverageEntries: readonly CoverageEntry[] = Object.freeze((
     "grammarId": "c23-grammar@1",
     "detectorId": "c23@1",
     "checkerId": "c23-grammar@1",
-    "descriptionPath": "docs/superpowers/specs/2026-09-12-m2-technique-coverage.md",
+    "descriptionPath": "docs/solver/techniques/forcing.md",
     "fixtureIds": [
-      "C23-static",
-      "C23-dynamic",
-      "C23-nested-depth2"
+      "C23-static-independent",
+      "C23-nested-depth2-independent",
+      "C23-dynamic-semantic-128",
+      "C23-dynamic-semantic-129"
     ],
-    "status": "specified",
-    "evidence": []
+    "status": "independently-verified",
+    "evidence": [
+      {
+        "kind": "positive",
+        "fixtureId": "C23-static-independent",
+        "alias": "Static forcing nets",
+        "record": "web/tests/unit/solver/nets.test.ts#independent-and-production-certificates"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "C23-static-independent",
+        "alias": "Static forcing nets",
+        "record": "web/tests/unit/solver/nets.test.ts#scope-source-case-root-substitution"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "C23-static-independent",
+        "alias": "Static forcing nets",
+        "record": "web/tests/unit/solver/nets.test.ts#declared-profile-boundaries"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C23-static-independent",
+        "alias": "Static forcing nets",
+        "record": "web/tests/unit/solver/nets.test.ts#replays-original-clue-prefix"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C23-static-independent",
+        "alias": "Static forcing nets",
+        "record": "web/tests/unit/solver/nets.test.ts#assertSound-both-certificates"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "C23-dynamic-semantic-128",
+        "alias": "Dynamic forcing nets",
+        "record": "web/tests/unit/solver/nets.test.ts#independent-and-production-certificates"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "C23-dynamic-semantic-128",
+        "alias": "Dynamic forcing nets",
+        "record": "web/tests/unit/solver/nets.test.ts#scope-source-case-root-substitution"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "C23-dynamic-semantic-128",
+        "alias": "Dynamic forcing nets",
+        "record": "web/tests/unit/solver/nets.test.ts#declared-profile-boundaries"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C23-dynamic-semantic-128",
+        "alias": "Dynamic forcing nets",
+        "record": "web/tests/unit/solver/nets.test.ts#replays-original-clue-prefix"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C23-dynamic-semantic-128",
+        "alias": "Dynamic forcing nets",
+        "record": "web/tests/unit/solver/nets.test.ts#assertSound-both-certificates"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "C23-nested-depth2-independent",
+        "alias": "Nested forcing",
+        "record": "web/tests/unit/solver/nets.test.ts#independent-and-production-certificates"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "C23-nested-depth2-independent",
+        "alias": "Nested forcing",
+        "record": "web/tests/unit/solver/nets.test.ts#scope-source-case-root-substitution"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "C23-nested-depth2-independent",
+        "alias": "Nested forcing",
+        "record": "web/tests/unit/solver/nets.test.ts#declared-profile-boundaries"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C23-nested-depth2-independent",
+        "alias": "Nested forcing",
+        "record": "web/tests/unit/solver/nets.test.ts#replays-original-clue-prefix"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C23-nested-depth2-independent",
+        "alias": "Nested forcing",
+        "record": "web/tests/unit/solver/nets.test.ts#assertSound-both-certificates"
+      }
+    ]
   },
   {
     "id": "C24",
@@ -4970,13 +5184,47 @@ export const coverageEntries: readonly CoverageEntry[] = Object.freeze((
     "grammarId": "c24-grammar@1",
     "detectorId": "c24@1",
     "checkerId": "c24-grammar@1",
-    "descriptionPath": "docs/superpowers/specs/2026-09-12-m2-technique-coverage.md",
+    "descriptionPath": "docs/solver/techniques/forcing.md",
     "fixtureIds": [
+      "C24-kraken-mutant",
+      "C24-kraken-franken",
       "C24-kraken-basic",
-      "C24-kraken-franken"
+      "C24-kraken-four-fins",
+      "C24-kraken-simple23"
     ],
-    "status": "specified",
-    "evidence": []
+    "status": "independently-verified",
+    "evidence": [
+      {
+        "kind": "positive",
+        "fixtureId": "C24-kraken-mutant",
+        "alias": "Kraken Fish",
+        "record": "web/tests/unit/solver/forcing.test.ts#independent-and-production-certificates"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "C24-kraken-mutant",
+        "alias": "Kraken Fish",
+        "record": "web/tests/unit/solver/forcing.test.ts#scope-source-case-root-substitution"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "C24-kraken-mutant",
+        "alias": "Kraken Fish",
+        "record": "web/tests/unit/solver/forcing.test.ts#declared-profile-boundaries"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C24-kraken-mutant",
+        "alias": "Kraken Fish",
+        "record": "web/tests/unit/solver/forcing.test.ts#replays-original-clue-prefix"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C24-kraken-mutant",
+        "alias": "Kraken Fish",
+        "record": "web/tests/unit/solver/forcing.test.ts#assertSound-both-certificates"
+      }
+    ]
   },
   {
     "id": "C25",
@@ -5075,7 +5323,7 @@ export const coverageEntries: readonly CoverageEntry[] = Object.freeze((
       "R"
     ],
     "assumptionPolicy": "discharged",
-    "bounds": "k=2…4 alternatives from an already proved clause (e.g. guardians), not a guessed list. Per branch C25–C27 <=12 pairs or static C22 chains <=24 links. Shared conclusion under every branch, no additional nesting.",
+    "bounds": "Already-proved complete OR clause, k=2...4. Forcing: same effect under every alternative; per branch C25-C27 <=12 positions or static C22 <=24 links, no recursive case nesting. Inserted whip: scalar C26 prefix/one OR position/suffix, <=12 total positions including OR and terminal; one target assumption discharged. Complete OR alternatives and ordered conflicts required; OR supplies no exclusivity. See D087.",
     "grammarId": "c28-grammar@1",
     "detectorId": "c28@1",
     "checkerId": "c28-grammar@1",

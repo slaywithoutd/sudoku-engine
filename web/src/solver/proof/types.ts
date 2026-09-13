@@ -82,3 +82,15 @@ export interface CheckedCertificate {
 export type CertificateEvent = { readonly kind: "work"; readonly units: number }
   | { readonly kind: "verified"; readonly certificate: CheckedCertificate }
   | { readonly kind: "rejected"; readonly code: string };
+
+declare const branchCertificateBrand: unique symbol;
+/** Confined computational result. Never accepted by primary commit/retention. */
+export interface BranchCertificate {
+  readonly [branchCertificateBrand]: true;
+  readonly proposal: DeductionProposal;
+  readonly consequences: readonly CheckedInference[];
+  readonly scope: readonly number[];
+}
+export type BranchEvent = { readonly kind: "work"; readonly units: number }
+  | { readonly kind: "branch-checked"; readonly certificate: BranchCertificate }
+  | { readonly kind: "rejected"; readonly code: string };

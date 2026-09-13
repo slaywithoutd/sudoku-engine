@@ -127,3 +127,48 @@ scope/certificate mutation gates and honest incomplete-search limits.
 ```text
 npm test -- tests/unit/solver/set-arguments.test.ts
 ```
+
+## Forcing, net and Kraken fixture provenance
+
+`C22.json` contains complete digit, cell2/cell9 and unit2/unit9 cases authored
+from original-given domains by a separate coordinate/set signed-graph search.
+The Nishio case honestly reuses C17's three-edge single-digit geometry with a
+fresh C22 assumption/discharge proof. The positive24 example has25distinct
+signed vertices on its long branch and a seven-link complementary branch;
+both place49/2. A shorter proof exists, so24 is certificate-boundary evidence,
+not a claim of minimal difficulty.
+
+`C23.json` preserves separately authored finite basic operations and any
+original-clue prefix. `C23-static-independent` is the corrected static label
+for the original seed: merely creating a bivalue is not dynamic-link use.
+Actual dynamic discovery on that prestate consumes the rebuilt cell23{2,8}
+cover. The nested seed exhausts its actual inner alternatives at depth2.
+Independent128 and129 examples use only original-given peer exclusions before
+the branch. Every recorded domain change is checked separately. The128 proof
+is admitted;129 is mathematically valid but rejected by the named profile.
+The129 puzzle is an honest row/column/digit permutation of128, followed by a
+fresh propagation schedule; neither proof inserts identity padding. Reachable
+semantic dependency counting is confirmed against the actual primitive DAG.
+
+`C24.json` reuses independently checked C07/C08 geometry with new fin paths:
+basic, Franken size2 and Mutant size4 examples have targets that do not see the
+fin. The four-fin case reuses C07's direct-visibility boundary and is explicitly
+a one-link special case. The simple23 example thins original clues while
+preserving all fish-symbol occurrences and uses24distinct signed vertices.
+Every scalar edge flips sign, so23 is the attainable maximum below the stated
+24-link cap for a target-positive to fin-negative path. It does not establish
+that shorter fin paths are impossible.
+
+`tests/solver/forcing-acceptance.ts` contains a separate mathematical operation
+interpreter and certificate algebra. It does not call production forcing/net
+builders or indexes to author certificates. Tests verify both independent and
+production certificates, each prestate's satisfiability, every effect's
+exhausted forced-opposite counterfactual and original-clue replay. Actual
+discovery gates are separate from named maximum-length recipe acceptance.
+Source, sibling, scope, complete-case, every-root and resource interruption
+mutations are covered. See `docs/solver/techniques/forcing.md` for authority and
+the exact semantic-versus-expanded proof budget contract.
+
+```text
+npm test -- tests/unit/solver/forcing.test.ts tests/unit/solver/nets.test.ts tests/unit/solver/candidates.test.ts
+```

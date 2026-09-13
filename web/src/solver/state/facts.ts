@@ -148,3 +148,6 @@ export function createRoots(assembly: Assembly, branch: BranchId = "primary"): R
   for (const node of nodes.values()) rootCounts.set(node, facts.size);
   return new ImmutableMap(facts);
 }
+
+/** Confined branch publication; implemented beside the private candidate owner. */
+export { forkView } from "./candidates";

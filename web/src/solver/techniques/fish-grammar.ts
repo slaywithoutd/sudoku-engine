@@ -32,7 +32,7 @@ export function mixedFishForm(bases:readonly string[],covers:readonly string[]):
  return (b.has("box")||c.has("box"))&&(oriented(b,c)||oriented(c,b))?"franken":"mutant";
 }
 /** Independent named predicates plus exact incidence arithmetic, never discovery. */
-export function validateFishComponent(view:ReadView,p:FishComponent):FishRequirement {
+export function validateFishGeometry(view:ReadView,p:FishComponent):FishRequirement {
  requireProof(p&&typeof p==="object"&&!Array.isArray(p),"fish-component");
  const simple=["basic","finned","sashimi"].includes(p.form),max=simple?7:4;
  fields(p,["alias","form","size","symbol","bases","covers","fins",...simple?[]:["incidence"]]);
@@ -64,9 +64,13 @@ export function validateFishComponent(view:ReadView,p:FishComponent):FishRequire
   if(p.alias==="Endo-fin fish")requireProof(fins.some(c=>baseCounts[c]>1),"fish-missing-endofin");
  }
  const effects=coefficients.flatMap((coefficient,cell)=>coefficient>0&&current(cell)&&!view.state.values[cell]&&
-  fins.every(fin=>fishSees(view,cell,fin))&&(p.alias!=="Cannibalistic fish"||baseCounts[cell]>0)?[{kind:"remove" as const,cell,symbol:p.symbol}]:[]);
- requireProof(effects.length>0,"unproductive-fish");
+  (p.alias!=="Cannibalistic fish"||baseCounts[cell]>0)?[{kind:"remove" as const,cell,symbol:p.symbol}]:[]);
  return {pattern:p,coefficients,baseCounts,effects};
+}
+/** Ordinary fish additionally requires direct target-to-fin visibility. */
+export function validateFishComponent(view:ReadView,p:FishComponent):FishRequirement {
+ const geometry=validateFishGeometry(view,p), effects=geometry.effects.filter(e=>p.fins.every(fin=>fishSees(view,e.cell,fin)));
+ requireProof(effects.length>0,"unproductive-fish"); return {...geometry,effects};
 }
 export function validateFishPattern(view:ReadView,p:FishPattern,technique:string,effects:readonly Effect[]):readonly FishRequirement[] {
  let requirements:FishRequirement[];

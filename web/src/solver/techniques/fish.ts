@@ -110,7 +110,7 @@ export class FishCursorSet<T> {
  * remain valid even when a smaller fish proves the same removal.
  */
 class FishSearch {
- constructor(readonly view:ReadView,readonly family:string,readonly context:DiscoveryContext,readonly sources:FishSources) {}
+ constructor(readonly view:ReadView,readonly family:string,readonly context:DiscoveryContext,readonly sources:FishSources, readonly reaches?:(symbol:number,target:number,fin:number)=>boolean, readonly maximum?:number) {}
  *ordered(houses:readonly House[],n:number):Generator<House[]> {
   const preferred=houses.filter(h=>h.support.every(c=>!this.view.state.values[c])),other=houses.filter(h=>!preferred.includes(h));
   for(let count=0;count<=n;count++)for(const a of combinations(preferred,n-count))for(const b of combinations(other,count))yield [...a,...b].sort((a,b)=>a.id.localeCompare(b.id));
@@ -154,7 +154,7 @@ class FishSearch {
   }
  }
  *patterns():Generator<Work|Candidate> {
-  const max=["C06","C07"].includes(this.family)?7:4;
+  const max=this.maximum??(["C06","C07"].includes(this.family)?7:4);
   // Distinct-effect Siamese explanations precede equal-effect presentations.
   // The latter remain in a complete second pass, with all repeated work paid.
   const simple=["C06","C07"].includes(this.family);
@@ -177,7 +177,7 @@ class FishSearch {
    if(current.every(c=>this.view.state.values[c]))continue;
    // At most 27*9 cells and 81*81 peer flags; paid by the invocation lease.
    const houses=classicScopes(this.view).filter(h=>this.sources.has(h.cells)).map(h=>({id:h.id,cells:h.cells,support:h.cells.filter(c=>this.view.state.domains[c]&bit)})).sort((a,b)=>a.id.localeCompare(b.id));
-   const peers=current.map(c=>new Set(current.filter(d=>c!==d&&this.view.assembly.allDifferent.some(h=>h.cells.includes(c)&&h.cells.includes(d)))));
+   const peers=current.map(c=>new Set(current.filter(d=>c!==d&&(this.reaches?this.reaches(symbol,c,d):this.view.assembly.allDifferent.some(h=>h.cells.includes(c)&&h.cells.includes(d))))));
    for(const orientation of simple?["row","column"]:["mixed"]) {
     const available=deferred?houses:houses.filter(h=>h.support.every(c=>!this.view.state.values[c]));
     const basePool=available.filter(h=>this.sources.has(h.cells,symbol)&&(!simple||h.id.startsWith(orientation+":")));
@@ -291,3 +291,15 @@ class FishTechnique implements TechniqueDescriptor {
  }
 }
 export const fishTechniques:readonly TechniqueDescriptor[]=Object.freeze(["C06","C07","C08","C09"].map(id=>Object.freeze(new FishTechnique(id))));
+
+/** Untrusted C07/C08 geometry enumeration composed by Kraken's checked chains.
+ * Reachability only selects recipes; Kraken replays every fin and count root. */
+export function* krakenFishShapes(view:ReadView,context:DiscoveryContext,reaches:(symbol:number,target:number,fin:number)=>boolean):Generator<Work|Candidate> {
+ assertOwnedView(view);const lease=context.workspace.reserve(1,262144);
+ try {
+  const sources=new FishSources(view,lease);yield* sources.prepare();
+  const searches=[new FishSearch(view,"C07",context,sources,reaches,4),new FishSearch(view,"C08",context,sources,reaches,4)];
+  for(const event of new FishCursorSet(searches.map(search=>search.patterns())).events())
+   if("kind" in event||!("components" in event.pattern)&&event.pattern.fins.length>0)yield event;
+ }finally{lease.dispose();}
+}
