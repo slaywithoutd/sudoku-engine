@@ -300,9 +300,9 @@ expect(discoverFixture("C16-length25").status).toBe("out-of-profile");
 
 **Files:** create `src/solver/techniques/als-patterns.ts`, `death-blossom.ts`; fixtures `C18.json`, `C19.json`; test `tests/unit/solver/als-patterns.test.ts`; `docs/solver/techniques/als.md`; update registry/manifest/provenance.
 
-**Interfaces:** descriptors consuming AlsIndex/GroupIndex and table/count checker; certificates contain every set, cell overlap, RCC occurrence and target visibility premise.
+**Interfaces:** descriptors consuming AlsIndex/ImplicationIndex with complete ALS occurrence groups and the table/count checker; certificates contain every set, cell overlap, RCC occurrence and target visibility premise. Generic GroupIndex syntax must not truncate five-cell ALS occurrences (D078).
 
-- [ ] Assert full RCC and branch coverage:
+- [x] Assert full RCC and branch coverage:
 
 ```ts
 for (const id of ["C18-xz-double-rcc", "C18-overlap", "C18-xy", "C19-chain-6", "C19-blossom-4"]) {
@@ -311,10 +311,10 @@ for (const id of ["C18-xz-double-rcc", "C18-overlap", "C18-xy", "C19-chain-6", "
 expect(checkFixtureMutation("C19-blossom-4", "remove-petal").kind).toBe("rejected");
 ```
 
-- [ ] Run `npm test -- tests/unit/solver/als-patterns.test.ts`.
-- [ ] Join two/three ALSs for XZ/XY, enumerate <=6-set chains, exclude invalid overlaps from RCC and validate overlap effects through complete local relations. Death Blossom splits over every stem candidate with its proved petal consequence; join only common effects. Use <=5 cells per ALS and <=4 stem candidates; charge cache lookups/construction and each extension.
-- [ ] Run disjoint/overlapping, single/double RCC, chain endpoints and all stem size fixtures with independent checks; stale cache mutation must fail; typecheck.
-- [ ] Commit listed files: `feat: explain ALS relationships chains and death blossom`.
+- [x] Run `npm test -- tests/unit/solver/als-patterns.test.ts`.
+- [x] Join two/three ALSs for XZ/XY, enumerate <=6-set chains, exclude invalid overlaps from RCC and validate overlap effects through complete local relations. Death Blossom splits over every stem candidate with its proved petal consequence; join only common effects. Use <=5 cells per ALS and <=4 stem candidates; charge cache lookups/construction and each extension.
+- [x] Run disjoint/overlapping, single/double RCC, chain endpoints and all stem size fixtures with independent checks; stale cache mutation must fail; typecheck.
+- [x] Commit listed files: `feat: explain ALS relationships chains and death blossom`.
 
 ## T13 — Set/count and aligned exclusion C20–C21
 

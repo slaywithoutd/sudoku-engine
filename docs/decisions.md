@@ -740,3 +740,11 @@ Record each answer here with its rationale and consequences. If an answer change
 - Status: Technical C29 grammar clarification for T16, 2026-09-13; implementation/review pending. Existing four-cell/four-symbol and complete joint-proof bounds remain unchanged.
 - A quad component need not itself be a three-symbol triple. The [primary description](https://www.sudokuwiki.org/Fireworks) joins two double fireworks: opposite intersection cells, shared wings, and disjoint two-symbol sets. This canonical form is required; joining two already complete triples cannot substitute for its acceptance fixture.
 - Each symbol still needs its complete intersecting-house cover proof. Check the conjunction across all four cells before projecting effects; the layout alone proves nothing. Name additional bounded combinations according to their actually checked structure. This resolves ambiguous "two such cover relations" wording without enabling arbitrary four-cell tables as Fireworks.
+
+
+## D084 — Distinguish selected Sue de Coq cells from the whole intersection
+
+- Status: Technical C20 grammar clarification for T13, 2026-09-13; implementation/review pending. Existing selected-cell, side-ALS and symbol bounds remain unchanged.
+- The selected intersection contains two or three cells. With two selected cells, the unused third geometric box-line cell may belong to either side set, but never both. All selected cell sets remain disjoint, and each side stays in its declared house. Do not silently require every line-side cell to be outside the box or every box-side cell to be outside the line.
+- The [primary extended definition](https://hodoku.sourceforge.net/en/tech_misc.php), inspected 2026-09-13, also permits symbols outside the intersection's candidate union on both sides. An intersection symbol cannot belong to both side unions; an outside symbol may, but each side's cell/symbol deficit must be counted separately. Full Hall/cover allocation evidence remains mandatory.
+- T13 must include an unused-third-cell example and a shared outside-symbol example, alongside the invalid double-counted intersection-symbol case. A generic local table cannot acquire the Sue de Coq name without these structural/allocation conditions. This clarifies the existing extended family rather than adding a new technique or raising a bound.
