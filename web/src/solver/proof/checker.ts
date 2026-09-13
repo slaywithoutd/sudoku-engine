@@ -1,12 +1,18 @@
 import { canonicalProblem } from "../problem";
 import type { Json } from "../problem";
 import type { StateKey } from "../snapshot";
-import { ImmutableMap, originalFact, originalRootCount } from "../state/facts";
-import { PrimitiveRegistry, ProofError, requireProof, sameValue } from "./primitives";
+import { ImmutableMap, originalFact, originalRootCount, originalPremises } from "../state/facts";
+import { assertM2RootAssemblyBounds, PrimitiveRegistry, ProofError, requireProof, sameValue } from "./primitives";
 import type { CheckContext, CheckEvent, CheckedInference, CheckedStep, DeductionProposal, ProofNode } from "./types";
 
 const authenticSteps = new WeakSet<object>();
-const acceptedNodes = new WeakMap<ProofNode, { state: StateKey; inference: CheckedInference }>();
+interface CheckedNodeAuthority {
+  readonly state: StateKey;
+  readonly inference: CheckedInference;
+  /** References to the actual immutable nodes checked, not just their wire IDs. */
+  readonly premises: readonly ProofNode[];
+}
+const acceptedNodes = new WeakMap<ProofNode, CheckedNodeAuthority>();
 const NODE_BYTES = 16 * 1024;
 const HEADER_BYTES = 32 * 1024;
 const MAX_ARITY = 64;
@@ -150,6 +156,7 @@ export class ProofChecker {
         const root = retained.get(id);
         requireProof(root && originalRootCount(root) === rootCount, "missing-original-roots");
       }
+      assertM2RootAssemblyBounds(source.view.assembly);
       const problem = canonicalProblem(source.view.assembly.problem);
       const state = copyBounded(source.view.state.key, NODE_BYTES).value;
       requireProof(state.problemKey === problem.key && typeof state.branch === "string" &&
@@ -170,15 +177,23 @@ export class ProofChecker {
         tick();
         const original = originalFact(node);
         const checked = acceptedNodes.get(node);
-        const authority = original ? { state: original.state, inference: Object.freeze({
+        const authority: CheckedNodeAuthority | undefined = original ? {
+          state: original.state,
+          premises: originalPremises(node)!,
+          inference: Object.freeze({
           conclusion: original.proposition, openAssumptions: original.openAssumptions,
           conditional: original.conditional, rules: original.rules,
         }) } : checked;
         requireProof(authority && id === node.id && Number.isSafeInteger(id) && id >= 0 &&
           authority.state.problemKey === state.problemKey && authority.state.branch === state.branch &&
           authority.state.revision <= state.revision, "inauthentic-retained-node");
-        for (const premise of node.premises)
+        for (const [index, premise] of node.premises.entries()) {
           requireProof(premise < id && retained.has(premise), "missing-retained-dependency");
+          // Every retained object may be authentic while its assembled prefix
+          // is not. This identity check binds the graph to the checked premises
+          // and is independent of the retained Map's iteration order.
+          requireProof(retained.get(premise) === authority.premises[index], "substituted-retained-dependency");
+        }
         const encoded = copyBounded(node, NODE_BYTES);
         runBytes += encoded.bytes;
         requireProof(runBytes <= limits.proofBytes && runBytes <= limits.workspaceBytes, "proof-byte-limit");
@@ -253,7 +268,11 @@ export class ProofChecker {
         proof: Object.freeze({ ...proof, nodes: Object.freeze(stagedNodes) }) });
       const step = Object.freeze({ proposal: checkedProposal, consequences, afterRevision: state.revision }) as CheckedStep;
       authenticSteps.add(step);
-      for (const node of stagedNodes) acceptedNodes.set(node, { state, inference: inferences.get(node.id)! });
+      for (const node of stagedNodes) acceptedNodes.set(node, {
+        state,
+        inference: inferences.get(node.id)!,
+        premises: Object.freeze(node.premises.map(id => available.get(id)!)),
+      });
       yield { kind: "checked", step };
     } catch (error) {
       yield { kind: "rejected", code: error instanceof ProofError ? error.code : "malformed-proof" };

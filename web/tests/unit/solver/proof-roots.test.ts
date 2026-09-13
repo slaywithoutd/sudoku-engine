@@ -1,9 +1,10 @@
 import { describe, expect, test } from "vitest";
-import { normalizeClassic } from "../../../src/solver/problem";
+import { canonicalProblem, normalizeClassic } from "../../../src/solver/problem";
 import { AllDifferentRule } from "../../../src/solver/rules/all-different";
 import { assemble } from "../../../src/solver/rules/assemble";
 import { createRoots, rootNode } from "../../../src/solver/state/facts";
 import { checkProposal, isCheckedStep } from "../../../src/solver/proof/checker";
+import { primitiveRegistry } from "../../../src/solver/proof/primitives";
 import type { CheckContext, DeductionProposal, ProofNode } from "../../../src/solver/proof/types";
 
 function fixture() {
@@ -34,7 +35,95 @@ function terminal(proposal: DeductionProposal, context: CheckContext) {
   return events.at(-1)!;
 }
 
+function smallAssembly(cellCount: number, symbolCount: number, ruleCount = 0) {
+  const problem = canonicalProblem({
+    schema: 1,
+    cells: Array.from({ length: cellCount }, (_, index) => index),
+    symbols: Array.from({ length: symbolCount }, (_, index) => index + 1),
+    givens: Array<number>(cellCount).fill(0),
+    constraints: Array.from({ length: ruleCount }, (_, index) => ({
+      id: `rule:${index}`, type: "all-different@1", cells: [0, 1], parameters: {},
+    })),
+  });
+  const result = assemble(problem, [new AllDifferentRule()]);
+  if (!result.ok) throw new Error("small fixture assembly failed");
+  return result.value;
+}
+
 describe("original proof authority", () => {
+  test.each([[1, 10, 0], [82, 9, 0], [2, 2, 257]])("bounds original root allocation for %i cells, %i symbols and %i rules", (cells, symbols, rules) => {
+    expect(() => createRoots(smallAssembly(cells, symbols, rules))).toThrow();
+  });
+  test.each([[1, 10, 0], [82, 9, 0], [2, 2, 257]])("applies matching primitive bounds for %i cells, %i symbols and %i rules", (cells, symbols, rules) => {
+    const { context } = fixture();
+    const assembly = smallAssembly(cells, symbols, rules);
+    expect(() => primitiveRegistry.check({ rule: "domain-axiom@1", premises: [], parameters: {},
+      conclusion: { kind: "domain", cell: 0, mask: 2 ** symbols - 1 } },
+    { ...context, view: { ...context.view, assembly } })).toThrow();
+  });
+  test("retains smaller nine-bit mock problems", () => {
+    const roots = createRoots(smallAssembly(6, 3));
+    expect(roots.size).toBe(6);
+    expect(roots.get(5)?.proposition).toEqual({ kind: "domain", cell: 5, mask: 7 });
+  });
+  test.each(["allDifferent", "covers"] as const)("bounds %s before canonical problem traversal", kind => {
+    const { assembly } = fixture();
+    const oversized = { ...assembly, [kind]: Array(kind === "covers" ? 2305 : 257),
+      problem: { ...assembly.problem, key: "forged-key-must-not-be-traversed-first" } };
+    expect(() => createRoots(oversized)).toThrow("root-capability-limit");
+  });
+  test.each(["sparse-scope", "nested-parameters"])("preflights malformed %s before canonical traversal", kind => {
+    const { assembly } = fixture();
+    const changedRule = { ...assembly.problem.constraints[0],
+      ...(kind === "sparse-scope" ? { cells: Array<number>(2) } : { parameters: { nested: { payload: true } } }),
+    };
+    const changed = { ...assembly, problem: { ...assembly.problem,
+      constraints: [changedRule, ...assembly.problem.constraints.slice(1)], key: "forged-key-must-not-be-traversed-first" } };
+    expect(() => createRoots(changed)).toThrow(kind === "sparse-scope" ? "invalid-root-array" : "invalid-root-parameters");
+  });
+  test("rejects accessor rule parameters without evaluating unbounded external code", () => {
+    const { assembly } = fixture();
+    let reads = 0;
+    const changedRule = { ...assembly.problem.constraints[0] };
+    Object.defineProperty(changedRule, "parameters", { enumerable: true, get: () => { reads++; return {}; } });
+    expect(() => createRoots({ ...assembly, problem: { ...assembly.problem,
+      constraints: [changedRule, ...assembly.problem.constraints.slice(1)] } })).toThrow();
+    expect(reads).toBe(0);
+  });
+  test("binds original capability dependencies to their factory prefix too", () => {
+    const { assembly, context, proposal } = fixture();
+    const separate = createRoots(assembly);
+    const retained = new Map(context.retained);
+    retained.set(82, rootNode(separate.get(82)!));
+    const result = terminal({ ...proposal, proof: { ...proposal.proof, nodes: [], imports: [109], roots: [109] } },
+      { ...context, retained });
+    expect(result.kind).toBe("rejected");
+    if (result.kind === "rejected") expect(result.code).toBe("substituted-retained-dependency");
+  });
+  test.each(["ascending", "descending", "dependent-first"])("binds retained dependencies to the proved objects with %s map order", order => {
+    const { context, proposal, node } = fixture();
+    const rule: ProofNode = { ...node, rule: "rule-instance@1", conclusion: { kind: "rule", constraintId: "box:0" } };
+    const scope: ProofNode = { ...node, id: node.id + 1, rule: "all-different@1", premises: [rule.id],
+      parameters: { constraintId: "box:0" }, conclusion: { kind: "all-different", cells: [0, 1, 2, 9, 10, 11, 18, 19, 20] } };
+    const original = terminal({ ...proposal, proof: { ...proposal.proof, nodes: [rule, scope], roots: [scope.id] } }, context);
+    const alternative = terminal(proposal, context);
+    expect(original.kind).toBe("checked");
+    expect(alternative.kind).toBe("checked");
+    if (original.kind !== "checked" || alternative.kind !== "checked") return;
+    const [provedRule, provedScope] = original.step.proposal.proof.nodes;
+    const provedGiven = alternative.step.proposal.proof.nodes[0];
+    const retained = (dependency: ProofNode) => {
+      const entries: [number, ProofNode][] = [...context.retained, [provedRule.id, dependency], [provedScope.id, provedScope]];
+      if (order === "descending") entries.reverse();
+      if (order === "dependent-first") entries.unshift(entries.pop()!);
+      return new Map(entries);
+    };
+    const imported = { ...proposal, proof: { ...proposal.proof, nodes: [], imports: [provedScope.id], roots: [provedScope.id] } };
+    expect(terminal(imported, { ...context, retained: retained(provedRule) }).kind).toBe("checked");
+    expect(terminal(imported, { ...context, retained: retained(provedGiven) })).toEqual({
+      kind: "rejected", code: "substituted-retained-dependency",
+    });
+  });
   test("materializes full original domains, exact clues and capability dependencies in canonical order", () => {
     const { facts } = fixture();
     expect(facts.get(0)?.proposition).toEqual({ kind: "domain", cell: 0, mask: 511 });

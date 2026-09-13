@@ -2,7 +2,7 @@ import { canonicalProblem } from "../problem";
 import type { BranchId } from "../problem";
 import type { Assembly, FactId, NodeId } from "../rules/types";
 import type { CheckContext, ProofNode } from "../proof/types";
-import { primitiveRegistry, requireProof, sameValue } from "../proof/primitives";
+import { assertM2RootAssemblyBounds, primitiveRegistry, requireProof, sameValue } from "../proof/primitives";
 import type { Fact, Proposition } from "./types";
 
 /** Encapsulation matters: freezing a Map alone does not prevent set/delete. */
@@ -28,6 +28,7 @@ export class ImmutableMap<K, V> implements ReadonlyMap<K, V> {
 
 const factNodes = new WeakMap<Fact, ProofNode>();
 const originalNodes = new WeakMap<ProofNode, Fact>();
+const rootPremises = new WeakMap<ProofNode, readonly ProofNode[]>();
 const rootCounts = new WeakMap<ProofNode, number>();
 /** Returns only the original immutable node behind a factory-issued fact. */
 export function rootNode(fact: Fact): ProofNode {
@@ -41,12 +42,18 @@ export function originalFact(node: ProofNode): Fact | undefined { return origina
 /** Size of the complete initialization that issued this node, including capabilities. */
 export function originalRootCount(node: ProofNode): number | undefined { return rootCounts.get(node); }
 
+/** Exact original premise identities, so equal numeric handles cannot be substituted. */
+export function originalPremises(node: ProofNode): readonly ProofNode[] | undefined {
+  return rootPremises.get(node);
+}
+
 /**
  * Materializes assembler handles as independently checked original premises.
  * IDs: all cell domains, nonzero clues, canonical constraints, then capabilities.
  * Full domains remain roots even at clue cells; narrowing requires a derivation.
  */
 export function createRoots(assembly: Assembly, branch: BranchId = "primary"): ReadonlyMap<FactId, Fact> {
+  assertM2RootAssemblyBounds(assembly);
   const problem = canonicalProblem(assembly.problem);
   requireProof(problem.key === assembly.problem.key && typeof branch === "string" && branch.length > 0, "invalid-root-state");
   const state = Object.freeze({ problemKey: problem.key, branch, revision: 0 });
@@ -84,6 +91,7 @@ export function createRoots(assembly: Assembly, branch: BranchId = "primary"): R
       scope: Object.freeze([]),
     });
     const checked = primitiveRegistry.check(node, context);
+    rootPremises.set(node, Object.freeze(node.premises.map(id => nodes.get(id)!)));
     const fact: Fact = Object.freeze({
       id: node.id,
       root: node.id,
