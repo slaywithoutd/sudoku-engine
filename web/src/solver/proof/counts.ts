@@ -1,0 +1,81 @@
+import { derived, domainAssertion, premises, requireProof, sameValue, validLiteral } from "./primitives";
+import type { CheckContext, CheckedInference, PrimitiveInput, Proposition } from "./types";
+
+/** Every scoped cell appears once; a cached support list cannot stand in for evidence. */
+export function provedDomains(sources: readonly Proposition[], cells: readonly number[]): Map<number, number> {
+  const domains = sources.map(domainAssertion);
+  requireProof(domains.length === cells.length && domains.every(Boolean) &&
+    new Set(domains.map(d => d!.cell)).size === cells.length && domains.every(d => cells.includes(d!.cell)), "incomplete-domain-evidence");
+  return new Map(domains.map(d => [d!.cell, d!.mask]));
+}
+
+export class SupportStrategy {
+  readonly id = "support@1";
+  check(input: PrimitiveInput, context: CheckContext): CheckedInference {
+    const [cover, ...sources] = premises(input, context, input.premises.length);
+    requireProof(cover?.kind === "cover", "expected-cover");
+    const domains = provedDomains(sources, cover.cells);
+    const cells = cover.cells.filter(cell => (domains.get(cell)! & (1 << (cover.symbol - 1))) !== 0);
+    requireProof(sameValue(input.conclusion, { kind: "cover", symbol: cover.symbol, cells }), "invalid-support");
+    return derived(input, context);
+  }
+}
+
+export class HallStrategy {
+  readonly id = "hall@1";
+  check(input: PrimitiveInput, context: CheckContext): CheckedInference {
+    const [scope, ...sources] = premises(input, context, input.premises.length);
+    requireProof(scope?.kind === "all-different" && sources.length > 0, "expected-all-different");
+    const domains = sources.map(domainAssertion);
+    requireProof(domains.every(d => d && scope.cells.includes(d.cell)) &&
+      new Set(domains.map(d => d!.cell)).size === domains.length, "invalid-hall-domains");
+    const mask = domains.reduce((mask, d) => mask | d!.mask, 0);
+    const size = context.view.assembly.problem.symbols.filter(symbol => mask & (1 << (symbol - 1))).length;
+    const claim = input.conclusion;
+    const valid = size < domains.length ? sameValue(claim, { kind: "false" }) :
+      size === domains.length && claim.kind === "literal" && validLiteral(claim.value, context) &&
+      sameValue(claim, { kind: "literal", value: claim.value }) && !claim.value.positive &&
+      scope.cells.includes(claim.value.cell) && !domains.some(d => d!.cell === claim.value.cell) &&
+      (mask & (1 << (claim.value.symbol - 1))) !== 0;
+    requireProof(valid, "invalid-hall-conclusion");
+    return derived(input, context);
+  }
+}
+
+interface WeightedPremise { readonly premise: number; readonly coefficient: number }
+/**
+ * Sum weighted covers (at least one) and all-different capacities (at most one).
+ * Per-candidate coefficients preserve overlaps. If u-l is nonnegative, then
+ * sum((u-l)*x) <= U-L; an individual coefficient exceeding U-L proves not-x.
+ */
+export class CoverCountStrategy {
+  readonly id = "cover-count@1";
+  check(input: PrimitiveInput, context: CheckContext): CheckedInference {
+    const { symbol, covers, capacities } = input.parameters as unknown as {
+      symbol: number; covers: WeightedPremise[]; capacities: WeightedPremise[] };
+    requireProof(context.view.assembly.problem.symbols.includes(symbol) && Array.isArray(covers) && Array.isArray(capacities) &&
+      covers.length > 0 && capacities.length > 0 && sameValue(input.parameters, { symbol, covers, capacities }), "invalid-count-parameters");
+    const coefficients = new Map<number, number>(), domainIds = new Set(input.premises);
+    let bound = 0;
+    for (const [entries, direction] of [[covers, -1], [capacities, 1]] as const) {
+      requireProof(new Set(entries.map(e => e.premise)).size === entries.length, "duplicate-count-premise");
+      for (const entry of entries) {
+        requireProof(Number.isSafeInteger(entry.coefficient) && entry.coefficient > 0 && entry.coefficient <= 81 &&
+          sameValue(entry, { premise: entry.premise, coefficient: entry.coefficient }) && input.premises.includes(entry.premise), "invalid-count-coefficient");
+        const scope = context.retained.get(entry.premise)?.conclusion;
+        requireProof(scope && (direction === -1 ? scope.kind === "cover" && scope.symbol === symbol : scope.kind === "all-different"), "invalid-count-scope");
+        requireProof(scope.kind === "cover" || scope.kind === "all-different", "invalid-count-scope");
+        bound += direction * entry.coefficient; domainIds.delete(entry.premise);
+        for (const cell of scope.cells) coefficients.set(cell, (coefficients.get(cell) ?? 0) + direction * entry.coefficient);
+      }
+    }
+    const domains = provedDomains([...domainIds].map(id => context.retained.get(id)!.conclusion), [...coefficients.keys()]);
+    for (const [cell, coefficient] of coefficients) if (domains.get(cell)! & (1 << (symbol - 1)))
+      requireProof(coefficient >= 0, "uncovered-count-incidence");
+    const claim = input.conclusion;
+    requireProof(bound < 0 ? sameValue(claim, { kind: "false" }) : claim.kind === "literal" && validLiteral(claim.value, context) &&
+      sameValue(claim, { kind: "literal", value: claim.value }) && !claim.value.positive &&
+      claim.value.symbol === symbol && (coefficients.get(claim.value.cell) ?? 0) > bound, "invalid-count-conclusion");
+    return derived(input, context);
+  }
+}

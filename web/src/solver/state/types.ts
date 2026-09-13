@@ -16,6 +16,8 @@ export type Proposition =
   | { readonly kind: "all-different"; readonly cells: readonly CellId[] }
   | { readonly kind: "cover"; readonly symbol: SymbolId; readonly cells: readonly CellId[] }
   | { readonly kind: "relation"; readonly cells: readonly CellId[]; readonly tuples: readonly (readonly SymbolId[])[] }
+  /** Exact semantics belong to the authenticated definition node, never count alone. */
+  | { readonly kind: "table"; readonly cells: readonly CellId[]; readonly count: number; readonly definition: NodeId }
   | { readonly kind: "false" };
 export interface Fact {
   readonly id: FactId;

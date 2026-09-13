@@ -46,6 +46,10 @@ export interface CheckContext {
   readonly limits: Limits;
   /** Checker-populated metadata for the exact admitted premise objects. */
   readonly premiseInferences?: ReadonlyMap<NodeId, CheckedInference>;
+  /** Checker-owned lexical position, never taken from detector metadata. */
+  readonly currentNode?: ProofNode;
+  /** Remaining checker workspace after retained/current wire data is charged. */
+  readonly workspaceRemaining?: number;
 }
 export interface CheckedInference {
   readonly conclusion: Proposition;

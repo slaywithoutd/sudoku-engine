@@ -4,6 +4,11 @@ import type { Assembly } from "../rules/types";
 import { M2_ROOT_LIMITS } from "../limits";
 import type { CheckContext, CheckedInference, PrimitiveInput } from "./types";
 import type { Literal, Proposition } from "../state/types";
+import { AssumptionStrategy, ConjunctionStrategy, ContradictionStrategy, DischargeStrategy, CasesStrategy } from "./assumptions";
+import { SupportStrategy, HallStrategy, CoverCountStrategy } from "./counts";
+import { TableChecker } from "./tables";
+import type { TableDefinition } from "./tables";
+import type { ProofNode } from "./types";
 
 export class ProofError extends Error {
   constructor(readonly code: string) {
@@ -64,9 +69,8 @@ function requireRootIdentifier(id: string, suffixAllowance = 0): void {
 
 /**
  * Bounds the original allocation before canonical traversal or root creation.
- * T03 has only all-different rule semantics: parameters must be empty and no
- * relation tables can enter this synchronous factory. Later rule support must
- * provide its own bounded parameter validation before widening this gate.
+ * Relation roots have small explicit tuples only. Larger relations belong in
+ * cooperative table DAGs. Scalar parameter bounds precede module validation.
  */
 export function assertM2RootAssemblyBounds(assembly: Assembly): void {
   requireRootData(assembly, ["problem", "modules", "allDifferent", "covers", "relations", "peers", "supportSignature"]);
@@ -74,21 +78,39 @@ export function assertM2RootAssemblyBounds(assembly: Assembly): void {
   requireProof(Array.isArray(assembly.allDifferent) && assembly.allDifferent.length <= M2_ROOT_LIMITS.allDifferent &&
     Array.isArray(assembly.covers) && assembly.covers.length <= M2_ROOT_LIMITS.covers,
     "root-capability-limit");
-  requireProof(Array.isArray(assembly.relations) && assembly.relations.length === 0,
-    "unsupported-relation-root");
+  requireProof(Array.isArray(assembly.relations) && assembly.relations.length <= 256, "root-relation-limit");
   const problem = assembly.problem;
   requireProof(problem.cells.length + problem.givens.length + problem.constraints.length +
-    assembly.allDifferent.length + assembly.covers.length <= M2_ROOT_LIMITS.nodes, "root-node-limit");
+    assembly.allDifferent.length + assembly.covers.length + assembly.relations.length <= M2_ROOT_LIMITS.nodes, "root-node-limit");
   for (const values of [problem.cells, problem.symbols, problem.givens, problem.constraints,
     assembly.allDifferent, assembly.covers, assembly.relations]) requireDenseRootArray(values);
   for (const rule of problem.constraints) {
     requireRootData(rule, ["id", "type", "cells", "parameters"]);
-    requireProof(rule.type === "all-different@1", "unsupported-rule-root");
+    requireRootIdentifier(rule.type);
+    requireProof(assembly.modules.get(rule.id)?.type === rule.type, "unsupported-rule-root");
     requireRootIdentifier(rule.id);
     requireRootScope(rule.cells);
     requireProof(rule.parameters !== null && typeof rule.parameters === "object" &&
       !Array.isArray(rule.parameters) && Object.getPrototypeOf(rule.parameters) === Object.prototype &&
-      Reflect.ownKeys(rule.parameters).length === 0, "invalid-root-parameters");
+      Reflect.ownKeys(rule.parameters).length <= 16, "invalid-root-parameters");
+    for (const key of Reflect.ownKeys(rule.parameters)) {
+      const descriptor = Object.getOwnPropertyDescriptor(rule.parameters, key)!;
+      requireProof(typeof key === "string" && key.length <= 64 && descriptor.enumerable && "value" in descriptor &&
+        (typeof descriptor.value === "boolean" || Number.isSafeInteger(descriptor.value)), "invalid-root-parameters");
+    }
+  }
+  for (const relation of assembly.relations) {
+    requireRootData(relation, ["id", "cells", "tuples", "premise"]);
+    requireRootIdentifier(relation.id, 16);
+    requireRootScope(relation.cells);
+    requireProof(relation.cells.length <= 16 && Array.isArray(relation.tuples) && relation.tuples.length <= 256 &&
+      relation.cells.length * relation.tuples.length <= 2048, "root-relation-tuple-limit");
+    requireDenseRootArray(relation.tuples);
+    for (const tuple of relation.tuples) {
+      requireProof(Array.isArray(tuple) && tuple.length === relation.cells.length, "invalid-root-tuple");
+      requireDenseRootArray(tuple);
+      requireProof(tuple.every(symbol => problem.symbols.includes(symbol)), "invalid-root-tuple");
+    }
   }
   const capabilityFields = new Map([
     [assembly.allDifferent, ["id", "cells", "premise"]],
@@ -126,13 +148,15 @@ export function domainAssertion(proposition: Proposition): { cell: number; mask:
   return undefined;
 }
 
-function derived(input: PrimitiveInput, context: CheckContext): CheckedInference {
+export function derived(input: PrimitiveInput, context: CheckContext): CheckedInference {
   const premises = input.premises.map(id => context.premiseInferences?.get(id));
   requireProof(premises.every(Boolean), "missing-premise-inference");
-  requireProof(premises.every(p => p!.openAssumptions.length === 0 && !p!.conditional), "unsupported-assumption-scope");
-  return inference(input, [...new Set(premises.flatMap(p => p!.rules))].sort());
+  return Object.freeze({ conclusion: input.conclusion,
+    openAssumptions: Object.freeze([...new Set(premises.flatMap(p => p!.openAssumptions))].sort((a,b) => a-b)),
+    conditional: premises.some(p => p!.conditional),
+    rules: Object.freeze([...new Set(premises.flatMap(p => p!.rules))].sort()) });
 }
-function premises(input: PrimitiveInput, context: CheckContext, count: number): Proposition[] {
+export function premises(input: PrimitiveInput, context: CheckContext, count: number): Proposition[] {
   requireProof(input.premises.length === count && new Set(input.premises).size === count && sameValue(input.parameters, {}), "invalid-inference-parameters");
   return input.premises.map(id => {
     const node = context.retained.get(id);
@@ -140,17 +164,17 @@ function premises(input: PrimitiveInput, context: CheckContext, count: number): 
     return node.conclusion;
   });
 }
-function validLiteral(value: Literal, context: CheckContext): boolean {
+export function validLiteral(value: Literal, context: CheckContext): boolean {
   return context.view.assembly.problem.cells.includes(value.cell) &&
     context.view.assembly.problem.symbols.includes(value.symbol) && typeof value.positive === "boolean" &&
     sameValue(value, { cell: value.cell, symbol: value.symbol, positive: value.positive });
 }
-function literals(proposition: Proposition): readonly Literal[] {
+export function literals(proposition: Proposition): readonly Literal[] {
   if (proposition.kind === "literal") return [proposition.value];
   requireProof(proposition.kind === "clause", "expected-clause");
   return proposition.alternatives;
 }
-function clause(values: readonly Literal[]): Proposition {
+export function clause(values: readonly Literal[]): Proposition {
   const sorted = [...new Map(values.map(value => [`${value.cell}:${value.symbol}:${value.positive}`, value])).values()]
     .sort((a, b) => a.cell - b.cell || a.symbol - b.symbol || Number(a.positive) - Number(b.positive));
   if (sorted.length === 0) return { kind: "false" };
@@ -169,10 +193,13 @@ function restrictDomain(input: PrimitiveInput, context: CheckContext): CheckedIn
 function weakLink(input: PrimitiveInput, context: CheckContext): CheckedInference {
   const [scope] = premises(input, context, 1);
   const alternatives = literals(input.conclusion);
-  requireProof(scope.kind === "all-different" && alternatives.length === 2 &&
-    alternatives.every(value => validLiteral(value, context) && !value.positive && scope.cells.includes(value.cell)) &&
-    alternatives[0].cell !== alternatives[1].cell && alternatives[0].symbol === alternatives[1].symbol &&
+  requireProof(alternatives.length === 2 && alternatives.every(value => validLiteral(value, context) && !value.positive) &&
     sameValue(input.conclusion, clause(alternatives)), "invalid-weak-link");
+  const [a,b] = alternatives, domain = domainAssertion(scope);
+  const valid = domain ? a.cell === domain.cell && b.cell === domain.cell && a.symbol !== b.symbol :
+    scope.kind === "all-different" && scope.cells.includes(a.cell) && scope.cells.includes(b.cell) &&
+      a.cell !== b.cell && a.symbol === b.symbol;
+  requireProof(valid, "invalid-weak-link");
   return derived(input, context);
 }
 function coverClause(input: PrimitiveInput, context: CheckContext): CheckedInference {
@@ -233,22 +260,30 @@ function declaredRule(input: PrimitiveInput, context: CheckContext): CheckedInfe
 
 /** Closed, explicit version ownership, shared with capability assembly. */
 export class PrimitiveRegistry {
+  readonly #tables: TableChecker;
   readonly #strategies: ReadonlyMap<string, Strategy> = new Map([
     ["domain-axiom@1", domain], ["given@1", given],
     ["rule-instance@1", declaredRule], ["all-different@1", declaredRule], ["cover@1", declaredRule],
+    ["relation@1", declaredRule],
     ["domain-restrict@1", restrictDomain], ["weak-link@1", weakLink],
     ["cover-clause@1", coverClause], ["resolution@1", resolve],
+    ...[new AssumptionStrategy(), new ConjunctionStrategy(), new ContradictionStrategy(),
+      new DischargeStrategy(), new CasesStrategy(), new SupportStrategy(), new HallStrategy(), new CoverCountStrategy()].map(strategy => [strategy.id,
+        (input: PrimitiveInput, context: CheckContext) => strategy.check(input, context)] as const),
   ]);
-  constructor() {
+  constructor(tables: Iterable<readonly [ProofNode, TableDefinition]> = []) {
+    this.#tables = new TableChecker(tables);
     Object.freeze(this);
   }
 
+  tableDefinition(node: ProofNode): TableDefinition | undefined { return this.#tables.get(node); }
+
   has(id: string): boolean {
-    return this.#strategies.has(id);
+    return this.#strategies.has(id) || this.#tables.has(id);
   }
 
   get ids(): readonly string[] {
-    return Object.freeze([...this.#strategies.keys()].sort());
+    return Object.freeze([...this.#strategies.keys(), ...this.#tables.ids].sort());
   }
 
   check(input: PrimitiveInput, context: CheckContext): CheckedInference {
@@ -256,6 +291,12 @@ export class PrimitiveRegistry {
     requireProof(strategy, "unknown-primitive");
     assertM2ProblemBounds(context.view.assembly.problem);
     return strategy(input, context);
+  }
+
+  /** Expensive finite-table semantics yield at tuple/pair/rejection boundaries. */
+  *checkSteps(input: PrimitiveInput, context: CheckContext): Generator<number, CheckedInference, void> {
+    if (this.#tables.has(input.rule)) return yield* this.#tables.check(input, context);
+    return this.check(input, context);
   }
 }
 export const primitiveRegistry = new PrimitiveRegistry();

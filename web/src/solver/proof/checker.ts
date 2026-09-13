@@ -5,14 +5,19 @@ import { ImmutableMap, originalFact, originalRootCount, originalPremises } from 
 import { assertM2RootAssemblyBounds, PrimitiveRegistry, ProofError, requireProof, sameValue } from "./primitives";
 import type { CheckContext, CheckEvent, CheckedInference, CheckedStep, DeductionProposal, ProofNode } from "./types";
 import type { ReadView } from "../state/types";
+import { checkScope } from "./assumptions";
+import type { TableDefinition } from "./tables";
 
 const authenticSteps = new WeakSet<object>();
 const stepImports = new WeakMap<CheckedStep, ReadonlyMap<number, ProofNode>>();
+const stepUsage = new WeakMap<CheckedStep, { readonly headerBytes: number; readonly workUnits: number }>();
 interface CheckedNodeAuthority {
   readonly state: StateKey;
   readonly inference: CheckedInference;
   /** References to the actual immutable nodes checked, not just their wire IDs. */
   readonly premises: readonly ProofNode[];
+  readonly scopes?: readonly ProofNode[];
+  readonly table?: TableDefinition;
 }
 const acceptedNodes = new WeakMap<ProofNode, CheckedNodeAuthority>();
 const NODE_BYTES = 16 * 1024;
@@ -33,6 +38,18 @@ export function checkedImportsMatch(step: CheckedStep, retained: ReadonlyMap<num
 /** Read-only authority lookup for retaining all intermediate checked facts. */
 export function checkedNodeInference(node: ProofNode): CheckedInference | undefined {
   return acceptedNodes.get(node)?.inference;
+}
+
+/** Exact non-node bytes: bounded header plus separators between serialized nodes. */
+export function checkedHeaderBytes(step: CheckedStep): number {
+  requireProof(isCheckedStep(step), "inauthentic-checked-step");
+  return stepUsage.get(step)!.headerBytes;
+}
+
+/** Includes bookkeeping/duplicate visits which need not emit a public work yield. */
+export function checkedWorkUnits(step: CheckedStep): number {
+  requireProof(isCheckedStep(step), "inauthentic-checked-step");
+  return stepUsage.get(step)!.workUnits;
 }
 
 /**
@@ -203,8 +220,6 @@ function ids(values: readonly number[], cap: number): void {
  * validate its active run/deadline/revision before passing it to the reducer.
  */
 export class ProofChecker {
-  constructor(private readonly registry = new PrimitiveRegistry()) {}
-
   *checkProposal(input: DeductionProposal, source: CheckContext): Generator<CheckEvent, void, void> {
     try {
       const limits = { ...source.limits };
@@ -243,6 +258,7 @@ export class ProofChecker {
       let runBytes = 0;
       let maximumId = -1;
       const inferences = new Map<number, CheckedInference>();
+      const tables: [ProofNode, TableDefinition][] = [];
       for (const [id, node] of retained) {
         tick();
         const original = originalFact(node);
@@ -264,6 +280,9 @@ export class ProofChecker {
           // and is independent of the retained Map's iteration order.
           requireProof(retained.get(premise) === authority.premises[index], "substituted-retained-dependency");
         }
+        for (const [index, ancestor] of node.scope.entries())
+          requireProof(retained.get(ancestor) === authority.scopes?.[index], "substituted-retained-scope");
+        if (authority.table) tables.push([node, authority.table]);
         const encoded = copyBounded(node, NODE_BYTES);
         runBytes += encoded.bytes;
         requireProof(runBytes <= limits.proofBytes && runBytes <= limits.workspaceBytes, "proof-byte-limit");
@@ -272,6 +291,7 @@ export class ProofChecker {
         yield { kind: "work", units: 1 };
       }
       tick();
+      const registry = new PrimitiveRegistry(tables);
       const header = captured.header.value;
       let stepBytes = captured.header.bytes;
       const chargeStep = () => requireProof(stepBytes <= limits.stepBytes &&
@@ -309,10 +329,17 @@ export class ProofChecker {
         requireProof(Number.isSafeInteger(node.id) && node.id > maximumId, "nonmonotone-node-id");
         maximumId = node.id;
         ids(node.premises, MAX_ARITY);
-        requireProof(sameValue(node.scope, []), "unsupported-assumption-scope");
+        ids(node.scope, MAX_ARITY);
         for (const premise of node.premises)
           requireProof(premise < node.id && available.has(premise), "missing-or-forward-premise");
-        const checked = this.registry.check(node, { ...context, retained: new ImmutableMap(available), premiseInferences: inferences });
+        const nodeContext = { ...context, retained: new ImmutableMap(available), premiseInferences: inferences, currentNode: node,
+          workspaceRemaining: limits.workspaceBytes - runBytes - stepBytes };
+        checkScope(node, nodeContext);
+        const checking = registry.checkSteps(node, nodeContext);
+        let next = checking.next();
+        while (!next.done) { tick(); yield { kind: "work", units: next.value }; next = checking.next(); }
+        const checked = next.value;
+        requireProof(checked.openAssumptions.every(id => node.scope.includes(id) || (node.rule === "assume@1" && id === node.id)), "escaped-assumption");
         available.set(node.id, node);
         inferences.set(node.id, checked);
         stagedNodes.push(node);
@@ -327,12 +354,14 @@ export class ProofChecker {
         if (reachable.has(id)) continue;
         reachable.add(id);
         const node = available.get(id)!;
-        if (!retained.has(id)) pending.push(...node.premises);
+        if (!retained.has(id)) pending.push(...node.premises, ...node.scope);
         yield { kind: "work", units: 1 };
       }
       requireProof([...available.keys()].every(id => reachable.has(id)), "unused-proof-node");
       tick();
       const consequences = Object.freeze(proof.roots.map(id => inferences.get(id)!));
+      requireProof(consequences.every(item => item.openAssumptions.length === 0 &&
+        (!item.conditional || context.policy === "unique-only")), "open-proof-root");
       if (effectful) checkedEffectState(context.view, proposal, consequences);
       // This sole private construction path follows all checks. The WeakSet,
       // not this internal type assertion, rejects casts/deserialized lookalikes.
@@ -341,11 +370,14 @@ export class ProofChecker {
       const step = Object.freeze({ proposal: checkedProposal, consequences,
         afterRevision: state.revision + (effectful ? 1 : 0) }) as CheckedStep;
       authenticSteps.add(step);
+      stepUsage.set(step, Object.freeze({ headerBytes: captured.header.bytes + Math.max(0, stagedNodes.length - 1), workUnits: work }));
       stepImports.set(step, new ImmutableMap(proof.imports.map(id => [id, retained.get(id)!] as const)));
       for (const node of stagedNodes) acceptedNodes.set(node, {
         state,
         inference: inferences.get(node.id)!,
         premises: Object.freeze(node.premises.map(id => available.get(id)!)),
+        scopes: Object.freeze(node.scope.map(id => available.get(id)!)),
+        table: registry.tableDefinition(node),
       });
       yield { kind: "checked", step };
     } catch (error) {

@@ -74,6 +74,25 @@ class CandidateOwner {
       coverIds: incidence.covers, relationIds: incidence.relations, constraintIds: incidence.constraints, graphChanged: true });
     return Object.freeze({ view: next.view, changes });
   }
+
+  /** Cache closed checked facts without changing any candidate or revision. */
+  retain(step: CheckedStep): ReadView {
+    requireProof(isCheckedStep(step), "inauthentic-checked-step");
+    requireProof(sameValue(this.view.state.key, step.proposal.state) && step.afterRevision === this.view.state.key.revision, "stale-step-state");
+    requireProof(step.proposal.effects.length === 0, "effectful-fact-retention");
+    requireProof(checkedImportsMatch(step, this.nodes), "substituted-step-import");
+    const nodes = new Map(this.nodes), facts = new Map(this.view.facts);
+    for (const node of step.proposal.proof.nodes) {
+      requireProof(!nodes.has(node.id), "reused-proof-node");
+      const inference = checkedNodeInference(node);
+      requireProof(inference, "inauthentic-proof-node");
+      nodes.set(node.id, node);
+      facts.set(node.id, Object.freeze({ id: node.id, root: node.id, state: this.view.state.key,
+        proposition: inference.conclusion, openAssumptions: inference.openAssumptions,
+        conditional: inference.conditional, rules: inference.rules }));
+    }
+    return new CandidateOwner(this.view.assembly, Object.freeze({ ...this.view.state }), facts, nodes, this, []).view;
+  }
 }
 
 function owner(view: ReadView): CandidateOwner {
@@ -95,7 +114,8 @@ export function initialize(input: Assembly, branch: BranchId): ReadView {
     modules: new ImmutableMap(input.problem.constraints.map(rule => [rule.id, input.modules.get(rule.id)!] as const)),
     allDifferent: Object.freeze(input.allDifferent.map(scope => Object.freeze({ ...scope, cells: Object.freeze([...scope.cells]) }))),
     covers: Object.freeze(input.covers.map(cover => Object.freeze({ ...cover, cells: Object.freeze([...cover.cells]) }))),
-    relations: Object.freeze([]),
+    relations: Object.freeze(input.relations.map(relation => Object.freeze({ ...relation,
+      cells: Object.freeze([...relation.cells]), tuples: Object.freeze(relation.tuples.map(tuple => Object.freeze([...tuple]))) }))),
     // Reconstruct bounded peer metadata from the capabilities already checked
     // by createRoots; externally supplied lists are not candidate authority.
     peers: Object.freeze(input.problem.cells.map(cell => Object.freeze([...new Set(input.allDifferent
@@ -112,6 +132,9 @@ export function initialize(input: Assembly, branch: BranchId): ReadView {
 
 /** Exact immutable prefix to supply as CheckContext.retained on the next check. */
 export function retainedProof(view: ReadView): ReadonlyMap<NodeId, ProofNode> { return owner(view).nodes; }
+
+/** Retain exact checked definitions for subsequent proofs, without a state edit. */
+export function retainCheckedFacts(view: ReadView, step: CheckedStep): ReadView { return owner(view).retain(step); }
 
 /** Run identity and deadline remain the controller's final pre-commit guard. */
 export function commitChecked(view: ReadView, step: CheckedStep): { view: ReadView; changes: ChangeSet } {

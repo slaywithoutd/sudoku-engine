@@ -5,6 +5,8 @@ import type {
   Json,
 } from "../../src/solver/problem";
 import { AllDifferentRule } from "../../src/solver/rules/all-different";
+import { requireProof, sameValue } from "../../src/solver/proof/primitives";
+import type { CheckContext, CheckedInference, PrimitiveInput } from "../../src/solver/proof/types";
 import type {
   Assignment,
   RuleCapabilities,
@@ -13,12 +15,33 @@ import type {
   RuleModule,
 } from "../../src/solver/rules/types";
 
-const noCapabilities = (): RuleCapabilities => ({
-  allDifferent: [],
-  covers: [],
-  relations: [],
-  primitiveIds: [],
-});
+/** Small test rule semantics; no production registry imports these modules. */
+function relationCapabilities(rule: ConstraintInstance, context: RuleContext): RuleCapabilities {
+  const tuples = context.problem.symbols.flatMap(a => context.problem.symbols
+    .filter(b => rule.type === "sum@1" ? a + b === (rule.parameters as { total: number }).total : a < b).map(b => [a,b]));
+  return { allDifferent: [], covers: [], relations: [{ id: `${rule.id}:relation`, cells: rule.cells, tuples,
+    premise: context.roots.get(rule.id)! }], primitiveIds: ["relation@1"] };
+}
+
+/** Independently reconstruct tuples, without calling capability discovery. */
+function checkMockPrimitive(input: PrimitiveInput, context: CheckContext): CheckedInference {
+  const id = input.conclusion.kind === "rule" ? input.conclusion.constraintId : (input.parameters as { constraintId: string }).constraintId;
+  const rule = context.view.assembly.problem.constraints.find(rule => rule.id === id)!;
+  requireProof(rule && rule.cells.length === 2, "invalid-mock-scope");
+  if (input.rule === "rule-instance@1") requireProof(input.premises.length === 0 && sameValue(input.parameters, {}) &&
+    sameValue(input.conclusion, { kind: "rule", constraintId: id }), "invalid-mock-root");
+  else {
+    requireProof(input.rule === "relation@1" && input.premises.length === 1 && sameValue(input.parameters, { constraintId: id }) &&
+      sameValue(context.retained.get(input.premises[0])?.conclusion, { kind: "rule", constraintId: id }), "invalid-mock-relation-premise");
+    const tuples: number[][] = [];
+    for (const a of context.view.assembly.problem.symbols) for (const b of context.view.assembly.problem.symbols) {
+      const valid = rule.type === "order@1" ? b > a : b === (rule.parameters as { total: number }).total - a;
+      if (valid) tuples.push([a,b]);
+    }
+    requireProof(sameValue(input.conclusion, { kind: "relation", cells: rule.cells, tuples }), "invalid-mock-relation");
+  }
+  return { conclusion: input.conclusion, rules: [id], conditional: false, openAssumptions: [] };
+}
 
 function parameterObject(parameters: Json): Readonly<Record<string, Json>> | null {
   return parameters !== null &&
@@ -57,13 +80,11 @@ const sumRule: RuleModule = Object.freeze({
         parameters.total
     );
   },
-  capabilities: noCapabilities,
+  capabilities: relationCapabilities,
   *propagate() {
     yield { kind: "exhausted" } as const;
   },
-  checkPrimitive() {
-    throw new Error("sum@1 declares no proof primitives");
-  },
+  checkPrimitive: checkMockPrimitive,
 });
 
 const orderRule: RuleModule = Object.freeze({
@@ -107,9 +128,7 @@ const orderRule: RuleModule = Object.freeze({
   *propagate() {
     yield { kind: "exhausted" } as const;
   },
-  checkPrimitive() {
-    throw new Error("order@1 declares no proof primitives");
-  },
+  checkPrimitive: checkMockPrimitive,
 });
 
 export const mockRuleRegistry: readonly RuleModule[] = Object.freeze([

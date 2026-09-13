@@ -2,7 +2,7 @@ import { canonicalProblem } from "../problem";
 import type { BranchId } from "../problem";
 import type { Assembly, FactId, NodeId } from "../rules/types";
 import type { CheckContext, ProofNode } from "../proof/types";
-import { assertM2RootAssemblyBounds, primitiveRegistry, requireProof, sameValue } from "../proof/primitives";
+import { assertM2RootAssemblyBounds, primitiveRegistry, requireProof } from "../proof/primitives";
 import type { Fact, Proposition } from "./types";
 
 /** Encapsulation matters: freezing a Map alone does not prevent set/delete. */
@@ -138,7 +138,13 @@ export function createRoots(assembly: Assembly, branch: BranchId = "primary"): R
     add("cover@1", Object.freeze({ kind: "cover", symbol: capability.symbol, cells: Object.freeze([...capability.cells]) }),
       [capability.premise], { constraintId });
   }
-  requireProof(sameValue(assembly.relations, []), "unsupported-relation-root");
+  for (const capability of canonicalCapabilities(assembly.relations)) {
+    const constraintId = constraintFor(capability.premise);
+    requireProof(capability.id === `${constraintId}:relation`, "invalid-capability-id");
+    add("relation@1", Object.freeze({ kind: "relation", cells: Object.freeze([...capability.cells]),
+      tuples: Object.freeze(capability.tuples.map(tuple => Object.freeze([...tuple]))) }),
+      [capability.premise], { constraintId });
+  }
   for (const node of nodes.values()) rootCounts.set(node, facts.size);
   return new ImmutableMap(facts);
 }
