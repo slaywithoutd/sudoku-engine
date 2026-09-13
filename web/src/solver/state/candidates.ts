@@ -11,6 +11,13 @@ import type { ChangeSet } from "./events";
 
 const owners = new WeakMap<CandidateState, CandidateOwner>();
 
+interface AcceptedLineage {
+  readonly anchor: object;
+  readonly parent: AcceptedLineage | null;
+  readonly step: CheckedStep | null;
+  readonly length: number;
+}
+
 /**
  * Owns one immutable candidate revision and its exact accepted proof prefix.
  * Publication happens only after local effects, facts and indexes all validate;
@@ -20,9 +27,13 @@ class CandidateOwner {
   readonly view: ReadView;
   readonly nodes: ReadonlyMap<NodeId, ProofNode>;
   readonly indexes: CandidateIndexes;
+  readonly lineage: AcceptedLineage;
 
   constructor(assembly: Assembly, state: CandidateState, facts: ReadonlyMap<FactId, Fact>,
-    nodes: ReadonlyMap<NodeId, ProofNode>, previous?: CandidateOwner, cells?: readonly number[]) {
+    nodes: ReadonlyMap<NodeId, ProofNode>, previous?: CandidateOwner, cells?: readonly number[], step?: CheckedStep) {
+    this.lineage = Object.freeze(previous && step
+      ? { anchor: previous.lineage.anchor, parent: previous.lineage, step, length: previous.lineage.length + 1 }
+      : { anchor: Object.freeze({}), parent: null, step: null, length: 0 });
     this.nodes = new ImmutableMap(nodes);
     this.indexes = new CandidateIndexes(assembly, state, previous?.indexes, cells);
     this.view = Object.freeze({ assembly, state, facts: new ImmutableMap(facts),
@@ -60,7 +71,7 @@ class CandidateOwner {
     }
     const state = Object.freeze({ key, values: Object.freeze(edited.values), domains: Object.freeze(edited.domains),
       domainFacts: Object.freeze(domainFacts) });
-    const next = new CandidateOwner(this.view.assembly, state, facts, nodes, this, edited.cells);
+    const next = new CandidateOwner(this.view.assembly, state, facts, nodes, this, edited.cells, step);
     const removed: Literal[] = [], placed: Literal[] = [];
     for (const cell of edited.cells) {
       for (const symbol of this.view.assembly.problem.symbols)
@@ -91,7 +102,7 @@ class CandidateOwner {
         proposition: inference.conclusion, openAssumptions: inference.openAssumptions,
         conditional: inference.conditional, rules: inference.rules }));
     }
-    return new CandidateOwner(this.view.assembly, Object.freeze({ ...this.view.state }), facts, nodes, this, []).view;
+    return new CandidateOwner(this.view.assembly, Object.freeze({ ...this.view.state }), facts, nodes, this, [], step).view;
   }
 }
 
@@ -132,6 +143,26 @@ export function initialize(input: Assembly, branch: BranchId): ReadView {
 
 /** Exact immutable prefix to supply as CheckContext.retained on the next check. */
 export function retainedProof(view: ReadView): ReadonlyMap<NodeId, ProofNode> { return owner(view).nodes; }
+
+/**
+ * Authenticates the entire committed prefix from the actual root-only view.
+ * Lineage retains only step identities and a root anchor, never historical views
+ * or full fact maps. Cost is linear in bundle count, including proof-only caches.
+ * A cold support-index rebuild keeps the same owned state/facts and is accepted.
+ */
+export function isAcceptedPath(initial: ReadView, accepted: ReadView, steps: readonly CheckedStep[]): boolean {
+  try {
+    const root = owner(initial).lineage;
+    let current = owner(accepted).lineage;
+    if (root.parent !== null || root.step !== null || initial.state.key.revision !== 0 ||
+      current.anchor !== root.anchor || !Array.isArray(steps) || steps.length !== current.length) return false;
+    for (let index = steps.length - 1; index >= 0; index--) {
+      if (current.step !== steps[index] || !current.parent) return false;
+      current = current.parent;
+    }
+    return current === root;
+  } catch { return false; }
+}
 
 /** Retain exact checked definitions for subsequent proofs, without a state edit. */
 export function retainCheckedFacts(view: ReadView, step: CheckedStep): ReadView { return owner(view).retain(step); }
