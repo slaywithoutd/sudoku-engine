@@ -1,0 +1,101 @@
+import type { ConstraintInstance, EngineProblem } from "../problem";
+import type {
+  Assignment,
+  Discovery,
+  ReadView,
+  RuleCapabilities,
+  RuleContext,
+  RuleIssue,
+  RuleModule,
+} from "./types";
+
+/** Versioned strategy for the only production rule supported in M2. */
+export class AllDifferentRule implements RuleModule {
+  readonly type = "all-different@1";
+
+  constructor() {
+    Object.freeze(this);
+  }
+
+  normalize(input: ConstraintInstance): ConstraintInstance {
+    return { ...input, cells: [...input.cells].sort((left, right) => left - right) };
+  }
+
+  validate(problem: EngineProblem, rule: ConstraintInstance): readonly RuleIssue[] {
+    const issues: RuleIssue[] = [];
+    if (
+      rule.parameters === null ||
+      typeof rule.parameters !== "object" ||
+      Array.isArray(rule.parameters) ||
+      Object.keys(rule.parameters).length !== 0
+    )
+      issues.push({
+        code: "invalid-parameters",
+        constraintId: rule.id,
+        message: "all-different@1 accepts no parameters",
+      });
+    if (rule.cells.length < 2)
+      issues.push({
+        code: "invalid-scope",
+        constraintId: rule.id,
+        message: "all-different@1 requires at least two cells",
+      });
+    if (new Set(rule.cells).size !== rule.cells.length)
+      issues.push({
+        code: "invalid-scope",
+        constraintId: rule.id,
+        message: "all-different@1 cells must be distinct",
+      });
+    if (rule.cells.some((cell) => !problem.cells.includes(cell)))
+      issues.push({
+        code: "invalid-scope",
+        constraintId: rule.id,
+        message: "all-different@1 references an unknown cell",
+      });
+    return issues;
+  }
+
+  checkComplete(rule: ConstraintInstance, assignment: Assignment): boolean {
+    const seen = new Set<number>();
+    for (const cell of rule.cells) {
+      const value = assignment.values[cell];
+      if (!Number.isSafeInteger(value) || value <= 0 || seen.has(value)) return false;
+      seen.add(value);
+    }
+    return true;
+  }
+
+  capabilities(rule: ConstraintInstance, context: RuleContext): RuleCapabilities {
+    const premise = context.roots.get(rule.id);
+    if (premise === undefined) throw new Error(`Missing assembler root for ${rule.id}`);
+    /*
+     * Pairwise conflict is valid for every all-different scope. A symbol cover
+     * additionally claims existence, so it is sound here only when the scope
+     * has one cell per symbol in the problem's shared domain. In particular, a
+     * three-cell cage must never masquerade as a nine-cell Sudoku house.
+     */
+    const covers =
+      rule.cells.length === context.problem.symbols.length
+        ? context.problem.symbols.map((symbol) => ({
+            id: `${rule.id}:symbol:${symbol}`,
+            symbol,
+            cells: [...rule.cells],
+            premise,
+          }))
+        : [];
+    return {
+      allDifferent: [{ id: rule.id, cells: [...rule.cells], premise }],
+      covers,
+      relations: [],
+      primitiveIds: [],
+    };
+  }
+
+  *propagate(_view: ReadView, _rule: ConstraintInstance): Discovery {
+    yield { kind: "exhausted" };
+  }
+
+  checkPrimitive(): never {
+    throw new Error("all-different@1 declares no proof primitives in T02");
+  }
+}
