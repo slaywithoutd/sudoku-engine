@@ -12,11 +12,14 @@ Approved design/plan: `0e98c2b`, 2026-09-12. Authorization and coding convention
 
 | Task | Status | Evidence |
 | --- | --- | --- |
-| T01 Independent oracle and fixtures | In progress | Test-first implementation and task review underway. |
-| T02?T27 | Pending | Approved requirements remain in the implementation plan; no family dropped. |
+| T01 Independent oracle and fixtures | Complete | `f01fa70`; 26 focused tests and typecheck passed; independent task review passed. |
+| T02 Normalization and capabilities | In progress | Strict semantic identity and rule registry implementation. |
+| T03-T27 | Pending | Approved requirements remain in the implementation plan; no family dropped. |
 
 ## Coding conventions
 
 Public operations and stateful services should explain their invariants in JSDoc. Algorithm comments explain the proof or reason for a constraint. Use cohesive objects for search sessions, rule registries, policies and application/worker lifecycles; strategy interfaces and factories express replaceable responsibilities. Prefer composition and readonly value records. Keep pure arithmetic and validation helpers simple. Tests remain independent of production discovery/checking where the plan requires independent evidence.
 
 No application availability, broad technique support or runtime performance is claimed until its acceptance gates pass. Work/proof/time defaults remain benchmark proposals.
+
+T01 uses an encapsulated set-based Algorithm X session and a separate plain-loop grid checker. Neither imports production engine logic. Empty-grid results are capped witnesses, not an exact count. Code documentation conventions: [architecture guide](solver/architecture.md).

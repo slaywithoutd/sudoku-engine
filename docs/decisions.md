@@ -584,7 +584,7 @@ Record each answer here with its rationale and consequences. If an answer change
 - Review: no unresolved product question blocks the completed specification/plan. Approval concerns the concrete proposed choices; measured calibration remains an implementation gate. Implementation still requires explicit design approval.
 
 
-## D065 ? Approve expanded M2 design and begin implementation
+## D065 — Approve expanded M2 design and begin implementation
 
 - Status: Confirmed by the user, 2026-09-12.
 - Source: explicit approval of the completed expanded design and implementation plan at `0e98c2b`, followed by permission to start implementing.
@@ -592,7 +592,7 @@ Record each answer here with its rationale and consequences. If an answer change
 - Workspace: isolated `.worktrees/m2-engine` on `feat/m2-engine`, based on `f3eb4ac` (approved planning plus workspace ignore rules); the original checkout retains `docs/m2-solver-design`.
 - Progress and runtime evidence: [M2 implementation record](m2-implementation-progress.md). Task completion requires actual tests and review; approval does not make any technique implemented or verified.
 
-## D066 ? Document engine reasoning and use purposeful object-oriented design
+## D066 — Document engine reasoning and use purposeful object-oriented design
 
 - Status: Confirmed coding preference from the user, 2026-09-12.
 - Decision: document public contracts, invariants, proof reasoning, identity/lifecycle ownership, resource limits and non-obvious algorithm choices in the code. Explain why a deduction is sound and why a boundary exists; avoid comments that merely repeat syntax.

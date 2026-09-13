@@ -67,7 +67,7 @@ T01 oracle → T02 normalization → T03 primitive roots → T04 shared state �
 
 **Interfaces:** `oracle(input: OracleInput): OracleResult`; input `{givens: number[], domains?: number[], force?: [number,number], forbid?: [number,number], limit: number, maxNodes: number}`; result `{witnesses: number[][], exhausted: boolean, interrupted: boolean, nodes: number}`. Domains are nine-bit input restrictions decoded independently by integer arithmetic. `checkGrid(givens: number[], values: number[]): boolean` is separate plain-loop validation.
 
-- [ ] Write count fixture assertions including complete, one-hole, duplicate, no-place, two-rectangle and empty. Independent count labels are established by the oracle, not copied from production:
+- [x] Write count fixture assertions including complete, one-hole, duplicate, no-place, two-rectangle and empty. Independent count labels are established by the oracle, not copied from production:
 
 ```ts
 const two = oracle({ givens: rectangleHoles, limit: 3, maxNodes: 1000000 });
@@ -79,10 +79,10 @@ expect(stopped.interrupted).toBe(true);
 expect(stopped.exhausted).toBe(false);
 ```
 
-- [ ] Run `npm test -- tests/unit/solver/oracle.test.ts`; require observed failure for missing oracle/fixtures.
-- [ ] Implement set-based Algorithm X with 729 candidate rows and 324 exact-cover columns: cell, row-digit, column-digit, box-digit. Choose uncovered column with fewest rows; recurse by set copies, deleting intersecting rows. Explicitly distinguish no remaining column, dead column, cap and interruption. Use no production topology/checker imports. Construct fixture strings from existing SOLUTION and independent loops; document source/license/hash and command.
-- [ ] Rerun command and `npm run typecheck`; verify independent complete grids with row/column/box permutations and bad-given mutations.
-- [ ] Commit listed files: `test: establish independent solver oracle and count fixtures`.
+- [x] Run `npm test -- tests/unit/solver/oracle.test.ts`; require observed failure for missing oracle/fixtures.
+- [x] Implement set-based Algorithm X with 729 candidate rows and 324 exact-cover columns: cell, row-digit, column-digit, box-digit. Choose uncovered column with fewest rows; recurse by set copies, deleting intersecting rows. Explicitly distinguish no remaining column, dead column, cap and interruption. Use no production topology/checker imports. Construct fixture strings from existing SOLUTION and independent loops; document source/license/hash and command.
+- [x] Rerun command and `npm run typecheck`; verify independent complete grids with row/column/box permutations and bad-given mutations.
+- [x] Commit listed files: `test: establish independent solver oracle and count fixtures`.
 
 ## T02 — Normalized constraints, snapshots and capabilities
 
