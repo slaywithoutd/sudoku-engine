@@ -1,6 +1,6 @@
 import { canonicalProblem } from "../problem";
 import { checkTechniqueGrammar } from "../techniques/grammar";
-import { assertOwnedView, isHypotheticalView, branchScope, ownsBranchNode } from "../state/candidates";
+import { assertOwnedView, isHypotheticalView, branchScope, ownsBranchNode, retainedProof } from "../state/candidates";
 import type { Json } from "../problem";
 import type { StateKey } from "../snapshot";
 import { ImmutableMap, originalFact, originalRootCount, originalPremises } from "../state/facts";
@@ -256,8 +256,15 @@ function* verifyGraph(input: DeductionProposal, source: CheckContext, admission:
         requireProof(performance.now() < deadline, "proof-time-limit");
         requireProof(++work <= limits.workUnits, "proof-work-limit");
       };
-      requireProof(source.retained.size <= limits.runNodes, "proof-run-node-limit");
-      const retained = new Map(source.retained);
+      const suppliedRetained = source.retained;
+      requireProof(suppliedRetained.size <= limits.runNodes, "proof-run-node-limit");
+      const retained = new Map(suppliedRetained);
+      const branchPrefix = admission === "branch" ? retainedProof(sourceView) : undefined;
+      if (branchPrefix) {
+        // Every source node must participate in the allocation boundary, not
+        // only the subset a caller elects to import into this deduction.
+        requireProof(retained.size === branchPrefix.size, "branch-prefix-mismatch");
+      }
       const firstRoot = retained.get(0);
       const rootCount = firstRoot && originalRootCount(firstRoot);
       requireProof(rootCount !== undefined && rootCount <= retained.size, "missing-original-roots");
@@ -285,6 +292,11 @@ function* verifyGraph(input: DeductionProposal, source: CheckContext, admission:
       const tables: [ProofNode, TableDefinition][] = [];
       for (const [id, node] of retained) {
         tick();
+        if (branchPrefix) {
+          // Equal cardinality plus exact ID/object membership establishes the
+          // complete publication prefix without a second unbudgeted traversal.
+          requireProof(branchPrefix.get(id) === node, "branch-prefix-mismatch");
+        }
         const original = originalFact(node);
         const checked = acceptedNodes.get(node) ?? (admission === "branch" && ownsBranchNode(sourceView, node) ? branchNodes.get(node) : undefined) ?? (admission === "certificate" ? certificateAuthorities.get(node) : undefined);
         const authority: CheckedNodeAuthority | undefined = original ? {

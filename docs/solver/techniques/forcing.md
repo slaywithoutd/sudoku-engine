@@ -93,6 +93,14 @@ forks. Branch admission authenticates exact immutable proof-node objects and
 their source/ancestor ownership. Read-only ancestry queries expose booleans or
 immutable scope values, never mutable owners or registration callbacks.
 
+Branch verification requires the complete exact source publication prefix in
+`context.retained`, including existing nodes unused by the new deduction.
+The proof's own `imports` still names only its dependencies. A copied retained
+map is accepted when every ID maps to the exact published node object.
+Publication also checks all proposed IDs against existing nodes and facts
+before reserving or copying storage, so no old domain-fact binding can be
+overwritten even if an upstream admission check regresses.
+
 The final parent proof is freshly replayed through ordinary admission. Net DAG
 import maps node objects to fresh global IDs, so colliding sibling numeric IDs
 cannot alias. Premises and lexical scopes are rewritten. The supported local

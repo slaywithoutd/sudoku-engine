@@ -60,6 +60,76 @@ function check(view: ReadView, proposal: DeductionProposal): CheckedStep {
 }
 
 describe("shared candidate ownership", () => {
+  test("a shortened branch prefix cannot overwrite a published domain fact", () => {
+    const assembly = assemble(canonicalProblem({
+      schema: 1, cells: [0, 1], symbols: [1, 2], givens: [0, 0],
+      constraints: [{ id: "a", type: "all-different@1", cells: [0, 1], parameters: {} }],
+    }), [new AllDifferentRule()]);
+    if (!assembly.ok) throw Error("invalid collision fixture");
+    const parent = initialize(assembly.value, "primary");
+    const workspace = new IndexWorkspace({ entryLimit: 10000, byteLimit: 10000000 });
+    const session = new HypotheticalSession(parent, "collision", workspace);
+    try {
+      const assumed = [...session.assume({ cell: 0, symbol: 1, positive: true }, limits)].at(-1);
+      if (assumed?.kind !== "branch-checked") throw Error("assumption rejected");
+      const before = session.view;
+      const priorFacts = before.facts;
+      const priorPrefix = retainedProof(before);
+      const priorDomains = before.state.domains;
+      const priorDomainFacts = before.state.domainFacts;
+      const priorUsage = workspace.usage;
+      const assumption = assumed.certificate.proposal.proof.nodes[0].id;
+      const collision = before.state.domainFacts[0];
+      expect(assumption).toBe(6);
+      expect(collision).toBe(7);
+
+      // Keep every original root and the exact assumption, but hide domain7.
+      // The old checker then treated7 as a fresh ID for this valid weak clause.
+      const shortened = new Map(priorPrefix);
+      shortened.delete(collision);
+      const proposal: DeductionProposal = {
+        technique: "branch-graph@1", state: before.state.key, effects: [], pattern: {},
+        proof: {
+          state: before.state.key, imports: [before.state.domainFacts[1], assumption], roots: [collision],
+          nodes: [{ id: collision, rule: "weak-link@1", premises: [before.state.domainFacts[1]],
+            scope: [assumption], parameters: {}, conclusion: { kind: "clause", alternatives: [
+              { cell: 1, symbol: 1, positive: false }, { cell: 1, symbol: 2, positive: false },
+            ] } }],
+        },
+      };
+      const result = [...verifyBranch(proposal, {
+        view: before, retained: shortened, policy: "discharged", uniqueEvidenceId: null, limits,
+      })].at(-1);
+      if (result?.kind === "branch-checked") {
+        expect(() => session.publish(result.certificate)).toThrow("reused-proof-node");
+      }
+      expect(session.view).toBe(before);
+      expect(session.view.facts).toBe(priorFacts);
+      expect(retainedProof(session.view)).toBe(priorPrefix);
+      expect(session.view.state.domains).toBe(priorDomains);
+      expect(session.view.state.domainFacts).toBe(priorDomainFacts);
+      expect(session.view.facts.get(collision)).toBe(priorFacts.get(collision));
+      expect(session.view.facts.get(collision)?.proposition).toEqual({ kind: "domain", cell: 0, mask: 1 });
+      expect(workspace.usage).toEqual(priorUsage);
+      expect(result).toEqual({ kind: "rejected", code: "branch-prefix-mismatch" });
+
+      // A copied complete prefix still admits a genuinely fresh node normally.
+      const freshId = collision + 1;
+      const fresh = { ...proposal, proof: { ...proposal.proof, roots: [freshId],
+        nodes: proposal.proof.nodes.map(node => ({ ...node, id: freshId })) } };
+      const valid = [...verifyBranch(fresh, {
+        view: before, retained: new Map(priorPrefix), policy: "discharged", uniqueEvidenceId: null, limits,
+      })].at(-1);
+      expect(valid?.kind).toBe("branch-checked");
+      if (valid?.kind !== "branch-checked") throw Error("complete prefix rejected");
+      session.publish(valid.certificate);
+      expect(session.view.facts.get(collision)).toBe(priorFacts.get(collision));
+      expect(session.view.state.domainFacts).toEqual(priorDomainFacts);
+    } finally {
+      session.dispose();
+    }
+    expect(workspace.usage).toEqual({ entries: 0, bytes: 0 });
+  });
   test("every borrowed branch cold rebuild reserves storage before allocation",()=>{
     const parent=fixture(),workspace=new IndexWorkspace({entryLimit:10000,byteLimit:100000}),view=forkView(parent,"cold",workspace),usage=workspace.usage;
     expect(()=>rebuildIndexes(view)).toThrow("workspace-byte-limit");expect(workspace.usage).toEqual(usage);
@@ -93,7 +163,7 @@ describe("shared candidate ownership", () => {
       expect(edge.premiseFacts[0]).toBe(a.view.facts.get(a.view.state.domainFacts[1]));expect(edge.premiseFacts[0].openAssumptions.length).toBe(1);
       expect(index!.acceptsView(b.view)).toBe(false);expect(index!.acceptsView(parent)).toBe(false);
       const fakeRetained=new Map(retainedProof(a.view));for(const [id,node]of retainedProof(b.view))if(node.rule==="assume@1")fakeRetained.set(id,node);
-      expect([...verifyBranch(proposal.proposal,{view:a.view,retained:fakeRetained,policy:"discharged",uniqueEvidenceId:null,limits})].at(-1)).toMatchObject({kind:"rejected"});
+      expect([...verifyBranch(proposal.proposal,{view:a.view,retained:fakeRetained,policy:"discharged",uniqueEvidenceId:null,limits})].at(-1)).toMatchObject({kind:"rejected",code:"branch-prefix-mismatch"});
     }finally{index?.dispose();a.dispose();b.dispose();}expect(workspace.usage).toEqual({entries:0,bytes:0});
   });
   test("abandoning assumption verification cannot publish hypothetical facts",()=>{

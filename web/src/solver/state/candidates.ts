@@ -193,22 +193,47 @@ export class HypotheticalSession {
     yield* verifyBranch(scoped, { view, retained: retainedProof(view), limits, policy: "discharged", uniqueEvidenceId: null });
   }
   publish(certificate: BranchCertificate): void {
-    const view = this.view, previous = owner(view), branch = previous.branch!;
+    const view = this.view;
+    const previous = owner(view);
+    const branch = previous.branch!;
     requireProof(branchCertificateSource(certificate) === view, "foreign-branch-certificate");
     requireProof(!certificate.consequences.some(c => c.conclusion.kind === "false" || c.conclusion.kind === "domain" && c.conclusion.mask === 0), "contradictory-branch-publication");
+
+    // Publication independently protects every existing fact binding. Validate
+    // the entire bundle before growing the lease or allocating replacement maps.
+    for (const node of certificate.proposal.proof.nodes) {
+      requireProof(!previous.nodes.has(node.id) && !view.facts.has(node.id), "reused-proof-node");
+      requireProof(branchNodeInference(node), "inauthentic-branch-node");
+    }
+
     branch.resource.lease.grow(1, 65536 + certificate.proposal.proof.nodes.length * 2048 + view.facts.size * 128);
-    const nodes = new Map(previous.nodes), facts = new Map(view.facts), domains = [...view.state.domains], domainFacts = [...view.state.domainFacts], values = [...view.state.values];
+    const nodes = new Map(previous.nodes);
+    const facts = new Map(view.facts);
+    const domains = [...view.state.domains];
+    const domainFacts = [...view.state.domainFacts];
+    const values = [...view.state.values];
     const key = Object.freeze({ ...view.state.key, revision: view.state.key.revision + 1 });
     for (const node of certificate.proposal.proof.nodes) {
-      const inference = branchNodeInference(node); requireProof(inference, "inauthentic-branch-node");
-      nodes.set(node.id, node); facts.set(node.id, Object.freeze({ id: node.id, root: node.id, state: key, proposition: inference.conclusion,
-        openAssumptions: inference.openAssumptions, conditional: inference.conditional, rules: inference.rules }));
+      const inference = branchNodeInference(node)!;
+      nodes.set(node.id, node);
+      facts.set(node.id, Object.freeze({
+        id: node.id, root: node.id, state: key, proposition: inference.conclusion,
+        openAssumptions: inference.openAssumptions, conditional: inference.conditional, rules: inference.rules,
+      }));
     }
     for (const id of certificate.proposal.proof.roots) {
       const p = nodes.get(id)!.conclusion;
-      if (p.kind === "domain") { requireProof((p.mask & view.state.domains[p.cell]) === p.mask, "branch-domain-widening"); domains[p.cell] = p.mask; domainFacts[p.cell] = id; }
+      if (p.kind === "domain") {
+        requireProof((p.mask & view.state.domains[p.cell]) === p.mask, "branch-domain-widening");
+        domains[p.cell] = p.mask;
+        domainFacts[p.cell] = id;
+      }
     }
-    for (const effect of certificate.proposal.effects) if (effect.kind === "place") values[effect.cell] = effect.symbol;
+    for (const effect of certificate.proposal.effects) {
+      if (effect.kind === "place") {
+        values[effect.cell] = effect.symbol;
+      }
+    }
     const state = Object.freeze({ key, domains: Object.freeze(domains), domainFacts: Object.freeze(domainFacts), values: Object.freeze(values) });
     this.#view = new CandidateOwner(view.assembly, state, facts, nodes, undefined, undefined, undefined,
       { parent: branch.parent, scope: certificate.scope, resource: branch.resource }).view;
