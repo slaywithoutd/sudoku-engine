@@ -3954,14 +3954,135 @@ export const coverageEntries: readonly CoverageEntry[] = Object.freeze((
     "grammarId": "c14-grammar@1",
     "detectorId": "c14@1",
     "checkerId": "c14-grammar@1",
-    "descriptionPath": "docs/superpowers/specs/2026-09-12-m2-technique-coverage.md",
+    "descriptionPath": "docs/solver/techniques/chains-and-coloring.md",
     "fixtureIds": [
       "C14-trap",
       "C14-wrap",
       "C14-multi"
     ],
-    "status": "specified",
-    "evidence": []
+    "status": "independently-verified",
+    "evidence": [
+      {
+        "kind": "positive",
+        "fixtureId": "C14-trap",
+        "alias": "Simple coloring",
+        "record": "web/tests/unit/solver/coloring.test.ts#Simple coloring is a checked presentation of the exact trap component"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "C14-trap",
+        "alias": "Simple coloring",
+        "record": "web/tests/unit/solver/coloring.test.ts#requires complete edges XOR and every branch proof"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "C14-trap",
+        "alias": "Simple coloring",
+        "record": "web/tests/unit/solver/coloring.test.ts#requires complete edges XOR and every branch proof"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C14-trap",
+        "alias": "Simple coloring",
+        "record": "web/tests/unit/solver/chains.test.ts#replays from original clues with no assumed candidate axioms"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C14-trap",
+        "alias": "Simple coloring",
+        "record": "web/tests/unit/solver/chains.test.ts#durable original seed hashes reproduce every satisfiable prestate and force-or-forbid counterfactual"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "C14-trap",
+        "alias": "Color trap",
+        "record": "web/tests/unit/solver/coloring.test.ts#has independent complete XOR evidence and oracle acceptance"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "C14-trap",
+        "alias": "Color trap",
+        "record": "web/tests/unit/solver/coloring.test.ts#requires complete edges XOR and every branch proof"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "C14-trap",
+        "alias": "Color trap",
+        "record": "web/tests/unit/solver/coloring.test.ts#requires complete edges XOR and every branch proof"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C14-trap",
+        "alias": "Color trap",
+        "record": "web/tests/unit/solver/chains.test.ts#replays from original clues with no assumed candidate axioms"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C14-trap",
+        "alias": "Color trap",
+        "record": "web/tests/unit/solver/chains.test.ts#durable original seed hashes reproduce every satisfiable prestate and force-or-forbid counterfactual"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "C14-wrap",
+        "alias": "Color wrap",
+        "record": "web/tests/unit/solver/coloring.test.ts#has independent complete XOR evidence and oracle acceptance"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "C14-wrap",
+        "alias": "Color wrap",
+        "record": "web/tests/unit/solver/coloring.test.ts#requires complete edges XOR and every branch proof"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "C14-wrap",
+        "alias": "Color wrap",
+        "record": "web/tests/unit/solver/coloring.test.ts#requires complete edges XOR and every branch proof"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C14-wrap",
+        "alias": "Color wrap",
+        "record": "web/tests/unit/solver/chains.test.ts#replays from original clues with no assumed candidate axioms"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C14-wrap",
+        "alias": "Color wrap",
+        "record": "web/tests/unit/solver/chains.test.ts#durable original seed hashes reproduce every satisfiable prestate and force-or-forbid counterfactual"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "C14-multi",
+        "alias": "Multi-coloring",
+        "record": "web/tests/unit/solver/coloring.test.ts#has independent complete XOR evidence and oracle acceptance"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "C14-multi",
+        "alias": "Multi-coloring",
+        "record": "web/tests/unit/solver/coloring.test.ts#requires complete edges XOR and every branch proof"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "C14-multi",
+        "alias": "Multi-coloring",
+        "record": "web/tests/unit/solver/coloring.test.ts#requires complete edges XOR and every branch proof"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C14-multi",
+        "alias": "Multi-coloring",
+        "record": "web/tests/unit/solver/chains.test.ts#replays from original clues with no assumed candidate axioms"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C14-multi",
+        "alias": "Multi-coloring",
+        "record": "web/tests/unit/solver/chains.test.ts#durable original seed hashes reproduce every satisfiable prestate and force-or-forbid counterfactual"
+      }
+    ]
   },
   {
     "id": "C15",
@@ -3981,14 +4102,45 @@ export const coverageEntries: readonly CoverageEntry[] = Object.freeze((
     "grammarId": "c15-grammar@1",
     "detectorId": "c15@1",
     "checkerId": "c15-grammar@1",
-    "descriptionPath": "docs/superpowers/specs/2026-09-12-m2-technique-coverage.md",
+    "descriptionPath": "docs/solver/techniques/chains-and-coloring.md",
     "fixtureIds": [
-      "C15-cell-wrap",
+      "C15-trap",
       "C15-house-wrap",
-      "C15-trap"
+      "C15-cell-wrap"
     ],
-    "status": "specified",
-    "evidence": []
+    "status": "independently-verified",
+    "evidence": [
+      {
+        "kind": "positive",
+        "fixtureId": "C15-cell-wrap",
+        "alias": "3D Medusa",
+        "record": "web/tests/unit/solver/coloring.test.ts#has independent complete XOR evidence and oracle acceptance"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "C15-cell-wrap",
+        "alias": "3D Medusa",
+        "record": "web/tests/unit/solver/coloring.test.ts#requires complete edges XOR and every branch proof"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "C15-cell-wrap",
+        "alias": "3D Medusa",
+        "record": "web/tests/unit/solver/coloring.test.ts#requires complete edges XOR and every branch proof"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C15-cell-wrap",
+        "alias": "3D Medusa",
+        "record": "web/tests/unit/solver/chains.test.ts#replays from original clues with no assumed candidate axioms"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C15-cell-wrap",
+        "alias": "3D Medusa",
+        "record": "web/tests/unit/solver/chains.test.ts#durable original seed hashes reproduce every satisfiable prestate and force-or-forbid counterfactual"
+      }
+    ]
   },
   {
     "id": "C16",
@@ -4010,14 +4162,105 @@ export const coverageEntries: readonly CoverageEntry[] = Object.freeze((
     "grammarId": "c16-grammar@1",
     "detectorId": "c16@1",
     "checkerId": "c16-grammar@1",
-    "descriptionPath": "docs/superpowers/specs/2026-09-12-m2-technique-coverage.md",
+    "descriptionPath": "docs/solver/techniques/chains-and-coloring.md",
     "fixtureIds": [
-      "C16-x",
-      "C16-xy",
-      "C16-aic"
+      "C16-xy-24-vertices",
+      "C16-x-4-vertices",
+      "C16-aic-cell-and-house"
     ],
-    "status": "specified",
-    "evidence": []
+    "status": "independently-verified",
+    "evidence": [
+      {
+        "kind": "positive",
+        "fixtureId": "C16-x-4-vertices",
+        "alias": "X-Chains",
+        "record": "web/tests/unit/solver/chains.test.ts#has independent exact named evidence and force/forbid acceptance"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "C16-x-4-vertices",
+        "alias": "X-Chains",
+        "record": "web/tests/unit/solver/chains.test.ts#rejects alias source assumption and count corruption"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "C16-x-4-vertices",
+        "alias": "X-Chains",
+        "record": "web/tests/unit/solver/chains.test.ts#also compiles through production at the exact independently authored geometry"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C16-x-4-vertices",
+        "alias": "X-Chains",
+        "record": "web/tests/unit/solver/chains.test.ts#replays from original clues with no assumed candidate axioms"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C16-x-4-vertices",
+        "alias": "X-Chains",
+        "record": "web/tests/unit/solver/chains.test.ts#durable original seed hashes reproduce every satisfiable prestate and force-or-forbid counterfactual"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "C16-xy-24-vertices",
+        "alias": "XY-Chains",
+        "record": "web/tests/unit/solver/chains.test.ts#has independent exact named evidence and force/forbid acceptance"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "C16-xy-24-vertices",
+        "alias": "XY-Chains",
+        "record": "web/tests/unit/solver/chains.test.ts#rejects alias source assumption and count corruption"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "C16-xy-24-vertices",
+        "alias": "XY-Chains",
+        "record": "web/tests/unit/solver/chains.test.ts#also compiles through production at the exact independently authored geometry"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C16-xy-24-vertices",
+        "alias": "XY-Chains",
+        "record": "web/tests/unit/solver/chains.test.ts#replays from original clues with no assumed candidate axioms"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C16-xy-24-vertices",
+        "alias": "XY-Chains",
+        "record": "web/tests/unit/solver/chains.test.ts#durable original seed hashes reproduce every satisfiable prestate and force-or-forbid counterfactual"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "C16-aic-cell-and-house",
+        "alias": "AICs",
+        "record": "web/tests/unit/solver/chains.test.ts#has independent exact named evidence and force/forbid acceptance"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "C16-aic-cell-and-house",
+        "alias": "AICs",
+        "record": "web/tests/unit/solver/chains.test.ts#rejects alias source assumption and count corruption"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "C16-aic-cell-and-house",
+        "alias": "AICs",
+        "record": "web/tests/unit/solver/chains.test.ts#also compiles through production at the exact independently authored geometry"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C16-aic-cell-and-house",
+        "alias": "AICs",
+        "record": "web/tests/unit/solver/chains.test.ts#replays from original clues with no assumed candidate axioms"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C16-aic-cell-and-house",
+        "alias": "AICs",
+        "record": "web/tests/unit/solver/chains.test.ts#durable original seed hashes reproduce every satisfiable prestate and force-or-forbid counterfactual"
+      }
+    ]
   },
   {
     "id": "C17",
@@ -4042,15 +4285,172 @@ export const coverageEntries: readonly CoverageEntry[] = Object.freeze((
     "grammarId": "c17-grammar@1",
     "detectorId": "c17@1",
     "checkerId": "c17-grammar@1",
-    "descriptionPath": "docs/superpowers/specs/2026-09-12-m2-technique-coverage.md",
+    "descriptionPath": "docs/solver/techniques/chains-and-coloring.md",
     "fixtureIds": [
-      "C17-continuous",
-      "C17-discontinuous-on/off",
-      "C17-group",
-      "C17-als"
+      "C17-continuous-24-links",
+      "C17-discontinuous-off",
+      "C17-discontinuous-on",
+      "C17-group-three-members",
+      "C17-als-link-size-4",
+      "C17-als-link-size-5",
+      "C17-als-link-size-3",
+      "C17-four-als-visits",
+      "C17-five-als-visits",
+      "C17-grouped-loop"
     ],
-    "status": "specified",
-    "evidence": []
+    "status": "independently-verified",
+    "evidence": [
+      {
+        "kind": "positive",
+        "fixtureId": "C17-continuous-24-links",
+        "alias": "Continuous Nice Loops",
+        "record": "web/tests/unit/solver/chains.test.ts#has independent exact named evidence and force/forbid acceptance"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "C17-continuous-24-links",
+        "alias": "Continuous Nice Loops",
+        "record": "web/tests/unit/solver/chains.test.ts#rejects alias source assumption and count corruption"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "C17-continuous-24-links",
+        "alias": "Continuous Nice Loops",
+        "record": "web/tests/unit/solver/chains.test.ts#also compiles through production at the exact independently authored geometry"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C17-continuous-24-links",
+        "alias": "Continuous Nice Loops",
+        "record": "web/tests/unit/solver/chains.test.ts#replays from original clues with no assumed candidate axioms"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C17-continuous-24-links",
+        "alias": "Continuous Nice Loops",
+        "record": "web/tests/unit/solver/chains.test.ts#durable original seed hashes reproduce every satisfiable prestate and force-or-forbid counterfactual"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "C17-discontinuous-on",
+        "alias": "Discontinuous Nice Loops",
+        "record": "web/tests/unit/solver/chains.test.ts#has independent exact named evidence and force/forbid acceptance"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "C17-discontinuous-on",
+        "alias": "Discontinuous Nice Loops",
+        "record": "web/tests/unit/solver/chains.test.ts#rejects alias source assumption and count corruption"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "C17-discontinuous-on",
+        "alias": "Discontinuous Nice Loops",
+        "record": "web/tests/unit/solver/chains.test.ts#also compiles through production at the exact independently authored geometry"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C17-discontinuous-on",
+        "alias": "Discontinuous Nice Loops",
+        "record": "web/tests/unit/solver/chains.test.ts#replays from original clues with no assumed candidate axioms"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C17-discontinuous-on",
+        "alias": "Discontinuous Nice Loops",
+        "record": "web/tests/unit/solver/chains.test.ts#durable original seed hashes reproduce every satisfiable prestate and force-or-forbid counterfactual"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "C17-group-three-members",
+        "alias": "Grouped AIC",
+        "record": "web/tests/unit/solver/chains.test.ts#has independent exact named evidence and force/forbid acceptance"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "C17-group-three-members",
+        "alias": "Grouped AIC",
+        "record": "web/tests/unit/solver/chains.test.ts#rejects alias source assumption and count corruption"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "C17-group-three-members",
+        "alias": "Grouped AIC",
+        "record": "web/tests/unit/solver/chains.test.ts#also compiles through production at the exact independently authored geometry"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C17-group-three-members",
+        "alias": "Grouped AIC",
+        "record": "web/tests/unit/solver/chains.test.ts#replays from original clues with no assumed candidate axioms"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C17-group-three-members",
+        "alias": "Grouped AIC",
+        "record": "web/tests/unit/solver/chains.test.ts#durable original seed hashes reproduce every satisfiable prestate and force-or-forbid counterfactual"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "C17-grouped-loop",
+        "alias": "Grouped loops",
+        "record": "web/tests/unit/solver/chains.test.ts#has independent exact named evidence and force/forbid acceptance"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "C17-grouped-loop",
+        "alias": "Grouped loops",
+        "record": "web/tests/unit/solver/chains.test.ts#rejects alias source assumption and count corruption"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "C17-grouped-loop",
+        "alias": "Grouped loops",
+        "record": "web/tests/unit/solver/chains.test.ts#also compiles through production at the exact independently authored geometry"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C17-grouped-loop",
+        "alias": "Grouped loops",
+        "record": "web/tests/unit/solver/chains.test.ts#replays from original clues with no assumed candidate axioms"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C17-grouped-loop",
+        "alias": "Grouped loops",
+        "record": "web/tests/unit/solver/chains.test.ts#has independent exact named evidence and force/forbid acceptance"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "C17-als-link-size-5",
+        "alias": "ALS links",
+        "record": "web/tests/unit/solver/chains.test.ts#has independent exact named evidence and force/forbid acceptance"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "C17-als-link-size-5",
+        "alias": "ALS links",
+        "record": "web/tests/unit/solver/chains.test.ts#rejects alias source assumption and count corruption"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "C17-als-link-size-5",
+        "alias": "ALS links",
+        "record": "web/tests/unit/solver/chains.test.ts#also compiles through production at the exact independently authored geometry"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C17-als-link-size-5",
+        "alias": "ALS links",
+        "record": "web/tests/unit/solver/chains.test.ts#replays from original clues with no assumed candidate axioms"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C17-als-link-size-5",
+        "alias": "ALS links",
+        "record": "web/tests/unit/solver/chains.test.ts#durable original seed hashes reproduce every satisfiable prestate and force-or-forbid counterfactual"
+      }
+    ]
   },
   {
     "id": "C18",

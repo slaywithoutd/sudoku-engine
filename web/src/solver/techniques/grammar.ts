@@ -3,6 +3,8 @@ import type { ReadView } from "../state/types";
 import { domainAssertion, requireProof, sameValue } from "../proof/primitives";
 import { checkPatternProof } from "./pattern-contracts";
 import { checkFishPattern } from "./fish-certificate";
+import { checkChainPattern } from "./chains-grammar";
+import { checkColoringPattern } from "./coloring-grammar";
 
 function fields(p: Record<string, unknown>, names: string[]): void {
   requireProof(sameValue(Object.keys(p).sort(), names.sort()), "invalid-technique-pattern");
@@ -39,6 +41,12 @@ export function checkTechniqueGrammar(proposal: DeductionProposal, view: ReadVie
   }
   if (["c10@1","c11@1","c12@1","c13@1"].includes(proposal.technique)) {
     checkPatternProof(proposal,view,available); return;
+  }
+  if (["c16@1", "c17@1"].includes(proposal.technique)) {
+    checkChainPattern(proposal, view, available); return;
+  }
+  if (["c14@1", "c15@1"].includes(proposal.technique)) {
+    checkColoringPattern(proposal, view, available); return;
   }
   if (["c06@1","c07@1","c08@1","c09@1"].includes(proposal.technique)) {
     checkFishPattern(proposal,view,available); return;

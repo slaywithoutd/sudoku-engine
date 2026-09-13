@@ -11,6 +11,9 @@ import { wingTechniques } from "./wings";
 import { bentSubsetTechniques } from "./bent-subsets";
 import { remotePairTechniques } from "./remote-pairs";
 import { fishTechniques } from "./fish";
+import { chainTechniques } from "./chains";
+import { loopTechniques } from "./loops";
+import { coloringTechniques } from "./coloring";
 
 const detectors = new Map<string, { discover(view: ReadView, context: DiscoveryContext): Discovery }>([
   ["C01", new NakedSingles()], ["C02", new HiddenSingles()],
@@ -21,13 +24,13 @@ const detectors = new Map<string, { discover(view: ReadView, context: DiscoveryC
 const dimensions: Record<string, readonly [number,number,number,number,number]> = {
   C01:[0,0,1,1,1],C02:[0,0,9,9,1],C03:[0,0,3,18,3],C04:[0,0,9,9,4],C05:[0,0,9,15,3],
   C06:[0,0,9,81,7],C07:[0,1,2,81,7],C08:[0,1,2,81,4],C09:[0,1,2,81,4],
-  C10:[3,0,3,12,3],C11:[0,0,3,5,3],C12:[0,1,9,6,6],C13:[24,0,2,12,2],C14:[0,1,4,81,0],C15:[0,1,2,81,0],
+  C10:[3,0,3,12,3],C11:[0,0,3,5,3],C12:[0,1,9,6,6],C13:[24,0,2,12,2],C14:[0,2,4,81,0],C15:[0,1,2,81,0],
   C16:[24,1,2,81,0],C17:[24,1,3,81,5],C18:[0,0,9,15,5],C19:[24,1,4,31,5],C20:[0,0,9,11,4],C21:[0,1,9,12,5],
   C22:[24,1,9,81,0],C23:[24,2,9,81,0],C24:[24,1,2,81,4],C25:[12,1,9,81,0],C26:[12,1,9,81,0],C27:[12,1,9,81,3],
   C28:[24,1,4,81,4],C29:[0,0,9,4,4],C30:[0,0,9,16,3],C31:[0,0,9,81,4],C32:[0,1,6,12,4],C33:[0,0,9,81,3],
   U01:[24,1,2,4,2],U02:[24,1,3,6,3],U03:[12,0,4,12,2],U04:[0,0,1,81,2],U05:[24,1,4,81,4],
 };
-const advanced=[...fishTechniques,...shortPatternTechniques,...wingTechniques,...bentSubsetTechniques,...remotePairTechniques];
+const advanced=[...fishTechniques,...shortPatternTechniques,...wingTechniques,...bentSubsetTechniques,...remotePairTechniques,...coloringTechniques,...chainTechniques,...loopTechniques];
 const descriptors: readonly TechniqueDescriptor[] = Object.freeze(coverageEntries.map(entry => advanced.find(d=>d.id===entry.version)??Object.freeze({
   id: entry.version, aliases: entry.aliases, tier: entry.tier, requires: entry.capabilities,
   assumptionPolicy: entry.assumptionPolicy,

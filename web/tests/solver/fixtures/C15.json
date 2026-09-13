@@ -1,0 +1,1456 @@
+[
+  {
+    "id": "C15-trap",
+    "rowId": "C15",
+    "givens": "534600910000195008098000067800700000400000090710904000000507084080400600340080170",
+    "preState": {
+      "values": [
+        5,
+        3,
+        4,
+        6,
+        0,
+        0,
+        9,
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        9,
+        5,
+        0,
+        0,
+        8,
+        0,
+        9,
+        8,
+        0,
+        0,
+        0,
+        0,
+        6,
+        7,
+        8,
+        0,
+        0,
+        7,
+        0,
+        0,
+        0,
+        0,
+        0,
+        4,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        9,
+        0,
+        7,
+        1,
+        0,
+        9,
+        0,
+        4,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        5,
+        0,
+        7,
+        0,
+        8,
+        4,
+        0,
+        8,
+        0,
+        4,
+        0,
+        0,
+        6,
+        0,
+        0,
+        3,
+        4,
+        0,
+        0,
+        8,
+        0,
+        1,
+        7,
+        0
+      ],
+      "domains": [
+        16,
+        4,
+        8,
+        32,
+        66,
+        130,
+        256,
+        1,
+        2,
+        34,
+        98,
+        98,
+        1,
+        256,
+        16,
+        14,
+        14,
+        128,
+        3,
+        256,
+        128,
+        6,
+        14,
+        6,
+        30,
+        32,
+        64,
+        128,
+        50,
+        310,
+        64,
+        55,
+        39,
+        30,
+        30,
+        55,
+        8,
+        50,
+        54,
+        134,
+        55,
+        167,
+        214,
+        256,
+        55,
+        64,
+        1,
+        54,
+        256,
+        54,
+        8,
+        150,
+        22,
+        54,
+        291,
+        34,
+        291,
+        16,
+        39,
+        64,
+        6,
+        128,
+        8,
+        259,
+        128,
+        339,
+        8,
+        7,
+        263,
+        32,
+        22,
+        278,
+        4,
+        8,
+        306,
+        2,
+        128,
+        290,
+        1,
+        64,
+        274
+      ]
+    },
+    "expectedPattern": {
+      "components": [
+        {
+          "colors": [
+            [
+              [
+                5,
+                2
+              ],
+              [
+                41,
+                8
+              ]
+            ],
+            [
+              [
+                5,
+                8
+              ],
+              [
+                39,
+                8
+              ]
+            ]
+          ],
+          "edges": [
+            {
+              "ends": [
+                [
+                  5,
+                  8
+                ],
+                [
+                  41,
+                  8
+                ]
+              ],
+              "source": {
+                "kind": "house",
+                "id": "column:5",
+                "symbol": 8
+              }
+            },
+            {
+              "ends": [
+                [
+                  39,
+                  8
+                ],
+                [
+                  41,
+                  8
+                ]
+              ],
+              "source": {
+                "kind": "house",
+                "id": "box:4",
+                "symbol": 8
+              }
+            },
+            {
+              "ends": [
+                [
+                  5,
+                  2
+                ],
+                [
+                  5,
+                  8
+                ]
+              ],
+              "source": {
+                "kind": "cell",
+                "cell": 5
+              }
+            }
+          ]
+        }
+      ],
+      "validColors": [
+        0,
+        1
+      ]
+    },
+    "expectedEffects": [
+      {
+        "kind": "remove",
+        "cell": 42,
+        "symbol": 8
+      }
+    ],
+    "origin": {
+      "author": "Independent repository fixture author",
+      "license": "Repository-owned; no external puzzle copied",
+      "sourceRevision": "independent-coloring-seeds@1"
+    },
+    "prefix": "Only original-given peer exclusions; no solution-derived candidate axioms.",
+    "oracleRecord": {
+      "method": "independent-algorithm-x@1",
+      "inputHash": "516247dc304f57f9374a3ec98b339c34e64fb27b807005dbe529a254e6993cc1",
+      "command": "npm test -- tests/unit/solver/coloring.test.ts tests/unit/solver/chains.test.ts",
+      "satisfiable": true,
+      "forceForbidExhausted": true
+    },
+    "grammar": "c15-grammar@1",
+    "alias": "3D Medusa",
+    "expectation": "productive",
+    "reachability": "original-clue-path"
+  },
+  {
+    "id": "C15-house-wrap",
+    "rowId": "C15",
+    "givens": "534678010672000000108040007059060420406803090013000006061507004087410030040206009",
+    "preState": {
+      "values": [
+        5,
+        3,
+        4,
+        6,
+        7,
+        8,
+        0,
+        1,
+        0,
+        6,
+        7,
+        2,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        8,
+        0,
+        4,
+        0,
+        0,
+        0,
+        7,
+        0,
+        5,
+        9,
+        0,
+        6,
+        0,
+        4,
+        2,
+        0,
+        4,
+        0,
+        6,
+        8,
+        0,
+        3,
+        0,
+        9,
+        0,
+        0,
+        1,
+        3,
+        0,
+        0,
+        0,
+        0,
+        0,
+        6,
+        0,
+        6,
+        1,
+        5,
+        0,
+        7,
+        0,
+        0,
+        4,
+        0,
+        8,
+        7,
+        4,
+        1,
+        0,
+        0,
+        3,
+        0,
+        0,
+        4,
+        0,
+        2,
+        0,
+        6,
+        0,
+        0,
+        9
+      ],
+      "domains": [
+        16,
+        4,
+        8,
+        32,
+        64,
+        128,
+        258,
+        1,
+        2,
+        32,
+        64,
+        2,
+        261,
+        276,
+        273,
+        404,
+        152,
+        148,
+        1,
+        256,
+        128,
+        260,
+        8,
+        274,
+        310,
+        48,
+        64,
+        192,
+        16,
+        256,
+        65,
+        32,
+        1,
+        8,
+        2,
+        133,
+        8,
+        2,
+        32,
+        128,
+        18,
+        4,
+        81,
+        256,
+        17,
+        194,
+        1,
+        4,
+        320,
+        274,
+        282,
+        208,
+        208,
+        32,
+        262,
+        32,
+        1,
+        16,
+        388,
+        64,
+        130,
+        128,
+        8,
+        258,
+        128,
+        64,
+        8,
+        1,
+        256,
+        50,
+        4,
+        18,
+        4,
+        8,
+        16,
+        2,
+        132,
+        32,
+        209,
+        208,
+        256
+      ]
+    },
+    "expectedPattern": {
+      "components": [
+        {
+          "colors": [
+            [
+              [
+                35,
+                1
+              ],
+              [
+                42,
+                1
+              ],
+              [
+                44,
+                5
+              ]
+            ],
+            [
+              [
+                44,
+                1
+              ],
+              [
+                78,
+                1
+              ]
+            ]
+          ],
+          "edges": [
+            {
+              "ends": [
+                [
+                  42,
+                  1
+                ],
+                [
+                  44,
+                  1
+                ]
+              ],
+              "source": {
+                "kind": "house",
+                "id": "row:4",
+                "symbol": 1
+              }
+            },
+            {
+              "ends": [
+                [
+                  42,
+                  1
+                ],
+                [
+                  78,
+                  1
+                ]
+              ],
+              "source": {
+                "kind": "house",
+                "id": "column:6",
+                "symbol": 1
+              }
+            },
+            {
+              "ends": [
+                [
+                  35,
+                  1
+                ],
+                [
+                  44,
+                  1
+                ]
+              ],
+              "source": {
+                "kind": "house",
+                "id": "column:8",
+                "symbol": 1
+              }
+            },
+            {
+              "ends": [
+                [
+                  44,
+                  1
+                ],
+                [
+                  44,
+                  5
+                ]
+              ],
+              "source": {
+                "kind": "cell",
+                "cell": 44
+              }
+            }
+          ]
+        }
+      ],
+      "invalidColor": 0,
+      "conflicts": [
+        [
+          [
+            35,
+            1
+          ],
+          [
+            42,
+            1
+          ]
+        ]
+      ]
+    },
+    "expectedEffects": [
+      {
+        "kind": "remove",
+        "cell": 35,
+        "symbol": 1
+      },
+      {
+        "kind": "remove",
+        "cell": 42,
+        "symbol": 1
+      },
+      {
+        "kind": "remove",
+        "cell": 44,
+        "symbol": 5
+      }
+    ],
+    "origin": {
+      "author": "Independent repository fixture author",
+      "license": "Repository-owned; no external puzzle copied",
+      "sourceRevision": "independent-coloring-seeds@1"
+    },
+    "prefix": "Only original-given peer exclusions; no solution-derived candidate axioms.",
+    "oracleRecord": {
+      "method": "independent-algorithm-x@1",
+      "inputHash": "9883b1313f7ac82bc8787f76c794bfe1266502ac01b947d67bf19f4e92c974c1",
+      "command": "npm test -- tests/unit/solver/coloring.test.ts tests/unit/solver/chains.test.ts",
+      "satisfiable": true,
+      "forceForbidExhausted": true
+    },
+    "grammar": "c15-grammar@1",
+    "alias": "3D Medusa",
+    "expectation": "productive",
+    "reachability": "original-clue-path"
+  },
+  {
+    "id": "C15-cell-wrap",
+    "rowId": "C15",
+    "givens": "034078912670095048198340060059060423406850001700904006961537084207009605045206179",
+    "preState": {
+      "values": [
+        0,
+        3,
+        4,
+        0,
+        7,
+        8,
+        9,
+        1,
+        2,
+        6,
+        7,
+        0,
+        0,
+        9,
+        5,
+        0,
+        4,
+        8,
+        1,
+        9,
+        8,
+        3,
+        4,
+        0,
+        0,
+        6,
+        0,
+        0,
+        5,
+        9,
+        0,
+        6,
+        0,
+        4,
+        2,
+        3,
+        4,
+        0,
+        6,
+        8,
+        5,
+        0,
+        0,
+        0,
+        1,
+        7,
+        0,
+        0,
+        9,
+        0,
+        4,
+        0,
+        0,
+        6,
+        9,
+        6,
+        1,
+        5,
+        3,
+        7,
+        0,
+        8,
+        4,
+        2,
+        0,
+        7,
+        0,
+        0,
+        9,
+        6,
+        0,
+        5,
+        0,
+        4,
+        5,
+        2,
+        0,
+        6,
+        1,
+        7,
+        9
+      ],
+      "domains": [
+        16,
+        4,
+        8,
+        32,
+        64,
+        128,
+        256,
+        1,
+        2,
+        32,
+        64,
+        2,
+        1,
+        256,
+        16,
+        4,
+        8,
+        128,
+        1,
+        256,
+        128,
+        4,
+        8,
+        2,
+        80,
+        32,
+        64,
+        128,
+        16,
+        256,
+        65,
+        32,
+        1,
+        8,
+        2,
+        4,
+        8,
+        2,
+        32,
+        128,
+        16,
+        6,
+        64,
+        256,
+        1,
+        64,
+        131,
+        6,
+        256,
+        3,
+        8,
+        144,
+        16,
+        32,
+        256,
+        32,
+        1,
+        16,
+        4,
+        64,
+        2,
+        128,
+        8,
+        2,
+        128,
+        64,
+        9,
+        129,
+        256,
+        32,
+        4,
+        16,
+        132,
+        8,
+        16,
+        2,
+        128,
+        32,
+        1,
+        64,
+        256
+      ]
+    },
+    "expectedPattern": {
+      "components": [
+        {
+          "colors": [
+            [
+              [
+                23,
+                2
+              ],
+              [
+                24,
+                5
+              ],
+              [
+                26,
+                7
+              ],
+              [
+                27,
+                8
+              ],
+              [
+                37,
+                2
+              ],
+              [
+                41,
+                3
+              ],
+              [
+                42,
+                7
+              ],
+              [
+                46,
+                1
+              ],
+              [
+                49,
+                2
+              ],
+              [
+                51,
+                8
+              ],
+              [
+                52,
+                5
+              ],
+              [
+                64,
+                8
+              ],
+              [
+                66,
+                4
+              ],
+              [
+                67,
+                1
+              ],
+              [
+                72,
+                3
+              ],
+              [
+                76,
+                8
+              ]
+            ],
+            [
+              [
+                24,
+                7
+              ],
+              [
+                41,
+                2
+              ],
+              [
+                46,
+                2
+              ],
+              [
+                46,
+                8
+              ],
+              [
+                49,
+                1
+              ],
+              [
+                51,
+                5
+              ],
+              [
+                66,
+                1
+              ],
+              [
+                67,
+                8
+              ],
+              [
+                72,
+                8
+              ]
+            ]
+          ],
+          "edges": [
+            {
+              "ends": [
+                [
+                  24,
+                  7
+                ],
+                [
+                  26,
+                  7
+                ]
+              ],
+              "source": {
+                "kind": "house",
+                "id": "row:2",
+                "symbol": 7
+              }
+            },
+            {
+              "ends": [
+                [
+                  37,
+                  2
+                ],
+                [
+                  41,
+                  2
+                ]
+              ],
+              "source": {
+                "kind": "house",
+                "id": "row:4",
+                "symbol": 2
+              }
+            },
+            {
+              "ends": [
+                [
+                  46,
+                  1
+                ],
+                [
+                  49,
+                  1
+                ]
+              ],
+              "source": {
+                "kind": "house",
+                "id": "row:5",
+                "symbol": 1
+              }
+            },
+            {
+              "ends": [
+                [
+                  51,
+                  5
+                ],
+                [
+                  52,
+                  5
+                ]
+              ],
+              "source": {
+                "kind": "house",
+                "id": "row:5",
+                "symbol": 5
+              }
+            },
+            {
+              "ends": [
+                [
+                  46,
+                  8
+                ],
+                [
+                  51,
+                  8
+                ]
+              ],
+              "source": {
+                "kind": "house",
+                "id": "row:5",
+                "symbol": 8
+              }
+            },
+            {
+              "ends": [
+                [
+                  66,
+                  1
+                ],
+                [
+                  67,
+                  1
+                ]
+              ],
+              "source": {
+                "kind": "house",
+                "id": "row:7",
+                "symbol": 1
+              }
+            },
+            {
+              "ends": [
+                [
+                  64,
+                  8
+                ],
+                [
+                  67,
+                  8
+                ]
+              ],
+              "source": {
+                "kind": "house",
+                "id": "row:7",
+                "symbol": 8
+              }
+            },
+            {
+              "ends": [
+                [
+                  72,
+                  8
+                ],
+                [
+                  76,
+                  8
+                ]
+              ],
+              "source": {
+                "kind": "house",
+                "id": "row:8",
+                "symbol": 8
+              }
+            },
+            {
+              "ends": [
+                [
+                  27,
+                  8
+                ],
+                [
+                  72,
+                  8
+                ]
+              ],
+              "source": {
+                "kind": "house",
+                "id": "column:0",
+                "symbol": 8
+              }
+            },
+            {
+              "ends": [
+                [
+                  37,
+                  2
+                ],
+                [
+                  46,
+                  2
+                ]
+              ],
+              "source": {
+                "kind": "house",
+                "id": "column:1",
+                "symbol": 2
+              }
+            },
+            {
+              "ends": [
+                [
+                  46,
+                  8
+                ],
+                [
+                  64,
+                  8
+                ]
+              ],
+              "source": {
+                "kind": "house",
+                "id": "column:1",
+                "symbol": 8
+              }
+            },
+            {
+              "ends": [
+                [
+                  49,
+                  1
+                ],
+                [
+                  67,
+                  1
+                ]
+              ],
+              "source": {
+                "kind": "house",
+                "id": "column:4",
+                "symbol": 1
+              }
+            },
+            {
+              "ends": [
+                [
+                  67,
+                  8
+                ],
+                [
+                  76,
+                  8
+                ]
+              ],
+              "source": {
+                "kind": "house",
+                "id": "column:4",
+                "symbol": 8
+              }
+            },
+            {
+              "ends": [
+                [
+                  23,
+                  2
+                ],
+                [
+                  41,
+                  2
+                ]
+              ],
+              "source": {
+                "kind": "house",
+                "id": "column:5",
+                "symbol": 2
+              }
+            },
+            {
+              "ends": [
+                [
+                  24,
+                  5
+                ],
+                [
+                  51,
+                  5
+                ]
+              ],
+              "source": {
+                "kind": "house",
+                "id": "column:6",
+                "symbol": 5
+              }
+            },
+            {
+              "ends": [
+                [
+                  24,
+                  7
+                ],
+                [
+                  42,
+                  7
+                ]
+              ],
+              "source": {
+                "kind": "house",
+                "id": "column:6",
+                "symbol": 7
+              }
+            },
+            {
+              "ends": [
+                [
+                  24,
+                  7
+                ],
+                [
+                  26,
+                  7
+                ]
+              ],
+              "source": {
+                "kind": "house",
+                "id": "box:2",
+                "symbol": 7
+              }
+            },
+            {
+              "ends": [
+                [
+                  27,
+                  8
+                ],
+                [
+                  46,
+                  8
+                ]
+              ],
+              "source": {
+                "kind": "house",
+                "id": "box:3",
+                "symbol": 8
+              }
+            },
+            {
+              "ends": [
+                [
+                  41,
+                  2
+                ],
+                [
+                  49,
+                  2
+                ]
+              ],
+              "source": {
+                "kind": "house",
+                "id": "box:4",
+                "symbol": 2
+              }
+            },
+            {
+              "ends": [
+                [
+                  51,
+                  5
+                ],
+                [
+                  52,
+                  5
+                ]
+              ],
+              "source": {
+                "kind": "house",
+                "id": "box:5",
+                "symbol": 5
+              }
+            },
+            {
+              "ends": [
+                [
+                  64,
+                  8
+                ],
+                [
+                  72,
+                  8
+                ]
+              ],
+              "source": {
+                "kind": "house",
+                "id": "box:6",
+                "symbol": 8
+              }
+            },
+            {
+              "ends": [
+                [
+                  66,
+                  1
+                ],
+                [
+                  67,
+                  1
+                ]
+              ],
+              "source": {
+                "kind": "house",
+                "id": "box:7",
+                "symbol": 1
+              }
+            },
+            {
+              "ends": [
+                [
+                  67,
+                  8
+                ],
+                [
+                  76,
+                  8
+                ]
+              ],
+              "source": {
+                "kind": "house",
+                "id": "box:7",
+                "symbol": 8
+              }
+            },
+            {
+              "ends": [
+                [
+                  24,
+                  5
+                ],
+                [
+                  24,
+                  7
+                ]
+              ],
+              "source": {
+                "kind": "cell",
+                "cell": 24
+              }
+            },
+            {
+              "ends": [
+                [
+                  41,
+                  2
+                ],
+                [
+                  41,
+                  3
+                ]
+              ],
+              "source": {
+                "kind": "cell",
+                "cell": 41
+              }
+            },
+            {
+              "ends": [
+                [
+                  49,
+                  1
+                ],
+                [
+                  49,
+                  2
+                ]
+              ],
+              "source": {
+                "kind": "cell",
+                "cell": 49
+              }
+            },
+            {
+              "ends": [
+                [
+                  51,
+                  5
+                ],
+                [
+                  51,
+                  8
+                ]
+              ],
+              "source": {
+                "kind": "cell",
+                "cell": 51
+              }
+            },
+            {
+              "ends": [
+                [
+                  66,
+                  1
+                ],
+                [
+                  66,
+                  4
+                ]
+              ],
+              "source": {
+                "kind": "cell",
+                "cell": 66
+              }
+            },
+            {
+              "ends": [
+                [
+                  67,
+                  1
+                ],
+                [
+                  67,
+                  8
+                ]
+              ],
+              "source": {
+                "kind": "cell",
+                "cell": 67
+              }
+            },
+            {
+              "ends": [
+                [
+                  72,
+                  3
+                ],
+                [
+                  72,
+                  8
+                ]
+              ],
+              "source": {
+                "kind": "cell",
+                "cell": 72
+              }
+            }
+          ]
+        }
+      ],
+      "invalidColor": 1,
+      "conflicts": [
+        [
+          [
+            46,
+            2
+          ],
+          [
+            46,
+            8
+          ]
+        ]
+      ]
+    },
+    "expectedEffects": [
+      {
+        "kind": "remove",
+        "cell": 24,
+        "symbol": 7
+      },
+      {
+        "kind": "remove",
+        "cell": 41,
+        "symbol": 2
+      },
+      {
+        "kind": "remove",
+        "cell": 46,
+        "symbol": 2
+      },
+      {
+        "kind": "remove",
+        "cell": 46,
+        "symbol": 8
+      },
+      {
+        "kind": "remove",
+        "cell": 49,
+        "symbol": 1
+      },
+      {
+        "kind": "remove",
+        "cell": 51,
+        "symbol": 5
+      }
+    ],
+    "origin": {
+      "author": "Independent repository fixture author",
+      "license": "Repository-owned; no external puzzle copied",
+      "sourceRevision": "independent-coloring-seeds@1"
+    },
+    "prefix": "Only original-given peer exclusions; no solution-derived candidate axioms.",
+    "oracleRecord": {
+      "method": "independent-algorithm-x@1",
+      "inputHash": "2c13f4e015201863e1912b1b4cf178976bab2b548937448096af0755a3a23556",
+      "command": "npm test -- tests/unit/solver/coloring.test.ts tests/unit/solver/chains.test.ts",
+      "satisfiable": true,
+      "forceForbidExhausted": true
+    },
+    "grammar": "c15-grammar@1",
+    "alias": "3D Medusa",
+    "expectation": "productive",
+    "reachability": "original-clue-path"
+  }
+]
