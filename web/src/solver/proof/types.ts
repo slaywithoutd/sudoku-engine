@@ -44,6 +44,8 @@ export interface CheckContext {
   readonly policy: AssumptionPolicy;
   readonly uniqueEvidenceId: string | null;
   readonly limits: Limits;
+  /** Checker-populated metadata for the exact admitted premise objects. */
+  readonly premiseInferences?: ReadonlyMap<NodeId, CheckedInference>;
 }
 export interface CheckedInference {
   readonly conclusion: Proposition;

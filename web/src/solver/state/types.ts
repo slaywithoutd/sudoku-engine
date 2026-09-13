@@ -26,7 +26,11 @@ export interface Fact {
   readonly conditional: boolean;
   readonly rules: readonly ConstraintId[];
 }
-/** Missing domain bits must be justified by facts, never supplied as axioms. */
+/**
+ * Missing bits require evidence. domainFacts points to an exact domain claim,
+ * except initialized givens, whose positive checked literal proves a singleton.
+ * All arrays and the key are immutable in candidate-owned published views.
+ */
 export interface CandidateState {
   readonly key: StateKey;
   readonly values: readonly (SymbolId | 0)[];

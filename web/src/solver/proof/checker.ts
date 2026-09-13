@@ -4,8 +4,10 @@ import type { StateKey } from "../snapshot";
 import { ImmutableMap, originalFact, originalRootCount, originalPremises } from "../state/facts";
 import { assertM2RootAssemblyBounds, PrimitiveRegistry, ProofError, requireProof, sameValue } from "./primitives";
 import type { CheckContext, CheckEvent, CheckedInference, CheckedStep, DeductionProposal, ProofNode } from "./types";
+import type { ReadView } from "../state/types";
 
 const authenticSteps = new WeakSet<object>();
+const stepImports = new WeakMap<CheckedStep, ReadonlyMap<number, ProofNode>>();
 interface CheckedNodeAuthority {
   readonly state: StateKey;
   readonly inference: CheckedInference;
@@ -20,6 +22,68 @@ const MAX_ARITY = 64;
 /** TypeScript brands do not survive a wire boundary; identity is the authority. */
 export function isCheckedStep(value: unknown): value is CheckedStep {
   return typeof value === "object" && value !== null && authenticSteps.has(value);
+}
+
+/** Retention uses checker-issued objects, including exact imported dependencies. */
+export function checkedImportsMatch(step: CheckedStep, retained: ReadonlyMap<number, ProofNode>): boolean {
+  const imports = stepImports.get(step);
+  return imports !== undefined && [...imports].every(([id, node]) => retained.get(id) === node);
+}
+
+/** Read-only authority lookup for retaining all intermediate checked facts. */
+export function checkedNodeInference(node: ProofNode): CheckedInference | undefined {
+  return acceptedNodes.get(node)?.inference;
+}
+
+/**
+ * Reconstructs the complete candidate transaction from proved literal roots.
+ * Placement peers must be explicit effects with their own proofs. Exact domain
+ * roots close every edited cell, so calculated masks never manufacture facts.
+ */
+export function checkedEffectState(view: ReadView, proposal: DeductionProposal,
+  consequences: readonly CheckedInference[]) {
+  const values = [...view.state.values], domains = [...view.state.domains];
+  const effects = proposal.effects, seen = new Set<string>(), cells = new Set<number>();
+  requireProof(effects.length > 0, "unproductive-step");
+  for (const effect of effects) {
+    fields(effect, ["kind", "cell", "symbol"]);
+    requireProof((effect.kind === "place" || effect.kind === "remove") &&
+      view.assembly.problem.cells.includes(effect.cell) && view.assembly.problem.symbols.includes(effect.symbol), "invalid-effect");
+    const identity = `${effect.kind}:${effect.cell}:${effect.symbol}`;
+    requireProof(!seen.has(identity), "duplicate-effect"); seen.add(identity);
+    const bit = 1 << (effect.symbol - 1);
+    requireProof(view.state.values[effect.cell] === 0 && (view.state.domains[effect.cell] & bit) !== 0,
+      "given-overwrite-or-unproductive-effect");
+    requireProof(consequences.some(item => sameValue(item.conclusion, {
+      kind: "literal", value: { cell: effect.cell, symbol: effect.symbol, positive: effect.kind === "place" },
+    })), "unexplained-effect");
+    if (effect.kind === "place") {
+      requireProof(values[effect.cell] === 0 && (domains[effect.cell] & bit) !== 0, "conflicting-effects");
+      values[effect.cell] = effect.symbol; domains[effect.cell] = bit;
+    } else {
+      requireProof(values[effect.cell] === 0, "conflicting-effects");
+      domains[effect.cell] &= ~bit;
+    }
+    cells.add(effect.cell);
+  }
+  for (const effect of effects) if (effect.kind === "place") {
+    // Derive peers from declared capabilities, never trust an external peer list.
+    const peers = new Set(view.assembly.allDifferent.filter(scope => scope.cells.includes(effect.cell))
+      .flatMap(scope => scope.cells).filter(cell => cell !== effect.cell));
+    for (const peer of peers) {
+      requireProof(values[peer] !== effect.symbol, "duplicate-placement");
+      if ((view.state.domains[peer] & (1 << (effect.symbol - 1))) !== 0)
+        requireProof(seen.has(`remove:${peer}:${effect.symbol}`), "missing-peer-effect");
+    }
+  }
+  for (const cell of cells) requireProof(consequences.some(item =>
+    sameValue(item.conclusion, { kind: "domain", cell, mask: domains[cell] })), "missing-domain-consequence");
+  for (const item of consequences) {
+    const p = item.conclusion;
+    requireProof((p.kind === "literal" && seen.has(`${p.value.positive ? "place" : "remove"}:${p.value.cell}:${p.value.symbol}`)) ||
+      (p.kind === "domain" && cells.has(p.cell) && p.mask === domains[p.cell]), "extraneous-effect-root");
+  }
+  return { values, domains, cells: [...cells].sort((a, b) => a - b) };
 }
 
 function sameState(left: StateKey, right: StateKey): boolean {
@@ -106,19 +170,24 @@ function envelope(value: object, names: readonly string[]): void {
   }
 }
 
-function captureProposal(input: DeductionProposal, cap: number, stepNodes: number) {
+function* captureProposal(input: DeductionProposal, cap: number, stepNodes: number,
+  tick: () => void): Generator<CheckEvent, { header: ReturnType<typeof copyBounded<DeductionProposal>>; references: ProofNode[] }, void> {
   envelope(input, ["technique", "state", "effects", "proof", "pattern"]);
   envelope(input.proof, ["state", "nodes", "imports", "roots"]);
   const nodes = input.proof.nodes;
-  requireProof(Array.isArray(nodes) && nodes.length <= stepNodes && nodes.length <= 4096, "proof-step-node-limit");
+  requireProof(Array.isArray(nodes) && nodes.length <= stepNodes && nodes.length <= 16384, "proof-step-node-limit");
   requireProof(Reflect.ownKeys(nodes).length === nodes.length + 1, "invalid-proof-array");
+  const count = nodes.length;
+  const header = copyBounded({ ...input, proof: { ...input.proof, nodes: [] } }, Math.min(cap, HEADER_BYTES));
   const references: ProofNode[] = [];
-  for (let index = 0; index < nodes.length; index++) {
+  for (let index = 0; index < count; index++) {
     const descriptor = Object.getOwnPropertyDescriptor(nodes, index);
     requireProof(descriptor?.enumerable && "value" in descriptor, "invalid-proof-array");
     references.push(descriptor.value);
+    // Larger configured steps remain cooperatively capturable. A batch never
+    // traverses payloads, and the initial length/header cannot change mid-check.
+    if ((index + 1) % 64 === 0) { tick(); yield { kind: "work", units: 1 }; }
   }
-  const header = copyBounded({ ...input, proof: { ...input.proof, nodes: [] } }, Math.min(cap, HEADER_BYTES));
   return { header, references };
 }
 
@@ -141,6 +210,7 @@ export class ProofChecker {
       const limits = { ...source.limits };
       for (const value of Object.values(limits))
         requireProof(Number.isSafeInteger(value) && value >= 0, "invalid-proof-limit");
+      requireProof(limits.stepNodes <= 16384, "invalid-proof-limit");
       const deadline = performance.now() + limits.timeMs;
       let work = 0;
       const tick = () => {
@@ -166,10 +236,10 @@ export class ProofChecker {
       const context: CheckContext = { ...source, limits, retained,
         view: { ...source.view, assembly: { ...source.view.assembly, problem },
           state: { ...source.view.state, key: state } } };
-      // Capture a bounded header and node references before yielding. Payloads
-      // are copied/checked one at a time below; completed private copies never
-      // observe later mutations of the external proposal.
-      const captured = captureProposal(input, Math.min(limits.stepBytes, limits.workspaceBytes), limits.stepNodes);
+      // Freeze the bounded header first, then capture references in batches.
+      // Payloads are copied/checked one at a time below; completed private
+      // copies never observe later mutations of the external proposal.
+      const captured = yield* captureProposal(input, Math.min(limits.stepBytes, limits.workspaceBytes), limits.stepNodes, tick);
       let runBytes = 0;
       let maximumId = -1;
       const inferences = new Map<number, CheckedInference>();
@@ -211,11 +281,12 @@ export class ProofChecker {
       fields(proposal, ["technique", "state", "effects", "proof", "pattern"]);
       fields(proposal.proof, ["state", "nodes", "imports", "roots"]);
       requireProof(sameState(proposal.state, state) && sameState(proposal.proof.state, state), "stale-proof-state");
-      // Reserved internal certificate only. Named-family grammar registration is
-      // added with T07; root certificates never authorize candidate mutations.
+      // Internal T04 scaffolding. T07 owns named singles and narrows maintenance
+      // to removal-only rule propagation; these are not named coverage claims.
       requireProof(proposal.technique === "rule-propagation@1" &&
-        sameValue(proposal.pattern, { kind: "roots" }), "unknown-technique");
-      requireProof(sameValue(proposal.effects, []), "unexplained-effect");
+        (sameValue(proposal.pattern, { kind: "roots" }) || sameValue(proposal.pattern, { kind: "propagation" })), "unknown-technique");
+      const effectful = sameValue(proposal.pattern, { kind: "propagation" });
+      if (!effectful) requireProof(sameValue(proposal.effects, []), "unexplained-effect");
       const proof = proposal.proof;
       requireProof(retained.size + captured.references.length <= limits.runNodes, "proof-run-node-limit");
       ids(proof.imports, 1024);
@@ -241,7 +312,7 @@ export class ProofChecker {
         requireProof(sameValue(node.scope, []), "unsupported-assumption-scope");
         for (const premise of node.premises)
           requireProof(premise < node.id && available.has(premise), "missing-or-forward-premise");
-        const checked = this.registry.check(node, { ...context, retained: new ImmutableMap(available) });
+        const checked = this.registry.check(node, { ...context, retained: new ImmutableMap(available), premiseInferences: inferences });
         available.set(node.id, node);
         inferences.set(node.id, checked);
         stagedNodes.push(node);
@@ -262,12 +333,15 @@ export class ProofChecker {
       requireProof([...available.keys()].every(id => reachable.has(id)), "unused-proof-node");
       tick();
       const consequences = Object.freeze(proof.roots.map(id => inferences.get(id)!));
+      if (effectful) checkedEffectState(context.view, proposal, consequences);
       // This sole private construction path follows all checks. The WeakSet,
       // not this internal type assertion, rejects casts/deserialized lookalikes.
       const checkedProposal = Object.freeze({ ...proposal,
         proof: Object.freeze({ ...proof, nodes: Object.freeze(stagedNodes) }) });
-      const step = Object.freeze({ proposal: checkedProposal, consequences, afterRevision: state.revision }) as CheckedStep;
+      const step = Object.freeze({ proposal: checkedProposal, consequences,
+        afterRevision: state.revision + (effectful ? 1 : 0) }) as CheckedStep;
       authenticSteps.add(step);
+      stepImports.set(step, new ImmutableMap(proof.imports.map(id => [id, retained.get(id)!] as const)));
       for (const node of stagedNodes) acceptedNodes.set(node, {
         state,
         inference: inferences.get(node.id)!,

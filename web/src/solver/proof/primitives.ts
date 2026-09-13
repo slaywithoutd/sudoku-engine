@@ -3,6 +3,7 @@ import type { EngineProblem, Json } from "../problem";
 import type { Assembly } from "../rules/types";
 import { M2_ROOT_LIMITS } from "../limits";
 import type { CheckContext, CheckedInference, PrimitiveInput } from "./types";
+import type { Literal, Proposition } from "../state/types";
 
 export class ProofError extends Error {
   constructor(readonly code: string) {
@@ -113,6 +114,88 @@ export function inference(input: PrimitiveInput, rules: readonly string[] = []):
 }
 type Strategy = (input: PrimitiveInput, context: CheckContext) => CheckedInference;
 
+/**
+ * A positive checked clue is singleton-domain authority at initialization.
+ * Later candidate restrictions use explicit domain propositions. This common
+ * interpretation prevents a full-domain root from being relabeled as narrower.
+ */
+export function domainAssertion(proposition: Proposition): { cell: number; mask: number } | undefined {
+  if (proposition.kind === "domain") return { cell: proposition.cell, mask: proposition.mask };
+  if (proposition.kind === "literal" && proposition.value.positive)
+    return { cell: proposition.value.cell, mask: 1 << (proposition.value.symbol - 1) };
+  return undefined;
+}
+
+function derived(input: PrimitiveInput, context: CheckContext): CheckedInference {
+  const premises = input.premises.map(id => context.premiseInferences?.get(id));
+  requireProof(premises.every(Boolean), "missing-premise-inference");
+  requireProof(premises.every(p => p!.openAssumptions.length === 0 && !p!.conditional), "unsupported-assumption-scope");
+  return inference(input, [...new Set(premises.flatMap(p => p!.rules))].sort());
+}
+function premises(input: PrimitiveInput, context: CheckContext, count: number): Proposition[] {
+  requireProof(input.premises.length === count && new Set(input.premises).size === count && sameValue(input.parameters, {}), "invalid-inference-parameters");
+  return input.premises.map(id => {
+    const node = context.retained.get(id);
+    requireProof(node, "missing-inference-premise");
+    return node.conclusion;
+  });
+}
+function validLiteral(value: Literal, context: CheckContext): boolean {
+  return context.view.assembly.problem.cells.includes(value.cell) &&
+    context.view.assembly.problem.symbols.includes(value.symbol) && typeof value.positive === "boolean" &&
+    sameValue(value, { cell: value.cell, symbol: value.symbol, positive: value.positive });
+}
+function literals(proposition: Proposition): readonly Literal[] {
+  if (proposition.kind === "literal") return [proposition.value];
+  requireProof(proposition.kind === "clause", "expected-clause");
+  return proposition.alternatives;
+}
+function clause(values: readonly Literal[]): Proposition {
+  const sorted = [...new Map(values.map(value => [`${value.cell}:${value.symbol}:${value.positive}`, value])).values()]
+    .sort((a, b) => a.cell - b.cell || a.symbol - b.symbol || Number(a.positive) - Number(b.positive));
+  if (sorted.length === 0) return { kind: "false" };
+  if (sorted.length === 1) return { kind: "literal", value: sorted[0] };
+  return { kind: "clause", alternatives: sorted };
+}
+function restrictDomain(input: PrimitiveInput, context: CheckContext): CheckedInference {
+  const [base, restriction] = premises(input, context, 2), domain = domainAssertion(base);
+  requireProof(domain && restriction.kind === "literal" && validLiteral(restriction.value, context) &&
+    restriction.value.cell === domain.cell, "invalid-domain-restriction");
+  const bit = 1 << (restriction.value.symbol - 1);
+  const mask = restriction.value.positive ? domain.mask & bit : domain.mask & ~bit;
+  requireProof(sameValue(input.conclusion, { kind: "domain", cell: domain.cell, mask }), "invalid-domain-restriction");
+  return derived(input, context);
+}
+function weakLink(input: PrimitiveInput, context: CheckContext): CheckedInference {
+  const [scope] = premises(input, context, 1);
+  const alternatives = literals(input.conclusion);
+  requireProof(scope.kind === "all-different" && alternatives.length === 2 &&
+    alternatives.every(value => validLiteral(value, context) && !value.positive && scope.cells.includes(value.cell)) &&
+    alternatives[0].cell !== alternatives[1].cell && alternatives[0].symbol === alternatives[1].symbol &&
+    sameValue(input.conclusion, clause(alternatives)), "invalid-weak-link");
+  return derived(input, context);
+}
+function coverClause(input: PrimitiveInput, context: CheckContext): CheckedInference {
+  const [source] = premises(input, context, 1), domain = domainAssertion(source);
+  let alternatives: Literal[];
+  if (source.kind === "cover") alternatives = source.cells.map(cell => ({ cell, symbol: source.symbol, positive: true }));
+  else {
+    requireProof(domain, "invalid-cover-clause");
+    alternatives = context.view.assembly.problem.symbols.filter(symbol => (domain.mask & (1 << (symbol - 1))) !== 0)
+      .map(symbol => ({ cell: domain.cell, symbol, positive: true }));
+  }
+  requireProof(sameValue(input.conclusion, clause(alternatives)), "invalid-cover-clause");
+  return derived(input, context);
+}
+function resolve(input: PrimitiveInput, context: CheckContext): CheckedInference {
+  const [left, right] = premises(input, context, 2).map(literals);
+  requireProof([...left, ...right].every(value => validLiteral(value, context)), "invalid-resolution");
+  const valid = left.some(a => right.some(b => a.cell === b.cell && a.symbol === b.symbol && a.positive !== b.positive &&
+    sameValue(input.conclusion, clause([...left.filter(v => !sameValue(v, a)), ...right.filter(v => !sameValue(v, b))]))));
+  requireProof(valid, "invalid-resolution");
+  return derived(input, context);
+}
+
 function domain(input: PrimitiveInput, context: CheckContext): CheckedInference {
   const problem = context.view.assembly.problem;
   const conclusion = input.conclusion;
@@ -153,6 +236,8 @@ export class PrimitiveRegistry {
   readonly #strategies: ReadonlyMap<string, Strategy> = new Map([
     ["domain-axiom@1", domain], ["given@1", given],
     ["rule-instance@1", declaredRule], ["all-different@1", declaredRule], ["cover@1", declaredRule],
+    ["domain-restrict@1", restrictDomain], ["weak-link@1", weakLink],
+    ["cover-clause@1", coverClause], ["resolution@1", resolve],
   ]);
   constructor() {
     Object.freeze(this);
