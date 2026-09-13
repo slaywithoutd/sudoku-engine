@@ -239,7 +239,7 @@ expect(indexFromSiblingBranch.accepts(view.state.key)).toBe(false);
 
 **Interfaces:** each module exports readonly `TechniqueDescriptor[]`; named validators consume `proposal.pattern` and emit primitive proof requirements. D073 adds required `discover(view, context)` with `DiscoveryContext {workspace: IndexWorkspace; limits: Limits}` and an explicit interrupted discovery event. Update technique types, registry and affected acceptance/test helpers; no per-detector budget defaults. C12 consumes local table checker; other forms consume graph/cover indexes.
 
-- [ ] Test named geometry and counterexamples:
+- [x] Test named geometry and counterexamples:
 
 ```ts
 for (const id of ["C10-empty-rectangle", "C11-xy", "C11-xyz", "C11-w", "C12-n6", "C13-chute"]) {
@@ -249,10 +249,10 @@ expect(discoverFixture("C11-xyz-missing-visibility").proposals).toEqual([]);
 expect(discoverFixture("C12-n7").status).toBe("out-of-profile");
 ```
 
-- [ ] Run `npm test -- tests/unit/solver/short-patterns.test.ts tests/unit/solver/wings.test.ts`.
-- [ ] Implement four-vertex single-digit named shapes (three internal strong/weak/strong links; D070), ER exhaustive arm groups, bivalue/trivalue wing joins, identical-pair bridge, remote-pair parity and bounded bent-set table certificates. Local assignment enumeration is restricted to declared cells/conflicts, with all surviving assignments checked for z coverage. Yield between tuple/path extensions.
-- [ ] Run every alias/orientation/negative and 4/5/6-cell fixture in matrix, force/forbid, replay original-clue examples and typecheck. AIC equivalence alone does not pass named coverage.
-- [ ] Commit listed files: `feat: explain short patterns wings and bent subsets`.
+- [x] Run `npm test -- tests/unit/solver/short-patterns.test.ts tests/unit/solver/wings.test.ts`.
+- [x] Implement four-vertex single-digit named shapes (three internal strong/weak/strong links; D070), ER exhaustive arm groups, bivalue/trivalue wing joins, identical-pair bridge, remote-pair parity and bounded bent-set table certificates. Local assignment enumeration is restricted to declared cells/conflicts, with all surviving assignments checked for z coverage. Yield between tuple/path extensions.
+- [x] Run every alias/orientation/negative and 4/5/6-cell fixture in matrix, force/forbid, replay original-clue examples and typecheck. AIC equivalence alone does not pass named coverage.
+- [x] Commit listed files: `feat: explain short patterns wings and bent subsets`.
 
 ## T10 — Basic and generalized fish C06–C09
 

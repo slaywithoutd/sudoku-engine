@@ -20,8 +20,9 @@ Approved design/plan: `0e98c2b`, 2026-09-12. Authorization and coding convention
 | T06 Exact counting and quality | Complete | `27f856c`; 280 tests and typecheck passed; independent task review passed. |
 | T07 Manifest and foundation techniques | Complete | `f072846`, `56cf5bf`; initial 391 tests, post-fix 113 focused tests and typecheck passed; independent review and fix review passed. |
 | T08 Shared implication/group/ALS indexes | Complete | `6d44e97`; 423 tests before final query refinement, final 25 focused tests and typecheck passed; independent review passed. |
-| T09 Short patterns and wings | Next | Independent original-clue seeds prepared; explicit discovery context and named proof compilation. |
-| T10-T27 | Pending | Approved requirements remain in the implementation plan; no family dropped. |
+| T09 Short patterns and wings | Complete | `ea83092`, `0507b77`, `1ce4aad`, `8f69a2c`; 545 tests before additive evidence/fixes, 156 affected tests after fix 1, final 35 focused tests and typecheck; independent review and both fix reviews passed. |
+| T10 Basic and complex fish | In progress | Independent original-clue seeds and bounded count-certificate refinement prepared; implementation dispatch follows T09 review. |
+| T11-T27 | Pending | Approved requirements remain in the implementation plan; no family dropped. |
 
 ## Coding conventions
 
@@ -44,3 +45,6 @@ T06 adds original-clue MRV exact enumeration, local evidence authority, private 
 T07 records all 38 rows and independently verifies C01-C05 using 61 fixture records, 19 alias replays and 133 certificate mutations. Review reproduced a getter/proxy view-substitution bypass; the fix authenticates exact published views and preserves trusted cold rebuilds. It also repairs catalogue UTF-8 and removes argument-spread failure at the supported 262,144 retained-key bound. The post-fix 113 focused tests passed; the earlier full 391-test result belongs to the original implementation commit. D070/D071 document naming and certificate authority. Expanded profile readiness remains blocked until later family gates pass; no timing/default validation is claimed.
 
 T08 adds shared budget leases, exact proved-source recipes, complete implication/group/ALS enumeration and resumable RCC queries. The checked local all-different subset primitive preserves proof metadata without creating a cover. Independent review found no blocking issue; a relation-conflict certificate-expansion regression is explicitly carried to T09 (its truth is already independently checked). D072 records index ownership and overlap rules; D073 supplies the next task's discovery-context integration. No advanced named detector is claimed by the indexes.
+
+
+T09 implements C10-C13 with explicit discovery resources, independent named validators, complete local table proofs and documented strategy/lifecycle objects. Thirty-one positive and 15 negative/boundary fixtures retain independent certificates, original-clue replay and 42 forced/42 forbidden oracle checks. A 5,000-assignment C12 fixture exercises partition construction. Review found that valid substitute proofs could omit a named table or pool dual components; the fixes require complete table lineage and independently derived component roots for every supplied effect root. Display-only corner changes cannot create a second inference. Final focused validation passed 35 tests after the narrow second fix; the earlier 545-test full suite and 156-test affected suite are explicitly tied to their respective revisions. D073-D075 record the discovery/primitive/counting refinements; D076/D077 remain upcoming fish/chain prerequisites. Expanded readiness remains blocked, and runtime accounting/measurement remain later gates.

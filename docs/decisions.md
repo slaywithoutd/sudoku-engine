@@ -657,9 +657,44 @@ Record each answer here with its rationale and consequences. If an answer change
 
 ## D073 — Explicit discovery resource context
 
-- Status: Technical integration ruling for T09/T19, 2026-09-13; implementation pending.
+- Status: Technical integration ruling for T09/T19, 2026-09-13; T09 implementation and independent review complete, operation scheduling pending.
 - Gap: `discover(view)` cannot supply the shared workspace required by D072. Creating a private default budget inside each advanced detector would violate operation accounting.
 - Decision: extend technique discovery to accept an explicit per-invocation `DiscoveryContext` with the operation's shared workspace and selected `Limits`. Tests create explicit contexts; the scheduler supplies the operation context. Foundation strategies may ignore unused fields. No global service locator, hidden per-detector budget or persisted resource settings.
 - Add a discovery interrupted event with an explicit reason so an index/resource interruption reaches the ledger without being relabeled exhaustion. Forced iterator closure remains incomplete even without a terminal event.
 - Discovery still yields charged work, proposals and honest terminal status; its context does not grant proof or candidate authority. Speculative branches have isolated state with allocations charged to the owning operation. Rule maintenance can retain its existing interface until it needs context, with caller-level accounting unchanged.
 - T09 owns the descriptor/test-helper integration; T19/T20 own full operation scheduling, deadline and work/proof accounting. This closes an interface gap, not a claim that resource defaults are calibrated.
+
+
+## D074 — Remote Pair parity and explicit inference-link counting
+
+- Status: Technical clarification for T09, 2026-09-13; preserves the approved 24-inference-link cap and both Remote Pair aliases.
+- The previous wording mixed cell parity and link count. For a simple path of m identical-bivalue cells, count m internal strong edges and m-1 intercell weak edges: 2m-1 inference links. Opposite endpoint colors require even m; the supported forms are m=4,6,8,10,12 (7,11,15,19,23 links). Target-conflict premises are additional. Thirteen cells fail endpoint parity; fourteen exceed the cap.
+- This follows the [author's explicit Remote Pair/AIC notation](https://hodoku.sourceforge.net/en/tech_chains.php), inspected 2026-09-13. Chute still requires every path cell in one band or stack. Counting only intercell arrows would hide the internal bivalue inferences; an even number of intercell edges would give the wrong endpoint parity.
+- T09 updated manifest/descriptor bounds and tested lower/upper accepted lengths, wrong parity and over-limit rejection. Independent original-clue fixtures cover all five accepted cell counts plus band/stack aliases. This is a finite profile, not an assertion that longer remote pairs are mathematically invalid.
+
+
+## D075 — Direct checked clauses from complete finite relations
+
+- Status: Technical primitive refinement for T09, 2026-09-13; implementation and independent review complete.
+- Gap: a relation-derived weak conflict had only a documented assume/filter/project recipe, while primary unconditional pattern policies reject hypothetical assumptions. Restricting indexes to original all-different conflicts would leave accepted relation facts unusable; silently relaxing the policy would blur the declared grammar.
+- Decision: extend the unreleased `table-project@1` grammar to a canonical clause of 2–64 distinct sorted valid literals over its source cells. Require one complete authenticated table/relation and empty parameters, then independently verify that every surviving tuple satisfies the clause. Charge row traversal and each literal evaluation cooperatively. Existing false/single-literal forms retain their own grammar; no general table-to-table projection is added.
+- This directly proves a two-negative-literal weak conflict after complete proved domain filtering, without `assume@1`. Preserve all source assumptions, conditionality, rule provenance, exact defining-node identity, scope/arity/byte limits and complete-partition checks. A complete empty relation entails a clause vacuously; this is mathematical proof evidence, not independent solution-count evidence.
+- Tests must cover a conflict created only by proved domain filtering, direct unconditional projection, the earlier discharged recipe, surviving counterexample, missing filter, partial table, foreign cells and canonical/boundary/taint failures. Named family checking still independently constrains geometry and the complete proof computation.
+
+
+## D076 — Bound count certificates by necessary negative incidences
+
+- Status: Technical prerequisite for T10, 2026-09-13; implementation and independent review pending.
+- Gap: `cover-count@1` currently requires domain facts for every cell in its base/cover union. Ordinary fish sizes 5/6/7 therefore need 75/84/91 premises, exceeding the fixed 64-premise node cap. Raising the cap or omitting these requested sizes is unnecessary.
+- Decision: retain the exact weighted incidence inequality. Let w(cell)=capacity coefficient minus cover coefficient and B=total capacity weight minus total cover weight, so sum(w*x)<=B. Only negative-coefficient occurrences require explicit domain evidence proving x=0; zero/positive terms are already nonnegative. Require such evidence for every negative coefficient, with no missing occurrence. Every supplied domain remains valid, unique and in the counted scope; a compatible superset is allowed for existing certificates.
+- Infer false only if B<0; infer not-target only if its positive coefficient exceeds B. Keep positive integer coefficient bounds, exact scope identities, complete cover meanings, checked domain provenance, assumption/conditional inheritance and all existing byte/arity caps. No estimated support or cached absence can replace a premise.
+- For ordinary sizes 5/6/7, necessary arities become 30/30/28. Mixed fish with at most four bases have at most 36 negative-incidence cells plus eight scope premises, also within 64 before any independent proof expansion. This is a symbolic size calculation, not a performance measurement.
+- T10 updates the primitive and independent overlap/missing-negative-evidence/counterfactual tests, then validates every size and mixed form. This removes redundant premises while preserving the same checkable linear argument.
+
+
+## D077 — Distinguish chain vertices, inference links and loop closure
+
+- Status: Technical fixture clarification for T11, 2026-09-13; implementation and independent review pending. No named family or the 24-link cap is removed.
+- The C16 examples described as lengths 4/24 conflated vertices and links. An open endpoint-disjunction AIC starts and ends strong, so its alternating internal edge count is odd. Four and 24 candidate vertices have three and 23 internal inference links. Target-conflict premises are additional, as in D070/D074.
+- Record both vertex count and inference-link count explicitly. Require productive four/24-vertex examples, an even 24-link prefix that cannot be presented as a strong-ended endpoint deduction, and a 25-link out-of-profile case. C17 continuous loops can have 24 alternating links including closure; discontinuous loops additionally check their repeated endpoint and inferred polarity. A failed productivity condition is different from a resource interruption or a size bound.
+- This interpretation follows the [author's X/XY-chain and AIC definitions](https://hodoku.sourceforge.net/en/tech_chains.php), inspected 2026-09-13. Internal cell links count too; graphical arrows and candidate vertices are not interchangeable units.

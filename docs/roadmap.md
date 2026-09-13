@@ -1,6 +1,6 @@
 # Sudoku platform roadmap
 
-Updated: 2026-09-12. Status: **M1a + M1b implemented and verified**, with subsequent UI/appearance under D053/D058. **M2 design is approved and implementation is underway under D065/D066.** See [implementation progress](m2-implementation-progress.md). M2 direction is D046–D057; completed planning and proposed choices are D059–D064.
+Updated: 2026-09-13. Status: **M1a + M1b implemented and verified**, with subsequent UI/appearance under D053/D058. **M2 design is approved and implementation is underway under D065/D066.** See [implementation progress](m2-implementation-progress.md). M2 direction is D046–D057; completed planning and proposed choices are D059–D064.
 
 ## Delivery sequence
 
@@ -57,7 +57,7 @@ For Perfect minimality, define the verification contract at M3 before promising 
 
 ## First release and continuation
 
-M1 is complete under the [approved behavior specification](superpowers/specs/2026-09-12-first-release-design.md) and [implementation plan](superpowers/plans/2026-09-12-first-release.md), with D053/D058 refinements. **Execute and independently verify the approved expanded M2 plan.** Broad techniques and scheduling are not implemented; M2–M6 and later branches remain product direction, not work included in M1.
+M1 is complete under the [approved behavior specification](superpowers/specs/2026-09-12-first-release-design.md) and [implementation plan](superpowers/plans/2026-09-12-first-release.md), with D053/D058 refinements. **Execute and independently verify the approved expanded M2 plan.** Expanded technique coverage and runtime integration remain in progress; M2–M6 and later branches remain product direction, not work included in M1.
 
 M2 implementation batches preserve the full bounded target: oracle/contracts/shared proofs → foundation → graph/short patterns/fish → coloring/chains/ALS → combinations/forcing/generalized/specialized/templates → conditional techniques → scheduling/orchestration → bounded worker/controller/UI → independent integration and benchmark gates. Intermediate batches are reviewable; completing the first six techniques does not complete M2. No universal technique completeness is promised.
 
