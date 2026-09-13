@@ -26,3 +26,11 @@ Comments should explain the mathematical or lifecycle reason for a step, not nar
 ## Dependency constraints
 
 Production engine code cannot import views, persistence, play state or test fixtures. Independent test oracles cannot import production topology, candidate helpers, detectors, proof checking or exact enumeration. Rule/discovery code can propose effects; only the checker/reducer boundary applies them. The exact verifier starts from original normalized rules and clues, never the human-pruned candidate state. Each speculative/conditional branch has separate mutable ownership.
+
+Shared resource-limit values live in `solver/limits.ts` so proof checking, scheduling and transport can use one contract without importing each other’s implementations. The proof layer owns assumption policy. During foundation implementation, elementary inference checks needed by candidate-state tests move forward from T05 into T04; those tests must use authentic checker output. No public test bypass can mint accepted steps.
+
+Proof staging must be resumable at bounded node boundaries: a finite total-byte limit alone does not make a long synchronous graph copy responsive. Header/control and per-node bounds are distinct. Functional tests establish yields and mutation isolation; T26 measures scheduling responsiveness and the proposed slice targets.
+
+An authenticated proof node must retain the identity of the premises actually checked. Matching numeric IDs and problem/branch/revision fields alone cannot authenticate a prefix: two separately checked proposals can allocate the same IDs to different facts. Wire nodes are rechecked, and retained in-memory nodes must match their checked premise bindings.
+
+The root preflight bounds synchronous initialization before canonical traversal: at most 81 cells, nine symbols, 256 declared rules, 256 all-different capabilities, 2,304 covers and 2,978 original/capability roots; scopes contain at most 81 cells. The active profile must also enforce the stricter combined limit of 256 rule and technique jobs. These are structural bounds, not benchmarked time/proof defaults or custom-size product support. Finite relation roots are added with their independent checking in T05.

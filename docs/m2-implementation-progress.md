@@ -14,8 +14,9 @@ Approved design/plan: `0e98c2b`, 2026-09-12. Authorization and coding convention
 | --- | --- | --- |
 | T01 Independent oracle and fixtures | Complete | `f01fa70`; 26 focused tests and typecheck passed; independent task review passed. |
 | T02 Normalization and capabilities | Complete | `c0f93ca`, `8eb00d9`; 35 focused tests and typecheck passed; independent review and fix review passed. |
-| T03 Proof roots and checking boundary | In progress | True clue/rule roots and independently checked inference contracts. |
-| T04-T27 | Pending | Approved requirements remain in the implementation plan; no family dropped. |
+| T03 Proof roots and checking boundary | Complete | `4427544`, `40a2603`; 64 focused tests and typecheck passed; independent review and fix review passed. |
+| T04 Candidate state and invalidation | In progress | Atomic edits from authentic checked steps, proof-backed domains and immutable snapshots. |
+| T05-T27 | Pending | Approved requirements remain in the implementation plan; no family dropped. |
 
 ## Coding conventions
 
@@ -26,3 +27,5 @@ No application availability, broad technique support or runtime performance is c
 T01 uses an encapsulated set-based Algorithm X session and a separate plain-loop grid checker. Neither imports production engine logic. Empty-grid results are capped witnesses, not an exact count. Code documentation conventions: [architecture guide](solver/architecture.md).
 
 T02 adds documented RuleRegistry/CapabilityAssembler and AllDifferentRule objects, strict complete semantic keys, isolated immutable snapshots and separate all-different/cover capabilities. Review regression tests preserve own `__proto__` JSON keys and reject unregistered primitive versions. Full suite before review hardening: 122 tests passed; post-fix focused suite: 35 tests passed. No logical technique is exposed by this foundation yet.
+
+T03 adds PrimitiveRegistry/ProofChecker, authentic immutable roots and proof-only checked certificates. Regression checks cover retained-premise substitution, M2 preflight bounds, UTF-8 accounting and cooperative node staging. Full suite before review fixes: 161 tests passed; post-fix focused suite: 64 tests passed. No effectful deduction is accepted by the T03 boundary yet. D067 records the resulting implementation refinements; timing targets remain unmeasured.

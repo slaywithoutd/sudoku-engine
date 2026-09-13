@@ -37,7 +37,7 @@ New production file ownership:
 
 | Path under `web/src/` | Responsibility / exported contract |
 | --- | --- |
-| `solver/problem.ts`, `solver/snapshot.ts` | EngineProblem/value/identity types, canonical rule normalization, normalizeClassic/makeSnapshot. |
+| `solver/problem.ts`, `solver/snapshot.ts`, `solver/limits.ts` | EngineProblem/value/identity types, shared resource-limit value contract, canonical rule normalization, normalizeClassic/makeSnapshot. |
 | `solver/rules/types.ts`, `solver/rules/assemble.ts`, `solver/rules/all-different.ts` | RuleModule and capabilities, assemble, classic semantics only. |
 | `solver/state/types.ts`, `solver/state/candidates.ts`, `solver/state/facts.ts`, `solver/state/indexes.ts`, `solver/state/events.ts` | ReadView/StateKey, initialize/commitChecked, proof-root facts, supports, invalidate. |
 | `solver/proof/types.ts`, `solver/proof/primitives.ts`, `solver/proof/checker.ts`, `solver/proof/replay.ts` | ProofBundle/checked types, primitive registry, checkProposal/replay; no discovery imports. |
@@ -107,11 +107,11 @@ expect(snapshot.problem.givens[0]).toBe(5); // mutate original input after snaps
 
 ## T03 — Proof roots and primitive checker boundary
 
-**Files:** create `src/solver/proof/types.ts`, `primitives.ts`, `checker.ts`, `src/solver/state/types.ts`, `facts.ts`; create `tests/unit/solver/proof-roots.test.ts`.
+**Files:** create `src/solver/proof/types.ts`, `primitives.ts`, `checker.ts`, `src/solver/state/types.ts`, `facts.ts`, `src/solver/limits.ts`; create `tests/unit/solver/proof-roots.test.ts`. Update T02 rule type imports and primitive registration only as needed to replace temporary interfaces with actual checker ownership.
 
-**Interfaces:** Fact/Proposition/ProofNode/ProofBundle/PrimitiveInput/CheckContext/CheckedInference, plus `checkProposal` per contracts §5. Use a nonexported unique-symbol brand for CheckedStep, constructed only by checker; wire decoders cannot construct it. `createRoots(assembly: Assembly): ReadonlyMap<FactId, Fact>` establishes domains, clues and rule premises.
+**Interfaces:** Fact/Proposition/ProofNode/ProofBundle/PrimitiveInput/CheckContext/CheckedInference, plus `checkProposal` per contracts §5. Use a nonexported unique-symbol brand and runtime authenticity check for CheckedStep, constructed only by checker; wire decoders cannot construct it. Shared Limits lives in `solver/limits.ts`; proof types own AssumptionPolicy for later import by technique contracts. `createRoots(assembly: Assembly): ReadonlyMap<FactId, Fact>` establishes domains, clues and rule premises.
 
-- [ ] Assert falsified clue, unknown primitive and arbitrary domain root rejection:
+- [x] Assert falsified clue, unknown primitive and arbitrary domain root rejection:
 
 ```ts
 expect(checkRoot({ kind: "given", cell: 0, symbol: 4 }, problem).ok).toBe(false);
@@ -119,14 +119,14 @@ expect(checkRoot({ kind: "domain", cell: 2, mask: 1 }, problem).ok).toBe(false);
 expect(checkRoot({ kind: "given", cell: 0, symbol: 5 }, problem).ok).toBe(true);
 ```
 
-- [ ] Run `npm test -- tests/unit/solver/proof-roots.test.ts`; require rejection assertions fail before implementation.
-- [ ] Implement rule dispatch on explicit version IDs; domain-axiom uses full original symbol set, given uses exact clues, all-different/cover derives from assembled semantics. Implement bounded check events and root-reference validation; `checkRoot` is a test adapter that drains this primitive interface, not a second trusted checker. No detector imports.
-- [ ] Rerun focused tests/typecheck; try cyclic/forward/missing dependencies and altered capability scopes.
-- [ ] Commit listed files: `feat: establish checked proof roots and primitive registry`.
+- [x] Run `npm test -- tests/unit/solver/proof-roots.test.ts`; require rejection assertions fail before implementation.
+- [x] Implement rule dispatch on explicit version IDs; domain-axiom uses full original symbol set, given uses exact clues, all-different/cover derives from assembled semantics. Implement bounded check events and root-reference validation; `checkRoot` is a test adapter that drains this primitive interface, not a second trusted checker. No detector imports.
+- [x] Rerun focused tests/typecheck; try cyclic/forward/missing dependencies and altered capability scopes.
+- [x] Commit listed files: `feat: establish checked proof roots and primitive registry`.
 
 ## T04 — Shared candidates, supports and invalidation
 
-**Files:** create `src/solver/state/candidates.ts`, `indexes.ts`, `events.ts`; modify `facts.ts`; tests `tests/unit/solver/candidates.test.ts`, `events.test.ts`.
+**Files:** create `src/solver/state/candidates.ts`, `indexes.ts`, `events.ts`; modify `facts.ts`; tests `tests/unit/solver/candidates.test.ts`, `events.test.ts`. Bring forward the minimal `proof/primitives.ts` and `proof/checker.ts` elementary domain/link/resolution inference needed by authentic state-edit tests; T05 retains the remaining proof algebra.
 
 **Interfaces:** `initialize`, `commitChecked`, `invalidate`, CandidateState/ChangeSet/ReadView per contracts §3. `rebuildIndexes(view: ReadView): ReadView` is the cold correctness baseline. Expose no mutable arrays; filled domains are singleton masks.
 
