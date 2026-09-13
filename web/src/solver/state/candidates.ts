@@ -112,6 +112,9 @@ function owner(view: ReadView): CandidateOwner {
   return owned;
 }
 
+/** Read-only authenticity gate; it cannot register a view or create authority. */
+export function assertOwnedView(view: ReadView): void { owner(view); }
+
 /**
  * Starts with full unresolved domains and given singletons, never peer pruning.
  * Given literals are explicit singleton authority (see domainAssertion). Root

@@ -1,14 +1,19 @@
 import { canonicalProblem } from "../problem";
+import { checkTechniqueGrammar } from "../techniques/grammar";
+import { assertOwnedView } from "../state/candidates";
 import type { Json } from "../problem";
 import type { StateKey } from "../snapshot";
 import { ImmutableMap, originalFact, originalRootCount, originalPremises } from "../state/facts";
 import { assertM2RootAssemblyBounds, PrimitiveRegistry, ProofError, requireProof, sameValue } from "./primitives";
-import type { CheckContext, CheckEvent, CheckedInference, CheckedStep, DeductionProposal, ProofNode } from "./types";
+import type { CheckContext, CheckEvent, CheckedInference, CheckedStep, DeductionProposal, ProofNode, CertificateEvent, CheckedCertificate } from "./types";
 import type { ReadView } from "../state/types";
 import { checkScope } from "./assumptions";
 import type { TableDefinition } from "./tables";
 
 const authenticSteps = new WeakSet<object>();
+const authenticCertificates = new WeakSet<object>();
+const certificateAuthorities = new WeakMap<ProofNode, CheckedNodeAuthority>();
+const certificateImports = new WeakMap<CheckedCertificate, ReadonlyMap<number, ProofNode>>();
 const stepImports = new WeakMap<CheckedStep, ReadonlyMap<number, ProofNode>>();
 const stepUsage = new WeakMap<CheckedStep, { readonly headerBytes: number; readonly workUnits: number }>();
 interface CheckedNodeAuthority {
@@ -221,7 +226,20 @@ function ids(values: readonly number[], cap: number): void {
  */
 export class ProofChecker {
   *checkProposal(input: DeductionProposal, source: CheckContext): Generator<CheckEvent, void, void> {
+    for (const event of verifyGraph(input, source, "named")) {
+      if (event.kind === "verified") throw Error("internal-admission-error");
+      yield event;
+    }
+  }
+}
+
+/** Admission mode is private, never a caller parameter or injectable strategy. */
+function* verifyGraph(input: DeductionProposal, source: CheckContext, admission: "named" | "certificate"): Generator<CheckEvent | CertificateEvent, void, void> {
     try {
+      // Capture once before authentication: context accessors cannot swap a
+      // forged view between the owner gate and later grammar reconstruction.
+      const sourceView = source.view;
+      if (admission === "named") assertOwnedView(sourceView);
       const limits = { ...source.limits };
       for (const value of Object.values(limits))
         requireProof(Number.isSafeInteger(value) && value >= 0, "invalid-proof-limit");
@@ -241,16 +259,16 @@ export class ProofChecker {
         const root = retained.get(id);
         requireProof(root && originalRootCount(root) === rootCount, "missing-original-roots");
       }
-      assertM2RootAssemblyBounds(source.view.assembly);
-      const problem = canonicalProblem(source.view.assembly.problem);
-      const state = copyBounded(source.view.state.key, NODE_BYTES).value;
+      assertM2RootAssemblyBounds(sourceView.assembly);
+      const problem = canonicalProblem(sourceView.assembly.problem);
+      const state = copyBounded(sourceView.state.key, NODE_BYTES).value;
       requireProof(state.problemKey === problem.key && typeof state.branch === "string" &&
         state.branch.length > 0 && Number.isSafeInteger(state.revision) && state.revision >= 0, "invalid-proof-state");
       requireProof(["unconditional", "discharged", "unique-only"].includes(source.policy) &&
         (source.uniqueEvidenceId === null || typeof source.uniqueEvidenceId === "string"), "invalid-proof-policy");
-      const context: CheckContext = { ...source, limits, retained,
-        view: { ...source.view, assembly: { ...source.view.assembly, problem },
-          state: { ...source.view.state, key: state } } };
+      const context: CheckContext = { limits, retained, policy: source.policy, uniqueEvidenceId: source.uniqueEvidenceId,
+        view: { ...sourceView, assembly: { ...sourceView.assembly, problem },
+          state: { ...sourceView.state, key: state } } };
       // Freeze the bounded header first, then capture references in batches.
       // Payloads are copied/checked one at a time below; completed private
       // copies never observe later mutations of the external proposal.
@@ -262,7 +280,7 @@ export class ProofChecker {
       for (const [id, node] of retained) {
         tick();
         const original = originalFact(node);
-        const checked = acceptedNodes.get(node);
+        const checked = acceptedNodes.get(node) ?? (admission === "certificate" ? certificateAuthorities.get(node) : undefined);
         const authority: CheckedNodeAuthority | undefined = original ? {
           state: original.state,
           premises: originalPremises(node)!,
@@ -301,12 +319,7 @@ export class ProofChecker {
       fields(proposal, ["technique", "state", "effects", "proof", "pattern"]);
       fields(proposal.proof, ["state", "nodes", "imports", "roots"]);
       requireProof(sameState(proposal.state, state) && sameState(proposal.proof.state, state), "stale-proof-state");
-      // Internal T04 scaffolding. T07 owns named singles and narrows maintenance
-      // to removal-only rule propagation; these are not named coverage claims.
-      requireProof(proposal.technique === "rule-propagation@1" &&
-        (sameValue(proposal.pattern, { kind: "roots" }) || sameValue(proposal.pattern, { kind: "propagation" })), "unknown-technique");
-      const effectful = sameValue(proposal.pattern, { kind: "propagation" });
-      if (!effectful) requireProof(sameValue(proposal.effects, []), "unexplained-effect");
+      const effectful = proposal.effects.length > 0;
       const proof = proposal.proof;
       requireProof(retained.size + captured.references.length <= limits.runNodes, "proof-run-node-limit");
       ids(proof.imports, 1024);
@@ -363,10 +376,23 @@ export class ProofChecker {
       requireProof(consequences.every(item => item.openAssumptions.length === 0 &&
         (!item.conditional || context.policy === "unique-only")), "open-proof-root");
       if (effectful) checkedEffectState(context.view, proposal, consequences);
+      if (admission === "named") checkTechniqueGrammar({ ...proposal, proof: { ...proof, nodes: stagedNodes } }, context.view, available);
       // This sole private construction path follows all checks. The WeakSet,
       // not this internal type assertion, rejects casts/deserialized lookalikes.
       const checkedProposal = Object.freeze({ ...proposal,
         proof: Object.freeze({ ...proof, nodes: Object.freeze(stagedNodes) }) });
+      if (admission === "certificate") {
+        const certificate = Object.freeze({ proposal: checkedProposal, consequences }) as CheckedCertificate;
+        authenticCertificates.add(certificate);
+        certificateImports.set(certificate, new ImmutableMap(proof.imports.map(id => [id, retained.get(id)!] as const)));
+        for (const node of stagedNodes) certificateAuthorities.set(node, {
+          state, inference: inferences.get(node.id)!,
+          premises: Object.freeze(node.premises.map(id => available.get(id)!)),
+          scopes: Object.freeze(node.scope.map(id => available.get(id)!)), table: registry.tableDefinition(node),
+        });
+        yield { kind: "verified", certificate };
+        return;
+      }
       const step = Object.freeze({ proposal: checkedProposal, consequences,
         afterRevision: state.revision + (effectful ? 1 : 0) }) as CheckedStep;
       authenticSteps.add(step);
@@ -383,7 +409,21 @@ export class ProofChecker {
     } catch (error) {
       yield { kind: "rejected", code: error instanceof ProofError ? error.code : "malformed-proof" };
     }
+}
+
+/** Non-applying proof infrastructure: these results cannot become owned facts. */
+export function* verifyCertificate(input: DeductionProposal, context: CheckContext): Generator<CertificateEvent, void, void> {
+  for (const event of verifyGraph(input, context, "certificate")) {
+    if (event.kind === "checked") throw Error("internal-admission-error");
+    yield event;
   }
+}
+export function isCheckedCertificate(value: unknown): value is CheckedCertificate {
+  return typeof value === "object" && value !== null && authenticCertificates.has(value);
+}
+/** Exact import identities for a non-applying session; never candidate authority. */
+export function certificateImportsMatch(certificate: CheckedCertificate, retained: ReadonlyMap<number, ProofNode>): boolean {
+  return isCheckedCertificate(certificate) && [...certificateImports.get(certificate)!].every(([id,node]) => retained.get(id) === node);
 }
 
 export function checkProposal(proposal: DeductionProposal, context: CheckContext): Generator<CheckEvent, void, void> {

@@ -7,7 +7,7 @@ import { AllDifferentRule } from "../../../src/solver/rules/all-different";
 import { makeSnapshot, type RunKey } from "../../../src/solver/snapshot";
 import { initialize, commitChecked, retainCheckedFacts, retainedProof, isAcceptedPath } from "../../../src/solver/state/candidates";
 import { rebuildIndexes } from "../../../src/solver/state/indexes";
-import { checkProposal } from "../../../src/solver/proof/checker";
+import { checkProposal, verifyCertificate } from "../../../src/solver/proof/checker";
 import type { CheckedStep, DeductionProposal, ProofNode } from "../../../src/solver/proof/types";
 import type { ReadView } from "../../../src/solver/state/types";
 
@@ -35,8 +35,9 @@ function exhaustion(context: EvidenceContext, witness: readonly number[] | null 
     : { kind: "zero", proof, evidenceId: "evidence" };
 }
 function checked(view: ReadView, nodes: ProofNode[], imports: number[], roots: number[], effects: DeductionProposal["effects"]): CheckedStep {
-  const proposal: DeductionProposal = { technique: "rule-propagation@1", state: view.state.key,
-    pattern: { kind: effects.length ? "propagation" : "roots" }, effects,
+  const single = effects.some(e => e.kind === "place") || effects.length === 0;
+  const proposal: DeductionProposal = { technique: single ? "c01@1" : "rule-propagation@1", state: view.state.key,
+    pattern: single ? { kind: "single", alias: "Naked Single", house: null, cell: 1, symbol: 2 } : { kind: "propagation" }, effects,
     proof: { state: view.state.key, nodes, imports, roots } };
   const result = [...checkProposal(proposal, { view, retained: retainedProof(view), policy: "unconditional", uniqueEvidenceId: null, limits })].at(-1)!;
   if (result.kind !== "checked") throw new Error(JSON.stringify(result));
@@ -63,6 +64,15 @@ function solved() {
 }
 
 describe("accepted-path authority and quality", () => {
+  test("primitive certificates never supply accepted logical-path quality", () => {
+    const c=solved(), view=c.initialView;
+    const proposal:DeductionProposal={technique:"unregistered@1",state:view.state.key,pattern:{kind:"roots"},effects:[],
+      proof:{state:view.state.key,nodes:[],imports:[0],roots:[0]}};
+    const result=[...verifyCertificate(proposal,{view,retained:retainedProof(view),policy:"unconditional",uniqueEvidenceId:null,limits})].at(-1);
+    expect(result?.kind).toBe("verified"); if(result?.kind!=="verified")return;
+    const count=mergeEvidence(unknown,exhaustion(c),c).count;
+    expect(deriveQuality(c.snapshot,"solved",[result.certificate as never],count,false,c)).toBe("inconsistent");
+  });
   test("authenticates exact committed prefix including unchanged-revision cache and cold indexes", () => {
     const c = solved();
     expect(isAcceptedPath(c.initialView, c.acceptedView, c.accepted)).toBe(true);

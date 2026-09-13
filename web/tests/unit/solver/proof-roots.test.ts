@@ -3,7 +3,7 @@ import { canonicalProblem, normalizeClassic } from "../../../src/solver/problem"
 import { AllDifferentRule } from "../../../src/solver/rules/all-different";
 import { assemble } from "../../../src/solver/rules/assemble";
 import { createRoots, rootNode } from "../../../src/solver/state/facts";
-import { checkProposal, isCheckedStep } from "../../../src/solver/proof/checker";
+import { verifyCertificate, isCheckedCertificate, checkProposal } from "../../../src/solver/proof/checker";
 import { primitiveRegistry } from "../../../src/solver/proof/primitives";
 import type { CheckContext, DeductionProposal, ProofNode } from "../../../src/solver/proof/types";
 
@@ -30,7 +30,7 @@ function fixture() {
   return { problem, assembly, facts, context, node, proposal };
 }
 function terminal(proposal: DeductionProposal, context: CheckContext) {
-  const events = [...checkProposal(proposal, context)];
+  const events = [...verifyCertificate(proposal, context)];
   expect(events.filter(event => event.kind !== "work")).toHaveLength(1);
   return events.at(-1)!;
 }
@@ -107,11 +107,11 @@ describe("original proof authority", () => {
       parameters: { constraintId: "box:0" }, conclusion: { kind: "all-different", cells: [0, 1, 2, 9, 10, 11, 18, 19, 20] } };
     const original = terminal({ ...proposal, proof: { ...proposal.proof, nodes: [rule, scope], roots: [scope.id] } }, context);
     const alternative = terminal(proposal, context);
-    expect(original.kind).toBe("checked");
-    expect(alternative.kind).toBe("checked");
-    if (original.kind !== "checked" || alternative.kind !== "checked") return;
-    const [provedRule, provedScope] = original.step.proposal.proof.nodes;
-    const provedGiven = alternative.step.proposal.proof.nodes[0];
+    expect(original.kind).toBe("verified");
+    expect(alternative.kind).toBe("verified");
+    if (original.kind !== "verified" || alternative.kind !== "verified") return;
+    const [provedRule, provedScope] = original.certificate.proposal.proof.nodes;
+    const provedGiven = alternative.certificate.proposal.proof.nodes[0];
     const retained = (dependency: ProofNode) => {
       const entries: [number, ProofNode][] = [...context.retained, [provedRule.id, dependency], [provedScope.id, provedScope]];
       if (order === "descending") entries.reverse();
@@ -119,7 +119,7 @@ describe("original proof authority", () => {
       return new Map(entries);
     };
     const imported = { ...proposal, proof: { ...proposal.proof, nodes: [], imports: [provedScope.id], roots: [provedScope.id] } };
-    expect(terminal(imported, { ...context, retained: retained(provedRule) }).kind).toBe("checked");
+    expect(terminal(imported, { ...context, retained: retained(provedRule) }).kind).toBe("verified");
     expect(terminal(imported, { ...context, retained: retained(provedGiven) })).toEqual({
       kind: "rejected", code: "substituted-retained-dependency",
     });
@@ -144,15 +144,15 @@ describe("original proof authority", () => {
   test("authenticates copied immutable checked values without authenticating lookalikes", () => {
     const { proposal, context } = fixture();
     const event = terminal(proposal, context);
-    expect(event.kind).toBe("checked");
-    if (event.kind !== "checked") return;
-    expect(isCheckedStep(event.step)).toBe(true);
-    expect(isCheckedStep({ ...event.step })).toBe(false);
-    expect(isCheckedStep(JSON.parse(JSON.stringify(event.step)))).toBe(false);
+    expect(event.kind).toBe("verified");
+    if (event.kind !== "verified") return;
+    expect(isCheckedCertificate(event.certificate)).toBe(true);
+    expect(isCheckedCertificate({ ...event.certificate })).toBe(false);
+    expect(isCheckedCertificate(JSON.parse(JSON.stringify(event.certificate)))).toBe(false);
     (proposal.effects as unknown[]).push({ kind: "place", cell: 1, symbol: 9 });
-    expect(event.step.proposal.effects).toEqual([]);
-    expect(Object.isFrozen(event.step.proposal.proof.nodes[0].conclusion)).toBe(true);
-    expect(event.step.afterRevision).toBe(0);
+    expect(event.certificate.proposal.effects).toEqual([]);
+    expect(Object.isFrozen(event.certificate.proposal.proof.nodes[0].conclusion)).toBe(true);
+    expect("afterRevision" in event.certificate).toBe(false);
   });
   test("reconstructs declared cover semantics and derives rule provenance from the rule premise", () => {
     const { context, proposal, node } = fixture();
@@ -161,11 +161,11 @@ describe("original proof authority", () => {
       conclusion: { kind: "cover", symbol: 5, cells: [0, 1, 2, 9, 10, 11, 18, 19, 20] } };
     const good = { ...proposal, proof: { ...proposal.proof, nodes: [cover], imports: [82] } };
     const result = terminal(good, context);
-    expect(result.kind).toBe("checked");
-    if (result.kind === "checked") {
-      expect(result.step.consequences[0].rules).toEqual(["box:0"]);
-      expect(result.step.consequences[0].openAssumptions).toEqual([]);
-      expect(result.step.consequences[0].conditional).toBe(false);
+    expect(result.kind).toBe("verified");
+    if (result.kind === "verified") {
+      expect(result.certificate.consequences[0].rules).toEqual(["box:0"]);
+      expect(result.certificate.consequences[0].openAssumptions).toEqual([]);
+      expect(result.certificate.consequences[0].conditional).toBe(false);
     }
     const altered: ProofNode = { ...cover, conclusion: { kind: "cover", symbol: 5, cells: [0] } };
     expect(terminal({ ...good, proof: { ...good.proof, nodes: [altered] } }, context).kind).toBe("rejected");
@@ -174,7 +174,7 @@ describe("original proof authority", () => {
     const { context, proposal, node } = fixture();
     const domain: ProofNode = { ...node, rule: "domain-axiom@1", conclusion: { kind: "domain", cell: 2, mask: 511 } };
     const changed = { ...context, view: { ...context.view, state: { ...context.view.state, domains: Array<number>(81).fill(1) } } };
-    expect(terminal({ ...proposal, proof: { ...proposal.proof, nodes: [domain] } }, changed).kind).toBe("checked");
+    expect(terminal({ ...proposal, proof: { ...proposal.proof, nodes: [domain] } }, changed).kind).toBe("verified");
   });
   test("rejects authentic root imports from a sibling branch", () => {
     const { context, proposal, assembly } = fixture();
@@ -227,7 +227,7 @@ describe("original proof authority", () => {
     if (kind === "effect") changed = { ...proposal, effects: [{ kind: "place", cell: 0, symbol: 5 }] };
     if (kind === "parameters") changed = { ...proposal, proof: { ...proposal.proof, nodes: [{ ...node, parameters: { solution: [5] } }] } };
     if (kind === "stale") changed = { ...proposal, state: { ...proposal.state, revision: 1 } };
-    expect(terminal(changed, ctx).kind).toBe("rejected");
+    expect(kind === "unknown-technique" ? [...checkProposal(changed, ctx)].at(-1)?.kind : terminal(changed, ctx).kind).toBe("rejected");
   });
   test.each(["stepNodes", "runNodes", "stepBytes", "proofBytes", "workUnits"] as const)("charges %s including retained initialization", limit => {
     const { context, proposal } = fixture();
@@ -235,11 +235,11 @@ describe("original proof authority", () => {
   });
   test("checks imported original facts and emits bounded work events", () => {
     const { context, proposal } = fixture();
-    const events = [...checkProposal({ ...proposal, proof: { ...proposal.proof, nodes: [], imports: [81], roots: [81] } }, context)];
-    expect(events.at(-1)?.kind).toBe("checked");
+    const events = [...verifyCertificate({ ...proposal, proof: { ...proposal.proof, nodes: [], imports: [81], roots: [81] } }, context)];
+    expect(events.at(-1)?.kind).toBe("verified");
     expect(events.some(event => event.kind === "work" && event.units > 0)).toBe(true);
     const result = events.at(-1)!;
-    if (result.kind === "checked") expect(Object.isFrozen(result.step.consequences[0])).toBe(true);
+    if (result.kind === "verified") expect(Object.isFrozen(result.certificate.consequences[0])).toBe(true);
   });
   test("cannot evade root allocation and initialization budgets by omitting the retained original roots", () => {
     const { context, proposal } = fixture();
@@ -250,14 +250,14 @@ describe("original proof authority", () => {
     const cycle: Record<string, unknown> = {};
     cycle.self = cycle;
     const next = { ...node, id: node.id + 1, parameters: cycle } as ProofNode;
-    const events = [...checkProposal({ ...proposal, proof: { ...proposal.proof,
+    const events = [...verifyCertificate({ ...proposal, proof: { ...proposal.proof,
       nodes: [node, next], roots: [node.id, next.id] } }, context)];
     expect(events.at(-1)?.kind).toBe("rejected");
     expect(events.filter(event => event.kind === "work").length).toBeGreaterThan(context.retained.size);
   });
   test("charges UTF-8 bytes of object keys against the individual node cap", () => {
     const { context, proposal, node } = fixture();
-    const oversized: ProofNode = { ...node, parameters: { ["😀".repeat(4100)]: true } };
+    const oversized: ProofNode = { ...node, parameters: { ["ðŸ˜€".repeat(4100)]: true } };
     expect(terminal({ ...proposal, proof: { ...proposal.proof, nodes: [oversized] } }, context)).toEqual({ kind: "rejected", code: "proof-byte-limit" });
   });
 });

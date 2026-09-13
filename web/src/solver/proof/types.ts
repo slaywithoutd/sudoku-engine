@@ -71,3 +71,14 @@ export interface CheckedStep {
 export type CheckEvent = { readonly kind: "work"; readonly units: number }
   | { readonly kind: "checked"; readonly step: CheckedStep }
   | { readonly kind: "rejected"; readonly code: string };
+
+declare const checkedCertificateBrand: unique symbol;
+/** Primitive semantics only; deliberately confers no candidate/replay authority. */
+export interface CheckedCertificate {
+  readonly [checkedCertificateBrand]: true;
+  readonly proposal: DeductionProposal;
+  readonly consequences: readonly CheckedInference[];
+}
+export type CertificateEvent = { readonly kind: "work"; readonly units: number }
+  | { readonly kind: "verified"; readonly certificate: CheckedCertificate }
+  | { readonly kind: "rejected"; readonly code: string };

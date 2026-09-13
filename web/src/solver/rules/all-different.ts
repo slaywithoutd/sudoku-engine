@@ -1,4 +1,5 @@
 import type { ConstraintInstance, EngineProblem } from "../problem";
+import { CertificateBuilder } from "../proof/builder";
 import { inference, requireProof, sameValue } from "../proof/primitives";
 import type { PrimitiveInput, CheckContext, CheckedInference } from "../proof/types";
 import type {
@@ -93,7 +94,20 @@ export class AllDifferentRule implements RuleModule {
     };
   }
 
-  *propagate(_view: ReadView, _rule: ConstraintInstance): Discovery {
+  *propagate(view: ReadView, rule: ConstraintInstance): Discovery {
+    const builder = new CertificateBuilder(view), seen = new Set<string>();
+    for (const source of rule.cells) for (const cell of rule.cells) {
+      yield { kind: "work", units: 1 };
+      const symbol = view.state.values[source];
+      if (source === cell || !symbol || view.state.values[cell] || !(view.state.domains[cell] & (1 << (symbol-1)))) continue;
+      if (seen.has(`${cell}:${symbol}`)) continue;
+      seen.add(`${cell}:${symbol}`);
+      const fact = [...view.facts.values()].find(f => f.proposition.kind === "literal" && f.proposition.value.positive &&
+        f.proposition.value.cell === source && f.proposition.value.symbol === symbol && !f.conditional && !f.openAssumptions.length);
+      if (!fact) throw Error("missing-value-evidence");
+      builder.peer(fact.root, source, cell, symbol, rule.cells);
+    }
+    if (seen.size) yield { kind: "proposal", proposal: builder.finish("rule-propagation@1", { kind: "propagation" }) };
     yield { kind: "exhausted" };
   }
 

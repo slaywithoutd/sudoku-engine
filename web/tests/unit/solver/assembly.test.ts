@@ -116,7 +116,7 @@ describe("capability assembly", () => {
     );
   });
 
-  test("reports unsupported propagation as an explicit exhausted generator event", () => {
+  test("reports completed finite rule propagation with explicit work and exhaustion", () => {
     const result = assemble(makeMockProblem(), mockRuleRegistry);
     expect(result.ok).toBe(true);
     if (!result.ok) return;
@@ -133,9 +133,10 @@ describe("capability assembly", () => {
       facts: new Map(),
       supports: () => [],
     };
-    expect([...result.value.modules.get(rule.id)!.propagate(view, rule)]).toEqual([
-      { kind: "exhausted" },
-    ]);
+    const events = [...result.value.modules.get(rule.id)!.propagate(view, rule)];
+    expect(events.at(-1)).toEqual({ kind: "exhausted" });
+    expect(events.some(e => e.kind === "work")).toBe(true);
+    expect(events.some(e => e.kind === "proposal")).toBe(false);
   });
 
   test("rejects malformed rule parameters and duplicate registry types", () => {

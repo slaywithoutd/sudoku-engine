@@ -40,3 +40,42 @@ Re-establish the labels and validate every returned witness with:
 ```text
 npm test -- tests/unit/solver/oracle.test.ts
 ```
+
+## Foundation fixture provenance
+
+`C01.json`–`C05.json` are repository-owned original-clue examples. An independent
+fixture author labeled 46 productive examples and 11 negative examples using
+plain Python sets and house geometry; no production discovery, topology or mask
+helpers participated. The original author independently verified 158 positive
+force/forbid counterfactuals. Two equivalent C03 presentation records and two
+additional named negatives were subsequently added without changing the source
+geometry/effects. Per-record origin, original clues, exact pre-state/pattern,
+expected effects and independent oracle metadata are retained in the JSON.
+
+The original construction witness only generated/sanity-checked clue boards;
+it never seeds candidate restrictions. `fixtureView` starts from those clues
+and proves every peer exclusion through real maintenance. The independently
+authored test certificate compiler uses fixture geometry, never discovery output
+or the production CertificateBuilder. Mutations change that independent
+certificate. Every productive fixture runs the separate Algorithm X witness and
+exhaustive counterfactual gate on both the detected and independently compiled
+certificate. Unsatisfiable negatives are rejection diagnostics, not deductions.
+
+Durable reproduction from `web/`:
+
+```text
+npm test -- tests/unit/solver/foundation.test.ts tests/unit/solver/coverage.test.ts
+```
+
+Original-clue replay covers every advertised foundation alias. Additional
+repository-owned one-hole constructions cover all 81 cells and all 27 houses ×
+nine symbols. Named C02 fixtures retain a multivalue target before the deduction,
+so the independent C02 evidence is not merely a relabeled naked single. The
+negative small-cage contract also has an actual three-cell all-different test
+with nine symbols and no cover capability.
+
+`verifyCertificate` and CertificateSession tests exercise primitive algebra only.
+Their distinct opaque results cannot enter owned candidate state, production
+replay or quality. Mixed-rule table tests do not advertise an unimplemented
+production technique. The approved grammar/cache boundary is documented in
+`docs/solver/techniques/foundation.md`.

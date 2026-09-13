@@ -47,12 +47,8 @@ export interface RuleCapabilities {
   primitiveIds: readonly VersionId[];
 }
 
-/** T02's honest terminal event; later tasks widen this event union. */
-export interface ExhaustedDiscoveryEvent {
-  readonly kind: "exhausted";
-}
-export type DiscoveryEvent = ExhaustedDiscoveryEvent;
-export type Discovery = Generator<DiscoveryEvent, void, void>;
+import type { Discovery } from "../techniques/types";
+export type { Discovery, DiscoveryEvent } from "../techniques/types";
 
 import type { ReadView } from "../state/types";
 import type { PrimitiveInput, CheckContext, CheckedInference } from "../proof/types";

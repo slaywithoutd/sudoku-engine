@@ -4,7 +4,7 @@ import { assemble } from "../../../src/solver/rules/assemble";
 import { AllDifferentRule } from "../../../src/solver/rules/all-different";
 import { initialize, commitChecked, retainedProof, diagnose } from "../../../src/solver/state/candidates";
 import { rebuildIndexes } from "../../../src/solver/state/indexes";
-import { checkProposal } from "../../../src/solver/proof/checker";
+import { checkProposal, verifyCertificate } from "../../../src/solver/proof/checker";
 import type { CheckContext, CheckedStep, DeductionProposal, Effect, ProofNode, Proposition } from "../../../src/solver/proof/types";
 import type { ReadView } from "../../../src/solver/state/types";
 
@@ -39,7 +39,9 @@ function builder(view: ReadView) {
       { kind: "domain", cell, mask: view.state.domains[cell] & ~(1 << (symbol - 1)) }));
   };
   return { add, roots, remove, proposal: (effects: Effect[]): DeductionProposal => ({
-    technique: "rule-propagation@1", state: view.state.key, effects, pattern: { kind: "propagation" },
+    technique: effects.some(e => e.kind === "place") ? "c01@1" : "rule-propagation@1", state: view.state.key, effects,
+    pattern: effects.some(e => e.kind === "place") ? { kind: "single", alias: "Naked Single", house: null,
+      cell: effects.find(e => e.kind === "place")!.cell, symbol: effects.find(e => e.kind === "place")!.symbol } : { kind: "propagation" },
     proof: { state: view.state.key, nodes, imports: [...imports], roots },
   }) };
 }
@@ -98,7 +100,9 @@ describe("shared candidate ownership", () => {
     expect(() => commitChecked(view, {} as CheckedStep)).toThrow("inauthentic");
     const proposal: DeductionProposal = { technique: "rule-propagation@1", state: view.state.key, effects: [], pattern: { kind: "roots" },
       proof: { state: view.state.key, nodes: [], imports: [0], roots: [0] } };
-    expect(() => commitChecked(view, check(view, proposal))).toThrow("unproductive");
+    const certificate = [...verifyCertificate(proposal, context(view))].at(-1);
+    expect(certificate?.kind).toBe("verified");
+    if (certificate?.kind === "verified") expect(() => commitChecked(view, certificate.certificate as never)).toThrow("inauthentic");
   });
   test.each(["missing-domain", "invented-mask", "extra-effect", "given-overwrite", "wrong-branch"])("fails closed for %s without publishing changes", kind => {
     const view = fixture(), original = firstRemoval(view);
@@ -171,7 +175,7 @@ describe("shared candidate ownership", () => {
     const proposal = { ...b.proposal([]), pattern: { kind: "roots" } };
     const configured = { ...context(view), limits: { ...limits, stepNodes: 8192, stepBytes: 2 * 1024 * 1024,
       proofBytes: 4 * 1024 * 1024, workUnits: 20000 } };
-    expect([...checkProposal(proposal, configured)].at(-1)?.kind).toBe("checked");
+    expect([...verifyCertificate(proposal, configured)].at(-1)?.kind).toBe("verified");
     expect([...checkProposal(proposal, { ...configured, limits: { ...configured.limits, stepNodes: 4096 } })].at(-1))
       .toEqual({ kind: "rejected", code: "proof-step-node-limit" });
     expect([...checkProposal(proposal, { ...configured, limits: { ...configured.limits, stepNodes: 16385 } })].at(-1))

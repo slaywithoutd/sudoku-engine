@@ -3,9 +3,9 @@ import { canonicalProblem } from "../../../src/solver/problem";
 import { assemble } from "../../../src/solver/rules/assemble";
 import { AllDifferentRule } from "../../../src/solver/rules/all-different";
 import { initialize, retainedProof } from "../../../src/solver/state/candidates";
-import { checkProposal, ProofChecker } from "../../../src/solver/proof/checker";
+import { verifyCertificate, ProofChecker } from "../../../src/solver/proof/checker";
 import { PrimitiveRegistry } from "../../../src/solver/proof/primitives";
-import { assertSound } from "../../solver/acceptance";
+import { assertCertificateSound as assertSound } from "../../solver/acceptance";
 import type { CheckContext, DeductionProposal, ProofNode, Proposition } from "../../../src/solver/proof/types";
 
 const limits = { timeMs: 10000, workUnits: 100000, exactNodes: 100000, stepNodes: 4096,
@@ -25,7 +25,7 @@ function fixture(givens = [1,0], symbols = [1,2], scopes = [[0,1]]) {
   };
   const proposal = (roots: number[]): DeductionProposal => ({ technique: "rule-propagation@1", state: view.state.key,
     effects: [], pattern: { kind: "roots" }, proof: { state: view.state.key, nodes, imports: [...imports], roots } });
-  const check = (roots: number[]) => [...checkProposal(proposal(roots), context)].at(-1)!;
+  const check = (roots: number[]) => [...verifyCertificate(proposal(roots), context)].at(-1)!;
   return { add, check, nodes, context, proposal };
 }
 const lit = (cell: number, symbol: number, positive = true): Proposition => ({ kind: "literal", value: { cell, symbol, positive } });
@@ -47,7 +47,7 @@ test("discharges only the contradicted assumption and derives row provenance", (
   const neg = b.add("resolution@1", [weak, 2], lit(1, 1, false));
   const contradiction = b.add("contradiction@1", [a, neg], { kind: "false" }, [a]);
   const root = b.add("discharge@1", [a, contradiction], lit(1, 1, false));
-  expect(b.check([root])).toMatchObject({ kind: "checked", step: { consequences: [{ openAssumptions: [], conditional: false, rules: ["row:0"] }] } });
+  expect(b.check([root])).toMatchObject({ kind: "verified", certificate: { consequences: [{ openAssumptions: [], conditional: false, rules: ["row:0"] }] } });
   b.nodes[0] = { ...b.nodes[0], conclusion: { ...lit(1,1), ignored: true } as unknown as Proposition };
   expect(b.check([root])).toMatchObject({ kind: "rejected", code: "invalid-assumption" });
 });
@@ -63,7 +63,7 @@ test("cases requires every exhaustive alternative with its own branch", () => {
   const second = b.add("conjunction@1", [2, c], { kind: "and", terms: [lit(0, 1), lit(1, 2)] }, [c]);
   const secondResult = b.add("conjunction@1", [second], lit(0, 1), [c], { index: 0 });
   const root = b.add("cases@1", [clause, a, firstResult, c, secondResult], lit(0, 1));
-  expect(b.check([root]).kind).toBe("checked");
+  expect(b.check([root]).kind).toBe("verified");
   b.nodes[b.nodes.length - 1] = { ...b.nodes.at(-1)!, premises: [clause, a, firstResult] };
   expect(b.check([root]).kind).toBe("rejected");
 });
@@ -77,14 +77,14 @@ test("rejects a sibling assumption even when its literal matches a desired concl
 test("support rebuilds every cell from checked domain facts, ignoring the view cache", () => {
   const b = fixture();
   const root = b.add("support@1", [5, 2, 1], { kind: "cover", symbol: 1, cells: [0, 1] });
-  expect(b.check([root]).kind).toBe("checked");
+  expect(b.check([root]).kind).toBe("verified");
   b.nodes[0] = { ...b.nodes[0], premises: [5, 2], conclusion: { kind: "cover", symbol: 1, cells: [0] } };
   expect(b.check([root]).kind).toBe("rejected");
 });
 
 test("Hall singleton removes its digit from the rest of its all-different scope", () => {
   const b = fixture(), root = b.add("hall@1", [4, 2], lit(1, 1, false));
-  expect(b.check([root]).kind).toBe("checked");
+  expect(b.check([root]).kind).toBe("verified");
   b.nodes[0] = { ...b.nodes[0], conclusion: lit(0, 1, false) };
   expect(b.check([root]).kind).toBe("rejected");
 });
@@ -132,7 +132,7 @@ test.each(["forward", "unsupported", "uniqueness", "false-strong-link"])("reject
 test("same-cell weak exclusion is independent of an all-different house", () => {
   const b = fixture(), root = b.add("weak-link@1", [1], { kind: "clause", alternatives: [
     { cell: 1, symbol: 1, positive: false }, { cell: 1, symbol: 2, positive: false }] });
-  expect(b.check([root]).kind).toBe("checked");
+  expect(b.check([root]).kind).toBe("verified");
 });
 
 test.each(["wrapped-symbol", "extra-fields"])("Hall rejects a malformed literal: %s", mutation => {

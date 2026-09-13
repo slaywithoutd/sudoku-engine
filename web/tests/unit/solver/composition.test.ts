@@ -2,13 +2,15 @@ import { expect, test } from "vitest";
 import { canonicalProblem, normalizeClassic } from "../../../src/solver/problem";
 import { assemble } from "../../../src/solver/rules/assemble";
 import { AllDifferentRule } from "../../../src/solver/rules/all-different";
-import { initialize, retainedProof, retainCheckedFacts } from "../../../src/solver/state/candidates";
-import { checkProposal } from "../../../src/solver/proof/checker";
+import { initialize, retainedProof, retainCheckedFacts, commitChecked } from "../../../src/solver/state/candidates";
+import { verifyCertificate, checkProposal, checkedWorkUnits } from "../../../src/solver/proof/checker";
+import { CertificateSession } from "../../../src/solver/proof/certificates";
+import { getTechniques } from "../../../src/solver/techniques/registry";
 import type { CheckContext, DeductionProposal, ProofNode, Proposition } from "../../../src/solver/proof/types";
 import type { ReadView } from "../../../src/solver/state/types";
 import { mockRuleRegistry } from "../../solver/mock-rules";
-import { assertSound } from "../../solver/acceptance";
-import { replay } from "../../../src/solver/proof/replay";
+import { assertCertificateSound as assertSound } from "../../solver/acceptance";
+import { replay, initializationReservation } from "../../../src/solver/proof/replay";
 import { SOLUTION } from "../../fixtures";
 import { makeSnapshot } from "../../../src/solver/snapshot";
 
@@ -20,9 +22,9 @@ function fixture(cells = 4, symbols = 9, givens = Array(cells).fill(0)): ReadVie
     symbols: Array.from({ length: symbols }, (_,i) => i+1), givens, constraints: [] }), [new AllDifferentRule()]);
   if (!result.ok) throw Error("fixture"); return initialize(result.value, "primary");
 }
-function builder(view: ReadView) {
+function builder(view: ReadView, retained = retainedProof(view)) {
   const nodes: ProofNode[] = [], imports = new Set<number>();
-  const context: CheckContext = { view, retained: retainedProof(view), limits, policy: "discharged", uniqueEvidenceId: null };
+  const context: CheckContext = { view, retained, limits, policy: "discharged", uniqueEvidenceId: null };
   const add = (rule: string, premises: number[], conclusion: Proposition, parameters = {}) => {
     premises.filter(id => context.retained.has(id)).forEach(id => imports.add(id));
     const id = context.retained.size + nodes.length;
@@ -32,7 +34,7 @@ function builder(view: ReadView) {
     add(rule, premises, { kind: "table", cells, count, definition: context.retained.size + nodes.length } as Proposition, parameters);
   const proposal = (roots: number[]): DeductionProposal => ({ technique: "rule-propagation@1", state: view.state.key,
     effects: [], pattern: { kind: "roots" }, proof: { state: view.state.key, nodes, imports: [...imports], roots } });
-  const check = (roots: number[]) => [...checkProposal(proposal(roots), context)].at(-1)!;
+  const check = (roots: number[]) => [...verifyCertificate(proposal(roots), context)].at(-1)!;
   return { add, table, proposal, check, nodes, context };
 }
 
@@ -51,7 +53,7 @@ test("checks a 6,561-row Cartesian table as a bounded coverage DAG", () => {
   let root = rows[0];
   for (let a = 1; a < 9; a++) root = b.table("table-union@1", [root, rows[a]], [0,1,2,3], (a+1)*729);
   const projection = b.add("table-project@1", [root], { kind: "domain", cell: 3, mask: 511 });
-  expect(b.check([projection])).toMatchObject({ kind: "checked" });
+  expect(b.check([projection])).toMatchObject({ kind: "verified" });
   expect(Math.max(...b.nodes.map(node => new TextEncoder().encode(JSON.stringify(node)).length))).toBeLessThan(16384);
   b.nodes[b.nodes.length - 1] = { ...b.nodes.at(-1)!, premises: [rows[0]] };
   expect(b.check([projection])).toMatchObject({ kind: "rejected", code: "incomplete-table" });
@@ -91,7 +93,7 @@ test.each([false, true])("joint sum/order/row inference forces A=4 with both reg
   const place = b.add("table-project@1", [mixed], { kind: "literal", value: { cell: 0, symbol: 4, positive: true } });
   const domain = b.add("table-project@1", [mixed], { kind: "domain", cell: 0, mask: 8 });
   const proposal = { ...b.proposal([place, domain]), effects: [{ kind: "place", cell: 0, symbol: 4 } as const], pattern: { kind: "propagation" } };
-  expect([...checkProposal(proposal, b.context)].at(-1)).toMatchObject({ kind: "checked", step: {
+  expect([...verifyCertificate(proposal, b.context)].at(-1)).toMatchObject({ kind: "verified", certificate: {
     proposal: { effects: [{ kind: "place", cell: 0, symbol: 4 }] }, consequences: [{ rules: ["order:0", "row:0", "sum:0"] }, { rules: ["order:0", "row:0", "sum:0"] }] } });
   expect(assertSound(view, proposal).proposal.effects).toEqual([{ kind: "place", cell: 0, symbol: 4 }]);
   expect(() => assertSound(view, proposal, { oracleMaxNodes: 0 })).toThrow(/interrupt/i);
@@ -101,25 +103,20 @@ test("replays a one-hole completion from original clues without discovery", () =
   const givens = Array.from(SOLUTION, Number); givens[0] = 0;
   const problem = normalizeClassic({ kind: "classic", version: 1, width: 9, height: 9, givens });
   const result = assemble(problem, [new AllDifferentRule()]); if (!result.ok) throw Error("fixture");
-  const view = initialize(result.value, "primary"), b = builder(view);
-  const scope = [...view.facts.values()].find(f => f.proposition.kind === "all-different" && f.proposition.cells.length === 9 && f.proposition.cells.every(cell => cell < 9))!;
-  let domain = 0, mask = 511;
-  for (let cell = 1; cell < 9; cell++) {
-    const symbol = givens[cell];
-    const weak = b.add("weak-link@1", [scope.root], { kind: "clause", alternatives: [
-      { cell: 0, symbol, positive: false }, { cell, symbol, positive: false }] });
-    const removal = b.add("resolution@1", [weak, view.state.domainFacts[cell]], { kind: "literal", value: { cell: 0, symbol, positive: false } });
-    mask &= ~(1 << (symbol-1));
-    domain = b.add("domain-restrict@1", [domain, removal], { kind: "domain", cell: 0, mask });
+  let view = initialize(result.value, "primary"); const proposals: DeductionProposal[] = [];
+  for (const rule of view.assembly.problem.constraints) {
+    for (const event of [...view.assembly.modules.get(rule.id)!.propagate(view, rule)]) if (event.kind === "proposal") {
+      const checked = [...checkProposal(event.proposal, { view, retained: retainedProof(view), limits, policy: "unconditional", uniqueEvidenceId: null })].at(-1);
+      if (checked?.kind !== "checked") throw Error("preamble");
+      proposals.push(event.proposal); view = commitChecked(view, checked.step).view;
+    }
   }
-  const place = b.add("cover-clause@1", [domain], { kind: "literal", value: { cell: 0, symbol: 5, positive: true } });
-  const proposal = { ...b.proposal([place, domain]), pattern: { kind: "propagation" }, effects: [{ kind: "place", cell: 0, symbol: 5 } as const] };
-  expect(assertSound(view, proposal).afterRevision).toBe(1);
-  expect([...replay(makeSnapshot(problem, { kind: "manual" }, "replay", 0), [proposal], result.value, limits)].at(-1))
-    .toMatchObject({ kind: "checked", step: { afterRevision: 1 } });
-  const altered = structuredClone(proposal);
-  (altered.proof.nodes.at(-1)!.conclusion as { value: { symbol: number } }).value.symbol = 4;
-  expect([...replay(makeSnapshot(problem, { kind: "manual" }, "replay", 0), [altered], result.value, limits)].at(-1)?.kind).toBe("rejected");
+  const single = [...getTechniques("classic-expanded@1")[0].discover(view)].find(e => e.kind === "proposal");
+  if (single?.kind !== "proposal") throw Error("single"); proposals.push(single.proposal);
+  const snapshot = makeSnapshot(problem, { kind: "manual" }, "replay", 0);
+  expect([...replay(snapshot, proposals, result.value, limits)].at(-1)).toMatchObject({ kind: "checked" });
+  const altered = structuredClone(proposals); (altered.at(-1)!.effects[0] as {symbol:number}).symbol = 4;
+  expect([...replay(snapshot, altered, result.value, limits)].at(-1)?.kind).toBe("rejected");
 });
 
 test("exhaustively checks all nonempty three-symbol domain boxes under sum/order in both registry orders", () => {
@@ -133,7 +130,7 @@ test("exhaustively checks all nonempty three-symbol domain boxes under sum/order
       // Hand-derived joint semantics: the only ordered pair summing to four is (1,3).
       const count = a % 2 === 1 && c >= 4 ? 1 : 0;
       const b = builder(view), root = b.table("table-filter@1", [0,1,...relations], [0,1], count, { cells: [0,1], box: [a,c] });
-      expect(b.check([root]).kind, `box ${a},${c}; reversed ${reverse}`).toBe("checked");
+      expect(b.check([root]).kind, `box ${a},${c}; reversed ${reverse}`).toBe("verified");
     }
   }
 });
@@ -141,7 +138,7 @@ test("exhaustively checks all nonempty three-symbol domain boxes under sum/order
 test("table enumeration yields before completion and rejects a depleted work budget", () => {
   const b = builder(fixture(2,9));
   const root = b.table("table-filter@1", [0,1], [0,1], 81, { cells: [0,1], box: [511,511] });
-  const events = [...checkProposal(b.proposal([root]), { ...b.context, limits: { ...limits, workUnits: 20 } })];
+  const events = [...verifyCertificate(b.proposal([root]), { ...b.context, limits: { ...limits, workUnits: 20 } })];
   expect(events.filter(event => event.kind === "work").length).toBeGreaterThan(10);
   expect(events.at(-1)).toEqual({ kind: "rejected", code: "proof-work-limit" });
 });
@@ -154,26 +151,29 @@ test("acceptance rejects an unsatisfiable pre-state instead of passing vacuously
   expect(() => assertSound(view, b.proposal([root]))).toThrow(/pre-state is unsatisfiable/);
 });
 
-test("retained proof-only tables preserve exact definitions for later checked projections and replay", () => {
-  const view = fixture(2,2), b = builder(view);
+test("certificate-only tables preserve exact definitions without candidate or replay authority", () => {
+  const view = fixture(2,2), b = builder(view), session = new CertificateSession(b.context);
   const table = b.table("table-filter@1", [0,1], [0,1], 4, { cells: [0,1], box: [3,3] });
-  const first = b.check([table]); if (first.kind !== "checked") throw Error("fixture proof");
-  const next = retainCheckedFacts(view, first.step), c = builder(next);
-  expect(next.state.key.revision).toBe(0);
-  expect(retainedProof(view).size).toBe(2);
+  const first = b.check([table]); if (first.kind !== "verified") throw Error("fixture proof");
+  session.retain(first.certificate);
+  const other=fixture(2,2), unrelated=new CertificateSession({...b.context,view:other,retained:retainedProof(other)});
+  expect(()=>unrelated.retain(first.certificate)).toThrow("substituted-certificate-import");
+  const c = builder(view, session.context.retained);
+  expect(view.state.key.revision).toBe(0); expect(retainedProof(view).size).toBe(2);
   const root = c.add("table-project@1", [table], { kind: "domain", cell: 0, mask: 3 });
-  expect(c.check([root]).kind).toBe("checked");
+  expect(c.check([root]).kind).toBe("verified");
+  expect(() => commitChecked(view, first.certificate as never)).toThrow("inauthentic");
+  expect(() => retainCheckedFacts(view, first.certificate as never)).toThrow("inauthentic");
+  expect([...checkProposal(c.proposal([root]), session.context)].at(-1)).toMatchObject({ kind: "rejected", code: "inauthentic-retained-node" });
   const snapshot = makeSnapshot(view.assembly.problem, { kind: "manual" }, "cached", 0);
-  const events = [...replay(snapshot, [b.proposal([table]), c.proposal([root])], view.assembly, limits)];
-  expect(events.filter(event => event.kind === "checked")).toHaveLength(2);
-  expect(events.at(-1)?.kind).toBe("checked");
+  expect([...replay(snapshot, [b.proposal([table])], view.assembly, limits)].at(-1)?.kind).toBe("rejected");
 });
 
 test("inline relation projection preserves correlations and deduplicates every complete projected row", () => {
   const b = builder(fixture(3,2));
   const table = b.table("table-filter@1", [0,1,2], [0,1,2], 8, { cells: [0,1,2], box: [3,3,3] });
   const root = b.add("table-project@1", [table], { kind: "relation", cells: [0,2], tuples: [[1,1],[1,2],[2,1],[2,2]] });
-  expect(b.check([root]).kind).toBe("checked");
+  expect(b.check([root]).kind).toBe("verified");
   b.nodes[1] = { ...b.nodes[1], conclusion: { kind: "relation", cells: [0,2], tuples: [[1,1],[1,2],[2,1]] } };
   expect(b.check([root])).toMatchObject({ kind: "rejected", code: "invalid-table-projection" });
 });
@@ -192,7 +192,7 @@ test("table definition authority survives exact conjunction projection", () => {
   const and = b.add("conjunction@1", [table], { kind: "and", terms: [claim] });
   const alias = b.add("conjunction@1", [and], claim, { index: 0 });
   const root = b.add("table-project@1", [alias], { kind: "domain", cell: 0, mask: 3 });
-  expect(b.check([root]).kind).toBe("checked");
+  expect(b.check([root]).kind).toBe("verified");
 });
 
 test("cases cannot equate different tables merely because their cells and row counts match", () => {
@@ -220,28 +220,39 @@ test.each(["invalid", "work", "workspace", "nodes", "time"])("empty replay still
   expect([...replay(snapshot, [], view.assembly, constrained)].at(-1)?.kind).toBe("rejected");
 });
 
-test("replay charges cumulative headers even when every individual proof-only bundle fits", () => {
-  const view = fixture(2,2), snapshot = makeSnapshot(view.assembly.problem, { kind: "manual" }, "headers", 0);
-  const proposal: DeductionProposal = { technique: "rule-propagation@1", state: view.state.key, effects: [], pattern: { kind: "roots" },
-    proof: { state: view.state.key, imports: [0], nodes: [], roots: [0] } };
-  const bytes = (value: unknown) => new TextEncoder().encode(JSON.stringify(value)).length;
-  const rootBytes = [...retainedProof(view).values()].reduce((sum,node) => sum+bytes(node), 0);
-  const cap = rootBytes + 2*bytes(proposal)-1;
-  const constrained = { ...limits, proofBytes: cap };
-  const events = [...replay(snapshot, [proposal,proposal], view.assembly, constrained)];
-  expect(events.filter(event => event.kind === "checked")).toHaveLength(1);
-  expect(events.at(-1)).toMatchObject({ kind: "rejected", code: "proof-byte-limit" });
+function namedPath() {
+  const problem = canonicalProblem({ schema: 1, cells: [0,1], symbols: [1,2], givens: [1,0],
+    constraints: [{ id: "row:0", type: "all-different@1", cells: [0,1], parameters: {} }] });
+  const assembly = assemble(problem, [new AllDifferentRule()]); if (!assembly.ok) throw Error("fixture");
+  const initial = initialize(assembly.value, "primary");
+  const event = [...assembly.value.modules.get("row:0")!.propagate(initial, problem.constraints[0])].find(e => e.kind === "proposal");
+  if (event?.kind !== "proposal") throw Error("fixture");
+  const first = [...checkProposal(event.proposal, { view: initial, retained: retainedProof(initial), limits, policy: "unconditional", uniqueEvidenceId: null })].at(-1);
+  if (first?.kind !== "checked") throw Error("fixture");
+  const view = commitChecked(initial, first.step).view, b = builder(view);
+  const root = b.add("cover-clause@1", [view.state.domainFacts[1]], { kind: "literal", value: { cell: 1, symbol: 2, positive: true } });
+  const second: DeductionProposal = { ...b.proposal([root]), technique: "c01@1", pattern: {kind:"single",alias:"Naked Single",cell:1,symbol:2,house:null} };
+  const checked = [...checkProposal(second, b.context)].at(-1); if (checked?.kind !== "checked") throw Error("cache");
+  return { initial, proposals: [event.proposal, second], steps: [first.step, checked.step], snapshot: makeSnapshot(problem, {kind:"manual"}, "named-path", 0) };
+}
+
+test("replay charges cumulative headers even when every named bundle fits individually", () => {
+  const path = namedPath(), bytes = (value: unknown) => new TextEncoder().encode(JSON.stringify(value)).length;
+  const cap = [...retainedProof(path.initial).values()].reduce((sum,node) => sum+bytes(node), 0) + path.proposals.reduce((sum,p) => sum+bytes(p), 0)-1;
+  const events = [...replay(path.snapshot, path.proposals, path.initial.assembly, {...limits,proofBytes:cap})];
+  expect(events.filter(e => e.kind === "checked")).toHaveLength(1);
+  expect(events.at(-1)).toMatchObject({kind:"rejected",code:"proof-byte-limit"});
 });
 
 test("replay includes checker bookkeeping in the cumulative work limit", () => {
-  const view = fixture(2,2), snapshot = makeSnapshot(view.assembly.problem, { kind: "manual" }, "work", 0);
-  const proposal: DeductionProposal = { technique: "rule-propagation@1", state: view.state.key, effects: [], pattern: { kind: "roots" },
-    proof: { state: view.state.key, imports: [0], nodes: [], roots: [0] } };
-  // Startup: 1 gate + 2 descriptor visits + 32 reserved units. Each bundle:
-  // 2 retained roots + 1 header check + 1 graph visit + 1 final check = 5.
-  const events = [...replay(snapshot, [proposal,proposal], view.assembly, { ...limits, workUnits: 44 })];
-  expect(events.filter(event => event.kind === "checked")).toHaveLength(1);
-  expect(events.at(-1)).toMatchObject({ kind: "rejected", code: "proof-work-limit" });
+  const path = namedPath(), estimator = initializationReservation(path.initial.assembly);
+  let startup = 1, next = estimator.next();
+  while (!next.done) { if (next.value.kind === "work") startup += next.value.units; next = estimator.next(); }
+  startup += next.value.workUnits;
+  const cap = startup + path.steps.reduce((sum,step) => sum+checkedWorkUnits(step), 0)-1;
+  const events = [...replay(path.snapshot, path.proposals, path.initial.assembly, {...limits,workUnits:cap})];
+  expect(events.filter(e => e.kind === "checked")).toHaveLength(1);
+  expect(events.at(-1)).toMatchObject({kind:"rejected",code:"proof-work-limit"});
 });
 
 test("an empty table proves exactly false and rejects unsupported conclusion fields", () => {
@@ -250,22 +261,16 @@ test("an empty table proves exactly false and rejects unsupported conclusion fie
   if (!result.ok) throw Error("fixture"); const view = initialize(result.value, "primary"), b = builder(view);
   const table = b.table("table-filter@1", [2,3,5], [0,1], 0, { cells: [0,1], box: [1,1] });
   const root = b.add("table-project@1", [table], { kind: "false" });
-  expect(b.check([root]).kind).toBe("checked");
+  expect(b.check([root]).kind).toBe("verified");
   b.nodes[1] = { ...b.nodes[1], conclusion: { kind: "false", ignored: true } as unknown as Proposition };
   expect(b.check([root])).toMatchObject({ kind: "rejected", code: "invalid-table-projection" });
 });
 
-test("cumulative replay bytes include separators between nodes in an earlier bundle", () => {
-  const view = fixture(2,2), b = builder(view);
-  const a = b.add("domain-axiom@1", [], { kind: "domain", cell: 0, mask: 3 });
-  const c = b.add("domain-axiom@1", [], { kind: "domain", cell: 1, mask: 3 });
-  const first = b.proposal([a,c]);
-  const second = { ...first, proof: { ...first.proof, nodes: [], imports: [a], roots: [a] } };
-  const bytes = (value: unknown) => new TextEncoder().encode(JSON.stringify(value)).length;
-  const rootBytes = [...retainedProof(view).values()].reduce((sum,node) => sum+bytes(node), 0);
-  const cap = rootBytes + bytes(first) + bytes(second) - 1;
-  const snapshot = makeSnapshot(view.assembly.problem, { kind: "manual" }, "framing", 0);
-  const events = [...replay(snapshot, [first,second], view.assembly, { ...limits, proofBytes: cap })];
-  expect(events.filter(event => event.kind === "checked")).toHaveLength(1);
-  expect(events.at(-1)).toMatchObject({ kind: "rejected", code: "proof-byte-limit" });
+test("cumulative replay bytes include separators between nodes in an earlier named bundle", () => {
+  const path = namedPath(), bytes = (value: unknown) => new TextEncoder().encode(JSON.stringify(value)).length;
+  expect(path.proposals[0].proof.nodes.length).toBeGreaterThan(1);
+  const cap = [...retainedProof(path.initial).values()].reduce((sum,node) => sum+bytes(node), 0) + path.proposals.reduce((sum,p) => sum+bytes(p), 0)-1;
+  const events = [...replay(path.snapshot, path.proposals, path.initial.assembly, {...limits,proofBytes:cap})];
+  expect(events.filter(e => e.kind === "checked")).toHaveLength(1);
+  expect(events.at(-1)).toMatchObject({kind:"rejected",code:"proof-byte-limit"});
 });
