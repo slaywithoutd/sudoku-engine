@@ -187,12 +187,13 @@ interface TechniqueDescriptor {
   eligible(view: ReadView): { kind: "yes" } |
     { kind: "excluded"; reason: string; dependencies: readonly Watch[] };
   estimate(view: ReadView): Estimate;
-  discover(view: ReadView): Discovery;
+  discover(view: ReadView, context: DiscoveryContext): Discovery;
 }
+interface DiscoveryContext { workspace: IndexWorkspace; limits: Limits } // D073; one operation
 interface Estimate { hit: number; gain: number; cost: number } // bounded integers
 type DiscoveryEvent = { kind: "work"; units: number } |
   { kind: "proposal"; proposal: DeductionProposal } |
-  { kind: "exhausted" };
+  { kind: "exhausted" } | { kind: "interrupted"; reason: string };
 type Discovery = Generator<DiscoveryEvent, void, void>;
 type DetectorStatus = "pending" | "in-progress" | "found" |
   "exhausted" | "excluded" | "interrupted";
@@ -207,6 +208,10 @@ type Ledger = readonly LedgerEntry[];
 Discovery is read-only and resumable at explicit bounded loop units. Generator return, cancellation or an empty current result list does not mean exhaustion: require the explicit exhausted event. Use one live job per technique descriptor and one per rule instance, each with a resumable cursor over sorted scopes (cell/house/digit/pattern seed). Do not materialize combinatorial scope jobs. At most 256 ledger jobs are supported by protocol 2; assembly rejects a larger operation explicitly. The classic profile needs fewer than this cap. Declare all structural profile bounds before the run. Reaching the end of a finite length/size profile is `exhausted within profile`; hitting time, work, cache/proof memory or serialization limits is `interrupted`, even if shorter patterns finished. Record individual reasons, bounds, exclusions and disabled conditional families in the result coverage panel.
 
 Candidates proposed under the same revision are independently checked before selection. Deduplicate equivalent effects using sorted effects then normalized proof key; keep the least-complex checked proof, not the first wall-clock arrival. A proposal is not an accepted step. Primitive labels and aliases cannot bypass the checker or the family grammar. Before each technique-selection window, drain mandatory rule-propagation jobs to a checked fixed point. They use descriptor `rule-propagation@1`, normal proof/effect checking and revisions, and a preamble presentation; they are semantic maintenance, not an extra named matrix technique. They consume the same human/work/proof budgets. Interruption here is incomplete initialization/logic, never a valid unfiltered candidate premise. Initial root construction itself is bounded by M2 cells/rules and checked under the total deadline before starting discovery.
+
+D072 makes index resource ownership explicit: `buildImplications(view, workspace)`, `buildGroups(view, workspace)` and `buildAls(view, workspace)` require a shared `IndexWorkspace`; each returns work events followed by either a complete ready index or an explicit interrupted reason (`cancelled`, `workspace-entry-limit`, `workspace-byte-limit`). Reserve aggregate entries/bytes and scratch before allocation; incomplete iteration releases its lease, while a completed index keeps its lease until disposal. Query work is separately charged. Borrowed entries cannot outlive that lease; retained downstream recipes require their own budget. These are accounted sizes, not measured heap use.
+
+Indexes preserve StateKey/version/watch metadata and exact premise identities. State-only `accepts` answers cache metadata compatibility; `acceptsView` also authenticates published ownership and every referenced fact. An independent equal-key root context cannot authorize imports. Cold rebuild or same-revision retained-prefix growth is reusable only if all referenced inputs are identical. `acceptsView` means existing recipes remain valid; `completeFor` also checks that the index covers the current closed proved-source prefix. Prefix growth can require rebuilding even without a candidate revision change; incomplete index coverage cannot establish absence, prerequisite exclusion or exhaustion. Entries contain explicit bounded proof recipes, not accepted facts. Add the checked `all-different-subset@1` primitive for explicit nonempty subset scope reduction; it preserves assumptions/provenance and cannot create a cover. Local table filtering still requires all cited constraint scopes wholly inside its selected cells.
 
 ## 5. Proof graph and checking
 

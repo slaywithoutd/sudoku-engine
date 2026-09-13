@@ -217,9 +217,9 @@ expect(validateCoverage(fakeVerifiedWithoutOracle)).toContain("missing-independe
 
 **Files:** create `src/solver/indexes/implications.ts`, `groups.ts`, `als.ts`; tests `tests/unit/solver/implications.test.ts`, `als-index.test.ts`.
 
-**Interfaces:** `buildImplications(view): Generator<IndexEvent<ImplicationIndex>>`, `buildGroups(view): Generator<IndexEvent<GroupIndex>>`, `buildAls(view): Generator<IndexEvent<AlsIndex>>`. Define `IndexEvent<T> = {kind:"work",units:number}|{kind:"ready",value:T}`. Index entries contain StateKey, premise FactIds, explicit literals/member lists and dependency watches; no bare unproved edge.
+**Interfaces:** `buildImplications(view, workspace): Generator<IndexEvent<ImplicationIndex>>`, `buildGroups(view, workspace): Generator<IndexEvent<GroupIndex>>`, `buildAls(view, workspace): Generator<IndexEvent<AlsIndex>>`. D072 requires one shared `IndexWorkspace` and adds an explicit interrupted event to work/ready; incomplete builds release their lease and cannot emit ready. Completed indexes own their lease until disposal. Query work is charged separately. Index entries contain StateKey, premise FactIds, explicit literals/member lists and dependency watches; no bare unproved edge.
 
-- [ ] Write strong-versus-weak and stale-index tests:
+- [x] Write strong-versus-weak and stale-index tests:
 
 ```ts
 expect(graph.strong(a, b)).toBe(false); // same-symbol peers with a third house support
@@ -228,16 +228,16 @@ expect(als.rcc(setA, setB, digit)).toBe(false); // one cross-pair cannot see eac
 expect(indexFromSiblingBranch.accepts(view.state.key)).toBe(false);
 ```
 
-- [ ] Run `npm test -- tests/unit/solver/implications.test.ts tests/unit/solver/als-index.test.ts`.
-- [ ] Enumerate exact cell/house covers, weak conflicts, <=3-member groups and <=5-cell n+1 ALS sets in canonical order. Store all occurrence/provenance lists; build RCC from complete cross-conflicts and reject invalid overlaps. Charge every extension and invalidate globally before incremental optimization. Index adapters such as `strong/weak/rcc/accepts` query immutable entries, never infer proof by name.
-- [ ] Rerun tests/typecheck; compare all entries to cold reconstruction after seeded changes and a mock non-house relation; enforce workspace-entry cap with explicit interruption.
-- [ ] Commit listed files: `feat: index proved implications groups and almost locked sets`.
+- [x] Run `npm test -- tests/unit/solver/implications.test.ts tests/unit/solver/als-index.test.ts`.
+- [x] Enumerate exact cell/house covers, weak conflicts, <=3-member groups and <=5-cell n+1 ALS sets in canonical order. Store all occurrence/provenance lists; build RCC from complete cross-conflicts and reject invalid overlaps. Charge every extension and invalidate globally before incremental optimization. Index adapters such as `strong/weak/rcc/accepts` query immutable entries, never infer proof by name.
+- [x] Rerun tests/typecheck; compare all entries to cold reconstruction after seeded changes and a mock non-house relation; enforce workspace-entry cap with explicit interruption.
+- [x] Commit listed files: `feat: index proved implications groups and almost locked sets`.
 
 ## T09 — Short patterns and wings C10–C13
 
 **Files:** create `src/solver/techniques/short-patterns.ts`, `wings.ts`, `bent-subsets.ts`, `remote-pairs.ts`; fixtures `C10.json`–`C13.json`; tests `tests/unit/solver/short-patterns.test.ts`, `wings.test.ts`; `docs/solver/techniques/wings-and-short-patterns.md`; update registry/manifest/provenance.
 
-**Interfaces:** each module exports readonly `TechniqueDescriptor[]`; named validators consume `proposal.pattern` and emit primitive proof requirements. C12 consumes local table checker; other forms consume graph/cover indexes.
+**Interfaces:** each module exports readonly `TechniqueDescriptor[]`; named validators consume `proposal.pattern` and emit primitive proof requirements. D073 adds required `discover(view, context)` with `DiscoveryContext {workspace: IndexWorkspace; limits: Limits}` and an explicit interrupted discovery event. Update technique types, registry and affected acceptance/test helpers; no per-detector budget defaults. C12 consumes local table checker; other forms consume graph/cover indexes.
 
 - [ ] Test named geometry and counterexamples:
 
