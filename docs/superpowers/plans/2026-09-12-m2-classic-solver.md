@@ -1,521 +1,642 @@
-# M2 Classic Sudoku Solver Implementation Plan
+# M2 Expanded Sudoku Engine Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task after design approval. Steps use checkbox (`- [ ]`) syntax for tracking. This plan does not itself authorize execution or delegation.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task **after explicit design approval**. Steps use checkbox (`- [ ]`) syntax for tracking. This plan authorizes neither execution nor delegation.
 
-**Goal:** Deliver an isolated classic solver with ordered human deductions, an identified search fallback, independently checked count evidence and interruptible worker execution.
+**Goal:** Deliver a broad, bounded classic logical engine with Explain/Analyze, independently checked explanations and count evidence, responsive workers and isolated temporary analysis.
 
-**Architecture:** Pure TypeScript solver modules use a shared classic topology but separate human and exact state. A dedicated worker sends immutable evidence checkpoints to a volatile application controller; plain TypeScript views render them without updating play progress or the persisted library graph.
+**Architecture:** Normalize all declared rules into shared domains/facts and assemble explicit capabilities. Resumable detectors propose proof DAGs; separate checkers and atomic reducers establish the logical path. Original-problem exact DFS, conditional uniqueness analysis, worker transport and the memory-only screen preserve separate evidence and state lifetimes.
 
-**Tech Stack:** Existing TypeScript 7.0.2, Vite 8.3.0, Vitest 5.0.0, Playwright 1.63.0 and native browser Worker/IndexedDB. Reuse current lockfile; no new runtime dependencies planned.
+**Tech Stack:** Existing TypeScript 7.0.2, Vite 8.3.0, Vitest 5.0.0, Playwright 1.63.0, native Worker/IndexedDB; retain lockfile and no new runtime dependency. These are inspected repository pins, not recommendations to upgrade.
 
-**Spec:** [M2 classic solver design](../specs/2026-09-12-m2-classic-solver-design.md). Read the entire spec and [decision log](../../decisions.md) before execution.
+**Spec:** Read [screen/evidence design](../specs/2026-09-12-m2-classic-solver-design.md), [engine contracts](../specs/2026-09-12-m2-engine-contracts.md), [technique matrix](../specs/2026-09-12-m2-technique-coverage.md), [research rationale](../specs/2026-09-12-m2-engine-expansion-design.md) and [decisions](../../decisions.md). The contracts and matrix define signatures/grammars; this plan defines implementation sequence and evidence. All tasks are future work.
 
-**Status:** INITIAL PLAN, not started; **requires revision before execution**. The [expanded engine proposal](../specs/2026-09-12-m2-engine-expansion-design.md) revises technique scope, Explain/Analyze scheduling, the multi-constraint interface, proof structure and transport. Its §10 maps the required planning expansion. D053 also supersedes Portuguese examples below with English. Preserve this initial plan as the original detailed baseline; do not execute it as the final broader scope. Implementation still requires design approval.
+**Status:** COMPLETE REVISED PLAN FOR REVIEW, 2026-09-12. Replaces the obsolete ten-task/six-technique plan. No solver implementation or benchmarks have been performed. Review baseline `80471d2` on `docs/m2-solver-design`; preserve research `24e0d25` and D058 themes.
 
 ## Global constraints
 
-- User-facing text stays Portuguese.
-- Player notes are never an input.
-- Human masks are never passed in.
-- No X-Wing, triples/quads, chains, uniqueness assumptions or advanced contradiction technique is included.
-- Cancel is a controller operation, not a worker message requiring acknowledgement.
-- One total limit covers validation, human deductions, finding a completion and count verification; no hidden second budget or unlimited mode.
-- Thus IndexedDB schema version 1, library format version 1 and backup envelope version 1 remain unchanged.
-- Gameplay hints wait until M5. Construction assistance, variants, community and AI are outside M2.
-- Preserve the M1 behavior and existing dependency pins. Do not touch legacy Spring/Maven paths.
-- Do not mark M2 verified until actual correctness, browser and benchmark evidence has been recorded. Numerical performance limits in spec §9 are provisional targets.
+- Browser-first TypeScript + Vite, plain TypeScript views, IndexedDB and worker execution.
+- Explain and Analyze modes, defaulting to Explain.
+- Scores guide computation; they never establish correctness.
+- Every applied deduction must have a checkable explanation.
+- Perfect requires independent uniqueness evidence plus a complete logical path derived from clues and declared rules alone. Uniqueness-dependent paths are separate and cannot qualify.
+- Finding one solution alone does not prove uniqueness.
+- Configurable limits, Cancel and honest incomplete outcomes.
+- Isolated solver snapshots must not overwrite personal play progress.
+- English UI under D053 and preserved Light/Dark × five themes under D058.
+- Gameplay hints wait until M5 is complete. Variant implementation, construction assistance, community and AI remain outside M2.
+- All C01–C33 and U01–U05 matrix rows have implementation and independent acceptance gates; a kernel is not the completed expanded release.
+- No application code before explicit design approval. Do not change legacy Spring/Maven files or persist solver metadata/preferences.
 
-## Execution setup and file map
+## Execution setup, paths and review gates
 
-After approval, inspect `git status --short --branch`, latest commits and all applicable instructions again. Preserve newer work. Use `superpowers:using-git-worktrees` if isolation is needed for implementation; this documentation branch is not permission to replace the current checkout. Record the actual approved spec revision. Run baseline gates once in `web/` (`npm ci` if dependencies are absent, then `npm run typecheck`, `npm test`, `npm run build`, `npm run test:e2e`). Diagnose an unexpected baseline failure before attributing it to M2.
+After approval, inspect Git status/log and applicable instructions again; record the approved spec commit. Preserve unrelated edits, use an isolated checkout if implementation needs it. The current root has no AGENTS.md. Run baseline gates once from `web/`: `npm ci` only if needed, `npm run typecheck`, `npm test`, `npm run build`, `npm run test:e2e`. Diagnose existing failures before attributing them to M2. Latest recorded application evidence is 64 unit/storage/route tests and 23 Chromium browser tests, not fresh solver evidence.
 
-Concurrent uncommitted `web/` work appeared during design: sidebar shell, layout/style changes, SVG grid strokes, optional `BoardOptions.controlsContainer`, and browser/visual fixture updates. These were read-only inspected and left intact. Task 9 must integrate into that current shell and preserve detached controls rather than restore the old header/layout. Recheck their final state at execution time; this plan does not grade or commit that work.
+All task paths beginning `src/` or `tests/` are relative to `web/`. `docs/` paths are repository-root relative. Do not create future files in this planning session. Existing modifications are restricted to `web/src/app/{controller,application,router}.ts`, `web/src/ui/{home,library,player}.ts`, `web/src/styles.css`, `web/tsconfig.json`, `web/package.json`, and test/benchmark configs named below. Preserve `ui/board.ts` behavior; reuse its input API. Repository/domain/backup production files need no solver change.
 
-The following proposed paths do not exist at the inspected baseline. Existing files named as modifications do exist.
+New production file ownership:
 
-| New production file | Responsibility |
+| Path under `web/src/` | Responsibility / exported contract |
 | --- | --- |
-| `web/src/solver/types.ts` | All spec value, step, evidence and checkpoint contracts; no DOM or worker globals. |
-| `web/src/solver/snapshot.ts` | Strict classic input validation, deep snapshot copy/content identity. |
-| `web/src/solver/topology.ts` | Canonical units, sorted peers and unit memberships. |
-| `web/src/solver/candidates.ts` | Initialization, mask helpers, contradiction detection, atomic checked step application. |
-| `web/src/solver/techniques/singles.ts` | Pure naked/hidden single detectors. |
-| `web/src/solver/techniques/locked.ts` | Pure pointing/claiming detectors. |
-| `web/src/solver/techniques/pairs.ts` | Pure naked/hidden pair detectors. |
-| `web/src/solver/techniques/registry.ts` | Fixed `classic-baseline@1` ordered registry/capability prerequisites. |
-| `web/src/solver/human.ts` | Resumable scan/apply loop; no exact search. |
-| `web/src/solver/exact.ts` | Resumable original-givens DFS enumeration, cap two. |
-| `web/src/solver/evidence.ts` | Witness checks, evidence merging, consistency and derived quality. |
-| `web/src/solver/replay.ts` | Separate premise/effect validation and trace replay. |
-| `web/src/solver/run.ts` | Sequential human then exact orchestration, checkpoint assembly. |
-| `web/src/solver/protocol.ts` | Wire types and active-message validation. |
-| `web/src/workers/solver.worker.ts` | Worker entrypoint, timing/scheduling and message emission. |
-| `web/src/app/solver-controller.ts` | Volatile input, request identity, last accepted evidence, cancellation/watchdog. |
-| `web/src/ui/solver.ts` | Input/source/limit controls and result screen lifecycle. |
-| `web/src/ui/solver-board.ts` | Read-only grid and selected-step cell roles; no editing controls. |
-| `web/src/ui/solver-trace.ts` | Portuguese typed explanations and ordered details. |
+| `solver/problem.ts`, `solver/snapshot.ts` | EngineProblem/value/identity types, canonical rule normalization, normalizeClassic/makeSnapshot. |
+| `solver/rules/types.ts`, `solver/rules/assemble.ts`, `solver/rules/all-different.ts` | RuleModule and capabilities, assemble, classic semantics only. |
+| `solver/state/types.ts`, `solver/state/candidates.ts`, `solver/state/facts.ts`, `solver/state/indexes.ts`, `solver/state/events.ts` | ReadView/StateKey, initialize/commitChecked, proof-root facts, supports, invalidate. |
+| `solver/proof/types.ts`, `solver/proof/primitives.ts`, `solver/proof/checker.ts`, `solver/proof/replay.ts` | ProofBundle/checked types, primitive registry, checkProposal/replay; no discovery imports. |
+| `solver/proof/tables.ts`, `solver/proof/counts.ts`, `solver/proof/assumptions.ts`, `solver/proof/unique.ts` | Separate finite table, incidence, scope and trade checkers. |
+| `solver/techniques/types.ts`, `solver/techniques/registry.ts`, `solver/techniques/manifest.ts` | Discovery/descriptor/ledger contracts, ordered registry, auditable aliases/bounds/status. |
+| `solver/techniques/*.ts` named per batch below | Read-only named pattern discovery and versioned grammar validation, separated functions. |
+| `solver/indexes/implications.ts`, `solver/indexes/groups.ts`, `solver/indexes/als.ts`, `solver/indexes/templates.ts` | Shared resumable indexes with revision/provenance dependencies. |
+| `solver/scheduling/{work,ledger,features,policy,rollout}.ts` | Work budget, fair service ledger, frozen features, two scoring stages, bounded branch simulation. |
+| `solver/exact.ts`, `solver/evidence.ts`, `solver/human.ts`, `solver/run.ts` | Original-problem enumeration, count/quality merge, logical loop, phase orchestration. |
+| `solver/transport/{protocol,codec,sender,receiver}.ts` | Protocol 2 decoding, bounded UTF-8 chunks, credit/acceptance barriers. |
+| `workers/solver.worker.ts`, `app/solver-worker.ts`, `app/solver-controller.ts` | Worker entry, platform adapter, volatile input/run/result lifecycle. |
+| `ui/solver.ts`, `ui/solver-board.ts`, `ui/solver-trace.ts`, `ui/solver-coverage.ts`, `ui/solver-copy.ts` | English screen, read-only board, graph expansion, support ledger, typed text. |
 
-Existing modifications: `web/src/app/router.ts`, `web/src/app/controller.ts` (services type only), `web/src/app/application.ts`, `web/src/ui/home.ts`, `web/src/ui/library.ts`, `web/src/ui/player.ts`, `web/src/styles.css`; optionally `web/tsconfig.json`/`web/package.json` only if a separate worker typecheck configuration is required. Domain editor/library/storage/backup models stay unchanged. Keep `domain/classic.ts` independent for witness checking rather than refactoring its private topology into the solver.
+Types are owned by these modules, not repeated in a giant `types.ts`. Re-export imports only when needed; dependency arrows are problem → rules/proof value types → state/checker → indexes/techniques → scheduler/human/exact/evidence → run/transport → app → UI. Break the state/checker type cycle using `import type`; primitives receive read-only `CheckContext`. No production module imports tests; exact never imports human/techniques/scheduler. No source changes to Java.
 
-Test/support additions: `web/tests/solver/` for fixtures, oracle and shared helper modules; actual Vitest test files under `web/tests/unit/solver/` so the existing `tests/unit/**/*.test.ts` include finds them; browser suites under `web/tests/e2e/`. No new test include is needed. Technique explanations and fixture provenance live in `docs/solver/techniques/` and `web/tests/solver/README.md`. The final release evidence belongs in `docs/m2-solver-verification.md`.
+Test infrastructure lives in `tests/solver/`; actual Vitest cases in `tests/unit/solver/` are discovered by current `vite.config.ts`. Browser tests in `tests/e2e/`. Each technique batch creates its matrix fixture JSON, one theorem/explanation Markdown file, detector and separate named grammar checker functions; it is not accepted just because another technique solves the same puzzle.
 
-## Shared implementation contracts
+Every task follows a red/green cycle: add its explicit failing assertions; run its listed command and observe a meaningful failure; implement the described algorithm; rerun focused tests and typecheck; inspect the diff and commit only that task's listed paths with its suggested message. Paths are exact allowlists, never `git add .`. For test helpers not yet available, first use direct assertions, then adopt the helper when its producer task is complete. Review gates reject missing fixture evidence or mismatched signatures; do not advance by marking a family unsupported without an approved scope change.
 
-All types in spec §§4–8 are exported from `solver/types.ts`, except wire unions exported from `solver/protocol.ts`. Import `Digit`, `Value` and `ClassicDefinition` from the existing domain model. Add these explicit function/result types; the names below are used across tasks:
+## Dependency map
+
+T01 oracle → T02 normalization → T03 primitive roots → T04 shared state → T05 proof graphs/tables. T06 exact depends on T02/T04 and is independent of detectors. T07 kernel/manifest → T08 graph indexes → T09 short patterns → T10 basic/complex fish → T11 chains/coloring → T12 ALS → T13 set/combination → T14 forcing → T15 generalized chains → T16 specialized → T17 templates. T18 conditional families depends on T06/T11/T14. T19 scheduling uses all primary families; T20 orchestration uses T06/T18/T19. T21 transport → T22 worker → T23 controller → T24 UI → T25 integration/correctness → T26 benchmarks → T27 release review. Named families can be reviewed independently when prerequisites exist; this plan does not request parallel agents.
+
+## T01 — Independent fixture and oracle foundation
+
+**Files:** create `tests/solver/oracle.ts`, `grid-check.ts`, `fixtures/counts.json`, `README.md`, `tests/unit/solver/oracle.test.ts`. Reuse `tests/fixtures.ts` constants without modifying them.
+
+**Interfaces:** `oracle(input: OracleInput): OracleResult`; input `{givens: number[], domains?: number[], force?: [number,number], forbid?: [number,number], limit: number, maxNodes: number}`; result `{witnesses: number[][], exhausted: boolean, interrupted: boolean, nodes: number}`. Domains are nine-bit input restrictions decoded independently by integer arithmetic. `checkGrid(givens: number[], values: number[]): boolean` is separate plain-loop validation.
+
+- [ ] Write count fixture assertions including complete, one-hole, duplicate, no-place, two-rectangle and empty. Independent count labels are established by the oracle, not copied from production:
 
 ```ts
-// solver/snapshot.ts
-makeSnapshot(definition: unknown, source: SourceRef,
-  snapshotId: string, inputRevision: number): SolverSnapshot;
-
-// solver/candidates.ts
-type Contradiction =
-  | { kind: "duplicate"; unit: UnitId; digit: Digit; cells: CellIndex[] }
-  | { kind: "empty-domain"; cell: CellIndex }
-  | { kind: "missing-support"; unit: UnitId; digit: Digit };
-initializeCandidates(givens: readonly Value[]): CandidateState;
-findContradiction(state: CandidateState): Contradiction | null;
-applyDeduction(state: CandidateState, proposal: DeductionProposal):
-  { state: CandidateState; step: DeductionStep; contradiction: Contradiction | null };
-
-// solver/human.ts and solver/exact.ts
-type WorkEvent =
-  | { kind: "work" }
-  | { kind: "deduction"; state: CandidateState; step: DeductionStep }
-  | { kind: "human-stop"; status: "solved" | "stalled" | "contradiction";
-      state: CandidateState };
-humanSteps(givens: readonly Value[]): Generator<WorkEvent, void, void>;
-type ExactEvent =
-  | { kind: "work"; nodes: number; backtracks: number; maxDepth: number }
-  | { kind: "witness"; values: Digit[]; decisions: CandidateRef[];
-      nodes: number; backtracks: number; maxDepth: number }
-  | { kind: "exhausted"; nodes: number; backtracks: number; maxDepth: number }
-  | { kind: "cap-reached"; nodes: number; backtracks: number; maxDepth: number };
-exactSteps(givens: readonly Value[]): Generator<ExactEvent, void, void>;
-
-// solver/replay.ts and evidence.ts
-replayTrace(snapshot: SolverSnapshot, trace: readonly TraceEntry[]): CandidateState;
-isWitness(givens: readonly Value[], values: unknown): values is Digit[];
-type Quality = "verified-baseline" | "not-established" | "not-applicable" | "inconsistent";
-deriveQuality(snapshot: SolverSnapshot, humanStatus: HumanStatus,
-  trace: readonly TraceEntry[], count: CountEvidence): Quality;
-
-// solver/run.ts
-interface RunClock { now(): number }
-interface RunScheduler { yieldTask(): Promise<void> }
-runSolver(start: ToWorker, clock: RunClock, scheduler: RunScheduler,
-  emit: (message: FromWorker) => void): Promise<void>;
+const two = oracle({ givens: rectangleHoles, limit: 3, maxNodes: 1000000 });
+expect(two.exhausted).toBe(true);
+expect(two.witnesses).toHaveLength(2);
+expect(two.witnesses.every(w => checkGrid(rectangleHoles, w))).toBe(true);
+const stopped = oracle({ givens: Array(81).fill(0), limit: 2, maxNodes: 1 });
+expect(stopped.interrupted).toBe(true);
+expect(stopped.exhausted).toBe(false);
 ```
 
-Generators expose bounded work units, not entire synchronous solve calls. A technique's public `find(state)` remains pure and returns the first match; its internal resumable pattern enumerator is consumed by `humanSteps` to honor slice/deadline checks between bounded scans. Exhaustion/cap are explicit events, so closing a generator on interruption cannot accidentally count as exhaustion. `applyDeduction` constructs a local deduction index `beforeRevision + 1`; human deductions precede search entries, and the orchestrator assigns subsequent search indices.
+- [ ] Run `npm test -- tests/unit/solver/oracle.test.ts`; require observed failure for missing oracle/fixtures.
+- [ ] Implement set-based Algorithm X with 729 candidate rows and 324 exact-cover columns: cell, row-digit, column-digit, box-digit. Choose uncovered column with fewest rows; recurse by set copies, deleting intersecting rows. Explicitly distinguish no remaining column, dead column, cap and interruption. Use no production topology/checker imports. Construct fixture strings from existing SOLUTION and independent loops; document source/license/hash and command.
+- [ ] Rerun command and `npm run typecheck`; verify independent complete grids with row/column/box permutations and bad-given mutations.
+- [ ] Commit listed files: `test: establish independent solver oracle and count fixtures`.
 
-## Task 1: Snapshot, topology and checked candidate state
+## T02 — Normalized constraints, snapshots and capabilities
 
-**Files:** Create `src/solver/types.ts`, `snapshot.ts`, `topology.ts`, `candidates.ts`; create `tests/unit/solver/snapshot.test.ts`, `candidates.test.ts`. Paths in tasks are relative to `web/` unless prefixed `docs/`.
+**Files:** create `src/solver/problem.ts`, `snapshot.ts`, `rules/types.ts`, `rules/assemble.ts`, `rules/all-different.ts`; tests `tests/unit/solver/problem.test.ts`, `assembly.test.ts`; create `tests/solver/mock-rules.ts`.
 
-**Consumes:** existing `Value`, `Digit`, `ClassicDefinition`, `parsePuzzleString`, `isComplete`; spec §§4–6. **Produces:** `makeSnapshot`, `initializeCandidates`, `findContradiction`, `applyDeduction`, `UNITS`, `PEERS`, `CELL_UNITS`. Define the complete spec type unions now, even though later tasks implement their producers.
+**Interfaces:** `normalizeClassic`, `makeSnapshot`, `assemble`, EngineProblem/RunKey and RuleModule exactly as contracts §§1–2. `canonicalJson(value: Json): string` rejects nonfinite/unknown values before serialization. Test-only `makeMockProblem` and `mockRuleRegistry` cover sum/order and noncovering all-different scopes.
 
-- [ ] Write failing snapshot/candidate tests with explicit arrays and immutability checks:
+- [ ] Write assertions for canonical order, deep copies and unknown rules:
 
 ```ts
-import { expect, test } from "vitest";
-import { parsePuzzleString } from "../../../src/domain/classic";
-import { SOLUTION } from "../../fixtures";
-import { initializeCandidates } from "../../../src/solver/candidates";
-import { makeSnapshot } from "../../../src/solver/snapshot";
-test("one-hole initialization retains a candidate, not an unexplained placement", () => {
-  const givens = parsePuzzleString("0" + SOLUTION.slice(1));
-  const state = initializeCandidates(givens);
-  expect(state.values[0]).toBe(0);
-  expect(state.masks[0]).toBe(16);
-  expect(state.masks.slice(1)).toEqual(Array(80).fill(0));
-  expect(givens[0]).toBe(0);
+expect(assemble(withUnknownRule(problem), registry).ok).toBe(false);
+expect(normalizeClassic(definition).constraints).toHaveLength(27);
+expect(canonicalProblem(reverseRuleOrder(problem)).key).toBe(problem.key);
+expect(cageAssembly.covers).toHaveLength(0); // three-cell all-different is not a house
+expect(snapshot.problem.givens[0]).toBe(5); // mutate original input after snapshot
+```
+
+- [ ] Run `npm test -- tests/unit/solver/problem.test.ts tests/unit/solver/assembly.test.ts` and observe failure.
+- [ ] Implement strict normalize → canonical semantic key → roots → assembly. In this task capabilities can reference rule-root handles; T03 verifies them before a ReadView is exposed. Preserve ordered rule arrays, derive covers only with existence premises, and build sorted incidence/peer sets from scopes. Test helpers such as `withUnknownRule` are local builders declared in each test file, never production API.
+- [ ] Rerun tests/typecheck; verify all 81 classic peer sets (20 peers each) independently and registration permutations/malformed parameter rejection.
+- [ ] Commit listed files: `feat: normalize solver problems and assemble rule capabilities`.
+
+## T03 — Proof roots and primitive checker boundary
+
+**Files:** create `src/solver/proof/types.ts`, `primitives.ts`, `checker.ts`, `src/solver/state/types.ts`, `facts.ts`; create `tests/unit/solver/proof-roots.test.ts`.
+
+**Interfaces:** Fact/Proposition/ProofNode/ProofBundle/PrimitiveInput/CheckContext/CheckedInference, plus `checkProposal` per contracts §5. Use a nonexported unique-symbol brand for CheckedStep, constructed only by checker; wire decoders cannot construct it. `createRoots(assembly: Assembly): ReadonlyMap<FactId, Fact>` establishes domains, clues and rule premises.
+
+- [ ] Assert falsified clue, unknown primitive and arbitrary domain root rejection:
+
+```ts
+expect(checkRoot({ kind: "given", cell: 0, symbol: 4 }, problem).ok).toBe(false);
+expect(checkRoot({ kind: "domain", cell: 2, mask: 1 }, problem).ok).toBe(false);
+expect(checkRoot({ kind: "given", cell: 0, symbol: 5 }, problem).ok).toBe(true);
+```
+
+- [ ] Run `npm test -- tests/unit/solver/proof-roots.test.ts`; require rejection assertions fail before implementation.
+- [ ] Implement rule dispatch on explicit version IDs; domain-axiom uses full original symbol set, given uses exact clues, all-different/cover derives from assembled semantics. Implement bounded check events and root-reference validation; `checkRoot` is a test adapter that drains this primitive interface, not a second trusted checker. No detector imports.
+- [ ] Rerun focused tests/typecheck; try cyclic/forward/missing dependencies and altered capability scopes.
+- [ ] Commit listed files: `feat: establish checked proof roots and primitive registry`.
+
+## T04 — Shared candidates, supports and invalidation
+
+**Files:** create `src/solver/state/candidates.ts`, `indexes.ts`, `events.ts`; modify `facts.ts`; tests `tests/unit/solver/candidates.test.ts`, `events.test.ts`.
+
+**Interfaces:** `initialize`, `commitChecked`, `invalidate`, CandidateState/ChangeSet/ReadView per contracts §3. `rebuildIndexes(view: ReadView): ReadView` is the cold correctness baseline. Expose no mutable arrays; filled domains are singleton masks.
+
+- [ ] Assert sound initialization, atomic placement and cold/incremental equality:
+
+```ts
+const before = initialize(assembly, "primary");
+const next = commitChecked(before, checkedSingle);
+expect(before.state.values[cell]).toBe(0);
+expect(next.view.state.domains[cell]).toBe(1 << (digit - 1));
+expect(next.view.state.key.revision).toBe(before.state.key.revision + 1);
+expect(next.view.state).toEqual(rebuildIndexes(next.view).state);
+expect(next.changes.cells).toContain(cell);
+```
+
+- [ ] Run `npm test -- tests/unit/solver/candidates.test.ts tests/unit/solver/events.test.ts`.
+- [ ] Initialize clue/rule roots and full unresolved domains only; preamble peer exclusions use subsequent checked rule-propagation proposals. Commit via cloned local buffers, reconstruct exact effects/peer removals, reject no-op/stale/wrong-branch/given overwrite; publish only after complete validation. Build cell→constraint/cover/relation incidence; conservatively invalidate graph and transitive dependent caches. Check duplicates/empty domain/missing cover without turning human diagnostic into exact count evidence.
+- [ ] Rerun tests/typecheck; compare cold rebuild after seeded monotone edits and ensure unrelated scopes retain only dependency-valid exhaustion.
+- [ ] Commit listed files: `feat: add shared candidate state and sound event invalidation`.
+
+## T05 — Proof DAGs, assumptions, finite tables and replay
+
+**Files:** create `src/solver/proof/assumptions.ts`, `tables.ts`, `counts.ts`, `replay.ts`; extend `checker.ts`, `primitives.ts`; tests `tests/unit/solver/proof-graph.test.ts`, `composition.test.ts`; create `tests/solver/acceptance.ts`.
+
+**Interfaces:** `replay`, `checkProposal` plus resolution/conjunction/cases/discharge/Hall/cover-count/table primitive decoders from contracts §5. Test helper `assertSound(view, proposal)` drains the checker, checks pre-state satisfiability with oracle, force/forbids effects and requires exhaustive no-witness counterfactuals. Helper implementation must throw on oracle interruption. Fixture lookup/discovery helpers are added in T07 when the registry exists; T05 passes hand-authored proposal objects directly, avoiding a dependency on future detectors.
+
+- [ ] Add mutation and mixed-rule tests:
+
+```ts
+expect(checkToEnd(removeOneCase(proof), context).kind).toBe("rejected");
+expect(checkToEnd(importSiblingAssumption(proof), context).kind).toBe("rejected");
+expect(checkToEnd(truncateTable(proof), context).kind).toBe("rejected");
+expect(mixedStep.effects).toContainEqual({ kind: "place", cell: 0, symbol: 4 });
+expect(mixedStep.rules).toEqual(expect.arrayContaining(["sum:0", "order:0", "row:0"]));
+```
+
+- [ ] Run `npm test -- tests/unit/solver/proof-graph.test.ts tests/unit/solver/composition.test.ts`.
+- [ ] Implement topological node verification, scope propagation and allowed discharge; complete table enumeration trees with rejection reasons, sound joins/projections, coefficient-based incidence counts. Rebuild supports from proved domains during checking. `assertSound` uses `oracle({...preState, force:[cell,symbol],limit:1})` for removals and `forbid` for placements; require `exhausted && witnesses.length===0`. Exhaustively enumerate mock sum/order domains and compare both rule orders; keep mock production registration impossible.
+- [ ] Rerun tests/typecheck; reject omitted provenance, wrong strong/weak premise, cycles, unsupported primitives, false tuple coverage and hidden uniqueness. Replay one-hole from original clues without detector enumeration.
+- [ ] Commit listed files: `feat: check proof graphs and cross-rule deductions independently`.
+
+## T06 — Independent production exact counting and quality
+
+**Files:** create `src/solver/exact.ts`, `evidence.ts`; tests `tests/unit/solver/exact.test.ts`, `evidence.test.ts`.
+
+**Interfaces:** `exactSteps`, `isWitness`, `deriveQuality`, CountEvidence/ExactEvent per contracts §7. `mergeEvidence(previous, incoming, context)` validates witnesses, monotonicity and consistency; context binds snapshot, assembly, accepted primary path and run identity.
+
+- [ ] Write original-clue independence and interrupted-count assertions:
+
+```ts
+expect(countFrom(exactSteps(twoProblem, assembly)).kind).toBe("multiple");
+expect(stopAfterFirstWitness(exactSteps(uniqueProblem, assembly))).toMatchObject({
+  kind: "unknown", lowerBound: 1,
 });
-test("snapshot deep-copies clues and rejects extra semantics", () => {
-  const definition = { kind: "classic", version: 1, width: 9, height: 9,
-    givens: parsePuzzleString(SOLUTION) };
-  const snapshot = makeSnapshot(definition, { kind: "manual" }, "snapshot-1", 0);
-  definition.givens[0] = 0;
-  expect(snapshot.definition.givens[0]).toBe(5);
-  expect(() => makeSnapshot({ ...definition, rules: ["diagonal"] },
-    { kind: "manual" }, "snapshot-2", 1)).toThrow();
-});
+expect(deriveQuality(snapshot, "solved", conditionalSteps, unique, false))
+  .toBe("not-established");
 ```
 
-- [ ] Run `npm test -- tests/unit/solver/snapshot.test.ts tests/unit/solver/candidates.test.ts`; confirm missing exports/modules fail before implementation.
-- [ ] Implement strict 81-value validation (reject holes, fractions, strings, NaN, out-of-range, extra definition keys/unsupported kind/version/dimensions), canonical content identity and deep copies. IDs/revisions must be valid nonempty/safe integers; reject nonfinite counters. Reject invalid source shape, never accept a session source.
-- [ ] Implement canonical topology using row/column/box formulas; assert in tests 27×9, 3 memberships, 20 sorted peers and no self-peer. Keep filled masks zero, empty masks peer-derived. Use this transition outline:
+- [ ] Run `npm test -- tests/unit/solver/exact.test.ts tests/unit/solver/evidence.test.ts`.
+- [ ] Implement explicit MRV DFS stack, ascending symbols, recomputed classic legal masks and singles, complete-rule leaf checking, witness deduplication and explicit root exhaustion. Emit bounded work between node/propagation operations. No human domains input. Encode duplicate zero proof and root-exhaustion process evidence with run identity/statistics. Preserve valid witnesses when rejecting inconsistent exhaustion/trace evidence. Full valid input is not-applicable quality.
+- [ ] Rerun tests/typecheck; differential-test all seed count fixtures plus seeded clue removals and mock complete-rule assignments. Verify exact cap two is “at least two,” closing a generator is not exhaustion, and a different second witness invalidates an incompatible human path.
+- [ ] Commit listed files: `feat: count original-problem solutions with independent evidence`.
+
+## T07 — Coverage manifest and foundation techniques C01–C05
+
+**Files:** create `src/solver/techniques/types.ts`, `registry.ts`, `manifest.ts`, `singles.ts`, `intersections.ts`, `subsets.ts`; create `tests/solver/fixtures/C01.json` through `C05.json`, `tests/unit/solver/foundation.test.ts`, `coverage.test.ts`, `docs/solver/techniques/foundation.md`; update fixture provenance README.
+
+**Interfaces:** TechniqueDescriptor/Discovery/Ledger, `getTechniques(profile: VersionId): readonly TechniqueDescriptor[]`, `coverageEntries`. Register all 38 matrix rows as specified, promote only passing implemented rows. Foundation `discover` yields work/proposal/exhausted and checks exact matrix grammar. Add `fixtureCase(id)`, `discoverFixture(id)` and `checkFixtureMutation(id, mutation)` to `tests/solver/acceptance.ts` now; this file is part of the task allowlist. Fixture discovery returns `{view, proposals, proposal, status}`: `proposal` is the sole expected productive proposal or throws if a productive fixture has none; negative fixtures inspect `proposals`/`status` without reading that accessor. Status is `productive | reject | out-of-profile | interrupted`. Mutation helpers clone the independently authored certificate, apply the named change, then drain checkProposal; they do not rerun discovery.
+
+- [ ] Write named discovery and coverage tests:
 
 ```ts
-// Checked step application, after strict technique-specific premise validation:
-const values = [...state.values], masks = [...state.masks];
-// Apply all direct eliminations to masks.
-// For the single placement: set value, clear its mask, remove digit from empty peers.
-// Record every actual peer removal in sorted peerEliminations.
-// Require at least one removed bit, then increment revision exactly once.
-// Compute contradiction on the resulting state; never auto-place a new singleton.
-```
-
-- [ ] Cover stale revision, absent-bit/no-op eliminations, filled/given edits, repeated effects, malformed supports, zero domain and missing-unit-digit support. Freeze test inputs recursively to catch detector/application mutation. Run the targeted files and `npm run typecheck`; expected all pass.
-- [ ] Commit only the listed kernel/test files: `feat: define isolated solver snapshots and candidate state`.
-
-## Task 2: Independent oracle and reproducible fixture corpus
-
-**Files:** Create `tests/solver/oracle.ts`, `grid-check.ts`, `fixtures.ts`, `candidate-fixtures.ts`, `test-helpers.ts`, `README.md`, `corpus.json`; create `tests/unit/solver/oracle.test.ts`. Add project-owned fixture authoring script `tests/solver/mine-fixtures.ts` when needed; keep it outside production imports.
-
-**Consumes:** spec §11 fixture recipes; existing `tests/fixtures.ts`. **Produces:** independent `oracleCount`, `checkGrid`; named `ONE_HOLE`, `DUPLICATE`, `NO_PLACE`, `TWO_RECTANGLE`, `EMPTY`, independently verified `HARD_UNIQUE` and `DEEP_UNSAT`; candidate fixtures and a provenance manifest. Shared helpers export `snapshotOf(givens)`, `startOf(givens, limitMs = 10000)` and `candidateState(masks)` using Task 1 types. `startOf` constructs a `start` envelope with protocolVersion 1, matching RunKey, remainingMs equal to limitMs and manual provenance; tests may use stable IDs.
-
-- [ ] Write the independent oracle's contract and failing tests before its implementation:
-
-```ts
-// Test-only types: no imports from src/solver or src/domain/classic.
-interface OracleOptions {
-  limit: 1 | 2;
-  allowed?: readonly (readonly number[])[]; // explicit allowed digits per cell
-  forbid?: { cell: number; digit: number };
-  force?: { cell: number; digit: number };
-  maxNodes: number;
+for (const id of ["C01-one-hole", "C02-row", "C03-claim-column", "C04-naked-4", "C05-triple"]) {
+  const { view, proposal } = discoverFixture(id);
+  assertSound(view, proposal);
+  expect(proposal.effects).toEqual(fixtureCase(id).expectedEffects);
 }
-interface OracleResult {
-  witnesses: number[][]; exhaustive: boolean; interrupted: boolean; nodes: number;
+expect(coverageEntries.map(e => e.id)).toHaveLength(38);
+expect(validateCoverage(fakeVerifiedWithoutOracle)).toContain("missing-independent-evidence");
+```
+
+- [ ] Run `npm test -- tests/unit/solver/foundation.test.ts tests/unit/solver/coverage.test.ts`.
+- [ ] First register mandatory `rule-propagation@1` jobs from RuleModule.propagate (semantic maintenance outside the 38 named rows), with checked preamble effects and the same acceptance barrier. Then implement canonical cell/cover/symbol/subset iteration, bounded yields, Hall/support proofs, intersections with explicit targets and complementary alias detection. Locked subsets combine separately valid roots. No automatic single placement after an elimination. `validateCoverage` is implemented in manifest and rejects unknown aliases/missing evidence; copy all exact bounds and tiers from matrix, not a six-entry union.
+- [ ] Run all per-row named/boundary/negative fixtures from matrix and force/forbid assertions, typecheck and replay an independently labeled original-clue prefix per alias. Reject no-effect/three-cells-two-values cases as useful deductions.
+- [ ] Commit listed files: `feat: add broad coverage ledger and elementary subset kernel`.
+
+## T08 — Shared implication, group and ALS indexes
+
+**Files:** create `src/solver/indexes/implications.ts`, `groups.ts`, `als.ts`; tests `tests/unit/solver/implications.test.ts`, `als-index.test.ts`.
+
+**Interfaces:** `buildImplications(view): Generator<IndexEvent<ImplicationIndex>>`, `buildGroups(view): Generator<IndexEvent<GroupIndex>>`, `buildAls(view): Generator<IndexEvent<AlsIndex>>`. Define `IndexEvent<T> = {kind:"work",units:number}|{kind:"ready",value:T}`. Index entries contain StateKey, premise FactIds, explicit literals/member lists and dependency watches; no bare unproved edge.
+
+- [ ] Write strong-versus-weak and stale-index tests:
+
+```ts
+expect(graph.strong(a, b)).toBe(false); // same-symbol peers with a third house support
+expect(graph.weak(a, b)).toBe(true);
+expect(als.rcc(setA, setB, digit)).toBe(false); // one cross-pair cannot see each other
+expect(indexFromSiblingBranch.accepts(view.state.key)).toBe(false);
+```
+
+- [ ] Run `npm test -- tests/unit/solver/implications.test.ts tests/unit/solver/als-index.test.ts`.
+- [ ] Enumerate exact cell/house covers, weak conflicts, <=3-member groups and <=5-cell n+1 ALS sets in canonical order. Store all occurrence/provenance lists; build RCC from complete cross-conflicts and reject invalid overlaps. Charge every extension and invalidate globally before incremental optimization. Index adapters such as `strong/weak/rcc/accepts` query immutable entries, never infer proof by name.
+- [ ] Rerun tests/typecheck; compare all entries to cold reconstruction after seeded changes and a mock non-house relation; enforce workspace-entry cap with explicit interruption.
+- [ ] Commit listed files: `feat: index proved implications groups and almost locked sets`.
+
+## T09 — Short patterns and wings C10–C13
+
+**Files:** create `src/solver/techniques/short-patterns.ts`, `wings.ts`, `bent-subsets.ts`, `remote-pairs.ts`; fixtures `C10.json`–`C13.json`; tests `tests/unit/solver/short-patterns.test.ts`, `wings.test.ts`; `docs/solver/techniques/wings-and-short-patterns.md`; update registry/manifest/provenance.
+
+**Interfaces:** each module exports readonly `TechniqueDescriptor[]`; named validators consume `proposal.pattern` and emit primitive proof requirements. C12 consumes local table checker; other forms consume graph/cover indexes.
+
+- [ ] Test named geometry and counterexamples:
+
+```ts
+for (const id of ["C10-empty-rectangle", "C11-xy", "C11-xyz", "C11-w", "C12-n6", "C13-chute"]) {
+  const f = discoverFixture(id); assertSound(f.view, f.proposal);
 }
-// oracleCount(givens: readonly number[], options: OracleOptions): OracleResult
-// checkGrid(givens: readonly number[], values: readonly number[]): boolean
+expect(discoverFixture("C11-xyz-missing-visibility").proposals).toEqual([]);
+expect(discoverFixture("C12-n7").status).toBe("out-of-profile");
 ```
 
-```ts
-import { expect, test } from "vitest";
-import { SOLUTION } from "../../fixtures";
-import { oracleCount } from "../../solver/oracle";
-test("independent exact cover enumerates the two rectangle completions", () => {
-  const givens = [...SOLUTION].map(Number);
-  for (const i of [3, 4, 30, 31]) givens[i] = 0;
-  const result = oracleCount(givens, { limit: 2, maxNodes: 1000000 });
-  expect(result.interrupted).toBe(false);
-  expect(result.witnesses).toHaveLength(2);
-  expect(result.witnesses[0]).not.toEqual(result.witnesses[1]);
-});
-```
+- [ ] Run `npm test -- tests/unit/solver/short-patterns.test.ts tests/unit/solver/wings.test.ts`.
+- [ ] Implement four-link single-digit named shapes, ER exhaustive arm groups, bivalue/trivalue wing joins, identical-pair bridge, remote-pair parity and bounded bent-set table certificates. Local assignment enumeration is restricted to declared cells/conflicts, with all surviving assignments checked for z coverage. Yield between tuple/path extensions.
+- [ ] Run every alias/orientation/negative and 4/5/6-cell fixture in matrix, force/forbid, replay original-clue examples and typecheck. AIC equivalence alone does not pass named coverage.
+- [ ] Commit listed files: `feat: explain short patterns wings and bent subsets`.
 
-- [ ] Run `npm test -- tests/unit/solver/oracle.test.ts`; verify failure. Implement independent unit/grid loops and set-based exact cover: candidate `(r,c,d)` covers columns `9*r+c`, `81+9*r+d-1`, `162+9*c+d-1`, `243+9*(3*floor(r/3)+floor(c/3))+d-1`. Filter candidates by givens/allowed/force/forbid; choose uncovered column with fewest rows, recurse through its rows, remove intersecting rows/covered columns, restore on return. Only empty uncovered columns after all options are explored support exhaustion; maxNodes returns interrupted.
-- [ ] Check oracle itself with full, one-hole, duplicate, no-place, two-rectangle and empty seeds. Implement test helpers with exact default IDs/keys and deep copies; add fixture variants for every technique direction/unit with explicit expected premises and effects.
-- [ ] Author candidate fixtures: naked pair at cells 0/1 with masks 3/3 and all others 511; hidden pair restrict digits 1/2 in row 0 to cells 0/1; pointing restrict digit 5 in box 0 to cells 0/1; claiming restrict digit 5 in row 0 to cells 0/1. Add column/box transforms and negative patterns; independently assert each positive pre-state is satisfiable. These local fixtures can test a detector directly even if the complete ordered engine would use an earlier technique.
-- [ ] Prepare real-puzzle corpus using project-owned deterministic clue removal from `SOLUTION` with fixed seed `0x4d320001`, plus published hard cases only after checking reuse terms and retaining attribution. Independently label every seed. Create a deeper unsatisfiable case by adding a locally legal wrong digit to a verified unique puzzle whose forced alternative the oracle rejects; require that basic initialization detects no duplicate/zero-domain/missing-support. Record a hard unique input and its oracle witness. Do not call a case “deep” or “hard” without recording the property observed.
-- [ ] Reserve corpus requirements for real original-givens traces covering all six techniques, to be finalized as detectors land in Tasks 3–5. Generate/review actual fixture data rather than placeholder puzzle strings. If project-owned generation does not produce coverage promptly, inspect the corresponding HoDoKu author examples and reuse only permitted data with provenance. Completeness of this corpus is a dependency of Task 5 acceptance, not a reason to ship missing coverage.
-- [ ] Run oracle tests; check its source imports independently (no production solver/checker imports), inspect manifest identities/expected counts and commit: `test: add independent Sudoku oracle and solver fixtures`.
+## T10 — Basic and generalized fish C06–C09
 
-## Task 3: Singles and the human scan loop
+**Files:** create `src/solver/techniques/fish.ts`, `fish-certificate.ts`; fixtures `C06.json`–`C09.json`; tests `tests/unit/solver/fish.test.ts`, `fish-complex.test.ts`; `docs/solver/techniques/fish.md`; update registry/manifest/provenance.
 
-**Files:** Create `src/solver/techniques/singles.ts`, `registry.ts`, `human.ts`; extend `candidates.ts`; create `tests/unit/solver/singles.test.ts`, `human.test.ts`; create `docs/solver/techniques/naked-single.md`, `hidden-single.md` from repository root.
+**Interfaces:** `fishTechniques: readonly TechniqueDescriptor[]`; `checkFishPattern(proposal, context): CheckedInference[]` calls counts/resolution checkers, not `discover`. C24 later reuses the same base/cover certificate with proved fin-false premises.
 
-**Consumes:** Task 1 state/application contract and Task 2 fixtures/oracle. **Produces:** `findNakedSingle(state)`, `findHiddenSingle(state)`, `humanSteps(givens)`, ordered registry exported as `BASELINE_TECHNIQUES`. This task registers singles only; final baseline ID is exposed to the UI only after Task 5 adds all six.
-
-- [ ] Write a one-hole ordered trace test and hidden-single fixture test; the hidden fixture must have more than one candidate in its target, so a naked-single implementation cannot pass accidentally:
+- [ ] Write size/overlap counterfactuals:
 
 ```ts
-import { expect, test } from "vitest";
-import { ONE_HOLE } from "../../solver/fixtures";
-import { humanSteps } from "../../../src/solver/human";
-test("one hole produces one explained placement and a solved stop", () => {
-  const events = [...humanSteps(ONE_HOLE)];
-  const steps = events.filter(e => e.kind === "deduction");
-  expect(steps).toHaveLength(1);
-  expect(steps[0]).toMatchObject({ step: {
-    technique: "naked-single", beforeRevision: 0, afterRevision: 1,
-    placements: [{ cell: 0, digit: 5 }], eliminations: [] } });
-  expect(events.at(-1)).toMatchObject({ kind: "human-stop", status: "solved" });
-});
-```
-
-- [ ] Run `npm test -- tests/unit/solver/singles.test.ts tests/unit/solver/human.test.ts`; confirm red. Implement cell-major naked singles and unit/digit-major hidden singles, pure proposals with exhaustive premises. Expose bounded scan yields between candidate pattern checks.
-- [ ] Implement orchestration using this explicit priority loop (with resumable yields during each scan):
-
-```ts
-// Initialize; reject/record contradiction before scanning.
-// Scan techniques in registry order; commit first productive proposal.
-// Yield its deduction event; restart registry index at zero.
-// If full board, validate then emit solved; full pass without step emits stalled.
-// Closing/interruption does not emit stalled or solved.
-```
-
-- [ ] Test no implicit cascading placements, restart after elimination-created singleton, already complete input, empty-grid stall, duplicate/zero-domain contradiction, cell/unit/digit tie breaks, and input freezing. Add oracle force/forbid soundness assertions for singles, with a satisfiable pre-state first. Run both files and Task 1 tests; expected pass.
-- [ ] Document each technique's prerequisites, statement, ordering and linked fixture IDs. Independently label the existing easy puzzle and record a full singles replay. Commit: `feat: add explained singles and deterministic human solving`.
-
-## Task 4: Locked candidates in both directions
-
-**Files:** Create `src/solver/techniques/locked.ts`, `tests/unit/solver/locked.test.ts`; modify `registry.ts`, `candidates.ts`, `tests/solver/corpus.json`; create `docs/solver/techniques/locked-pointing.md`, `locked-claiming.md`.
-
-**Consumes:** previous state, registry and oracle. **Produces:** `findLockedPointing(state)`, `findLockedClaiming(state)`, priorities 3/4 and their typed premises.
-
-- [ ] Write row/column pointing and row/column claiming tests with exact target lists. Example asserting real removal rather than only technique naming:
-
-```ts
-import { expect, test } from "vitest";
-import { candidateState } from "../../solver/test-helpers";
-import { findLockedPointing } from "../../../src/solver/techniques/locked";
-test("pointing removes 5 only from the source row outside its box", () => {
-  const masks = Array(81).fill(511);
-  for (const i of [2, 9, 10, 11, 18, 19, 20]) masks[i] &= ~16;
-  const step = findLockedPointing(candidateState(masks));
-  expect(step?.eliminations).toEqual([3, 4, 5, 6, 7, 8]
-    .map(cell => ({ cell, digit: 5 })));
-});
-```
-
-- [ ] Run `npm test -- tests/unit/solver/locked.test.ts`; confirm red. Implement exact support enumeration: ignore placed digits; require 2/3 supports; confinement is checked against *all* source supports; target cells are the target unit minus the source intersection. Include source support premise and both units. Return only productive patterns in canonical order.
-- [ ] Add negatives: digit already placed, singleton support, supports span two lines/boxes, missing support, no target bit, and an extra hidden support invalidating the move. Apply all eliminations as one atomic step; check created single becomes a separate next step with priority reset.
-- [ ] Verify local fixture satisfiability and force each eliminated candidate with the independent oracle, expecting exhaustive zero. Finalize one original-givens trace for pointing and one for claiming with reviewed snapshots/prefixes; add row/column transformations. Run locked/human tests and update technique Markdown. Commit: `feat: explain pointing and claiming eliminations`.
-
-## Task 5: Pairs, complete baseline and independent replay
-
-**Files:** Create `src/solver/techniques/pairs.ts`, `src/solver/replay.ts`, `tests/unit/solver/pairs.test.ts`, `replay.test.ts`, `technique-soundness.test.ts`; modify `registry.ts`, `candidates.ts`, `tests/solver/corpus.json`; create `docs/solver/techniques/naked-pair.md`, `hidden-pair.md`.
-
-**Consumes:** candidate application, exact stated premises, full fixture corpus. **Produces:** `findNakedPair(state)`, `findHiddenPair(state)`, all six `classic-baseline@1` techniques and `replayTrace(snapshot, trace)`.
-
-- [ ] Add tests of both pair types in rows, columns and boxes; test no-op and three-identical-mask degeneracy, hidden pair with an extra support elsewhere, digits already placed, and overlap in two units. Naked pair example:
-
-```ts
-import { expect, test } from "vitest";
-import { candidateState } from "../../solver/test-helpers";
-import { findNakedPair } from "../../../src/solver/techniques/pairs";
-test("naked pair emits every removal in the first matching unit", () => {
-  const masks = Array(81).fill(511); masks[0] = masks[1] = 3;
-  const step = findNakedPair(candidateState(masks));
-  expect(step?.eliminations).toEqual([2, 3, 4, 5, 6, 7, 8]
-    .flatMap(cell => [{ cell, digit: 1 }, { cell, digit: 2 }]));
-});
-```
-
-- [ ] Run `npm test -- tests/unit/solver/pairs.test.ts tests/unit/solver/replay.test.ts`; confirm red. Implement pair scans in the exact spec order; only two-cell/two-digit patterns and productive eliminations. Finalize fixed registry IDs, versions and prerequisites.
-- [ ] Implement replay as a separate interpreter: initialize original givens, check revision and every premise against pre-state, recompute the technique's allowed effects independently of detector iteration, compare exact direct/peer effects, commit, then validate any search witness/difference list. Do not call `findNakedPair`/other detector functions from the verifier. Share basic mask/topology operations, not pattern-selection code.
-- [ ] Add mutation regressions: altered mask, omitted support, extra target, changed version, missing peer elimination, two revisions skipped, hidden auto-placement, out-of-order trace index, and invalid search witness. Assert each is rejected, and full authentic traces reproduce all values/candidates.
-- [ ] For each positive candidate fixture, independently require satisfiable pre-state; force every removed candidate and forbid every placed value, requiring exhaustive zero under candidate restrictions. All six techniques must also appear in at least one final original-givens trace in the manifest. Use independent candidate restrictions only for local soundness; real trace replay begins from givens alone.
-- [ ] Run `npm test -- tests/unit/solver` and `npm run typecheck`, inspect corpus coverage and the six technique documents, then commit: `feat: add pairs and replay-verified baseline explanations`.
-
-## Task 6: Exact original-clue enumeration and bounded counting
-
-**Files:** Create `src/solver/exact.ts`, `tests/unit/solver/exact.test.ts`, `differential.test.ts`; extend `tests/solver/fixtures.ts` with oracle-labeled hard/deep-unsatisfiable inputs finalized in Task 2.
-
-**Consumes:** givens/topology only; independent oracle for tests. **Produces:** `exactSteps(givens)` with explicit witness, exhausted and cap events; never accepts human candidate masks.
-
-- [ ] Write tests requiring explicit exhaustion or two distinct witnesses, including the interrupted generator case:
-
-```ts
-import { expect, test } from "vitest";
-import { exactSteps } from "../../../src/solver/exact";
-import { ONE_HOLE, TWO_RECTANGLE } from "../../solver/fixtures";
-test("unique input exhausts; ambiguous input stops at two witnesses", () => {
-  const one = [...exactSteps(ONE_HOLE)];
-  expect(one.filter(e => e.kind === "witness")).toHaveLength(1);
-  expect(one.at(-1)?.kind).toBe("exhausted");
-  const two = [...exactSteps(TWO_RECTANGLE)];
-  expect(two.filter(e => e.kind === "witness")).toHaveLength(2);
-  expect(two.at(-1)?.kind).toBe("cap-reached");
-});
-test("interrupting after the first solution does not signal exhaustion", () => {
-  const engine = exactSteps(TWO_RECTANGLE);
-  let next = engine.next();
-  while (!next.done && next.value.kind !== "witness") next = engine.next();
-  expect(next.done).toBe(false);
-  expect(engine.return().done).toBe(true);
-  // Only the explicit exhausted event can establish a unique count.
-});
-```
-
-- [ ] Run `npm test -- tests/unit/solver/exact.test.ts`; confirm red. Implement explicit stack frames containing branch values, propagation/scanning cursor, MRV cell, remaining digits and successful-path decisions. Each attempted guessed child increments nodes; initial root counts as one node; backtracks count popped failed/exhausted child frames; maxDepth counts guesses. A witness does not empty the frontier.
-- [ ] Recompute legal masks inside each exact branch, propagate singles to fixed point, detect local contradictions, select MRV with cell tie break, branch digits ascending. Yield work at bounded propagation/scan/node intervals. Validate completed boards against original givens before emitting. Keep only two distinct serialized witnesses; full-grid input is handled as one witness then explicit root exhaustion.
-- [ ] Compare oracle labels/witness validity for all fixed inputs. Run at least 100 seeded clue-removal/transformation cases, including locally legal wrong clues; compare capped counts, and all witnesses for small exhaustible cases. Never use oracle interruption as a label. A zero result must have root exhaustion; stopping before any leaf must yield no zero claim.
-- [ ] Verify deterministic witness/decision ordering independent of scheduling; tests compare events excluding timing. Run exact/differential tests plus `npm run typecheck`; commit: `feat: enumerate classic solutions with explicit count evidence`.
-
-## Task 7: Evidence, quality and human-first orchestration
-
-**Files:** Create `src/solver/evidence.ts`, `run.ts`, `tests/unit/solver/evidence.test.ts`, `run.test.ts`; extend `types.ts` as needed to exactly match approved spec, not to broaden scope.
-
-**Consumes:** human/exact generators, replay and snapshot. **Produces:** `isWitness`, `deriveQuality`, `runSolver`; full checkpoints whose count and path statuses remain separate. Add injected fake clock/scheduler helpers to `tests/solver/test-helpers.ts`.
-
-- [ ] Write a table test for every evidence row and interrupted phase from spec §7. Include this essential no-false-Perfect regression:
-
-```ts
-import { expect, test } from "vitest";
-import { deriveQuality, isWitness } from "../../../src/solver/evidence";
-import type { CountEvidence } from "../../../src/solver/types";
-import { snapshotOf } from "../../solver/test-helpers";
-import { ONE_HOLE } from "../../solver/fixtures";
-test("uniqueness without a complete human path does not establish Perfect", () => {
-  const snapshot = snapshotOf(ONE_HOLE);
-  const witness = [...ONE_HOLE]; witness[0] = 5;
-  if (!isWitness(ONE_HOLE, witness)) throw new Error("Invalid test witness");
-  const count: CountEvidence = { kind: "unique", witnesses: [witness], exhaustive: true,
-    method: "classic-dfs@1", nodes: 1 };
-  expect(deriveQuality(snapshot, "stalled", [], count))
-    .toBe("not-established");
-});
-```
-
-- [ ] Run `npm test -- tests/unit/solver/evidence.test.ts tests/unit/solver/run.test.ts`; confirm red. Implement strict witness checks, capped monotone evidence, human witness de-duplication and quality derivation. Do not mask shape errors with unchecked casts.
-- [ ] Implement orchestration exactly: validate → human until terminal path state → exact from original givens with remaining budget. On stall, emit search-start; on first compatible exact witness add residual search completion, retain decision path and prefix. On human completion, emit existence witness, then enumerate independently without counting it twice. Never let exact propagation append human technique steps.
-- [ ] Use injected time/work scheduling to stop before initialization, mid-scan, after a committed step, at stall, after first witness, and just before root exhaustion. Emit timeout with the last atomic checkpoint. Every loop uses the selected total remaining deadline; yields are macrotasks. Phase/evidence milestones emit immediately; routine progress is throttled to 100 ms.
-- [ ] Inject inconsistent engine outputs: different exact witness after logical placement, multiple after human completion, zero exhaustion despite valid witness, tampered completed grid, invalid proposal. Assert human invalidation/quality inconsistency or exhaustion withdrawal as specified, never false zero/unique/Perfect. Verify duplicate input takes the direct zero proof path and malformed input yields typed error without a count claim.
-- [ ] Test counting-only search leaves the human trace pure, search-assisted completion is visibly marked, full input is already complete/not applicable, and no-op pattern scans cannot run forever. Run all solver tests, typecheck and commit: `feat: orchestrate human solving and independent evidence checks`.
-
-## Task 8: Worker protocol and volatile application controller
-
-**Files:** Create `src/solver/protocol.ts`, `src/workers/solver.worker.ts`, `src/app/solver-controller.ts`, `tests/unit/solver/protocol.test.ts`, `solver-controller.test.ts`; create `tests/solver/fake-worker.ts`. If TypeScript worker globals conflict with DOM, add `web/tsconfig.worker.json` and amend `web/package.json` typecheck command; keep this change scoped to worker type checking.
-
-**Consumes:** `runSolver`, wire protocol, existing `BoardAction/reduceEditor`, and snapshot helper. **Produces:** controller/view contracts below, with injected worker/time dependencies for deterministic tests:
-
-```ts
-interface SolverViewState {
-  editor: EditorState;
-  source: SourceRef;
-  snapshot: SolverSnapshot;
-  timeLimitSeconds: number;
-  outcome: "idle" | RunOutcome;
-  phase: "validating" | "human" | "exact" | null;
-  checkpoint: SolverCheckpoint | null;
-  errorCode: SolverErrorCode | null;
+for (let n = 2; n <= 7; n++) {
+  const f = discoverFixture(`C06-size-${n}`); assertSound(f.view, f.proposal);
 }
-interface SolverController {
-  snapshot(): SolverViewState;
-  subscribe(listener: () => void): () => void;
-  edit(action: BoardAction): void;
-  replaceInput(definition: unknown, source: SourceRef): void;
-  setTimeLimit(seconds: number): void;
-  start(): void;
-  cancel(): void;
-  leaveScreen(): void;
-  dispose(): void;
-}
-interface SolverDependencies {
-  newId(): string;
-  now(): number;
-  createWorker(): WorkerPort;
-  setTimer(callback: () => void, ms: number): unknown;
-  clearTimer(handle: unknown): void;
-}
-interface WorkerPort {
-  postMessage(message: ToWorker): void;
-  terminate(): void;
-  onmessage: ((event: { data: unknown }) => void) | null;
-  onerror: (() => void) | null;
-  onmessageerror: (() => void) | null;
-}
-// createSolverController(deps: SolverDependencies): SolverController
+expect(checkFixtureMutation("C08-mutant-4", "omit-overlap-coefficient").kind).toBe("rejected");
+expect(checkFixtureMutation("C09-siamese", "delete-second-root").kind).toBe("rejected");
 ```
 
-- [ ] Write deterministic controller race tests using a fake port storing sent messages and exposing `deliver(data)`; fake clock/timers can advance to exact deadlines. Assert frozen evidence before termination, including synchronous fake late delivery inside `terminate()`:
+- [ ] Run `npm test -- tests/unit/solver/fish.test.ts tests/unit/solver/fish-complex.test.ts`.
+- [ ] Enumerate same-digit base/cover combinations canonically; basic n2…7, mixed n2…4, <=4 fin occurrences. Compile complete base covers and at-most-one conflicts into a bounded incidence/resolution certificate under target=true. Treat endo-fin multiplicity explicitly; cannibalistic targets may be in bases. Siamese requires two independent certificates, retaining both roots. No full-grid DFS. Classify finned/sashimi and geometry aliases using exact matrix predicates.
+- [ ] Run all size/orientation/fin/mixed/endo/cannibal/Siamese classes, force/forbid, original-clue replay, typecheck; assert impossible proof/work completion reports interruption rather than absence.
+- [ ] Commit listed files: `feat: add bounded basic finned and complex fish proofs`.
+
+## T11 — Coloring, chains and loops C14–C17
+
+**Files:** create `src/solver/techniques/coloring.ts`, `chains.ts`, `loops.ts`; fixtures `C14.json`–`C17.json`; tests `tests/unit/solver/coloring.test.ts`, `chains.test.ts`; `docs/solver/techniques/chains-and-coloring.md`; update registry/manifest/provenance.
+
+**Interfaces:** descriptor arrays for coloring/Medusa, X/XY/AIC and grouped/ALS loops. Each path certificate records ordered links, group members, premise roots and discontinuity polarity; graph traversal is separate from resolution checking.
+
+- [ ] Write grammar and assumption tests:
 
 ```ts
-// Arrange controller via fake dependencies, start a TWO_RECTANGLE snapshot.
-// Deliver matching progress seq 1 with one independently valid witness.
-// Cancel; fake terminate attempts to deliver seq 2 claiming multiple.
-// Assert outcome cancelled, count unknown/lowerBound 1, terminate called once.
-// Start again; deliver old request result; assert current request unchanged.
-```
-
-- [ ] Run `npm test -- tests/unit/solver/protocol.test.ts tests/unit/solver/solver-controller.test.ts`; confirm red. Implement schema/key/sequence/evidence validation and atomic acceptance. Validate active wrong-shaped data as protocol failure; ignore well-formed stale keys and older sequences. Before accepting data, compare main elapsed time with deadline; at or after deadline, freeze last accepted state as timeout.
-- [ ] Implement controller cancellation in this order: terminalize/invalidate active request → snapshot previous checkpoint → clear timers/listeners → terminate. Dispose is idempotent. Startup/error/messageerror preserves prior evidence and terminates. Main watchdog begins at Start; compute remainingMs before posting and maintain a separate worker-local deadline. Values/source are locked during run; navigation cancels but retains workspace. Replacements/meaningful edits advance snapshot identity and clear result; selection/undo no-op does not.
-- [ ] Implement worker entry with literal Vite-supported constructor in the real controller factory. Use a narrow worker-global interface or separately typechecked WebWorker environment; do not add unchecked `any` or mix DOM/WebWorker globals just to silence errors. Worker takes one Start, uses `performance.now()` and a task-yield scheduler, emits versioned messages, catches runtime errors without inventing proof, and is always terminated by the owner on terminal acceptance.
-- [ ] Cover malformed options, active duplicate Start, 1/120 s endpoints, source deletion/rename attribution independence, unrelated library revisions, old snapshot/same content/new request IDs, errors in every phase, timeout race and 100 start/cancel loops with no surviving listeners/timers/worker references. Controller must not import Repository or call library update.
-- [ ] Run solver controller/protocol tests, typecheck and build. Browser workers are validated in Tasks 9/10; unit mocks alone do not complete this task's integration evidence. Commit: `feat: isolate solver worker lifecycle and cancellation`.
-
-## Task 9: Solver screen, source flow and read-only explanations
-
-**Files:** Create `src/ui/solver.ts`, `solver-board.ts`, `solver-trace.ts`, `tests/unit/solver/explanations.test.ts`, `tests/e2e/solver.spec.ts`, `solver-isolation.spec.ts`; modify `src/app/router.ts`, `controller.ts`, `application.ts`, `src/ui/home.ts`, `library.ts`, `player.ts`, `src/styles.css`, `tests/unit/router.test.ts`. Extend `tests/e2e/helpers.ts` only with shared solver entry/wait helpers actually reused.
-
-**Consumes:** `SolverController`, existing services/createDraft/parser/board/input. **Produces:** `mountSolver(container: HTMLElement, services: ScreenServices): () => void`, `renderTraceEntry(entry: TraceEntry): HTMLElement`, and the following read-only board contract. Highlight role precedence is placement → elimination → premise if roles overlap.
-
-```ts
-type CellHighlights = ReadonlyMap<CellIndex, "premise" | "placement" | "elimination">;
-interface SolverBoardView {
-  update(snapshot: SolverSnapshot, values: readonly Value[], highlights: CellHighlights): void;
-  destroy(): void;
+for (const id of ["C14-multi", "C15-cell-wrap", "C16-aic", "C17-continuous", "C17-group"]) {
+  const f = discoverFixture(id); assertSound(f.view, f.proposal);
 }
-// mountSolverBoard(container: HTMLElement, snapshot: SolverSnapshot,
-//   values: readonly Value[], highlights: CellHighlights): SolverBoardView
+expect(checkFixtureMutation("C17-group", "omit-group-member").kind).toBe("rejected");
+expect(discoverFixture("C16-length25").status).toBe("out-of-profile");
 ```
 
-- [ ] Add failing route round-trip for `{ screen: "solve" }` ↔ `#/solve` and Home enabled action. Define `ScreenServices.solver: SolverController`. Instantiate once in `mountApplication` with injectable factory for browser test harnesses; dispose on application teardown. On solver screen unmount, call `leaveScreen` then remove listeners.
-- [ ] Write real-browser entry expectations before rendering the screen:
+- [ ] Run `npm test -- tests/unit/solver/coloring.test.ts tests/unit/solver/chains.test.ts`.
+- [ ] Implement conjugate-component color alternatives and complete trap/wrap cases; Medusa includes cell and house XOR edges. Traverse simple paths by increasing length, lexical endpoints/edges, <=24 links and <=4 group/ALS nodes. Validate alternation, loop closure and effect polarity with resolution/discharge; no implication edge is trusted because it was colored. Multi-color uses exactly two components/four branches.
+- [ ] Rerun all named classes/bounds/negative fixtures, force/forbid and original-clue replay; prove no assumption escapes an accepted step; typecheck.
+- [ ] Commit listed files: `feat: add checked coloring chains and grouped loops`.
+
+## T12 — ALS relationships and Death Blossom C18–C19
+
+**Files:** create `src/solver/techniques/als-patterns.ts`, `death-blossom.ts`; fixtures `C18.json`, `C19.json`; test `tests/unit/solver/als-patterns.test.ts`; `docs/solver/techniques/als.md`; update registry/manifest/provenance.
+
+**Interfaces:** descriptors consuming AlsIndex/GroupIndex and table/count checker; certificates contain every set, cell overlap, RCC occurrence and target visibility premise.
+
+- [ ] Assert full RCC and branch coverage:
 
 ```ts
-// tests/e2e/solver.spec.ts
-import { test, expect } from "@playwright/test";
-import { SOLUTION } from "../fixtures";
-test("one-hole solve shows separate count evidence and an expandable trace", async ({ page }) => {
-  await page.goto("/");
-  await page.getByRole("button", { name: "Resolver", exact: true }).click();
-  await page.getByRole("button", { name: "Colar puzzle", exact: true }).click();
-  await page.getByLabel("81 células").fill("0" + SOLUTION.slice(1));
-  await page.getByRole("button", { name: "Usar entrada", exact: true }).click();
-  await page.getByRole("button", { name: "Resolver", exact: true }).click();
-  await expect(page.getByText("Solução única — verificada", { exact: true })).toBeVisible();
-  await page.getByText("Explicação passo a passo", { exact: true }).click();
-  await expect(page.getByText(/Único candidato/).first()).toBeVisible();
-  await expect(page.locator('[data-testid="solver-result-board"] [data-cell-index="0"]'))
-    .toHaveAttribute("aria-label", /5/);
-});
+for (const id of ["C18-xz-double-rcc", "C18-overlap", "C18-xy", "C19-chain-6", "C19-blossom-4"]) {
+  const f = discoverFixture(id); assertSound(f.view, f.proposal);
+}
+expect(checkFixtureMutation("C19-blossom-4", "remove-petal").kind).toBe("rejected");
 ```
 
-- [ ] Run `npm test -- tests/unit/router.test.ts tests/unit/solver/explanations.test.ts` and `npm run test:e2e -- tests/e2e/solver.spec.ts`; confirm new expectations fail for the missing UI. Implement temporary manual input with `mountBoard` in create mode; add paste picker and source picker using live controller snapshot and own-property checks. Source replacement resets history; malformed paste preserves it. Copy original puzzle clues only. Save Clues invokes ordinary `createDraft` once per click; do not save results or read play notes.
-- [ ] Build solved/partial/original grid views with native accessible row/cell layout and no editable controls; use a distinct test ID. Add multiple witness toggle and textual difference labels. Use native details for trace/evidence, exact Portuguese status mapping from spec §7, source/temporary-storage notice, initially 10 s integer limit with 1–120 validation, run/Cancel/retry/edit controls. Render initial candidate preamble and typed step premises/effects using safe text nodes. Include no full search-tree UI or gameplay action.
-- [ ] Add deterministic explanation tests for all six techniques, search-start/completion, incomplete path, unknown/0/1, zero/unique/multiple, duplicate witness and engine inconsistency. Use one-based Portuguese coordinates. An expanded historical step highlights roles on the result board and lists historical candidates in text; never replaces current result values.
-- [ ] Extend browser tests: manual/whitespace/dot imports, bad length/character isolation, conflicting and empty inputs, full-input label, all four source paths, drafts with unsaved edits, deleting a source after capture, copied puzzle with existing mistaken player values/hidden notes, limit form keyboard focus, read-only result keys, navigation cancellation/return and reload clearing. Test source picker replacement notice and missing records.
-- [ ] Capture library data after pending M1 saves settle; solve/cancel/rerun/navigate/export and assert unchanged serialized data/revision. Then Save Clues and verify exactly one new draft with input clues, unchanged sessions, and ordinary backup inclusion without analysis fields. Update library/player copy exactly as spec §10. Run browser isolation test through refresh, plus existing backup/lifecycle/board suites touched by integration.
-- [ ] Run typecheck, unit suite, build and targeted browser suites; inspect 1280×800/1920×1080 solver screenshots and keyboard focus. Commit: `feat: add temporary solver screen and expandable explanations`.
+- [ ] Run `npm test -- tests/unit/solver/als-patterns.test.ts`.
+- [ ] Join two/three ALSs for XZ/XY, enumerate <=6-set chains, exclude invalid overlaps from RCC and validate overlap effects through complete local relations. Death Blossom splits over every stem candidate with its proved petal consequence; join only common effects. Use <=5 cells per ALS and <=4 stem candidates; charge cache lookups/construction and each extension.
+- [ ] Run disjoint/overlapping, single/double RCC, chain endpoints and all stem size fixtures with independent checks; stale cache mutation must fail; typecheck.
+- [ ] Commit listed files: `feat: explain ALS relationships chains and death blossom`.
 
-## Task 10: Production worker acceptance, benchmarks and review record
+## T13 — Set/count and aligned exclusion C20–C21
 
-**Files:** Create `tests/e2e/solver-worker.spec.ts`, `solver-production.spec.ts`, `solver-visual.spec.ts`, `tests/browser/solver-failure.html`, `solver-failure.ts`, `tests/e2e/solver-benchmark.spec.ts`, `playwright.solver-production.config.ts`, `docs/m2-solver-verification.md`; modify `docs/README.md`, `docs/roadmap.md`, `docs/decisions.md`, root `README.md` startup/feature guide. Keep intentional failure injection only in a test harness, not production routes.
+**Files:** create `src/solver/techniques/sue-de-coq.ts`, `aligned-exclusion.ts`, `subset-counting.ts`; fixtures `C20.json`, `C21.json`; test `tests/unit/solver/set-arguments.test.ts`; `docs/solver/techniques/set-arguments.md`; update registry/manifest/provenance.
 
-**Consumes:** complete implementation and all approved acceptance criteria. **Produces:** reproducible release evidence, actual measured defaults, regression fixtures for issues found, final focused commits. This is not permission to publish, merge or deploy.
+**Interfaces:** descriptors using complete table-filter/Hall/count primitives. Certificates specify local cells, complete domains, auxiliary ALS premises and every rejected combination or coefficient inequality.
 
-- [ ] Add production-worker Playwright checks in `solver-production.spec.ts`: actual solved/count UI from the bundled worker, missing worker asset/startup failure by request interception, and UI responsiveness during real hard runs. Development `solver-worker.spec.ts` uses a test-only harness for unsupported definitions and controllable late-result/cancel/runtime races; label this separately from production evidence. For deterministic timeout outcomes use fake clock at unit level; browser tests assert honest terminal behavior without assuming a particular machine finds exactly one solution in 1 s.
-- [ ] Add a separate production Playwright config so the existing development-server suite is preserved. The config owns its isolated preview process and cleanup; no background process against the user's browser profile is needed:
+- [ ] Test enumeration completeness and scope limits:
 
 ```ts
-// web/playwright.solver-production.config.ts
-import { defineConfig } from "@playwright/test";
-export default defineConfig({
-  testDir: "./tests/e2e",
-  testMatch: ["solver-production.spec.ts", "solver-benchmark.spec.ts"],
-  workers: 1,
-  use: { baseURL: "http://127.0.0.1:5175", browserName: "chromium" },
-  webServer: {
-    command: "npm exec vite preview -- --host 127.0.0.1 --port 5175 --strictPort",
-    url: "http://127.0.0.1:5175", reuseExistingServer: false, timeout: 30000,
-  },
-});
+for (const id of ["C20-intersection-3", "C21-aligned-2", "C21-aligned-3", "C21-aligned-4", "C21-count"]) {
+  const f = discoverFixture(id); assertSound(f.view, f.proposal);
+}
+expect(checkFixtureMutation("C21-aligned-4", "drop-surviving-tuple").kind).toBe("rejected");
 ```
 
-Run `npm run build` then `npm run test:e2e -- --config playwright.solver-production.config.ts`. Gate production-only files in the default configuration with `testIgnore` or an explicit project selection so the same tests are not mislabeled as production on port 5174; add that focused modification to `web/playwright.config.ts`. Do not change the user's stable localhost:5173 origin. Benchmark fixtures use a per-case timeout calculated from trial count × selected limit plus startup allowance; avoid the default 30 s timeout for long opt-in measurements.
-- [ ] Add benchmark corpus loop recording CSV/JSON results under ignored `web/test-results/`: fixture ID, build/engine version, trial, cold/warm, throttle profile, time to first witness, time to final count, outcome/count/human/search status, nodes/depth/backtracks, progress bytes, trace bytes, long tasks and cancellation/deadline latency. Use Playwright's Chromium CDP session for a documented 4× CPU throttle and restore rate 1 after each profile. Five cold starts + 30 warm trials per case; 100 Start/Cancel cleanup trials. Verify no retained workers after cancellation using tracked worker events and process/profile observations.
-- [ ] Execute benchmark as an opt-in suite (tag `@benchmark`; skip unless `M2_BENCHMARK=1` so normal e2e is bounded). Example PowerShell execution:
+- [ ] Run `npm test -- tests/unit/solver/set-arguments.test.ts`.
+- [ ] Implement Sue de Coq box-line intersection and disjoint side ALS allocation within matrix bounds; aligned exclusion enumerates only 2…4 selected cells, rejects direct conflicts or explicitly empty auxiliary matchings, then projects. Subset counting reconstructs <=4-scope/12-cell incidence inequalities. Enumeration must cover every tuple; no whole-board solve Boolean accepted.
+- [ ] Run min/max intersection/side/selected-cell forms, overlap/double-count negatives, force/forbid, original-clue replay and typecheck.
+- [ ] Commit listed files: `feat: add finite set-count and aligned exclusion proofs`.
 
-```powershell
-$env:M2_BENCHMARK = '1'
-npm run test:e2e -- --config playwright.solver-production.config.ts tests/e2e/solver-benchmark.spec.ts
-Remove-Item Env:M2_BENCHMARK
+## T14 — Forcing, nets, nested proofs and Kraken C22–C24
+
+**Files:** create `src/solver/techniques/forcing.ts`, `nets.ts`, `kraken.ts`; fixtures `C22.json`–`C24.json`; tests `tests/unit/solver/forcing.test.ts`, `nets.test.ts`; `docs/solver/techniques/forcing.md`; update registry/manifest/provenance.
+
+**Interfaces:** fresh branch ReadViews; bounded discovery uses graph resolution and C01–C05 descriptors only inside nets. `forkView(view, branchId)` in state/facts shares immutable accepted roots and copies mutable domains/index ownership; add its tests to candidate suite. No call to exactSteps or recursive human/run.
+
+- [ ] Test branch isolation and named limitations:
+
+```ts
+const f = discoverFixture("C23-nested-depth2"); assertSound(f.view, f.proposal);
+expect(checkFixtureMutation("C22-unit", "omit-last-support-case").kind).toBe("rejected");
+expect(checkFixtureMutation("C24-kraken-basic", "omit-fin-branch").kind).toBe("rejected");
+expect(discoverFixture("C23-nested-depth3").status).toBe("out-of-profile");
 ```
 
-- [ ] Record actual machine/browser/commit information and compare every spec §9 target. If defaults need tuning, change the decision/spec/UI together, rerun affected benchmark cases and tests, and obtain review of material behavior changes. Do not invent a browser/machine matrix or claim that CPU throttling certifies another device. Keep intentionally unfinished cases explicitly timeout/unknown.
-- [ ] Run final gates once after corrections: `npm run typecheck`, `npm test`, `npm run build`, `npm run test:e2e`; perform production worker check and visual inspection at 1280×800/1920×1080. Test focused form fields, read-only board, native trace expansion, visible Cancel, difference labels and long-trace scrolling. Report tested browser scope; do not claim assistive-technology certification from DOM assertions.
-- [ ] Apply `superpowers:requesting-code-review` for the completed implementation under its instructions and active delegation permissions. Review soundness/evidence, cancellation identity/races, trace integrity, persistence isolation and scope. Reproduce material findings, fix with meaningful regressions, then rerun affected gates. Mark implementation-plan tasks complete only from executed evidence.
-- [ ] Write the M2 verification record with command outcomes, actual test counts, benchmark table/default decision, artifacts, unresolved limits and review findings. Update handoff/roadmap so M2 implementation status reflects reality and M3 is the next design checkpoint only if acceptance passes. Make focused local commits, including `test: verify classic solver evidence and worker acceptance` and `docs: record measured M2 solver release evidence` as appropriate. Verify clean scoped Git status; do not push/merge/deploy unless separately authorized.
+- [ ] Run `npm test -- tests/unit/solver/forcing.test.ts tests/unit/solver/nets.test.ts tests/unit/solver/candidates.test.ts`.
+- [ ] Enumerate candidate/cell/house exhaustive alternatives in canonical order; <=24-link chains and <=128-node nets/branch, nesting <=2. Static graph frozen at branch start; dynamic links rebuilt from proved branch changes. Nishio accepts only single-digit cover/weak consequences. Kraken proves every fin false under a target assumption then applies T10's checked fish certificate. Discharge all temporary roots before proposing effects.
+- [ ] Run every forcing kind, static/dynamic/nested and Kraken basic/mixed fixtures, negative sibling/stale/domain/scope mutations, independent checks and typecheck. Assert branch work exhaustion never becomes a failed-candidate deduction.
+- [ ] Commit listed files: `feat: add bounded forcing nets and kraken deductions`.
 
-## Plan-to-spec coverage and design-session verification
+## T15 — Generalized chain grammars C25–C28
 
-| Spec requirement | Owning tasks |
-| --- | --- |
-| Existing boundaries, strict snapshot and capability validation | 1, 8, 9 |
-| All inputs, result boards and explicit save-input flow | 9 |
-| Candidates, exact technique coverage, ordering/contracts | 1, 3, 4, 5 |
-| Structured explanation, search boundary and replay | 3–5, 7, 9 |
-| Original-clue exact solving/counting, honest quality | 2, 6, 7 |
-| Worker identity, progress, races, cancellation/failures | 7, 8, 10 |
-| Configurable total deadline and measured defaults | 7–10 |
-| Memory-only results, unchanged backup/schema/play progress | 8, 9, 10 |
-| Independent fixtures, soundness and differential correctness | 2–7 |
-| Browser accessibility, full acceptance and release evidence | 9, 10 |
+**Files:** create `src/solver/techniques/csp-variables.ts`, `generalized-chains.ts`, `or-forcing.ts`; fixtures `C25.json`–`C28.json`; test `tests/unit/solver/generalized-chains.test.ts`; `docs/solver/techniques/generalized-chains.md`; update registry/manifest/provenance.
 
-Before approving execution, review the companion spec's proposed behavior choices. No blocking product question was found during drafting; accepting this plan is not evidence that the 10-second default meets its benchmark targets. Design-session checks should verify Markdown links, no unresolved placeholders, exact file/interface consistency, requirement coverage and documentation-only diffs. Do not run or report future solver tests as completed during the design task.
+**Interfaces:** `buildCspVariables(view)` yields complete cell/house-symbol alternatives with FactIds; generalized pair certificate contains variable ID, left/right literals or group, every excluded alternative and conflict reference. OR forcing consumes proved clauses, not arbitrary lists.
+
+- [ ] Test each distinct grammar and name rejection:
+
+```ts
+for (const id of ["C25-bivalue", "C25-z", "C26-t", "C26-whip", "C27-braid", "C27-gwhip", "C28-or4"]) {
+  const f = discoverFixture(id); assertSound(f.view, f.proposal);
+}
+expect(checkFixtureMutation("C27-braid", "label-as-continuous-whip").kind).toBe("rejected");
+expect(checkFixtureMutation("C26-whip", "forward-right-dependency").kind).toBe("rejected");
+```
+
+- [ ] Run `npm test -- tests/unit/solver/generalized-chains.test.ts`.
+- [ ] Implement pair-by-pair bounded enumeration <=12 pairs, checking all excluded alternatives under z-only/t-only/combined policies. Braids can cite any earlier right; whips require predecessor continuity. Groups require all-member conflicts; max four groups/three members. OR2…4 closes the same effect in every proved clause alternative. Final no-right variable needs complete domain/support contradiction. Keep source revision and exact mapping in theorem documentation.
+- [ ] Run each grammar at min/max bounds, just-over-limit and valid-general/invalid-narrow aliases, force/forbid and original-clue fixtures; typecheck. An AIC solved example cannot substitute for z/t/braid discovery evidence.
+- [ ] Commit listed files: `feat: add distinct bounded whip braid and OR proof grammars`.
+
+## T16 — Specialized patterns C29–C32
+
+**Files:** create `src/solver/techniques/fireworks.ts`, `sk-loops.ts`, `exocet.ts`, `tridagon.ts`; fixtures `C29.json`–`C32.json`; tests `tests/unit/solver/fireworks.test.ts`, `sk-loops.test.ts`, `exocet.test.ts`, `tridagon.test.ts`; docs `docs/solver/techniques/fireworks.md`, `sk-loops.md`, `exocet.md`, `tridagon.md`; update registry/manifest/provenance.
+
+**Interfaces:** four descriptor arrays; named pattern records contain full geometry and finite cover/table certificate. No generic `special-pattern-is-valid` trusted primitive. C32 guardian clauses feed T15 OR discovery through proved relation facts.
+
+- [ ] Write one positive and a decisive counterexample for each family:
+
+```ts
+for (const id of ["C29-quad", "C30-mixed-1-3", "C31-junior-4", "C31-double", "C32-degenerate"]) {
+  const f = discoverFixture(id); assertSound(f.view, f.proposal);
+}
+expect(checkFixtureMutation("C31-junior-4", "omit-assigned-s-occurrence").kind).toBe("rejected");
+expect(checkFixtureMutation("C32-parity", "retain-valid-core-permutation").kind).toBe("rejected");
+```
+
+- [ ] Run `npm test -- tests/unit/solver/fireworks.test.ts tests/unit/solver/sk-loops.test.ts tests/unit/solver/exocet.test.ts tests/unit/solver/tridagon.test.ts`.
+- [ ] Implement in four reviewable substeps: (a) triple/quad fireworks from complete intersecting-house cover relations; (b) eight-group SK ring with bounded local tuple joins and verified closure; (c) Junior Exocet complete companions/S-cell covers including givens, base/target count proof, then Double joins of two independently checked relations; (d) four-box Tridagon core permutation rejection, deriving all guardian alternatives. Each family uses its exact matrix shape; reject unsupported mirror/escape, non-Junior, non-ring and other geometry aliases explicitly.
+- [ ] Run every advertised specialized form, each local independent table checker, force/forbid and original-clue examples, proof/byte interruption tests and typecheck. Source screenshots alone are not fixture labels; record license and original givens. Commit each family separately if it passes before its neighbors; T16 gate remains incomplete until all four pass.
+- [ ] Commit only the passing family's listed files: `feat: add checked fireworks patterns`, `feat: add checked SK loop relations`, `feat: add bounded Junior and Double Exocet proofs`, `feat: add Tridagon guardian proofs`.
+
+## T17 — Templates and pattern overlay C33
+
+**Files:** create `src/solver/indexes/templates.ts`, `src/solver/techniques/templates.ts`; fixture `C33.json`; test `tests/unit/solver/templates.test.ts`; `docs/solver/techniques/templates.md`; update registry/manifest/provenance.
+
+**Interfaces:** `buildTemplates(view, symbol)` yields bounded work and a complete template relation or interruption; template-cover checker reconstructs enumeration independently. Descriptor includes single/pair/triple overlay and incompatibility bounds; all tuple tests count toward work.
+
+- [ ] Test exhaustive set and interruption:
+
+```ts
+expect(independentEmptyGridTemplates().length).toBe(46656);
+const f = discoverFixture("C33-pair"); assertSound(f.view, f.proposal);
+expect(checkFixtureMutation("C33-single", "omit-legal-template").kind).toBe("rejected");
+expect(stopTemplateEnumerationBeforeEnd().canEliminate).toBe(false);
+```
+
+- [ ] Run `npm test -- tests/unit/solver/templates.test.ts`.
+- [ ] Enumerate one cell/row with column/box occupancy, respecting current clue/domain premises, encode complete branch alternatives/rejections as shared DAG nodes. Project one-digit relations; remove templates lacking any pairwise compatible partner; enumerate two/three-symbol compatible tuples within 100,000 tuple tests/revision. Never infer absence from an unfinished list. Apply proof/node/byte caps before publishing; an overlarge proof is explicit incomplete work.
+- [ ] Rerun single/pair/triple/incompatibility, independent template set comparison, local and original-clue soundness, overflow and typecheck. Do not promise full nine-symbol POM.
+- [ ] Commit listed files: `feat: add bounded template and overlay certificates`.
+
+## T18 — Uniqueness-dependent families U01–U05
+
+**Files:** create `src/solver/proof/unique.ts`, `src/solver/techniques/unique-rectangles.ts`, `unique-loops.ts`, `bug.ts`; fixtures `U01.json`–`U05.json`; tests `tests/unit/solver/unique-techniques.test.ts`, `unique-provenance.test.ts`; `docs/solver/techniques/uniqueness.md`; update registry/manifest/provenance.
+
+**Interfaces:** `unique-transform@1` checks a rule-preserving nonidentity trade under matching independent CountEvidence; descriptors have policy `unique-only`. Conditional flag is inherited through all primitive consequences. `classic-conditional@1` includes the primary profile plus U rows.
+
+- [ ] Assert gating, swap preservation and permanent taint:
+
+```ts
+expect(checkConditionalFixture("U01-type1", unknownEvidence).kind).toBe("rejected");
+expect(checkConditionalFixture("U02-avoidable-given", uniqueEvidence).kind).toBe("rejected");
+expect(checkConditionalFixture("U03-extra-order-rule", uniqueEvidence).kind).toBe("rejected");
+expect(afterDischarge.conditional).toBe(true);
+expect(deriveQuality(snapshot, "solved", conditionalSteps, uniqueEvidence, false))
+  .toBe("not-established");
+```
+
+- [ ] Run `npm test -- tests/unit/solver/unique-techniques.test.ts tests/unit/solver/unique-provenance.test.ts`.
+- [ ] Implement UR1…6 and hidden/avoidable/extended finite geometry, even unique loops <=12 cells, BUG core plus <=4 extras. Reconstruct affected house/clue preservation and nontrivial alternate assignment mapping; root uniqueness is never discharged. BUG core requires an actual alternate-cycle trade certificate; pure incompatible unique/core inputs become diagnostics. Apply only the conditional profile; no exact solution digits become a premise.
+- [ ] Run independent original-clue uniqueness first, every U alias/bound and nonunique trade counterexample, mixed-rule swap rejection, chain-inherited taint, replay and typecheck.
+- [ ] Commit listed files: `feat: add isolated uniqueness-dependent deduction families`.
+
+## T19 — Fair scheduling and Explain/Analyze selection
+
+**Files:** create `src/solver/scheduling/work.ts`, `ledger.ts`, `features.ts`, `policy.ts`, `rollout.ts`; tests `tests/unit/solver/scheduling.test.ts`, `rollout.test.ts`.
+
+**Interfaces:** `Budget` exposes `spend(units): boolean`, `remaining(): number`; `SchedulerPolicy` exposes `next(ledger, view): JobKey`, `choose(checked): CheckedStep`. JobKey is `{technique: VersionId, scopeKey: string}`. `WorkClock` is `{now():number}`. `selectStep(view, registry, options)` yields work/checked-step/logical-stop events. Options contain mode, versioned profile, work/phase caps and rollout flag; all included in RunKey.optionsKey.
+
+- [ ] Test fairness/ordering without wall time:
+
+```ts
+expect(serviceTickets(100, 10).everyJobServedWithin(40)).toBe(true);
+expect(runWithSlices(1).acceptedProofKeys).toEqual(runWithSlices(256).acceptedProofKeys);
+expect(interruptedCheaperTier.canClaimSimplerExhausted).toBe(false);
+expect(rolloutResult.primaryRevision).toBe(beforeRevision);
+expect(rolloutResult.usedWork).toBeLessThanOrEqual(rolloutAllowance);
+```
+
+- [ ] Run `npm test -- tests/unit/solver/scheduling.test.ts tests/unit/solver/rollout.test.ts`.
+- [ ] Implement fixed scan and event-fixed baselines first; drain checked rule propagation before each selection window. Use one live resumable cursor per descriptor/rule instance, never one materialized job per combinatorial scope. Add 256-unit deterministic quanta, every fourth quantum oldest-job service, canonical ties and dependency-ledger invalidation. Explain searches the lowest tier and finishes its current quantum before choosing. Analyze uses <=4 checked candidates/4,096-unit selection window and frozen integer priority/utility formulas from contracts §6. Implement rollout off by default, <=4 candidates/16 cheap steps, min(8192,10% remaining work), equal allocations, all copying/checking charged and no speculative imports. Runtime time slices cannot change logical quanta.
+- [ ] Rerun zero-score/starvation, missed-watch/cold-scan comparisons, useful-step/no-op, partial graph and unsound-filter mutations, fixed-version determinism and typecheck. Safe exclusions need necessary-premise reasons, not low priority.
+- [ ] Commit listed files: `feat: schedule fair deterministic Explain and Analyze work`.
+
+## T20 — Human loop, phases, fallback and conditional operation
+
+**Files:** create `src/solver/human.ts`, `run.ts`; extend `evidence.ts`; tests `tests/unit/solver/human.test.ts`, `run.test.ts`.
+
+**Interfaces:** `humanSteps(view, registry, options)` yields work/proposal/logical-stop; accepts commit acknowledgement before dependent work. `runSolver(request, ports): Promise<void>` receives `{clock: WorkClock, yieldTask():Promise<void>, publish(event):Promise<void>, awaitAcceptance(stepId):Promise<"accepted"|"human-stopped">}`. Event types are internal domain events mapped to protocol in T21; no DOM/Worker imports. Request binds snapshot, key, limits, conditional prefix and prior unique evidence.
+
+- [ ] Assert evidence separation and phase reserve:
+
+```ts
+expect(runAtHumanCeiling().human).toBe("incomplete");
+expect(runAtHumanCeiling().searchReason).toBe("logical-budget");
+expect(completeLogicalThenCount().usedFallback).toBe(false);
+expect(cancelAfterOneWitness().count).toMatchObject({kind:"unknown",lowerBound:1});
+expect(conditionalRun.primaryResult).toEqual(originalPrimaryResult);
+```
+
+- [ ] Run `npm test -- tests/unit/solver/human.test.ts tests/unit/solver/run.test.ts`.
+- [ ] Implement validate/assemble/initialize → human → exact with 70% human time/work ceiling and remainder exact; early logical stop lends unused budget. No exact start after deadline, no human resume after exact. Proof/resource interruption may retain logic prefix and start identified fallback with remaining independent budgets. Conditional replays original prefix under its own budget and uses no exact phase. Await acceptance or the explicit stop-human reconciliation after each productive proposal, derive stop ledger accurately and keep contradiction/inconsistency distinct. Cap metadata/search summaries.
+- [ ] Rerun all count fixtures in both modes, stop before/after witness/root exhaustion, complete-input/no-Perfect, temporary discharge/Perfect and conditional exclusion, plus typecheck.
+- [ ] Commit listed files: `feat: orchestrate bounded logical and independent exact phases`.
+
+## T21 — Bounded codec, proof transport and acceptance barrier
+
+**Files:** create `src/solver/transport/protocol.ts`, `codec.ts`, `sender.ts`, `receiver.ts`; tests `tests/unit/solver/protocol.test.ts`, `transport.test.ts`.
+
+**Interfaces:** ToWorker/FromWorker/ProofHeader/Limits exactly contracts §8; `decodeMessage(value: unknown): FromWorker`, `createSender(send, key, limits)`, `createReceiver(context, accept, ack)`. Receiver owns staging, not persistent library. `accept` commits only branded checked steps and returns revision; protocol `accepted` is emitted afterward. Codec exposes incremental encode/decode iterators with bounded records.
+
+- [ ] Write a proof spanning more than two chunks and interrupted acceptance:
+
+```ts
+await channel.sendProof(threeChunkProof);
+expect(channel.maxUnacked).toBeLessThanOrEqual(2);
+expect(channel.acksBeforeProofEnd).toBeGreaterThan(0);
+expect(channel.acceptedRevisions).toEqual([1]);
+expect(cancelAfterChunk(2).acceptedRevisions).toEqual([]);
+expect(deliverSequenceGap().outcome).toBe("error");
+```
+
+- [ ] Run `npm test -- tests/unit/solver/protocol.test.ts tests/unit/solver/transport.test.ts`.
+- [ ] Decode strict protocol/key/version/seq fields; budget before allocation; UTF-8 incremental tokens, <=16 KiB nodes, <=32 KiB controls and <=64 KiB chunks; topological staged nodes and imported roots; no repeated full traces. ACK after safe bounded staging, accept only after end/all counts/checking/deadline pass. Sender waits on credits and later step acceptance, coalesces statistics while blocked. Ignore old/wrong-key events; gap/malformed active/end-before-complete/oversize are protocol errors. Successful terminal requires no pending step. Implement stop-human/human-stopped phase reconciliation: the controller freezes its accepted revision at the human ceiling, ignores subsequent logical packets while still consuming sequence numbers, and worker reconciles that revision before leaving a pending proof for exact. Test both ACK-before-cutoff and cutoff-before-proof-end orderings.
+- [ ] Rerun split UTF-8/codepoint tokens, partial JSON node, missing/duplicate chunks/nodes/imports, overdeclared counts, cumulative caps, wrong operation/parent, early terminal and cancel-in-check races; typecheck. Verify no whole-proof synchronous JSON parse.
+- [ ] Commit listed files: `feat: stream bounded proofs with atomic acceptance and backpressure`.
+
+## T22 — Real worker and watchdog adapter
+
+**Files:** create `src/workers/solver.worker.ts`, `src/app/solver-worker.ts`, `web/tsconfig.worker.json`; modify `web/tsconfig.json`, `web/package.json`; create `tests/browser/solver-worker.html`, `solver-worker.ts`, `tests/e2e/solver-worker.spec.ts`.
+
+**Interfaces:** `WorkerPort` wraps postMessage/terminate/error/message handlers; `startWorker(request, callbacks): WorkerHandle` returns `{terminate():void}`. Use static Vite worker URL. Separate WebWorker TS lib with no DOM view imports; main config excludes worker entry and fixture worker-only files if needed; typecheck script runs both configs. Shared engine modules must compile under both environments.
+
+- [ ] Add browser assertions for real worker chunks/cancel/startup failure:
+
+```ts
+await page.goto("/tests/browser/solver-worker.html");
+await page.getByRole("button", { name: "Start long proof" }).click();
+await page.getByRole("button", { name: "Cancel" }).click();
+await expect(page.getByRole("status")).toHaveText("Cancelled");
+await expect(page.getByTestId("accepted-step-count")).toHaveText("0");
+```
+
+- [ ] Run `npm run test:e2e -- tests/e2e/solver-worker.spec.ts`; observe missing-worker failure before implementation.
+- [ ] Bind clock/yield/publish/accept ports to runSolver; use task yields (not microtask-only loops), <=8 ms worker slice and <=4 ms main check targets, local deadline from remainingMs and controller-owned total deadline. Startup/runtime/messageerror typed failures terminate and preserve prior state. No ACK-dependent Cancel, shared memory or main-thread solver fallback. Harness is test-only and has deterministic proof sizes/phase triggers.
+- [ ] Run browser suite, `npm run typecheck`, `npm run build`; inspect production output includes worker asset. Test terminate during graph build, exact enumeration, blocked ACK and main verification; all late callbacks ignored.
+- [ ] Commit listed files: `feat: run solver in bounded cancellable browser workers`.
+
+## T23 — Volatile controller, source copying and Save Clues
+
+**Files:** create `src/app/solver-controller.ts`; modify `src/app/controller.ts` services type only, `application.ts` service lifecycle, `router.ts`; create `tests/unit/solver/controller.test.ts`; modify `tests/unit/router.test.ts`.
+
+**Interfaces:** `createSolverController(deps): SolverController`; deps clock/newId/worker factory only. Controller methods `snapshot()`, `subscribe(listener)`, `replaceInput(definition,source)`, `edit(action)`, `setOptions(options)`, `start()`, `startConditional()`, `cancel(reason)`, `dispose()`. Input reducer reuses creation context, normalizes notes empty. Save Clues is an application action using existing library controller, not a solver engine dependency.
+
+- [ ] Test identity races and state isolation:
+
+```ts
+const before = structuredClone(libraryController.snapshot());
+solver.start(); solver.cancel("user"); fakeWorker.deliver(validLateResult);
+expect(solver.snapshot().outcome).toBe("cancelled");
+expect(libraryController.snapshot()).toEqual(before);
+expect(routeHash({screen:"solve"})).toBe("#/solve");
+expect(parseRoute("#/solve")).toEqual({screen:"solve"});
+```
+
+- [ ] Run `npm test -- tests/unit/solver/controller.test.ts tests/unit/router.test.ts`.
+- [ ] Implement one application-lifetime workspace; deep-copy draft values/definition clues with source attribution outside engine; use own-property checks. On Cancel/watchdog/disposal invalidate key first, discard staging/check callbacks, preserve accepted state, then clear listeners/timers and terminate. Receipt and precommit check exact total deadline. Primary phase timer also freezes logical acceptance at 70%, discards incomplete proof staging and sends stop-human without terminalizing the exact phase; reconcile acceptedRevision through the ordered port. Primary rerun/input changes discard both result graphs; conditional rerun replaces only conditional. Source rename/delete/restore/unrelated revisions never retarget snapshot. Implement Save Clues through `createDraft`, then copy input with existing `reduceEditor` digit actions, preserving atomic library controller semantics.
+- [ ] Rerun startup/timeout/result-Cancel ties, same-input rerun, wrong operation/version/parent, route disposal, reload instantiation, malformed paste, source deletion and save failure tests; typecheck. Assert byte-equivalent sessions/notes/history/settings/revision for all non-Save-Clues actions after prior saves settle.
+- [ ] Commit listed files: `feat: isolate solver workspace and request lifecycle from play state`.
+
+## T24 — English screen, proof graph and coverage UI
+
+**Files:** create `src/ui/solver.ts`, `solver-board.ts`, `solver-trace.ts`, `solver-coverage.ts`, `solver-copy.ts`; modify `src/ui/home.ts`, `library.ts`, `player.ts`, `src/app/application.ts`, `src/styles.css`; create `tests/e2e/solver-screen.spec.ts`.
+
+**Interfaces:** `mountSolver(container, services): () => void`; read-only board `mountSolverBoard(container, state): {update(state):void,destroy():void}` where state has values/givens/highlight roles/selection, no onAction digit API. Trace/coverage render accepted immutable records only. `solver-copy.ts` maps typed statuses/primitive/family parameters to English text, no arbitrary HTML.
+
+- [ ] Add end-to-end default/mode/explanation assertions:
+
+```ts
+await page.getByRole("button", {name:"Solve",exact:true}).click();
+await expect(page.getByRole("radio", {name:"Explain",exact:true})).toBeChecked();
+await expect(page.getByText("Temporary input and analysis.", {exact:false})).toBeVisible();
+await page.getByRole("button", {name:"Start",exact:true}).click();
+await expect(page.getByText("Solution verification", {exact:true})).toBeVisible();
+expect(await page.getByTestId("solver-result").getByRole("button", {name:"Number 1"}).count()).toBe(0);
+```
+
+- [ ] Run `npm run test:e2e -- tests/e2e/solver-screen.spec.ts` before implementation.
+- [ ] Implement §2–4 screen actions/copy, separate input/result/witness selection and conditional panel, advanced limits and ledger reasons. Use current sidebar/editor layout and detached input controls; mode controls locked while active. Render proof children lazily with bounded pages and accessible shared-node navigation, retaining full data. Visible Cancel/status do not move below expanded trace. Library/player say “No analysis is saved for this puzzle. Use Solve for a temporary analysis.” No gameplay hint/check/reveal controls.
+- [ ] Rerun screen tests, keyboard/focus/live-region/unsafe-string checks and `npm run typecheck`; inspect 1280×800 and 1920×1080 in representative themes, then all ten color combinations for text/role distinction. Confirm shared UI changes retain M1 squircle/grid/note/input behavior.
+- [ ] Commit listed files: `feat: present English solver modes proofs and separate evidence`.
+
+## T25 — Integrated correctness and production-browser acceptance
+
+**Files:** create `tests/unit/solver/differential.test.ts`, `coverage-release.test.ts`, `tests/e2e/solver-isolation.spec.ts`, `solver-races.spec.ts`, `web/playwright.production.config.ts`; extend solver worker/screen suites; add `test:e2e:production` script in `web/package.json`.
+
+**Interfaces:** production Playwright config uses port 5175 with `vite preview --host 127.0.0.1 --port 5175 --strictPort`; build first; production suites visit app routes only, since test HTML harnesses are not emitted by the normal build. Test-only fixture harness remains development coverage. No production debug globals or special proof injection UI.
+
+- [ ] Write release-gate assertions:
+
+```ts
+expect(unverifiedRequiredCoverageRows()).toEqual([]);
+expect(differentialCases.every(c => c.actualCount === c.oracleCount)).toBe(true);
+expect(replayAllAcceptedPaths().invalid).toEqual([]);
+expect(perfectCases.some(c => c.conditional || c.usedFallback || !c.unique)).toBe(false);
+```
+
+- [ ] Run `npm test -- tests/unit/solver/differential.test.ts tests/unit/solver/coverage-release.test.ts` and full browser suites; a missing advertised fixture must fail the gate.
+- [ ] Fill remaining matrix fixtures through independent authoring/labeling, not production golden updates. Add seeded digit/row/column/band/stack/transpose transformations, cold versus incremental scheduler/index comparisons and real source/session/backup byte comparisons. Exercise Cancel after one witness, partial proof, secondary operation and navigation; empty/full/duplicate/nonduplicate-zero/two/unique; startup/runtime/protocol failure injection at unit/harness boundaries. Production tests cover real run/cancel/navigation/reload plus correct bundled worker asset.
+- [ ] Run `npm run typecheck`, `npm test`, `npm run build`, `npm run test:e2e`, `npm run test:e2e:production`. Verify every enabled alias's original-clue path, independent acceptance, no false Perfect and preserved D058 settings/backup behavior. Repeat only checks affected by new fixes.
+- [ ] Commit listed test/config/fixture fixes with focused messages: `test: gate expanded solver coverage and production integration`.
+
+## T26 — Benchmarks and resource calibration
+
+**Files:** create `tests/solver/bench/corpus.json`, `tests/solver/bench/README.md`, `tests/e2e/solver-benchmark.spec.ts`, `web/playwright.benchmark.config.ts`, `docs/m2-solver-benchmarks.md`; add `bench:solver` script; modify frozen profile/policy constants only when measurements justify it. Store raw benchmark output in ignored test output, commit compact measured tables and corpus hashes.
+
+**Interfaces:** benchmark config inherits production browser settings on port 5175; suite selected separately from routine e2e using `testIgnore`/`testMatch` in configs. Record versioned run options, deterministic counters and standard browser performance/memory instrumentation, never online tuning inside Explain.
+
+- [ ] Establish training/held-out partition, family/oracle labels and a schema assertion:
+
+```ts
+expect(intersection(calibrationHashes, heldOutHashes)).toEqual([]);
+expect(requiredPolicyIds.every(id => report.policies.includes(id))).toBe(true);
+expect(report.samples.every(s => s.correctness === "passed"))
+  .toBe(true);
+```
+
+- [ ] Run `npm run build` then `npm run bench:solver`; first execute a schema/dry-run case and ensure missing policies/labels fail before collecting performance data.
+- [ ] Execute contracts §9 matrix: five cold/30 warm trials on foreground PC and 4× throttle; fixed-scan/event-fixed/scored Explain/Analyze/rollout ablations with identical caps, 50/70/unreserved phase shares and adversarial cases. Measure latency distributions, named logical coverage/fallback/count correctness, detector/cache/scheduler/checker/rollout work, proof/transport/peak heap, main tasks and 100 Start/Cancel cleanup cycles. Include all family classes; heavy stress fixtures may honestly time out at defaults but must pass generous deterministic correctness gates.
+- [ ] Report all failures and defaults/ranges as measured or unvalidated. Retain 10 s/70%/score/proof proposals only if supported; revise frozen versions and docs for review when not. Recheck affected deterministic/correctness tests for changed profiles; no family removal to improve a speed score. Keep rollout default off unless held-out measurements justify enabling it and review records that choice.
+- [ ] Commit benchmark docs, configs and justified constants: `perf: record solver policy and resource benchmarks`.
+
+## T27 — Final acceptance, documentation and release review
+
+**Files:** create `docs/m2-solver-verification.md`; update `docs/README.md`, `docs/roadmap.md`, `docs/decisions.md`, technique descriptions/manifest evidence links and root `README.md` startup/solver guidance. Update this plan's checkboxes only for completed tasks with actual evidence.
+
+**Interfaces:** release verification record identifies implementation/spec/engine/profile/checker commits, commands, corpus hashes, all 38 row statuses, actual bounds, runtime limits, benchmark results and remaining platform limitations.
+
+- [ ] Compare all design requirements to the coverage map below and fail release for any missing required row/test, unchecked applied proof, false count/Perfect, play-state mutation or missing benchmark result. No generic “all techniques” badge.
+- [ ] Run final appropriate gates after last changes: typecheck/unit/build/development and production browser commands; `git diff --check`; verify documentation links and staged file allowlist. Preserve unrelated work and generated ignored files.
+- [ ] Document actual results, independent fixture provenance and any deliberately incomplete stress outcomes. Clearly distinguish algorithm support from runtime completion. Update roadmap M2 only when all required implementation/acceptance work is complete; gameplay hints and variants stay later.
+- [ ] Review implementation against the approved spec and focused commits; resolve actionable findings, rerun affected gates, then seek the authorized integration/release review. No push/deploy/merge implied by this plan.
+- [ ] Commit documentation only: `docs: record verified expanded M2 solver and limitations`.
+
+## Requirement-to-task acceptance map
+
+| Requirement | Contract / matrix | Tasks / decisive gate |
+| --- | --- | --- |
+| Preserve current modules, English, appearance, no implementation during planning | Screen §§1–2; D046/D053/D058/D059 | Setup; T23–T25 isolation/themes; current documentation-only audit |
+| Normalized rules, full identity, assembly, no unsupported semantics | Contracts §§1–2 | T02/T03; unknown rule/order/scope/house tests |
+| Shared candidates/facts, invalidation, cross-rule provenance | Contracts §§3–5 | T04/T05/T08; cold rebuild and exhaustive mock composition |
+| All expanded families, aliases, exact bounds, independent fixtures | Matrix C01–C33/U01–U05 | T07–T18; T25 manifest fails missing coverage |
+| Explain/Analyze, deterministic order/fairness/safe filters/two scores/lookahead | Contracts §6 | T19; fixed-work determinism/4N service/rollout isolation; T26 ablations |
+| Proof graph/assumptions/Perfect/conditional paths | Contracts §§5/7 | T03/T05/T14/T18/T20; mutation/scope/quality tests |
+| Exact independent original-clue zero/one/two evidence, fallback | Contracts §7 | T01/T06/T20; oracle differential/one-witness interruption |
+| Worker identity, bounded transport, atomic acceptance, backpressure/Cancel/deadlines | Contracts §8 | T21/T22/T23/T25; >2-chunk credit test and real browser races |
+| Resource/persistence policy and measured defaults | Contracts §9; screen §§2–3 | T20/T23/T26; phase reserve, backup equivalence, full benchmark matrix |
+| English read-only solved/partial board, expandable proofs and separate counts | Screen §4 | T24/T25; keyboard, actual fallback, two witnesses, ten themes |
+| Design approval and reviewable complete plan | Screen §6; contracts §10 | Current planning verification; execution waits for explicit approval |
+
+## Review handoff
+
+The plan is complete for design review. No first-release interview answer is outstanding. Proposed choices are finite broad profiles, shared proof/fact contracts, separate uniqueness-dependent operation, event-driven fair scoring, a 70% human ceiling, bounded ACK/accept transport and memory-only results/preferences. Work/time/proof defaults and rollout benefit are empirical gates in T26. Unbounded generalizations are named exclusions in the matrix; every requested family has a planned bounded form and independent gate. **Do not execute this plan until the user approves the design.**

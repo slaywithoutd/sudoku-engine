@@ -406,7 +406,7 @@ Current status: all 38 interview questions are answered. Entries are chronologic
 
 ## Current unresolved scope
 
-All 38 interview questions are answered. There are no pending proposals for the completed first-release planning scope. M2's initial specification and plan under D046 now require expansion under D054–D057. The two questions raised during the researched engine revision are answered: Explain is the default of two modes, and Perfect excludes uniqueness-dependent paths. Remaining technical design work includes advanced-family contracts/bounds, concrete mixed-constraint/proof interfaces, revised detailed tasks and benchmark calibration. Historical entries retain their original context; subsequent decisions and approved specifications supersede earlier details. Other later-phase questions remain deferred to roadmap checkpoints under D044.
+All 38 interview questions are answered. The expanded M2 specification, concrete contracts, bounded technique matrix and complete 27-task plan are ready for review under D059–D064; solver implementation is not authorized. Explain is the default of two modes, and Perfect excludes uniqueness-dependent paths. No new product question blocks this proposal. Cost-table calibration, phase share, resource defaults and rollout benefit have explicit future benchmark gates, not measured answers. Historical entries retain their original context; subsequent decisions and approved specifications supersede earlier details. Other later-phase questions remain deferred under D044.
 
 Record each answer here with its rationale and consequences. If an answer changes a confirmed decision, retain and mark the older entry superseded.
 
@@ -432,7 +432,7 @@ Record each answer here with its rationale and consequences. If an answer change
 - Decision: Home Solve opens a dedicated temporary workspace with manual/string input or copied live draft/finished-puzzle clues. Never read player entries/notes as solver constraints. Input/results survive in-app navigation; leaving cancels active work; refresh clears the workspace. Optional Save Clues creates a normal independent draft.
 - Persistence recommendation: results, trace and limit preference remain memory-only. No IndexedDB/library/backup version changes and no saved puzzle verification metadata. Existing draft/play autosaving remains intact. Clearly label temporary analysis and clarify library/player copy about the absence of saved analysis.
 - Rationale: fits the inspected controller/repository boundaries and avoids introducing certificate lifecycle/restore semantics before M2 evidence is tested. Durable result storage would need a later explicit migration/backup design.
-- Contract: specification §§2–4 and 10; plan Tasks 1, 8–10.
+- Current contract: revised screen specification §§2–3, engine contracts §9 and plan T23–T25; historical task/section numbering is superseded by D059.
 
 ## D048 — Deterministic candidate and explanation baseline
 
@@ -440,8 +440,8 @@ Record each answer here with its rationale and consequences. If an answer change
 - Revision: the fixed six-technique-only scope and flat-only proof/order contract are superseded by D054–D057. Keep this entry as the initial kernel proposal, not the final requested engine capability.
 - Decision: 9-bit masks separate from manual notes; monotone checked candidate state; ordered naked single → hidden single → locked pointing → locked claiming → naked pair → hidden pair. Restart at singles after every productive pattern; define precise unit/cell/digit tie breaks, all row/column/box pair coverage and both intersection directions.
 - Explanation contract: versioned typed premises/effects/revisions with explicit peer eliminations; no hidden cascading placements. Retain full human prefix and labeled search boundary/completion, successful guess path and failed-branch summary counts. Exact count enumeration is separate from the human explanation trace.
-- Rationale: deterministic replay and soundness checks are practical for the approved small initial technique set. No advanced techniques, technique selector or full search-tree trace in M2.
-- Contract: specification §§4–6; plan Tasks 1, 3–5, 7, 9.
+- Historical rationale: deterministic replay and soundness checks were practical for the initial small technique set. The former advanced-technique exclusion is superseded by D054/D060; no full fallback search-tree trace remains the proposal.
+- Current contract: engine contracts §§3–6 and technique matrix; plan T03–T19. The old six-technique-only order is not executable scope.
 
 ## D049 — Exact evidence checked against original clues
 
@@ -451,15 +451,15 @@ Record each answer here with its rationale and consequences. If an answer change
 - Consequence: one witness with unfinished checking remains unknown with lower bound one; two witnesses establish at least two, never exactly two. Count-only search does not mark a complete human path search-assisted. Perfect evidence requires independent unique classification and complete replay-valid baseline deductions with no fallback, and is not a quality label for already-complete input.
 - Inconsistency policy: quarantine incompatible human evidence; discard exhaustion that contradicts a validated witness. Preserve independently validated evidence without silently selecting a contradictory conclusion.
 - Rationale: counting from human-pruned candidates would allow a bad deduction to create false uniqueness. Runtime DFS plus a separate test-only exact-cover oracle gives distinct correctness checks without multiple production engines.
-- Contract: specification §§7 and 11; plan Tasks 2, 6, 7.
+- Current contract: engine contracts §7; plan T01/T06/T20/T25. D063 adds a proposed human-phase ceiling without changing original-clue count independence.
 
 ## D050 — Identity-bound checkpoints and immediate cancellation
 
 - Status: Proposed for M2 review.
-- Decision: one dedicated worker per run; exact snapshot content key, local input revision, snapshot UUID and fresh request UUID accompany versioned sequenced messages. Source library revision is provenance, not the freshness authority for unrelated saves. Accept complete immutable checkpoints only for the active request.
+- Decision: one dedicated worker per run; exact snapshot content key, local input revision, snapshot UUID and fresh request UUID accompany versioned sequenced messages. Source library revision is provenance, not the freshness authority for unrelated saves. The former full-checkpoint transport is superseded by D062's bounded proof chunks and atomic complete-step acceptance.
 - Cancellation: controller terminalizes the request before terminating the worker; preserve only previously accepted evidence and ignore every late message. Navigation and total-budget watchdog use the same ordering. No acknowledgement-dependent Cancel protocol or shared memory. Typed startup/runtime/protocol errors preserve prior valid evidence.
 - Rationale: a worker may be aborted without flushing its discoveries; a blocked worker cannot acknowledge a cancellation message promptly. Immediate identity invalidation resolves result/Cancel races without writes to the original record.
-- Contract: specification §8; plan Tasks 7–10. Browser-standard/Vite sources are linked in the specification.
+- Current contract: engine contracts §8; plan T21–T25. Browser-standard/Vite sources are linked beside the contracts.
 
 ## D051 — Proposed total time budget and benchmark gate
 
@@ -467,15 +467,15 @@ Record each answer here with its rationale and consequences. If an answer change
 - Decision: one total 1–120 integer-second limit, default 10 seconds, covering validation/human/exact work and startup; rerun restarts from original clues. Target 8 ms worker slices and 100 ms routine progress; emit evidence milestones immediately. Main watchdog plus worker-local deadline stop unfinished checks without inventing conclusions.
 - Validation required: independent labeled corpus, production Chromium measurements on the user's PC, separate documented slower CPU-throttle profile, cold/warm trials, first-witness versus final-count latency, cancellation/deadline latency, payload/UI cost and cleanup stability. Specification §9 defines proposed numeric targets; they are not measured performance promises.
 - Consequence: actual benchmarks and any revised defaults must be recorded before release. No research-source timings substitute for this implementation's measurements.
-- Contract: specification §§8–9; plan Tasks 7–10.
+- Current contract: engine contracts §§7–9; plan T19–T26. D063 replaces the original all-fixtures-at-default-time target with coverage and measured performance gates suitable for the expanded corpus.
 
 ## D052 — Independent solver correctness and acceptance evidence
 
 - Status: Proposed verification method under confirmed solver-correctness requirements.
 - Decision: test-only set-based Algorithm X oracle and separate plain grid checker, neither importing production solver/checking internals. Use independently labeled original-clue fixtures, satisfiable candidate-state technique fixtures, per-elimination forcing/per-placement forbidding, trace replay mutation tests and seeded differential transformations.
-- Acceptance: real worker tests plus deterministic injected-clock/race tests; duplicate/unsatisfiable/unique/multiple/full/empty cases; no false uniqueness/Perfect on interruption or search; source and session/history/backup isolation; Portuguese accessible result/trace and production-build verification.
+- Acceptance: real worker tests plus deterministic injected-clock/race tests; duplicate/unsatisfiable/unique/multiple/full/empty cases; no false uniqueness/Perfect on interruption or search; source and session/history/backup isolation; English accessible result/trace under D053 and production-build verification.
 - Rationale: detector fixtures or production output alone cannot grade solver correctness independently. Oracle timeouts are inconclusive tests, not proofs. Benchmark evidence must distinguish measured facts from proposed targets.
-- Contract: specification §11 and the plan's task-to-spec coverage map. A future `docs/m2-solver-verification.md` will record execution evidence; it is not claimed during design.
+- Current contract: technique matrix §7 and the revised plan's requirement map. A future `docs/m2-solver-verification.md` will record execution evidence; it is not claimed during design.
 
 ## D053 — English interface, fixed note positions and repeat-value erasing
 
@@ -493,7 +493,7 @@ Record each answer here with its rationale and consequences. If an answer change
 - Status: Confirmed direction, 2026-09-12; implementation remains unauthorized.
 - Source: user objected to limiting the solver to the six baseline techniques, requested research and inclusion of logical deduction techniques, and proposed board/technique scoring inspired by chess engines. The user also requires the architecture to anticipate interacting constraints now.
 - Decision: expand the design target beyond the initial kernel to an explicit technique-family/alias/coverage catalogue; investigate adaptive scheduling and choosing useful deductions. Do not silently substitute the original small M2 scope for this request. The future variant UI remains in its existing milestones, but the shared constraint/proof boundary belongs in the engine design now.
-- Consequence: D048's fixed-only scope/order and the initial ten-task plan need revision. Preserve their isolation/count/cancellation safeguards. “All techniques” is a coverage goal, not an unverified universal completeness claim; state supported families and finite proof/search bounds explicitly.
+- Consequence: D048's fixed-only scope/order and the initial ten-task plan were superseded by the expanded contracts and 27-task plan under D059. Preserve their isolation/count/cancellation safeguards. “All techniques” is a coverage goal, not an unverified universal completeness claim; state supported families and finite proof/search bounds explicitly.
 - Research artifact: [expanded engine proposal](superpowers/specs/2026-09-12-m2-engine-expansion-design.md), including primary-source findings, catalogue, scheduler alternatives, mixed-constraint contracts and planning impact.
 
 ## D055 — Explain and Analyze modes, defaulting to Explain
@@ -520,7 +520,7 @@ Record each answer here with its rationale and consequences. If an answer change
 - Engine boundary: one normalized constraint problem, shared candidate/fact indexes, versioned rule capabilities, reusable reasoning families and a separate proof checker. Distinguish small all-different scopes from full digit-covering houses. Mixed-rule deductions cite every needed constraint. Exact counting continues from the complete original problem in separate state.
 - Proof/evidence: graph-shaped proofs with explicit assumption scopes and provenance; mode/profile/scheduler/rule identities; fair scheduling and honest bounded-stall/incomplete statuses. Revise full-trace worker checkpoints to bounded proof batches with atomic acceptance and cancellation during verification. Numerical limits remain proposals.
 - Validation: independently checked technique fixtures, proof mutation tests, scheduling ablations, held-out/adversarial corpora, mock multi-constraint contracts, worker backpressure/races and no play-state writes. Reference sources demonstrate related ideas, not a measured speedup or complete technique coverage for this project.
-- Next checkpoint: review the proposal, specify advanced proof-family bounds and concrete interfaces, revise the detailed implementation plan, then obtain implementation authorization. No application code changed in this research/design pass.
+- Next checkpoint: review the now-complete contracts, bounded matrix and revised plan under D059–D064, then obtain implementation authorization. No application code changed in these design passes.
 
 ## D058 — Light and dark modes with five pastel themes
 
@@ -530,4 +530,56 @@ Record each answer here with its rationale and consequences. If an answer change
 - Persistence: `settings.colorMode` and `settings.theme` use the existing atomic IndexedDB save path. Changes apply immediately to the document root. Version-1 libraries/backups without either field receive its default; explicit invalid values are rejected. Names, puzzle data and histories are preserved. Existing backup settings opt-in also controls appearance restoration.
 - Scope: appearance only; preserve the separate M2 design work and legacy Spring files. No solver functionality or appearance-specific storage service was added.
 - Evidence: [appearance verification](appearance-verification.md).
+
+## D059 — Complete expanded M2 planning, preserve newer work
+
+- Status: Confirmed planning authorization, 2026-09-12; proposed technical details remain subject to review.
+- Source: user's continuation explicitly requested inspection, completed design/interfaces/coverage/plan, consistent Markdown, verification and focused local commits; design and planning only.
+- Inspection: clean `docs/m2-solver-design` at `80471d2`, preserving expanded research `24e0d25` and newer D058 appearance implementation; no applicable AGENTS.md. Current application/test/configuration and verification records were read.
+- Deliverables: [revised screen specification](superpowers/specs/2026-09-12-m2-classic-solver-design.md), [research rationale](superpowers/specs/2026-09-12-m2-engine-expansion-design.md), [concrete contracts](superpowers/specs/2026-09-12-m2-engine-contracts.md), [coverage matrix](superpowers/specs/2026-09-12-m2-technique-coverage.md), [complete 27-task plan](superpowers/plans/2026-09-12-m2-classic-solver.md). These replace the old six-technique/ten-task contracts.
+- Gate: no solver code before explicit design approval; no repeated first-release interview. Current [planning verification](m2-design-verification.md) checks documentation, not solver runtime.
+
+## D060 — Finite broad coverage and proof-family acceptance
+
+- Status: Proposed implementation contract under confirmed D054/D056.
+- Decision: 33 primary and five conditional matrix rows with aliases, prerequisites, grammar, supported parameter classes, positive/negative/boundary/original-clue fixtures and independent force/forbid acceptance. Every requested family retains a bounded implementation task; intermediate kernel delivery cannot be called completed M2.
+- Bounds include basic fish 2–7, complex fish 2–4, <=4 fins, ordinary chains <=24 links, generalized chains <=12 pairs, ALS <=5 cells, forcing nesting <=2, local specialized pattern certificates, template single/pair/triple overlay, and conditional rectangle/loop/BUG forms. Non-Junior Exocet and unproved/generalized extensions are explicitly outside these finite bounds.
+- Correctness: names do not establish proofs. Every claimed form must satisfy its named grammar and independent fixtures. Generalized whips/braids are distinct from AICs. Local finite tables are allowed only within declared pattern grammars, never an arbitrary exact solution relabeled as logic.
+- Release consequence: missing named acceptance is a failed row gate, not permission to silently remove the family. No universal “all techniques” completeness claim. Matrix statuses are specified, not implemented or verified.
+
+## D061 — Shared semantic state and checked proof graph
+
+- Status: Proposed architecture under D054/D057.
+- Decision: canonical full-rule problem identity, static RuleModule registry, checked all-different versus digit-cover capabilities, one shared monotone domain/fact state per branch, and typed resumable discovery. Filled cells retain singleton domains; assignments are separate, superseding the old zero-mask convention.
+- Checking: clue/rule/domain roots, resolution/count/table primitives, exhaustive cases, scoped assumptions/discharge, inherited rule provenance and non-dischargeable uniqueness dependency. Only an opaque checked step can enter the atomic reducer. Candidate initialization and mechanical peer effects have proof roots too.
+- Invalidation: central ChangeSet, exhaustive support indexes, transitive dependency watches, initially conservative global graph invalidation and cold-rebuild differential tests. Cache identity includes problem/branch/revision/versions; registration order cannot change semantics.
+- Composition: small test-only sum/order/all-different modules prove shared-candidate and cross-rule interactions; production remains classic-only. Missing complete-rule semantics fails assembly, never a partial full-puzzle claim.
+- Contract: engine contracts §§1–5; plan T02–T05/T08.
+
+## D062 — Credit-controlled proof streaming and atomic acceptance
+
+- Status: Proposed protocol replacing D050's full-checkpoint payload shape.
+- Decision: protocol 2 binds operation/mode/profile/scheduler/checker/exact/options and parent uniqueness evidence as well as snapshot/request identity. One worker and one pending proof step; bounded begin/chunk/end transport, node dependencies and contiguous message sequence.
+- Backpressure: ACK after bounded safe chunk staging grants transport credit; a separate accepted-step response follows complete main-thread checking and atomic candidate/trace commit. This avoids deadlock for proofs larger than the two-chunk window. Worker cannot build the next dependent revision before acceptance.
+- Phase boundary: a separate stop-human/human-stopped exchange reconciles the accepted revision before abandoning a pending proof for reserved exact work. It does not replace immediate acknowledgement-free Cancel.
+- Proposed hard transport caps: 64 KiB chunks, two unacknowledged chunks, 32 KiB control packets, 16 KiB individual nodes; incremental UTF-8 encoding/decoding and main-thread check tasks. Apply cumulative node/byte limits before allocation. No partial proof effects, giant JSON parse or repeated full traces.
+- Cancellation: invalidate active identity before cleanup/terminate; discard staged proof, retain accepted evidence, ignore late callbacks. Same behavior for navigation/watchdog/errors. Deadline checked at receipt and immediately before commit; tie favors timeout. Terminal success cannot bypass a pending step.
+- Contract: engine contracts §8; plan T21–T25.
+
+## D063 — Scheduling, phase reserve and unmeasured resource defaults
+
+- Status: Proposed, explicitly unmeasured; confirmed requirements remain D042/D055/D057.
+- Policy: fixed-work quanta, canonical ties, every fourth quantum serves oldest eligible job; Explain completes lower tiers before claiming their exhaustion, Analyze compares at most four checked steps. Score detector opportunities separately from proved-step usefulness. Frozen integer estimates, no online/persistent learning; safe filters prove absent prerequisites rather than low payoff.
+- Lookahead: bounded proof-only Analyze rollout initially off by default. Benchmark <=4 candidates, <=16 cheap continuations and <=10% remaining work (cap 8,192); no guesses, exact calls or speculative fact leakage.
+- Phase reserve: proposed human ceiling 70% of total time/work, then independent original-problem exact checking with remaining budget. Early logical completion/stall lends unused time to exact. Reaching the ceiling is incomplete logical coverage and explicitly identified fallback, not stall. Compare 50/70/unreserved policies.
+- Proposed controls: 10-second default, integer 1–120; 2,000,000 work units, 500,000 exact nodes, 4,096 proof nodes/step, 65,536/run, 1 MiB/step and 8 MiB/run, adjustable ranges in contracts §9. Accounted engine workspace target 64 MiB is not a heap guarantee. All defaults, phase ratios, scores and latency targets await production benchmarks.
+- Gate: independent correctness/coverage first; held-out policy/rollout ablations, baseline/throttled cold/warm latency/work/heap/transport/cancel/cleanup measurements. Advanced stress cases may honestly be incomplete at defaults; generous deterministic fixture checks still gate advertised support. No speedup asserted; defaults/profile changes must update decisions and review evidence, not silently weaken coverage.
+
+## D064 — Volatile primary and conditional analysis, review disposition
+
+- Status: Proposed flow/persistence detail under D047/D056; English/appearance preservation confirmed by D053/D058.
+- Decision: one temporary input and primary result plus at most one conditional result; navigation cancels but retains accepted memory state, reload clears it. Modes/limits/technique profiles/results are memory-only. No IndexedDB/library/backup migration or hidden storage. Existing D058 appearance preferences remain durable.
+- Conditional action is enabled only after independent unique evidence for the same original problem; fresh request rechecks unconditional prefix, retains primary board/count, never uses exact solution digits as premises, never qualifies for Perfect. Primary rerun/input edit invalidates conditional results; conditional Cancel/rerun preserves primary result.
+- User flow: manual/paste/live-draft/original-puzzle clues inside Solve, English read-only results/expandable proof graph/coverage ledger/separate solution verification, configurable advanced limits and explicit Save Clues as Draft. No gameplay hints. Preserve all play/session/history/settings state except that explicit new draft action.
+- Review: no unresolved product question blocks the completed specification/plan. Approval concerns the concrete proposed choices; measured calibration remains an implementation gate. Implementation still requires explicit design approval.
 
