@@ -258,9 +258,9 @@ expect(discoverFixture("C12-n7").status).toBe("out-of-profile");
 
 **Files:** create `src/solver/techniques/fish.ts`, `fish-certificate.ts`; fixtures `C06.json`–`C09.json`; tests `tests/unit/solver/fish.test.ts`, `fish-complex.test.ts`; `docs/solver/techniques/fish.md`; update registry/manifest/provenance.
 
-**Interfaces:** `fishTechniques: readonly TechniqueDescriptor[]`; `checkFishPattern(proposal, context): CheckedInference[]` calls counts/resolution checkers, not `discover`. C24 later reuses the same base/cover certificate with proved fin-false premises.
+**Interfaces:** `fishTechniques: readonly TechniqueDescriptor[]`; actual T10 `checkFishPattern(proposal, view, available): void` is the closed structural named gate, invoked after primitive validity, reachability, scope and effect checks. It does not call `discover` or issue another proof authority. D076 refines the count-only domain decoder; D079 defines geometry labels; D080 adds watched discovery exclusions. C24 later reuses the same base/cover certificate with proved fin-false premises. See the [fish contract and reasoning](../../solver/techniques/fish.md).
 
-- [ ] Write size/overlap counterfactuals:
+- [x] Write size/overlap counterfactuals:
 
 ```ts
 for (let n = 2; n <= 7; n++) {
@@ -270,10 +270,10 @@ expect(checkFixtureMutation("C08-mutant-4", "omit-overlap-coefficient").kind).to
 expect(checkFixtureMutation("C09-siamese", "delete-second-root").kind).toBe("rejected");
 ```
 
-- [ ] Run `npm test -- tests/unit/solver/fish.test.ts tests/unit/solver/fish-complex.test.ts`.
-- [ ] Enumerate same-digit base/cover combinations canonically; basic n2…7, mixed n2…4, <=4 fin occurrences. Compile complete base covers and at-most-one conflicts into a bounded incidence/resolution certificate under target=true. Treat endo-fin multiplicity explicitly; cannibalistic targets may be in bases. Siamese requires two independent certificates, retaining both roots. No full-grid DFS. Classify finned/sashimi and geometry aliases using exact matrix predicates.
-- [ ] Run all size/orientation/fin/mixed/endo/cannibal/Siamese classes, force/forbid, original-clue replay, typecheck; assert impossible proof/work completion reports interruption rather than absence.
-- [ ] Commit listed files: `feat: add bounded basic finned and complex fish proofs`.
+- [x] Run `npm test -- tests/unit/solver/fish.test.ts tests/unit/solver/fish-complex.test.ts`.
+- [x] Enumerate same-digit base/cover combinations canonically; basic n2…7, mixed n2…4, <=4 fin occurrences. Compile complete base covers and at-most-one conflicts into a bounded incidence/resolution certificate under target=true. Treat endo-fin multiplicity explicitly; cannibalistic targets may be in bases. Siamese requires two independent certificates, retaining both roots. No full-grid DFS. Classify finned/sashimi and geometry aliases using exact matrix predicates.
+- [x] Run all size/orientation/fin/mixed/endo/cannibal/Siamese classes, force/forbid, original-clue replay, typecheck; assert impossible proof/work completion reports interruption rather than absence.
+- [x] Commit listed files: `feat: add bounded basic finned and complex fish proofs`.
 
 ## T11 — Coloring, chains and loops C14–C17
 

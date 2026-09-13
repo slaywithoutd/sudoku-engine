@@ -61,6 +61,8 @@ M1 is complete under the [approved behavior specification](superpowers/specs/202
 
 M2 implementation batches preserve the full bounded target: oracle/contracts/shared proofs → foundation → graph/short patterns/fish → coloring/chains/ALS → combinations/forcing/generalized/specialized/templates → conditional techniques → scheduling/orchestration → bounded worker/controller/UI → independent integration and benchmark gates. Intermediate batches are reviewable; completing the first six techniques does not complete M2. No universal technique completeness is promised.
 
+T01-T10 are implemented and independently reviewed, covering C01-C13. Fish commit `43fc459` passed 853 tests and typecheck; two minor fixture/provenance follow-ups are assigned to the T25 integration gate. Coloring/chains/loops are next. Later families, worker/application integration and resource calibration remain required before M2 becomes available.
+
 Remaining empirical gates are cost tables, proposed 70% human-phase share, configurable time/work/proof limits and Analyze rollout benefit. Proposed default is 10 seconds with 1–120 control; all caps and measurement criteria are in the contracts. Temporary input/results/options remain memory-only; optional Save Clues creates a normal draft. No unresolved product question blocks this design, and no solver default is yet validated.
 
 At each later checkpoint: read the decision log, inspect the implemented state, research any changing tool/format behavior, settle that stage's deferred choices, write its specification and implementation plan, and record results in this folder. Preserve earlier user decisions unless the user changes them.

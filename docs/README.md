@@ -80,4 +80,4 @@ Start M2 review with the [revised specification](superpowers/specs/2026-09-12-m2
 9. [Reference research](references/reference-research.md), [architecture research](references/architecture-research.md), [toolchain evidence](references/toolchain.md)
 10. [Historical planning verification](planning-verification.md) and [actual release verification](release-verification.md)
 
-11. [M2 implementation evidence](m2-implementation-progress.md), [engine coding guide](solver/architecture.md), [foundation reasoning](solver/techniques/foundation.md) and [short-pattern/wing reasoning](solver/techniques/wings-and-short-patterns.md)
+11. [M2 implementation evidence](m2-implementation-progress.md), [engine coding guide](solver/architecture.md), [foundation reasoning](solver/techniques/foundation.md), [short-pattern/wing reasoning](solver/techniques/wings-and-short-patterns.md) and [fish reasoning](solver/techniques/fish.md)

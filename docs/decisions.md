@@ -684,7 +684,7 @@ Record each answer here with its rationale and consequences. If an answer change
 
 ## D076 — Bound count certificates by necessary negative incidences
 
-- Status: Technical prerequisite for T10, 2026-09-13; implementation and independent review pending.
+- Status: Technical prerequisite for T10, 2026-09-13; implemented and independently reviewed at `43fc459`.
 - Gap: `cover-count@1` currently requires domain facts for every cell in its base/cover union. Ordinary fish sizes 5/6/7 therefore need 75/84/91 premises, exceeding the fixed 64-premise node cap. Raising the cap or omitting these requested sizes is unnecessary.
 - Decision: retain the exact weighted incidence inequality. Let w(cell)=capacity coefficient minus cover coefficient and B=total capacity weight minus total cover weight, so sum(w*x)<=B. Only negative-coefficient occurrences require explicit domain evidence proving x=0; zero/positive terms are already nonnegative. Require such evidence for every negative coefficient, with no missing occurrence. Every supplied domain remains valid, unique and in the counted scope; a compatible superset is allowed for existing certificates.
 - Infer false only if B<0; infer not-target only if its positive coefficient exceeds B. Keep positive integer coefficient bounds, exact scope identities, complete cover meanings, checked domain provenance, assumption/conditional inheritance and all existing byte/arity caps. No estimated support or cached absence can replace a premise.
@@ -698,3 +698,25 @@ Record each answer here with its rationale and consequences. If an answer change
 - The C16 examples described as lengths 4/24 conflated vertices and links. An open endpoint-disjunction AIC starts and ends strong, so its alternating internal edge count is odd. Four and 24 candidate vertices have three and 23 internal inference links. Target-conflict premises are additional, as in D070/D074.
 - Record both vertex count and inference-link count explicitly. Require productive four/24-vertex examples, an even 24-link prefix that cannot be presented as a strong-ended endpoint deduction, and a 25-link out-of-profile case. C17 continuous loops can have 24 alternating links including closure; discontinuous loops additionally check their repeated endpoint and inferred polarity. A failed productivity condition is different from a resource interruption or a size bound.
 - This interpretation follows the [author's X/XY-chain and AIC definitions](https://hodoku.sourceforge.net/en/tech_chains.php), inspected 2026-09-13. Internal cell links count too; graphical arrows and candidate vertices are not interchangeable units.
+
+
+## D078 — Count ALS visits separately from ordinary group vertices
+
+- Status: Technical graph representation clarification for T11, 2026-09-13; implementation/review pending.
+- C17 counts each ordinary group vertex and each ALS visit toward its four-special-node cap. An ALS visit includes its entry/exit symbol events and one proved internal strong inference; that inference and every external link count toward 24 links.
+- Ordinary groups retain the three-member house-intersection bound. ALS events retain every occurrence in the selected ALS of at most five cells. Never truncate an ALS event to three members. Primitive table expansion consumes separate proof/work limits.
+- Canonical visit identity uses the actual selected cells; group identity uses symbol/members. Presentation or source-recipe differences cannot create another semantic node. Preserve the simple-path/explicit-loop endpoint rule. Require four-visit and over-limit regressions plus actual five-cell ALS evidence. This is the engine's finite representation choice, consistent with treating [ALS as chain nodes](https://hodoku.sourceforge.net/en/tech_als.php), not a source-defined numerical limit.
+
+## D079 — Preserve arbitrary fish geometry while preferring specific labels
+
+- Status: Technical naming clarification for T10, 2026-09-13; implemented and independently reviewed at `43fc459`. The C08 arbitrary-house scope remains unchanged.
+- Mutant admission covers arbitrary distinct classic base/cover house sets within the recorded sizes and fin bounds. Do not require both row and column houses on the same side: that would exclude approved combinations. Basic and Franken are more specific shapes within this general geometry; discovery may prefer their labels when applicable without using naming preference to filter general coverage.
+- Franken requires at least one box and an orientation assignment with only rows/boxes on one side and columns/boxes on the other, allowing the swapped assignment and a side consisting solely of boxes. Equal line orientations on both sides are not automatically Franken. Basic retains its parallel row/column definition.
+- The [author's fish classification](https://hodoku.sourceforge.net/en/tech_fishg.php), inspected 2026-09-13, describes Mutant using arbitrary house combinations. Alias overlap does not establish another deduction or independent component. Every accepted label still requires its exact incidence certificate and all effect roots; specific-label preference is presentation, not proof authority or an exclusion rule.
+
+## D080 — Report necessary capability exclusions from discovery explicitly
+
+- Status: Technical discovery-contract refinement for T10, 2026-09-13; implemented and independently reviewed at `43fc459`; runtime consumption remains T19 onward.
+- Add `DiscoveryEvent` form `{ kind: "excluded"; reason: string; dependencies: readonly Watch[] }`, matching eligibility's evidence. Direct discovery on an authentic view without required capabilities terminates with this event, rather than throwing during a missing-house dereference or claiming that a search exhausted. An unowned/forged view is still an admission error.
+- Fish checks actual canonical house geometry and exact proved full digit-cover facts. Available covers provide bases per symbol; available all-different scopes provide capacities. Familiar IDs, cell count and the presence of an unrelated cover are insufficient. Do not demand a complete classic rule collection where a valid partial source collection proves the deduction.
+- T19/T20 consume the terminal status and preserve watched exclusion reasons; T21/T23 carry the existing ledger projection without conflating exclusion and interruption. Same-revision proof-source growth can invalidate exclusions. These events grant no proof, candidate, solution-count or quality authority.
