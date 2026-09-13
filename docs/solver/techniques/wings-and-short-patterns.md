@@ -45,9 +45,11 @@ inference. The first strong scope is always the box, fixing path orientation.
 `ShortComponentLineage` separately binds each component's endpoint clause to its
 two exact current house covers and every middle conflict. Its target roots then
 use only that endpoint clause and the component's outer target conflicts. Every
-effect needs such a local root, and the two components must contribute distinct
+supplied negative effect root must belong to one of these component-local proofs,
+and the two components must contribute distinct
 root node IDs. Shared premises and coincident endpoint clauses are permitted;
-pooled cross-component resolution does not satisfy either component's grammar.
+pooled cross-component resolution does not satisfy either component's grammar,
+even when genuine component roots accompany it.
 
 ## Implemented named geometry
 

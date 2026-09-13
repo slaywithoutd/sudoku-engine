@@ -169,18 +169,20 @@ class ShortComponentLineage {
   }
 }
 
-/** Distinct components need distinct negative roots, and every effect needs a local component proof. */
+/** Distinct components need distinct roots; every supplied effect root must be component-local. */
 export function requireDualRootLineage(proposal: DeductionProposal, view: ReadView,
   available: ReadonlyMap<number, ProofNode>, pattern: ShortPattern): void {
   const components = pattern.paths.map(path => new ShortComponentLineage(proposal, view, available, path));
   const roots = components.map(() => new Set<number>());
   for (const effect of proposal.effects) {
-    let covered = false;
+    const accepted = new Set<number>();
     components.forEach((component, index) => {
       const found = component.rootsFor(effect);
-      found.forEach(id => roots[index].add(id)); covered ||= found.length > 0;
+      found.forEach(id => { roots[index].add(id); accepted.add(id); });
     });
-    requireProof(covered, "missing-dual-effect-lineage");
+    const supplied = proposal.proof.roots.filter(id => sameValue(available.get(id)?.conclusion,
+      { kind: "literal", value: negative(effect.cell, effect.symbol) }));
+    requireProof(supplied.length > 0 && supplied.every(id => accepted.has(id)), "missing-dual-effect-lineage");
   }
   requireProof(roots.length === 2 && [...roots[0]].some(a => [...roots[1]].some(b => a !== b)),
     "missing-dual-component-root");

@@ -96,16 +96,28 @@ test.each([false,true])("Dual ER requires two component roots even when their en
   expect([...checkProposal(proposal,context)].at(-1)?.kind).toBe(both?"checked":"rejected");
 });
 
-test("Dual ER rejects a primitive-valid pooled cross-component derivation in place of two roots",()=>{
+test.each([false,true])("Dual ER rejects a primitive-valid pooled cross-component derivation even with genuine roots: %s",genuine=>{
   const f=shortFixtures.find(f=>f.id==="C10-dual-er")!,view=fixtureView(f),b=new FixtureProof(view);
   const pos=(cell:number)=>({cell,symbol:2,positive:true});
+  const roots:number[]=[];
+  if(genuine) {
+    const paths=(f.expectedPattern as unknown as ShortPattern).paths;
+    f.expectedEffects.forEach((effect,index)=>{
+      const path=paths[1-index],endpoint=b.shortEndpoint(path),target=pos(effect.cell);
+      roots.push(b.eliminate([endpoint,...[...path.vertices[0],...path.vertices[3]].map(cell=>b.weak(pos(cell),target))],target));
+    });
+  }
   const box=b.house("box:2",2),column=b.house("column:3",2),row=b.house("row:8",2);
   const not7=b.resolve(column,b.weak(pos(3),pos(7)),3,2),not8=b.resolve(column,b.weak(pos(3),pos(8)),3,2);
   const not24=b.resolve(row,b.weak(pos(78),pos(24)),78,2);
   const first=b.resolve(box,not7,7,2),second=b.resolve(first,not8,8,2),positive75=b.resolve(second,not24,24,2);
-  const roots=f.expectedEffects.map(e=>b.resolve(positive75,b.weak(pos(75),pos(e.cell)),75,2));
+  roots.push(...f.expectedEffects.map(e=>b.resolve(positive75,b.weak(pos(75),pos(e.cell)),75,2)));
   const proposal=b.finish(f,roots),context={view,retained:retainedProof(view),limits:discoveryContext().limits,policy:"unconditional" as const,uniqueEvidenceId:null};
   expect([...verifyCertificate(proposal,context)].at(-1)?.kind).toBe("verified");
+  if(genuine) {
+    expect(proposal.proof.nodes).toHaveLength(31);
+    expect(proposal.proof.roots.filter(id=>proposal.proof.nodes.find(n=>n.id===id)?.conclusion.kind==="literal")).toHaveLength(4);
+  }
   expect(proposal.proof.nodes.filter(n=>n.rule==="support@1")).toHaveLength(3);
   expect([...checkProposal(proposal,context)].at(-1)?.kind).toBe("rejected");
 });
