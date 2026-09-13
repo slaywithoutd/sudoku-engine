@@ -19,9 +19,9 @@ test("preserves exact UTF8 matrix bounds for every catalogue row", () => {
 test("catalogues all 38 exact matrix rows and only independently accepted implementations", () => {
   expect(coverageEntries).toHaveLength(38);
   expect(new Set(coverageEntries.map(e => e.id)).size).toBe(38);
-  expect(coverageEntries.filter(e => e.id > "C19").every(e => e.status === "specified")).toBe(true);
+  expect(coverageEntries.filter(e => e.id > "C21").every(e => e.status === "specified")).toBe(true);
   expect(validateCoverage(coverageEntries)).toEqual([]);
-  expect(coverageEntries.filter(e=>e.status==="independently-verified").map(e=>e.id)).toEqual(["C01","C02","C03","C04","C05","C06","C07","C08","C09","C10","C11","C12","C13","C14","C15","C16","C17","C18","C19"]);
+  expect(coverageEntries.filter(e=>e.status==="independently-verified").map(e=>e.id)).toEqual(["C01","C02","C03","C04","C05","C06","C07","C08","C09","C10","C11","C12","C13","C14","C15","C16","C17","C18","C19","C20","C21"]);
   expect(new Set(aliasMappings.map(e=>e.alias)).size).toBe(aliasMappings.length);
   expect(unsupportedAliases.every(e=>e.reason && e.nearestSupportedForm)).toBe(true);
   expect(getTechniques("classic-expanded@1")).toHaveLength(33);
@@ -32,7 +32,7 @@ test("partial catalogue cannot start an expanded run or silently stall as exhaus
   expect(()=>assembleTechniqueJobs(view.assembly,"classic-expanded@1")).toThrow("profile-incomplete");
   const fake={...view.assembly,problem:{...view.assembly.problem,constraints:Array(230).fill(view.assembly.problem.constraints[0])}};
   expect(()=>assembleTechniqueJobs(fake,"classic-expanded@1")).toThrow("profile-job-limit");
-  const future=getTechniques("classic-expanded@1").find(t=>t.id==="c20@1")!;
+  const future=getTechniques("classic-expanded@1").find(t=>t.id==="c22@1")!;
   expect(future.eligible(view)).toMatchObject({kind:"excluded",reason:"specified-not-implemented"});
   expect(()=>[...future.discover(view, discoveryContext())]).toThrow("specified-not-implemented");
 });

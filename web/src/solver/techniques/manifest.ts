@@ -4661,12 +4661,79 @@ export const coverageEntries: readonly CoverageEntry[] = Object.freeze((
     "grammarId": "c20-grammar@1",
     "detectorId": "c20@1",
     "checkerId": "c20-grammar@1",
-    "descriptionPath": "docs/superpowers/specs/2026-09-12-m2-technique-coverage.md",
+    "descriptionPath": "docs/solver/techniques/set-arguments.md",
     "fixtureIds": [
-      "C20-intersection-2/3"
+      "C20-intersection-2",
+      "C20-intersection-3",
+      "C20-line-side-4",
+      "C20-box-side-4",
+      "C20-unused-third-side",
+      "C20-shared-outside-symbol",
+      "C20-max11-symbol9"
     ],
-    "status": "specified",
-    "evidence": []
+    "status": "independently-verified",
+    "evidence": [
+      {
+        "kind": "positive",
+        "fixtureId": "C20-intersection-2",
+        "alias": "Sue de Coq",
+        "record": "Independent named certificate and exact production compilation; both C20 spellings checked."
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "C20-intersection-2",
+        "alias": "Sue de Coq",
+        "record": "Named geometry/domain/tuple/capacity mutations plus standalone and mixed primitive-valid substitute-root rejection."
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "C20-max11-symbol9",
+        "alias": "Sue de Coq",
+        "record": "Exact finite scope certificate; 256-leaf partition completeness; Cartesian6561 and occupancy4096 gates in set-arguments.test.ts."
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C20-intersection-2",
+        "alias": "Sue de Coq",
+        "record": "Independent original-given prefix replay; max11 includes17 C01 placements and1 C04 naked pair; no candidate axioms."
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C20-intersection-2",
+        "alias": "Sue de Coq",
+        "record": "Independent Algorithm X: satisfiable pre-state, exhausted forced removal and satisfiable forbid; npm test -- tests/unit/solver/set-arguments.test.ts."
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "C20-intersection-2",
+        "alias": "Two-sector disjoint subsets",
+        "record": "Independent named certificate and exact production compilation; both C20 spellings checked."
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "C20-intersection-2",
+        "alias": "Two-sector disjoint subsets",
+        "record": "Named geometry/domain/tuple/capacity mutations plus standalone and mixed primitive-valid substitute-root rejection."
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "C20-max11-symbol9",
+        "alias": "Two-sector disjoint subsets",
+        "record": "Exact finite scope certificate; 256-leaf partition completeness; Cartesian6561 and occupancy4096 gates in set-arguments.test.ts."
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C20-intersection-2",
+        "alias": "Two-sector disjoint subsets",
+        "record": "Independent original-given prefix replay; max11 includes17 C01 placements and1 C04 naked pair; no candidate axioms."
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C20-intersection-2",
+        "alias": "Two-sector disjoint subsets",
+        "record": "Independent Algorithm X: satisfiable pre-state, exhausted forced removal and satisfiable forbid; npm test -- tests/unit/solver/set-arguments.test.ts."
+      }
+    ]
   },
   {
     "id": "C21",
@@ -4688,13 +4755,140 @@ export const coverageEntries: readonly CoverageEntry[] = Object.freeze((
     "grammarId": "c21-grammar@1",
     "detectorId": "c21@1",
     "checkerId": "c21-grammar@1",
-    "descriptionPath": "docs/superpowers/specs/2026-09-12-m2-technique-coverage.md",
+    "descriptionPath": "docs/solver/techniques/set-arguments.md",
     "fixtureIds": [
-      "C21-aligned-2/3/4",
-      "C21-count"
+      "C21-aligned-2",
+      "C21-aligned-3",
+      "C21-aligned-4",
+      "C21-count-multiple-symbols-external",
+      "C21-count-multiple-symbols-internal",
+      "C21-aligned-auxiliary-5",
+      "C21-count-12-symbols-9",
+      "C21-count-one-symbol"
     ],
-    "status": "specified",
-    "evidence": []
+    "status": "independently-verified",
+    "evidence": [
+      {
+        "kind": "positive",
+        "fixtureId": "C21-aligned-2",
+        "alias": "Aligned Pair Exclusion",
+        "record": "Independent named certificate and exact production compilation; both C20 spellings checked."
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "C21-aligned-2",
+        "alias": "Aligned Pair Exclusion",
+        "record": "Named geometry/domain/tuple/capacity mutations plus standalone and mixed primitive-valid substitute-root rejection."
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "C21-aligned-auxiliary-5",
+        "alias": "Aligned Pair Exclusion",
+        "record": "Exact finite scope certificate; 256-leaf partition completeness; Cartesian6561 and occupancy4096 gates in set-arguments.test.ts."
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C21-aligned-2",
+        "alias": "Aligned Pair Exclusion",
+        "record": "Independent original-given prefix replay; max11 includes17 C01 placements and1 C04 naked pair; no candidate axioms."
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C21-aligned-2",
+        "alias": "Aligned Pair Exclusion",
+        "record": "Independent Algorithm X: satisfiable pre-state, exhausted forced removal and satisfiable forbid; npm test -- tests/unit/solver/set-arguments.test.ts."
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "C21-aligned-3",
+        "alias": "Aligned Triple Exclusion",
+        "record": "Independent named certificate and exact production compilation; both C20 spellings checked."
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "C21-aligned-3",
+        "alias": "Aligned Triple Exclusion",
+        "record": "Named geometry/domain/tuple/capacity mutations plus standalone and mixed primitive-valid substitute-root rejection."
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "C21-aligned-3",
+        "alias": "Aligned Triple Exclusion",
+        "record": "Exact finite scope certificate; 256-leaf partition completeness; Cartesian6561 and occupancy4096 gates in set-arguments.test.ts."
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C21-aligned-3",
+        "alias": "Aligned Triple Exclusion",
+        "record": "Independent original-given prefix replay; max11 includes17 C01 placements and1 C04 naked pair; no candidate axioms."
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C21-aligned-3",
+        "alias": "Aligned Triple Exclusion",
+        "record": "Independent Algorithm X: satisfiable pre-state, exhausted forced removal and satisfiable forbid; npm test -- tests/unit/solver/set-arguments.test.ts."
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "C21-aligned-4",
+        "alias": "Generalized Aligned Exclusion",
+        "record": "Independent named certificate and exact production compilation; both C20 spellings checked."
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "C21-aligned-4",
+        "alias": "Generalized Aligned Exclusion",
+        "record": "Named geometry/domain/tuple/capacity mutations plus standalone and mixed primitive-valid substitute-root rejection."
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "C21-aligned-4",
+        "alias": "Generalized Aligned Exclusion",
+        "record": "Exact finite scope certificate; 256-leaf partition completeness; Cartesian6561 and occupancy4096 gates in set-arguments.test.ts."
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C21-aligned-4",
+        "alias": "Generalized Aligned Exclusion",
+        "record": "Independent original-given prefix replay; max11 includes17 C01 placements and1 C04 naked pair; no candidate axioms."
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C21-aligned-4",
+        "alias": "Generalized Aligned Exclusion",
+        "record": "Independent Algorithm X: satisfiable pre-state, exhausted forced removal and satisfiable forbid; npm test -- tests/unit/solver/set-arguments.test.ts."
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "C21-count-multiple-symbols-external",
+        "alias": "Subset counting",
+        "record": "Independent named certificate and exact production compilation; both C20 spellings checked."
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "C21-count-multiple-symbols-external",
+        "alias": "Subset counting",
+        "record": "Named geometry/domain/tuple/capacity mutations plus standalone and mixed primitive-valid substitute-root rejection."
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "C21-count-12-symbols-9",
+        "alias": "Subset counting",
+        "record": "Exact finite scope certificate; 256-leaf partition completeness; Cartesian6561 and occupancy4096 gates in set-arguments.test.ts."
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C21-count-multiple-symbols-external",
+        "alias": "Subset counting",
+        "record": "Independent original-given prefix replay; max11 includes17 C01 placements and1 C04 naked pair; no candidate axioms."
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C21-count-multiple-symbols-external",
+        "alias": "Subset counting",
+        "record": "Independent Algorithm X: satisfiable pre-state, exhausted forced removal and satisfiable forbid; npm test -- tests/unit/solver/set-arguments.test.ts."
+      }
+    ]
   },
   {
     "id": "C22",

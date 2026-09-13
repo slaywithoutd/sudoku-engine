@@ -7,6 +7,7 @@ import type { Literal, Proposition } from "../state/types";
 import { AssumptionStrategy, ConjunctionStrategy, ContradictionStrategy, DischargeStrategy, CasesStrategy } from "./assumptions";
 import { SupportStrategy, HallStrategy, CoverCountStrategy, AllDifferentSubsetStrategy } from "./counts";
 import { TableChecker } from "./tables";
+import { SubsetCountChecker } from "./subset-count";
 import type { TableDefinition } from "./tables";
 import type { ProofNode } from "./types";
 
@@ -261,6 +262,7 @@ function declaredRule(input: PrimitiveInput, context: CheckContext): CheckedInfe
 /** Closed, explicit version ownership, shared with capability assembly. */
 export class PrimitiveRegistry {
   readonly #tables: TableChecker;
+  readonly #subsetCount = new SubsetCountChecker();
   readonly #strategies: ReadonlyMap<string, Strategy> = new Map([
     ["domain-axiom@1", domain], ["given@1", given],
     ["rule-instance@1", declaredRule], ["all-different@1", declaredRule], ["cover@1", declaredRule],
@@ -280,11 +282,11 @@ export class PrimitiveRegistry {
   tableDefinition(node: ProofNode): TableDefinition | undefined { return this.#tables.get(node); }
 
   has(id: string): boolean {
-    return this.#strategies.has(id) || this.#tables.has(id);
+    return this.#strategies.has(id) || this.#tables.has(id) || id === this.#subsetCount.id;
   }
 
   get ids(): readonly string[] {
-    return Object.freeze([...this.#strategies.keys(), ...this.#tables.ids].sort());
+    return Object.freeze([...this.#strategies.keys(), ...this.#tables.ids, this.#subsetCount.id].sort());
   }
 
   check(input: PrimitiveInput, context: CheckContext): CheckedInference {
@@ -296,6 +298,7 @@ export class PrimitiveRegistry {
 
   /** Expensive finite-table semantics yield at tuple/pair/rejection boundaries. */
   *checkSteps(input: PrimitiveInput, context: CheckContext): Generator<number, CheckedInference, void> {
+    if (input.rule === this.#subsetCount.id) return yield* this.#subsetCount.check(input, context);
     if (this.#tables.has(input.rule)) return yield* this.#tables.check(input, context);
     return this.check(input, context);
   }

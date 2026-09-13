@@ -1,0 +1,2514 @@
+[
+  {
+    "id": "C21-aligned-2",
+    "rowId": "C21",
+    "givens": "534678912672195348198342567850761423026050791710020856961537284287019635045286179",
+    "preState": {
+      "values": [
+        5,
+        3,
+        4,
+        6,
+        7,
+        8,
+        9,
+        1,
+        2,
+        6,
+        7,
+        2,
+        1,
+        9,
+        5,
+        3,
+        4,
+        8,
+        1,
+        9,
+        8,
+        3,
+        4,
+        2,
+        5,
+        6,
+        7,
+        8,
+        5,
+        0,
+        7,
+        6,
+        1,
+        4,
+        2,
+        3,
+        0,
+        2,
+        6,
+        0,
+        5,
+        0,
+        7,
+        9,
+        1,
+        7,
+        1,
+        0,
+        0,
+        2,
+        0,
+        8,
+        5,
+        6,
+        9,
+        6,
+        1,
+        5,
+        3,
+        7,
+        2,
+        8,
+        4,
+        2,
+        8,
+        7,
+        0,
+        1,
+        9,
+        6,
+        3,
+        5,
+        0,
+        4,
+        5,
+        2,
+        8,
+        6,
+        1,
+        7,
+        9
+      ],
+      "domains": [
+        16,
+        4,
+        8,
+        32,
+        64,
+        128,
+        256,
+        1,
+        2,
+        32,
+        64,
+        2,
+        1,
+        256,
+        16,
+        4,
+        8,
+        128,
+        1,
+        256,
+        128,
+        4,
+        8,
+        2,
+        16,
+        32,
+        64,
+        128,
+        16,
+        256,
+        64,
+        32,
+        1,
+        8,
+        2,
+        4,
+        12,
+        2,
+        32,
+        136,
+        16,
+        12,
+        64,
+        256,
+        1,
+        64,
+        1,
+        260,
+        264,
+        2,
+        12,
+        128,
+        16,
+        32,
+        256,
+        32,
+        1,
+        16,
+        4,
+        64,
+        2,
+        128,
+        8,
+        2,
+        128,
+        64,
+        8,
+        1,
+        256,
+        32,
+        4,
+        16,
+        4,
+        8,
+        16,
+        2,
+        128,
+        32,
+        1,
+        64,
+        256
+      ]
+    },
+    "expectedPattern": {
+      "alias": "Aligned Pair Exclusion",
+      "selected": [
+        39,
+        47
+      ],
+      "auxiliaries": [
+        {
+          "cells": [
+            36
+          ],
+          "house": "row:4",
+          "symbols": [
+            3,
+            4
+          ]
+        },
+        {
+          "cells": [
+            48
+          ],
+          "house": "row:5",
+          "symbols": [
+            4,
+            9
+          ]
+        }
+      ]
+    },
+    "expectedEffects": [
+      {
+        "kind": "remove",
+        "cell": 39,
+        "symbol": 4
+      }
+    ],
+    "independentEnumeration": {
+      "cartesianAssignments": 4,
+      "survivors": [
+        [
+          8,
+          3
+        ],
+        [
+          8,
+          9
+        ]
+      ],
+      "rejections": [
+        {
+          "tuple": [
+            4,
+            3
+          ],
+          "emptyAuxiliary": [
+            36
+          ]
+        },
+        {
+          "tuple": [
+            4,
+            9
+          ],
+          "emptyAuxiliary": [
+            48
+          ]
+        }
+      ]
+    },
+    "origin": {
+      "author": "Independent repository fixture author",
+      "license": "Repository-owned; no external puzzle copied",
+      "sourceRevision": "independent-aligned-seeds@1",
+      "reusedGeometry": "C11-xy-box pre-state; independently reconstructed complete selected Cartesian assignments and explicit auxiliary empty matchings"
+    },
+    "prefix": "Only original-given peer exclusions; no solution-derived candidate axioms.",
+    "oracleRecord": {
+      "method": "independent-algorithm-x@1",
+      "inputHash": "204477b029655b4ce3064479161b232f9f5f48435ce432bc4261090def3af5f7",
+      "command": "npm test -- tests/unit/solver/set-arguments.test.ts",
+      "satisfiable": true,
+      "forceForbidExhausted": true
+    },
+    "grammar": "c21-grammar@1",
+    "alias": "Aligned Pair Exclusion",
+    "expectation": "productive",
+    "reachability": "original-clue-path"
+  },
+  {
+    "id": "C21-aligned-3",
+    "rowId": "C21",
+    "givens": "534678912672195348198342567850761423026050791710020856961537284287019635045286179",
+    "preState": {
+      "values": [
+        5,
+        3,
+        4,
+        6,
+        7,
+        8,
+        9,
+        1,
+        2,
+        6,
+        7,
+        2,
+        1,
+        9,
+        5,
+        3,
+        4,
+        8,
+        1,
+        9,
+        8,
+        3,
+        4,
+        2,
+        5,
+        6,
+        7,
+        8,
+        5,
+        0,
+        7,
+        6,
+        1,
+        4,
+        2,
+        3,
+        0,
+        2,
+        6,
+        0,
+        5,
+        0,
+        7,
+        9,
+        1,
+        7,
+        1,
+        0,
+        0,
+        2,
+        0,
+        8,
+        5,
+        6,
+        9,
+        6,
+        1,
+        5,
+        3,
+        7,
+        2,
+        8,
+        4,
+        2,
+        8,
+        7,
+        0,
+        1,
+        9,
+        6,
+        3,
+        5,
+        0,
+        4,
+        5,
+        2,
+        8,
+        6,
+        1,
+        7,
+        9
+      ],
+      "domains": [
+        16,
+        4,
+        8,
+        32,
+        64,
+        128,
+        256,
+        1,
+        2,
+        32,
+        64,
+        2,
+        1,
+        256,
+        16,
+        4,
+        8,
+        128,
+        1,
+        256,
+        128,
+        4,
+        8,
+        2,
+        16,
+        32,
+        64,
+        128,
+        16,
+        256,
+        64,
+        32,
+        1,
+        8,
+        2,
+        4,
+        12,
+        2,
+        32,
+        136,
+        16,
+        12,
+        64,
+        256,
+        1,
+        64,
+        1,
+        260,
+        264,
+        2,
+        12,
+        128,
+        16,
+        32,
+        256,
+        32,
+        1,
+        16,
+        4,
+        64,
+        2,
+        128,
+        8,
+        2,
+        128,
+        64,
+        8,
+        1,
+        256,
+        32,
+        4,
+        16,
+        4,
+        8,
+        16,
+        2,
+        128,
+        32,
+        1,
+        64,
+        256
+      ]
+    },
+    "expectedPattern": {
+      "alias": "Aligned Triple Exclusion",
+      "selected": [
+        39,
+        41,
+        47
+      ],
+      "auxiliaries": [
+        {
+          "cells": [
+            36
+          ],
+          "house": "row:4",
+          "symbols": [
+            3,
+            4
+          ]
+        },
+        {
+          "cells": [
+            48
+          ],
+          "house": "row:5",
+          "symbols": [
+            4,
+            9
+          ]
+        }
+      ]
+    },
+    "expectedEffects": [
+      {
+        "kind": "remove",
+        "cell": 39,
+        "symbol": 4
+      }
+    ],
+    "independentEnumeration": {
+      "cartesianAssignments": 8,
+      "survivors": [
+        [
+          8,
+          3,
+          3
+        ],
+        [
+          8,
+          3,
+          9
+        ]
+      ],
+      "rejections": [
+        {
+          "tuple": [
+            4,
+            3,
+            3
+          ],
+          "emptyAuxiliary": [
+            36
+          ]
+        },
+        {
+          "tuple": [
+            4,
+            3,
+            9
+          ],
+          "emptyAuxiliary": [
+            36
+          ]
+        },
+        {
+          "tuple": [
+            4,
+            4,
+            3
+          ],
+          "directConflict": [
+            39,
+            41,
+            4
+          ]
+        },
+        {
+          "tuple": [
+            4,
+            4,
+            9
+          ],
+          "directConflict": [
+            39,
+            41,
+            4
+          ]
+        },
+        {
+          "tuple": [
+            8,
+            4,
+            3
+          ],
+          "emptyAuxiliary": [
+            36
+          ]
+        },
+        {
+          "tuple": [
+            8,
+            4,
+            9
+          ],
+          "emptyAuxiliary": [
+            48
+          ]
+        }
+      ]
+    },
+    "origin": {
+      "author": "Independent repository fixture author",
+      "license": "Repository-owned; no external puzzle copied",
+      "sourceRevision": "independent-aligned-seeds@1",
+      "reusedGeometry": "C11-xy-box pre-state; independently reconstructed complete selected Cartesian assignments and explicit auxiliary empty matchings"
+    },
+    "prefix": "Only original-given peer exclusions; no solution-derived candidate axioms.",
+    "oracleRecord": {
+      "method": "independent-algorithm-x@1",
+      "inputHash": "204477b029655b4ce3064479161b232f9f5f48435ce432bc4261090def3af5f7",
+      "command": "npm test -- tests/unit/solver/set-arguments.test.ts",
+      "satisfiable": true,
+      "forceForbidExhausted": true
+    },
+    "grammar": "c21-grammar@1",
+    "alias": "Aligned Triple Exclusion",
+    "expectation": "productive",
+    "reachability": "original-clue-path"
+  },
+  {
+    "id": "C21-aligned-4",
+    "rowId": "C21",
+    "givens": "534678912672195348198342567850761423026050791710020856961537284287019635045286179",
+    "preState": {
+      "values": [
+        5,
+        3,
+        4,
+        6,
+        7,
+        8,
+        9,
+        1,
+        2,
+        6,
+        7,
+        2,
+        1,
+        9,
+        5,
+        3,
+        4,
+        8,
+        1,
+        9,
+        8,
+        3,
+        4,
+        2,
+        5,
+        6,
+        7,
+        8,
+        5,
+        0,
+        7,
+        6,
+        1,
+        4,
+        2,
+        3,
+        0,
+        2,
+        6,
+        0,
+        5,
+        0,
+        7,
+        9,
+        1,
+        7,
+        1,
+        0,
+        0,
+        2,
+        0,
+        8,
+        5,
+        6,
+        9,
+        6,
+        1,
+        5,
+        3,
+        7,
+        2,
+        8,
+        4,
+        2,
+        8,
+        7,
+        0,
+        1,
+        9,
+        6,
+        3,
+        5,
+        0,
+        4,
+        5,
+        2,
+        8,
+        6,
+        1,
+        7,
+        9
+      ],
+      "domains": [
+        16,
+        4,
+        8,
+        32,
+        64,
+        128,
+        256,
+        1,
+        2,
+        32,
+        64,
+        2,
+        1,
+        256,
+        16,
+        4,
+        8,
+        128,
+        1,
+        256,
+        128,
+        4,
+        8,
+        2,
+        16,
+        32,
+        64,
+        128,
+        16,
+        256,
+        64,
+        32,
+        1,
+        8,
+        2,
+        4,
+        12,
+        2,
+        32,
+        136,
+        16,
+        12,
+        64,
+        256,
+        1,
+        64,
+        1,
+        260,
+        264,
+        2,
+        12,
+        128,
+        16,
+        32,
+        256,
+        32,
+        1,
+        16,
+        4,
+        64,
+        2,
+        128,
+        8,
+        2,
+        128,
+        64,
+        8,
+        1,
+        256,
+        32,
+        4,
+        16,
+        4,
+        8,
+        16,
+        2,
+        128,
+        32,
+        1,
+        64,
+        256
+      ]
+    },
+    "expectedPattern": {
+      "alias": "Generalized Aligned Exclusion",
+      "selected": [
+        39,
+        41,
+        47,
+        50
+      ],
+      "auxiliaries": [
+        {
+          "cells": [
+            36
+          ],
+          "house": "row:4",
+          "symbols": [
+            3,
+            4
+          ]
+        },
+        {
+          "cells": [
+            48
+          ],
+          "house": "row:5",
+          "symbols": [
+            4,
+            9
+          ]
+        }
+      ]
+    },
+    "expectedEffects": [
+      {
+        "kind": "remove",
+        "cell": 39,
+        "symbol": 4
+      }
+    ],
+    "independentEnumeration": {
+      "cartesianAssignments": 16,
+      "survivors": [
+        [
+          8,
+          3,
+          3,
+          4
+        ]
+      ],
+      "rejections": [
+        {
+          "tuple": [
+            4,
+            3,
+            3,
+            3
+          ],
+          "directConflict": [
+            41,
+            50,
+            3
+          ]
+        },
+        {
+          "tuple": [
+            4,
+            3,
+            3,
+            4
+          ],
+          "directConflict": [
+            39,
+            50,
+            4
+          ]
+        },
+        {
+          "tuple": [
+            4,
+            3,
+            9,
+            3
+          ],
+          "directConflict": [
+            41,
+            50,
+            3
+          ]
+        },
+        {
+          "tuple": [
+            4,
+            3,
+            9,
+            4
+          ],
+          "directConflict": [
+            39,
+            50,
+            4
+          ]
+        },
+        {
+          "tuple": [
+            4,
+            4,
+            3,
+            3
+          ],
+          "directConflict": [
+            39,
+            41,
+            4
+          ]
+        },
+        {
+          "tuple": [
+            4,
+            4,
+            3,
+            4
+          ],
+          "directConflict": [
+            39,
+            41,
+            4
+          ]
+        },
+        {
+          "tuple": [
+            4,
+            4,
+            9,
+            3
+          ],
+          "directConflict": [
+            39,
+            41,
+            4
+          ]
+        },
+        {
+          "tuple": [
+            4,
+            4,
+            9,
+            4
+          ],
+          "directConflict": [
+            39,
+            41,
+            4
+          ]
+        },
+        {
+          "tuple": [
+            8,
+            3,
+            3,
+            3
+          ],
+          "directConflict": [
+            41,
+            50,
+            3
+          ]
+        },
+        {
+          "tuple": [
+            8,
+            3,
+            9,
+            3
+          ],
+          "directConflict": [
+            41,
+            50,
+            3
+          ]
+        },
+        {
+          "tuple": [
+            8,
+            3,
+            9,
+            4
+          ],
+          "emptyAuxiliary": [
+            48
+          ]
+        },
+        {
+          "tuple": [
+            8,
+            4,
+            3,
+            3
+          ],
+          "directConflict": [
+            47,
+            50,
+            3
+          ]
+        },
+        {
+          "tuple": [
+            8,
+            4,
+            3,
+            4
+          ],
+          "directConflict": [
+            41,
+            50,
+            4
+          ]
+        },
+        {
+          "tuple": [
+            8,
+            4,
+            9,
+            3
+          ],
+          "emptyAuxiliary": [
+            48
+          ]
+        },
+        {
+          "tuple": [
+            8,
+            4,
+            9,
+            4
+          ],
+          "directConflict": [
+            41,
+            50,
+            4
+          ]
+        }
+      ]
+    },
+    "origin": {
+      "author": "Independent repository fixture author",
+      "license": "Repository-owned; no external puzzle copied",
+      "sourceRevision": "independent-aligned-seeds@1",
+      "reusedGeometry": "C11-xy-box pre-state; independently reconstructed complete selected Cartesian assignments and explicit auxiliary empty matchings"
+    },
+    "prefix": "Only original-given peer exclusions; no solution-derived candidate axioms.",
+    "oracleRecord": {
+      "method": "independent-algorithm-x@1",
+      "inputHash": "204477b029655b4ce3064479161b232f9f5f48435ce432bc4261090def3af5f7",
+      "command": "npm test -- tests/unit/solver/set-arguments.test.ts",
+      "satisfiable": true,
+      "forceForbidExhausted": true
+    },
+    "grammar": "c21-grammar@1",
+    "alias": "Generalized Aligned Exclusion",
+    "expectation": "productive",
+    "reachability": "original-clue-path"
+  },
+  {
+    "id": "C21-count-multiple-symbols-external",
+    "rowId": "C21",
+    "givens": "534678912672195348198342567850761423026050791710020856961537284287019635045286179",
+    "preState": {
+      "values": [
+        5,
+        3,
+        4,
+        6,
+        7,
+        8,
+        9,
+        1,
+        2,
+        6,
+        7,
+        2,
+        1,
+        9,
+        5,
+        3,
+        4,
+        8,
+        1,
+        9,
+        8,
+        3,
+        4,
+        2,
+        5,
+        6,
+        7,
+        8,
+        5,
+        0,
+        7,
+        6,
+        1,
+        4,
+        2,
+        3,
+        0,
+        2,
+        6,
+        0,
+        5,
+        0,
+        7,
+        9,
+        1,
+        7,
+        1,
+        0,
+        0,
+        2,
+        0,
+        8,
+        5,
+        6,
+        9,
+        6,
+        1,
+        5,
+        3,
+        7,
+        2,
+        8,
+        4,
+        2,
+        8,
+        7,
+        0,
+        1,
+        9,
+        6,
+        3,
+        5,
+        0,
+        4,
+        5,
+        2,
+        8,
+        6,
+        1,
+        7,
+        9
+      ],
+      "domains": [
+        16,
+        4,
+        8,
+        32,
+        64,
+        128,
+        256,
+        1,
+        2,
+        32,
+        64,
+        2,
+        1,
+        256,
+        16,
+        4,
+        8,
+        128,
+        1,
+        256,
+        128,
+        4,
+        8,
+        2,
+        16,
+        32,
+        64,
+        128,
+        16,
+        256,
+        64,
+        32,
+        1,
+        8,
+        2,
+        4,
+        12,
+        2,
+        32,
+        136,
+        16,
+        12,
+        64,
+        256,
+        1,
+        64,
+        1,
+        260,
+        264,
+        2,
+        12,
+        128,
+        16,
+        32,
+        256,
+        32,
+        1,
+        16,
+        4,
+        64,
+        2,
+        128,
+        8,
+        2,
+        128,
+        64,
+        8,
+        1,
+        256,
+        32,
+        4,
+        16,
+        4,
+        8,
+        16,
+        2,
+        128,
+        32,
+        1,
+        64,
+        256
+      ]
+    },
+    "expectedPattern": {
+      "alias": "Subset counting",
+      "cells": [
+        36,
+        47,
+        48
+      ],
+      "scopes": [
+        {
+          "house": "row:4",
+          "cells": [
+            36,
+            39
+          ]
+        },
+        {
+          "house": "row:5",
+          "cells": [
+            47,
+            48
+          ]
+        },
+        {
+          "house": "column:3",
+          "cells": [
+            39,
+            48
+          ]
+        },
+        {
+          "house": "box:3",
+          "cells": [
+            36,
+            47
+          ]
+        }
+      ],
+      "symbols": [
+        3,
+        4,
+        9
+      ],
+      "target": {
+        "cell": 39,
+        "symbol": 4
+      },
+      "capacities": [
+        1,
+        0,
+        1
+      ]
+    },
+    "expectedEffects": [
+      {
+        "kind": "remove",
+        "cell": 39,
+        "symbol": 4
+      }
+    ],
+    "independentEnumeration": {
+      "originalDomains": {
+        "36": [
+          3,
+          4
+        ],
+        "47": [
+          3,
+          9
+        ],
+        "48": [
+          4,
+          9
+        ]
+      },
+      "restrictedDomains": {
+        "36": [
+          3
+        ],
+        "47": [
+          3,
+          9
+        ],
+        "48": [
+          9
+        ]
+      },
+      "before": [
+        {
+          "symbol": 3,
+          "maximum": 1,
+          "compatibleOccupancies": [
+            [],
+            [
+              36
+            ],
+            [
+              47
+            ]
+          ],
+          "subsetsExamined": 8
+        },
+        {
+          "symbol": 4,
+          "maximum": 2,
+          "compatibleOccupancies": [
+            [],
+            [
+              36
+            ],
+            [
+              48
+            ],
+            [
+              36,
+              48
+            ]
+          ],
+          "subsetsExamined": 8
+        },
+        {
+          "symbol": 9,
+          "maximum": 1,
+          "compatibleOccupancies": [
+            [],
+            [
+              47
+            ],
+            [
+              48
+            ]
+          ],
+          "subsetsExamined": 8
+        }
+      ],
+      "after": [
+        {
+          "symbol": 3,
+          "maximum": 1,
+          "compatibleOccupancies": [
+            [],
+            [
+              36
+            ],
+            [
+              47
+            ]
+          ],
+          "subsetsExamined": 8
+        },
+        {
+          "symbol": 4,
+          "maximum": 0,
+          "compatibleOccupancies": [
+            []
+          ],
+          "subsetsExamined": 8
+        },
+        {
+          "symbol": 9,
+          "maximum": 1,
+          "compatibleOccupancies": [
+            [],
+            [
+              47
+            ],
+            [
+              48
+            ]
+          ],
+          "subsetsExamined": 8
+        }
+      ],
+      "sumAfter": 2
+    },
+    "origin": {
+      "url": null,
+      "author": "Independent repository fixture author",
+      "license": "Repository-owned; no external puzzle copied",
+      "sourceRevision": "independent-subset-count-seeds@1",
+      "reusedGeometry": "C11-xy-box / C21 aligned pre-state; independently enumerated per-symbol occupancy subsets, not production detectors or proof code"
+    },
+    "prefix": "Only original-given peer exclusions; no solution-derived candidate axioms.",
+    "oracleRecord": {
+      "method": "independent-algorithm-x@1",
+      "inputHash": "204477b029655b4ce3064479161b232f9f5f48435ce432bc4261090def3af5f7",
+      "command": "npm test -- tests/unit/solver/set-arguments.test.ts",
+      "satisfiable": true,
+      "forceForbidExhausted": true
+    },
+    "grammar": "c21-grammar@1",
+    "alias": "Subset counting",
+    "expectation": "productive",
+    "reachability": "original-clue-path"
+  },
+  {
+    "id": "C21-count-multiple-symbols-internal",
+    "rowId": "C21",
+    "givens": "534678912672195348198342567850761423026050791710020856961537284287019635045286179",
+    "preState": {
+      "values": [
+        5,
+        3,
+        4,
+        6,
+        7,
+        8,
+        9,
+        1,
+        2,
+        6,
+        7,
+        2,
+        1,
+        9,
+        5,
+        3,
+        4,
+        8,
+        1,
+        9,
+        8,
+        3,
+        4,
+        2,
+        5,
+        6,
+        7,
+        8,
+        5,
+        0,
+        7,
+        6,
+        1,
+        4,
+        2,
+        3,
+        0,
+        2,
+        6,
+        0,
+        5,
+        0,
+        7,
+        9,
+        1,
+        7,
+        1,
+        0,
+        0,
+        2,
+        0,
+        8,
+        5,
+        6,
+        9,
+        6,
+        1,
+        5,
+        3,
+        7,
+        2,
+        8,
+        4,
+        2,
+        8,
+        7,
+        0,
+        1,
+        9,
+        6,
+        3,
+        5,
+        0,
+        4,
+        5,
+        2,
+        8,
+        6,
+        1,
+        7,
+        9
+      ],
+      "domains": [
+        16,
+        4,
+        8,
+        32,
+        64,
+        128,
+        256,
+        1,
+        2,
+        32,
+        64,
+        2,
+        1,
+        256,
+        16,
+        4,
+        8,
+        128,
+        1,
+        256,
+        128,
+        4,
+        8,
+        2,
+        16,
+        32,
+        64,
+        128,
+        16,
+        256,
+        64,
+        32,
+        1,
+        8,
+        2,
+        4,
+        12,
+        2,
+        32,
+        136,
+        16,
+        12,
+        64,
+        256,
+        1,
+        64,
+        1,
+        260,
+        264,
+        2,
+        12,
+        128,
+        16,
+        32,
+        256,
+        32,
+        1,
+        16,
+        4,
+        64,
+        2,
+        128,
+        8,
+        2,
+        128,
+        64,
+        8,
+        1,
+        256,
+        32,
+        4,
+        16,
+        4,
+        8,
+        16,
+        2,
+        128,
+        32,
+        1,
+        64,
+        256
+      ]
+    },
+    "expectedPattern": {
+      "alias": "Subset counting",
+      "cells": [
+        36,
+        39,
+        47,
+        48
+      ],
+      "scopes": [
+        {
+          "house": "row:4",
+          "cells": [
+            36,
+            39
+          ]
+        },
+        {
+          "house": "row:5",
+          "cells": [
+            47,
+            48
+          ]
+        },
+        {
+          "house": "column:3",
+          "cells": [
+            39,
+            48
+          ]
+        },
+        {
+          "house": "box:3",
+          "cells": [
+            36,
+            47
+          ]
+        }
+      ],
+      "symbols": [
+        3,
+        4,
+        8,
+        9
+      ],
+      "target": {
+        "cell": 39,
+        "symbol": 4
+      },
+      "capacities": [
+        1,
+        1,
+        0,
+        1
+      ]
+    },
+    "expectedEffects": [
+      {
+        "kind": "remove",
+        "cell": 39,
+        "symbol": 4
+      }
+    ],
+    "independentEnumeration": {
+      "originalDomains": {
+        "36": [
+          3,
+          4
+        ],
+        "39": [
+          4,
+          8
+        ],
+        "47": [
+          3,
+          9
+        ],
+        "48": [
+          4,
+          9
+        ]
+      },
+      "restrictedDomains": {
+        "36": [
+          3
+        ],
+        "39": [
+          4
+        ],
+        "47": [
+          3,
+          9
+        ],
+        "48": [
+          9
+        ]
+      },
+      "before": [
+        {
+          "symbol": 3,
+          "maximum": 1,
+          "compatibleOccupancies": [
+            [],
+            [
+              36
+            ],
+            [
+              47
+            ]
+          ],
+          "subsetsExamined": 16
+        },
+        {
+          "symbol": 4,
+          "maximum": 2,
+          "compatibleOccupancies": [
+            [],
+            [
+              36
+            ],
+            [
+              39
+            ],
+            [
+              48
+            ],
+            [
+              36,
+              48
+            ]
+          ],
+          "subsetsExamined": 16
+        },
+        {
+          "symbol": 8,
+          "maximum": 1,
+          "compatibleOccupancies": [
+            [],
+            [
+              39
+            ]
+          ],
+          "subsetsExamined": 16
+        },
+        {
+          "symbol": 9,
+          "maximum": 1,
+          "compatibleOccupancies": [
+            [],
+            [
+              47
+            ],
+            [
+              48
+            ]
+          ],
+          "subsetsExamined": 16
+        }
+      ],
+      "after": [
+        {
+          "symbol": 3,
+          "maximum": 1,
+          "compatibleOccupancies": [
+            [],
+            [
+              36
+            ],
+            [
+              47
+            ]
+          ],
+          "subsetsExamined": 16
+        },
+        {
+          "symbol": 4,
+          "maximum": 1,
+          "compatibleOccupancies": [
+            [],
+            [
+              39
+            ]
+          ],
+          "subsetsExamined": 16
+        },
+        {
+          "symbol": 8,
+          "maximum": 0,
+          "compatibleOccupancies": [
+            []
+          ],
+          "subsetsExamined": 16
+        },
+        {
+          "symbol": 9,
+          "maximum": 1,
+          "compatibleOccupancies": [
+            [],
+            [
+              47
+            ],
+            [
+              48
+            ]
+          ],
+          "subsetsExamined": 16
+        }
+      ],
+      "sumAfter": 3
+    },
+    "origin": {
+      "url": null,
+      "author": "Independent repository fixture author",
+      "license": "Repository-owned; no external puzzle copied",
+      "sourceRevision": "independent-subset-count-seeds@1",
+      "reusedGeometry": "C11-xy-box / C21 aligned pre-state; independently enumerated per-symbol occupancy subsets, not production detectors or proof code"
+    },
+    "prefix": "Only original-given peer exclusions; no solution-derived candidate axioms.",
+    "oracleRecord": {
+      "method": "independent-algorithm-x@1",
+      "inputHash": "204477b029655b4ce3064479161b232f9f5f48435ce432bc4261090def3af5f7",
+      "command": "npm test -- tests/unit/solver/set-arguments.test.ts",
+      "satisfiable": true,
+      "forceForbidExhausted": true
+    },
+    "grammar": "c21-grammar@1",
+    "alias": "Subset counting",
+    "expectation": "productive",
+    "reachability": "original-clue-path"
+  },
+  {
+    "givens": "534670910672195340000300007059761423426853791713924856960537004207419635345206179",
+    "preState": {
+      "values": [
+        5,
+        3,
+        4,
+        6,
+        7,
+        0,
+        9,
+        1,
+        0,
+        6,
+        7,
+        2,
+        1,
+        9,
+        5,
+        3,
+        4,
+        0,
+        0,
+        0,
+        0,
+        3,
+        0,
+        0,
+        0,
+        0,
+        7,
+        0,
+        5,
+        9,
+        7,
+        6,
+        1,
+        4,
+        2,
+        3,
+        4,
+        2,
+        6,
+        8,
+        5,
+        3,
+        7,
+        9,
+        1,
+        7,
+        1,
+        3,
+        9,
+        2,
+        4,
+        8,
+        5,
+        6,
+        9,
+        6,
+        0,
+        5,
+        3,
+        7,
+        0,
+        0,
+        4,
+        2,
+        0,
+        7,
+        4,
+        1,
+        9,
+        6,
+        3,
+        5,
+        3,
+        4,
+        5,
+        2,
+        0,
+        6,
+        1,
+        7,
+        9
+      ],
+      "domains": [
+        16,
+        4,
+        8,
+        32,
+        64,
+        130,
+        256,
+        1,
+        130,
+        32,
+        64,
+        2,
+        1,
+        256,
+        16,
+        4,
+        8,
+        128,
+        129,
+        384,
+        129,
+        4,
+        136,
+        130,
+        18,
+        160,
+        64,
+        128,
+        16,
+        256,
+        64,
+        32,
+        1,
+        8,
+        2,
+        4,
+        8,
+        2,
+        32,
+        128,
+        16,
+        4,
+        64,
+        256,
+        1,
+        64,
+        1,
+        4,
+        256,
+        2,
+        8,
+        128,
+        16,
+        32,
+        256,
+        32,
+        129,
+        16,
+        4,
+        64,
+        2,
+        128,
+        8,
+        2,
+        128,
+        64,
+        8,
+        1,
+        256,
+        32,
+        4,
+        16,
+        4,
+        8,
+        16,
+        2,
+        128,
+        32,
+        1,
+        64,
+        256
+      ]
+    },
+    "expectedEffects": [
+      {
+        "kind": "remove",
+        "cell": 24,
+        "symbol": 2
+      }
+    ],
+    "origin": {
+      "author": "Independent repository fixture author",
+      "license": "Repository-owned",
+      "sourceRevision": "t13-extended-acceptance@1",
+      "reusedGeometry": "C19-blossom-shared-petal-5 original-clue domains; independent aligned reinterpretation"
+    },
+    "prefix": "Only original-given peer exclusions.",
+    "id": "C21-aligned-auxiliary-5",
+    "rowId": "C21",
+    "grammar": "c21-grammar@1",
+    "alias": "Aligned Pair Exclusion",
+    "expectedPattern": {
+      "alias": "Aligned Pair Exclusion",
+      "selected": [
+        20,
+        24
+      ],
+      "auxiliaries": [
+        {
+          "cells": [
+            18,
+            19,
+            22,
+            23,
+            25
+          ],
+          "house": "row:2",
+          "symbols": [
+            1,
+            2,
+            4,
+            6,
+            8,
+            9
+          ]
+        }
+      ]
+    },
+    "expectation": "productive",
+    "reachability": "original-clue-path",
+    "oracleRecord": {
+      "method": "independent-algorithm-x@1",
+      "satisfiable": true,
+      "forceForbidExhausted": true,
+      "inputHash": "bc8a07fb91fccaaecb6070b8912b212cc8d156b839835b20d2229adc38dca658",
+      "durableCommand": "npm test -- tests/unit/solver/als-patterns.test.ts",
+      "command": "npm test -- tests/unit/solver/set-arguments.test.ts"
+    }
+  },
+  {
+    "id": "C21-count-12-symbols-9",
+    "rowId": "C21",
+    "givens": "534678912672195348198342567850761423026050791710020856961537284287019635045286179",
+    "preState": {
+      "values": [
+        5,
+        3,
+        4,
+        6,
+        7,
+        8,
+        9,
+        1,
+        2,
+        6,
+        7,
+        2,
+        1,
+        9,
+        5,
+        3,
+        4,
+        8,
+        1,
+        9,
+        8,
+        3,
+        4,
+        2,
+        5,
+        6,
+        7,
+        8,
+        5,
+        0,
+        7,
+        6,
+        1,
+        4,
+        2,
+        3,
+        0,
+        2,
+        6,
+        0,
+        5,
+        0,
+        7,
+        9,
+        1,
+        7,
+        1,
+        0,
+        0,
+        2,
+        0,
+        8,
+        5,
+        6,
+        9,
+        6,
+        1,
+        5,
+        3,
+        7,
+        2,
+        8,
+        4,
+        2,
+        8,
+        7,
+        0,
+        1,
+        9,
+        6,
+        3,
+        5,
+        0,
+        4,
+        5,
+        2,
+        8,
+        6,
+        1,
+        7,
+        9
+      ],
+      "domains": [
+        16,
+        4,
+        8,
+        32,
+        64,
+        128,
+        256,
+        1,
+        2,
+        32,
+        64,
+        2,
+        1,
+        256,
+        16,
+        4,
+        8,
+        128,
+        1,
+        256,
+        128,
+        4,
+        8,
+        2,
+        16,
+        32,
+        64,
+        128,
+        16,
+        256,
+        64,
+        32,
+        1,
+        8,
+        2,
+        4,
+        12,
+        2,
+        32,
+        136,
+        16,
+        12,
+        64,
+        256,
+        1,
+        64,
+        1,
+        260,
+        264,
+        2,
+        12,
+        128,
+        16,
+        32,
+        256,
+        32,
+        1,
+        16,
+        4,
+        64,
+        2,
+        128,
+        8,
+        2,
+        128,
+        64,
+        8,
+        1,
+        256,
+        32,
+        4,
+        16,
+        4,
+        8,
+        16,
+        2,
+        128,
+        32,
+        1,
+        64,
+        256
+      ]
+    },
+    "expectedPattern": {
+      "alias": "Subset counting",
+      "cells": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        36,
+        47,
+        48
+      ],
+      "scopes": [
+        {
+          "house": "row:4",
+          "cells": [
+            36,
+            39
+          ]
+        },
+        {
+          "house": "row:5",
+          "cells": [
+            47,
+            48
+          ]
+        },
+        {
+          "house": "column:3",
+          "cells": [
+            3,
+            39,
+            48
+          ]
+        },
+        {
+          "house": "box:3",
+          "cells": [
+            36,
+            47
+          ]
+        }
+      ],
+      "symbols": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9
+      ],
+      "target": {
+        "cell": 39,
+        "symbol": 4
+      },
+      "capacities": [
+        1,
+        1,
+        2,
+        1,
+        1,
+        1,
+        1,
+        1,
+        2
+      ]
+    },
+    "expectedEffects": [
+      {
+        "kind": "remove",
+        "cell": 39,
+        "symbol": 4
+      }
+    ],
+    "independentEnumeration": {
+      "method": "independent-bit-subsets@1",
+      "subsetsPerSymbol": 4096,
+      "capacities": [
+        1,
+        1,
+        2,
+        1,
+        1,
+        1,
+        1,
+        1,
+        2
+      ]
+    },
+    "origin": {
+      "url": null,
+      "author": "Independent repository fixture author",
+      "license": "Repository-owned; no external puzzle copied",
+      "sourceRevision": "independent-subset-count-seeds@1",
+      "reusedGeometry": "External-target count seed padded with nine original-given singleton cells, one per symbol. Bound admission, not essentiality."
+    },
+    "prefix": "Only original-given peer exclusions; no solution-derived candidate axioms.",
+    "oracleRecord": {
+      "method": "independent-algorithm-x@1",
+      "command": "npm test -- tests/unit/solver/set-arguments.test.ts",
+      "satisfiable": true,
+      "forceForbidExhausted": true
+    },
+    "grammar": "c21-grammar@1",
+    "alias": "Subset counting",
+    "expectation": "productive",
+    "reachability": "original-clue-path"
+  },
+  {
+    "id": "C21-count-one-symbol",
+    "rowId": "C21",
+    "givens": "534678012672195048198342507859761420420853001713924856001537084280410005045286100",
+    "preState": {
+      "values": [
+        5,
+        3,
+        4,
+        6,
+        7,
+        8,
+        0,
+        1,
+        2,
+        6,
+        7,
+        2,
+        1,
+        9,
+        5,
+        0,
+        4,
+        8,
+        1,
+        9,
+        8,
+        3,
+        4,
+        2,
+        5,
+        0,
+        7,
+        8,
+        5,
+        9,
+        7,
+        6,
+        1,
+        4,
+        2,
+        0,
+        4,
+        2,
+        0,
+        8,
+        5,
+        3,
+        0,
+        0,
+        1,
+        7,
+        1,
+        3,
+        9,
+        2,
+        4,
+        8,
+        5,
+        6,
+        0,
+        0,
+        1,
+        5,
+        3,
+        7,
+        0,
+        8,
+        4,
+        2,
+        8,
+        0,
+        4,
+        1,
+        0,
+        0,
+        0,
+        5,
+        0,
+        4,
+        5,
+        2,
+        8,
+        6,
+        1,
+        0,
+        0
+      ],
+      "domains": [
+        16,
+        4,
+        8,
+        32,
+        64,
+        128,
+        256,
+        1,
+        2,
+        32,
+        64,
+        2,
+        1,
+        256,
+        16,
+        4,
+        8,
+        128,
+        1,
+        256,
+        128,
+        4,
+        8,
+        2,
+        16,
+        32,
+        64,
+        128,
+        16,
+        256,
+        64,
+        32,
+        1,
+        8,
+        2,
+        4,
+        8,
+        2,
+        32,
+        128,
+        16,
+        4,
+        320,
+        320,
+        1,
+        64,
+        1,
+        4,
+        256,
+        2,
+        8,
+        128,
+        16,
+        32,
+        256,
+        32,
+        1,
+        16,
+        4,
+        64,
+        290,
+        128,
+        8,
+        2,
+        128,
+        96,
+        8,
+        1,
+        256,
+        356,
+        356,
+        16,
+        260,
+        8,
+        16,
+        2,
+        128,
+        32,
+        1,
+        324,
+        260
+      ]
+    },
+    "expectedPattern": {
+      "alias": "Subset counting",
+      "cells": [
+        6
+      ],
+      "scopes": [
+        {
+          "house": "column:6",
+          "cells": [
+            6,
+            42
+          ]
+        }
+      ],
+      "target": {
+        "cell": 42,
+        "symbol": 9
+      },
+      "symbols": [
+        9
+      ],
+      "capacities": [
+        0
+      ]
+    },
+    "expectedEffects": [
+      {
+        "kind": "remove",
+        "cell": 42,
+        "symbol": 9
+      }
+    ],
+    "independentLocalAssignments": 8,
+    "origin": {
+      "author": "Independent repository fixture author",
+      "license": "Repository-owned; no external puzzle copied",
+      "sourceRevision": "independent-sdc-seeds@1",
+      "reusedGeometry": "C20-intersection-2 peer-derived singleton, independently reinterpreted as count"
+    },
+    "prefix": "Only original-given peer exclusions; no solution-derived candidate axioms.",
+    "oracleRecord": {
+      "method": "independent-algorithm-x@1",
+      "command": "npm test -- tests/unit/solver/set-arguments.test.ts",
+      "satisfiable": true,
+      "forceForbidExhausted": true
+    },
+    "grammar": "c21-grammar@1",
+    "alias": "Subset counting",
+    "expectation": "productive",
+    "reachability": "original-clue-path",
+    "independentEnumeration": {
+      "method": "independent-bit-subsets@1",
+      "subsetsPerSymbol": 2,
+      "capacities": [
+        0
+      ]
+    }
+  }
+]

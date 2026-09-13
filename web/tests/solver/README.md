@@ -98,3 +98,32 @@ substitution regressions, resource ownership tests and incomplete-search limits.
 ```text
 npm test -- tests/unit/solver/als-patterns.test.ts
 ```
+
+## Set-argument fixture provenance
+
+`C20.json` contains seven independent original-clue Sue de Coq examples.
+Six use only original-given peer exclusions; `C20-max11-symbol9` records a
+replayable prefix of seventeen ordinary C01 placements and one C04 naked pair.
+Those placements are outside its selected eleven cells and effect target.
+`tests/unit/solver/set-acceptance.ts` checks each recorded domain change and
+the final values/domains; none of the masks are installed as axioms.
+
+`C21.json` contains eight aligned/count positives. The three selected-size
+examples and two multi-symbol count examples honestly reuse the C11 XY clue
+geometry. The five-cell auxiliary reinterprets C19's independently authored
+shared-petal fixture. The one-symbol count uses a peer-derived singleton from
+C20. The twelve-cell/nine-symbol count pads the external-target example with
+nine original-given singleton terms; this is a bound-admission test, not an
+essentiality or difficulty claim. All examples are repository-owned.
+
+The independent interpreter never calls a production detector, index, builder
+or named validator to author a certificate. Focused tests independently check
+15 satisfiable pre-states, 15 exhausted forced-removal counterfactuals,
+satisfiable forbids and complete original-clue replay. They also compile the
+same exact geometries through production and test actual family discovery.
+Read `docs/solver/techniques/set-arguments.md` for the sources, supported bounds,
+scope/certificate mutation gates and honest incomplete-search limits.
+
+```text
+npm test -- tests/unit/solver/set-arguments.test.ts
+```

@@ -1,0 +1,2124 @@
+[
+  {
+    "id": "C20-intersection-2",
+    "rowId": "C20",
+    "givens": "534678012672195048198342507859761420420853001713924856001537084280410005045286100",
+    "preState": {
+      "values": [
+        5,
+        3,
+        4,
+        6,
+        7,
+        8,
+        0,
+        1,
+        2,
+        6,
+        7,
+        2,
+        1,
+        9,
+        5,
+        0,
+        4,
+        8,
+        1,
+        9,
+        8,
+        3,
+        4,
+        2,
+        5,
+        0,
+        7,
+        8,
+        5,
+        9,
+        7,
+        6,
+        1,
+        4,
+        2,
+        0,
+        4,
+        2,
+        0,
+        8,
+        5,
+        3,
+        0,
+        0,
+        1,
+        7,
+        1,
+        3,
+        9,
+        2,
+        4,
+        8,
+        5,
+        6,
+        0,
+        0,
+        1,
+        5,
+        3,
+        7,
+        0,
+        8,
+        4,
+        2,
+        8,
+        0,
+        4,
+        1,
+        0,
+        0,
+        0,
+        5,
+        0,
+        4,
+        5,
+        2,
+        8,
+        6,
+        1,
+        0,
+        0
+      ],
+      "domains": [
+        16,
+        4,
+        8,
+        32,
+        64,
+        128,
+        256,
+        1,
+        2,
+        32,
+        64,
+        2,
+        1,
+        256,
+        16,
+        4,
+        8,
+        128,
+        1,
+        256,
+        128,
+        4,
+        8,
+        2,
+        16,
+        32,
+        64,
+        128,
+        16,
+        256,
+        64,
+        32,
+        1,
+        8,
+        2,
+        4,
+        8,
+        2,
+        32,
+        128,
+        16,
+        4,
+        320,
+        320,
+        1,
+        64,
+        1,
+        4,
+        256,
+        2,
+        8,
+        128,
+        16,
+        32,
+        256,
+        32,
+        1,
+        16,
+        4,
+        64,
+        290,
+        128,
+        8,
+        2,
+        128,
+        96,
+        8,
+        1,
+        256,
+        356,
+        356,
+        16,
+        260,
+        8,
+        16,
+        2,
+        128,
+        32,
+        1,
+        324,
+        260
+      ]
+    },
+    "expectedPattern": {
+      "alias": "Sue de Coq",
+      "line": "row:7",
+      "box": "box:8",
+      "intersection": [
+        69,
+        70
+      ],
+      "lineSide": [
+        65
+      ],
+      "boxSide": [
+        80
+      ],
+      "intersectionSymbols": [
+        3,
+        6,
+        7,
+        9
+      ],
+      "lineSymbols": [
+        6,
+        7
+      ],
+      "boxSymbols": [
+        3,
+        9
+      ]
+    },
+    "expectedEffects": [
+      {
+        "kind": "remove",
+        "cell": 60,
+        "symbol": 9
+      }
+    ],
+    "independentLocalAssignments": 8,
+    "origin": {
+      "author": "Independent repository fixture author",
+      "license": "Repository-owned; no external puzzle copied",
+      "sourceRevision": "independent-sdc-seeds@1"
+    },
+    "prefix": "Only original-given peer exclusions; no solution-derived candidate axioms.",
+    "oracleRecord": {
+      "method": "independent-algorithm-x@1",
+      "inputHash": "9546202990eb9319fca78701a79b9009ae30ff6f8a55fa4bc14c8876cc711e2b",
+      "command": "npm test -- tests/unit/solver/set-arguments.test.ts",
+      "satisfiable": true,
+      "forceForbidExhausted": true
+    },
+    "grammar": "c20-grammar@1",
+    "alias": "Sue de Coq",
+    "expectation": "productive",
+    "reachability": "original-clue-path"
+  },
+  {
+    "id": "C20-intersection-3",
+    "rowId": "C20",
+    "givens": "500670000670005300000300567850761423426853791713924856960537084007419635345286179",
+    "preState": {
+      "values": [
+        5,
+        0,
+        0,
+        6,
+        7,
+        0,
+        0,
+        0,
+        0,
+        6,
+        7,
+        0,
+        0,
+        0,
+        5,
+        3,
+        0,
+        0,
+        0,
+        0,
+        0,
+        3,
+        0,
+        0,
+        5,
+        6,
+        7,
+        8,
+        5,
+        0,
+        7,
+        6,
+        1,
+        4,
+        2,
+        3,
+        4,
+        2,
+        6,
+        8,
+        5,
+        3,
+        7,
+        9,
+        1,
+        7,
+        1,
+        3,
+        9,
+        2,
+        4,
+        8,
+        5,
+        6,
+        9,
+        6,
+        0,
+        5,
+        3,
+        7,
+        0,
+        8,
+        4,
+        0,
+        0,
+        7,
+        4,
+        1,
+        9,
+        6,
+        3,
+        5,
+        3,
+        4,
+        5,
+        2,
+        8,
+        6,
+        1,
+        7,
+        9
+      ],
+      "domains": [
+        16,
+        388,
+        395,
+        32,
+        64,
+        130,
+        258,
+        9,
+        130,
+        32,
+        64,
+        395,
+        1,
+        264,
+        16,
+        4,
+        9,
+        130,
+        3,
+        384,
+        395,
+        4,
+        264,
+        130,
+        16,
+        32,
+        64,
+        128,
+        16,
+        256,
+        64,
+        32,
+        1,
+        8,
+        2,
+        4,
+        8,
+        2,
+        32,
+        128,
+        16,
+        4,
+        64,
+        256,
+        1,
+        64,
+        1,
+        4,
+        256,
+        2,
+        8,
+        128,
+        16,
+        32,
+        256,
+        32,
+        3,
+        16,
+        4,
+        64,
+        2,
+        128,
+        8,
+        2,
+        128,
+        64,
+        8,
+        1,
+        256,
+        32,
+        4,
+        16,
+        4,
+        8,
+        16,
+        2,
+        128,
+        32,
+        1,
+        64,
+        256
+      ]
+    },
+    "expectedPattern": {
+      "alias": "Sue de Coq",
+      "line": "column:2",
+      "box": "box:0",
+      "intersection": [
+        2,
+        11,
+        20
+      ],
+      "lineSide": [
+        56
+      ],
+      "boxSide": [
+        19
+      ],
+      "intersectionSymbols": [
+        1,
+        2,
+        4,
+        8,
+        9
+      ],
+      "lineSymbols": [
+        1,
+        2
+      ],
+      "boxSymbols": [
+        8,
+        9
+      ]
+    },
+    "expectedEffects": [
+      {
+        "kind": "remove",
+        "cell": 1,
+        "symbol": 9
+      }
+    ],
+    "independentLocalAssignments": 24,
+    "origin": {
+      "author": "Independent repository fixture author",
+      "license": "Repository-owned; no external puzzle copied",
+      "sourceRevision": "independent-sdc-seeds@1"
+    },
+    "prefix": "Only original-given peer exclusions; no solution-derived candidate axioms.",
+    "oracleRecord": {
+      "method": "independent-algorithm-x@1",
+      "inputHash": "fbefc5782afe69f125729ac6df9a74381c1aa5286607c8a995e89deffed7a5f0",
+      "command": "npm test -- tests/unit/solver/set-arguments.test.ts",
+      "satisfiable": true,
+      "forceForbidExhausted": true
+    },
+    "grammar": "c20-grammar@1",
+    "alias": "Sue de Coq",
+    "expectation": "productive",
+    "reachability": "original-clue-path"
+  },
+  {
+    "id": "C20-line-side-4",
+    "rowId": "C20",
+    "givens": "530600002670105340190342060809761423006803000713924006961030204007000630300000000",
+    "preState": {
+      "values": [
+        5,
+        3,
+        0,
+        6,
+        0,
+        0,
+        0,
+        0,
+        2,
+        6,
+        7,
+        0,
+        1,
+        0,
+        5,
+        3,
+        4,
+        0,
+        1,
+        9,
+        0,
+        3,
+        4,
+        2,
+        0,
+        6,
+        0,
+        8,
+        0,
+        9,
+        7,
+        6,
+        1,
+        4,
+        2,
+        3,
+        0,
+        0,
+        6,
+        8,
+        0,
+        3,
+        0,
+        0,
+        0,
+        7,
+        1,
+        3,
+        9,
+        2,
+        4,
+        0,
+        0,
+        6,
+        9,
+        6,
+        1,
+        0,
+        3,
+        0,
+        2,
+        0,
+        4,
+        0,
+        0,
+        7,
+        0,
+        0,
+        0,
+        6,
+        3,
+        0,
+        3,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "domains": [
+        16,
+        4,
+        136,
+        32,
+        448,
+        448,
+        449,
+        449,
+        2,
+        32,
+        64,
+        130,
+        1,
+        384,
+        16,
+        4,
+        8,
+        384,
+        1,
+        256,
+        128,
+        4,
+        8,
+        2,
+        208,
+        32,
+        208,
+        128,
+        16,
+        256,
+        64,
+        32,
+        1,
+        8,
+        2,
+        4,
+        10,
+        26,
+        32,
+        128,
+        16,
+        4,
+        337,
+        337,
+        337,
+        64,
+        1,
+        4,
+        256,
+        2,
+        8,
+        144,
+        144,
+        32,
+        256,
+        32,
+        1,
+        16,
+        4,
+        192,
+        2,
+        208,
+        8,
+        10,
+        154,
+        64,
+        26,
+        401,
+        384,
+        32,
+        4,
+        401,
+        4,
+        154,
+        154,
+        26,
+        465,
+        480,
+        465,
+        465,
+        465
+      ]
+    },
+    "expectedPattern": {
+      "alias": "Sue de Coq",
+      "line": "row:8",
+      "box": "box:6",
+      "intersection": [
+        73,
+        74
+      ],
+      "lineSide": [
+        76,
+        78,
+        79,
+        80
+      ],
+      "boxSide": [
+        63
+      ],
+      "intersectionSymbols": [
+        2,
+        4,
+        5,
+        8
+      ],
+      "lineSymbols": [
+        1,
+        5,
+        7,
+        8,
+        9
+      ],
+      "boxSymbols": [
+        2,
+        4
+      ]
+    },
+    "expectedEffects": [
+      {
+        "kind": "remove",
+        "cell": 77,
+        "symbol": 8
+      }
+    ],
+    "independentLocalAssignments": 192,
+    "origin": {
+      "author": "Independent repository fixture author",
+      "license": "Repository-owned; no external puzzle copied",
+      "sourceRevision": "independent-sdc-large-seeds@1"
+    },
+    "prefix": "Only original-given peer exclusions; no solution-derived candidate axioms.",
+    "oracleRecord": {
+      "method": "independent-algorithm-x@1",
+      "inputHash": "01444e9af18a6c459f3d9cc896c55447a74fd55b2ca2200bd85c45c8c7ab1636",
+      "command": "npm test -- tests/unit/solver/set-arguments.test.ts",
+      "satisfiable": true,
+      "forceForbidExhausted": true
+    },
+    "grammar": "c20-grammar@1",
+    "alias": "Sue de Coq",
+    "expectation": "productive",
+    "reachability": "original-clue-path"
+  },
+  {
+    "id": "C20-box-side-4",
+    "rowId": "C20",
+    "givens": "030678010600000300000342060000761423026853791003924856060537280000419635340286179",
+    "preState": {
+      "values": [
+        0,
+        3,
+        0,
+        6,
+        7,
+        8,
+        0,
+        1,
+        0,
+        6,
+        0,
+        0,
+        0,
+        0,
+        0,
+        3,
+        0,
+        0,
+        0,
+        0,
+        0,
+        3,
+        4,
+        2,
+        0,
+        6,
+        0,
+        0,
+        0,
+        0,
+        7,
+        6,
+        1,
+        4,
+        2,
+        3,
+        0,
+        2,
+        6,
+        8,
+        5,
+        3,
+        7,
+        9,
+        1,
+        0,
+        0,
+        3,
+        9,
+        2,
+        4,
+        8,
+        5,
+        6,
+        0,
+        6,
+        0,
+        5,
+        3,
+        7,
+        2,
+        8,
+        0,
+        0,
+        0,
+        0,
+        4,
+        1,
+        9,
+        6,
+        3,
+        5,
+        3,
+        4,
+        0,
+        2,
+        8,
+        6,
+        1,
+        7,
+        9
+      ],
+      "domains": [
+        282,
+        4,
+        282,
+        32,
+        64,
+        128,
+        272,
+        1,
+        10,
+        32,
+        465,
+        475,
+        1,
+        256,
+        16,
+        4,
+        8,
+        202,
+        465,
+        465,
+        465,
+        4,
+        8,
+        2,
+        272,
+        32,
+        192,
+        400,
+        400,
+        400,
+        64,
+        32,
+        1,
+        8,
+        2,
+        4,
+        8,
+        2,
+        32,
+        128,
+        16,
+        4,
+        64,
+        256,
+        1,
+        65,
+        65,
+        4,
+        256,
+        2,
+        8,
+        128,
+        16,
+        32,
+        257,
+        32,
+        257,
+        16,
+        4,
+        64,
+        2,
+        128,
+        8,
+        194,
+        192,
+        194,
+        8,
+        1,
+        256,
+        32,
+        4,
+        16,
+        4,
+        8,
+        16,
+        2,
+        128,
+        32,
+        1,
+        64,
+        256
+      ]
+    },
+    "expectedPattern": {
+      "alias": "Sue de Coq",
+      "line": "row:0",
+      "box": "box:0",
+      "intersection": [
+        0,
+        2
+      ],
+      "lineSide": [
+        8
+      ],
+      "boxSide": [
+        10,
+        18,
+        19,
+        20
+      ],
+      "intersectionSymbols": [
+        2,
+        4,
+        5,
+        9
+      ],
+      "lineSymbols": [
+        2,
+        4
+      ],
+      "boxSymbols": [
+        1,
+        5,
+        7,
+        8,
+        9
+      ]
+    },
+    "expectedEffects": [
+      {
+        "kind": "remove",
+        "cell": 11,
+        "symbol": 7
+      }
+    ],
+    "independentLocalAssignments": 192,
+    "origin": {
+      "author": "Independent repository fixture author",
+      "license": "Repository-owned; no external puzzle copied",
+      "sourceRevision": "independent-sdc-large-seeds@1"
+    },
+    "prefix": "Only original-given peer exclusions; no solution-derived candidate axioms.",
+    "oracleRecord": {
+      "method": "independent-algorithm-x@1",
+      "inputHash": "63731dae5bd0730678e38f90be28782d8de3141422973f047abf393599b19125",
+      "command": "npm test -- tests/unit/solver/set-arguments.test.ts",
+      "satisfiable": true,
+      "forceForbidExhausted": true
+    },
+    "grammar": "c20-grammar@1",
+    "alias": "Sue de Coq",
+    "expectation": "productive",
+    "reachability": "original-clue-path"
+  },
+  {
+    "id": "C20-unused-third-side",
+    "rowId": "C20",
+    "givens": "534670910670195348190000507859761403426850791713900856961507284287019635345206179",
+    "preState": {
+      "values": [
+        5,
+        3,
+        4,
+        6,
+        7,
+        0,
+        9,
+        1,
+        0,
+        6,
+        7,
+        0,
+        1,
+        9,
+        5,
+        3,
+        4,
+        8,
+        1,
+        9,
+        0,
+        0,
+        0,
+        0,
+        5,
+        0,
+        7,
+        8,
+        5,
+        9,
+        7,
+        6,
+        1,
+        4,
+        0,
+        3,
+        4,
+        2,
+        6,
+        8,
+        5,
+        0,
+        7,
+        9,
+        1,
+        7,
+        1,
+        3,
+        9,
+        0,
+        0,
+        8,
+        5,
+        6,
+        9,
+        6,
+        1,
+        5,
+        0,
+        7,
+        2,
+        8,
+        4,
+        2,
+        8,
+        7,
+        0,
+        1,
+        9,
+        6,
+        3,
+        5,
+        3,
+        4,
+        5,
+        2,
+        0,
+        6,
+        1,
+        7,
+        9
+      ],
+      "domains": [
+        16,
+        4,
+        8,
+        32,
+        64,
+        130,
+        256,
+        1,
+        2,
+        32,
+        64,
+        2,
+        1,
+        256,
+        16,
+        4,
+        8,
+        128,
+        1,
+        256,
+        130,
+        12,
+        142,
+        142,
+        16,
+        34,
+        64,
+        128,
+        16,
+        256,
+        64,
+        32,
+        1,
+        8,
+        2,
+        4,
+        8,
+        2,
+        32,
+        128,
+        16,
+        4,
+        64,
+        256,
+        1,
+        64,
+        1,
+        4,
+        256,
+        10,
+        10,
+        128,
+        16,
+        32,
+        256,
+        32,
+        1,
+        16,
+        4,
+        64,
+        2,
+        128,
+        8,
+        2,
+        128,
+        64,
+        8,
+        1,
+        256,
+        32,
+        4,
+        16,
+        4,
+        8,
+        16,
+        2,
+        128,
+        32,
+        1,
+        64,
+        256
+      ]
+    },
+    "expectedPattern": {
+      "alias": "Sue de Coq",
+      "line": "row:2",
+      "box": "box:1",
+      "intersection": [
+        22,
+        23
+      ],
+      "lineSide": [
+        20
+      ],
+      "boxSide": [
+        21
+      ],
+      "intersectionSymbols": [
+        2,
+        3,
+        4,
+        8
+      ],
+      "lineSymbols": [
+        2,
+        8
+      ],
+      "boxSymbols": [
+        3,
+        4
+      ]
+    },
+    "expectedEffects": [
+      {
+        "kind": "remove",
+        "cell": 25,
+        "symbol": 2
+      }
+    ],
+    "independentLocalAssignments": 8,
+    "origin": {
+      "author": "Independent repository fixture author",
+      "license": "Repository-owned; no external puzzle copied",
+      "sourceRevision": "independent-sdc-seeds@1"
+    },
+    "prefix": "Only original-given peer exclusions; no solution-derived candidate axioms.",
+    "oracleRecord": {
+      "method": "independent-algorithm-x@1",
+      "inputHash": "426972951eb8b3744af94fa41ad526fe460dbfeb066fd9ec0ef2c97fcd7492af",
+      "command": "npm test -- tests/unit/solver/set-arguments.test.ts",
+      "satisfiable": true,
+      "forceForbidExhausted": true
+    },
+    "grammar": "c20-grammar@1",
+    "alias": "Sue de Coq",
+    "expectation": "productive",
+    "reachability": "original-clue-path"
+  },
+  {
+    "id": "C20-shared-outside-symbol",
+    "rowId": "C20",
+    "givens": "004670902672090040198002067059760023426000791703920056961007284287019635345286179",
+    "preState": {
+      "values": [
+        0,
+        0,
+        4,
+        6,
+        7,
+        0,
+        9,
+        0,
+        2,
+        6,
+        7,
+        2,
+        0,
+        9,
+        0,
+        0,
+        4,
+        0,
+        1,
+        9,
+        8,
+        0,
+        0,
+        2,
+        0,
+        6,
+        7,
+        0,
+        5,
+        9,
+        7,
+        6,
+        0,
+        0,
+        2,
+        3,
+        4,
+        2,
+        6,
+        0,
+        0,
+        0,
+        7,
+        9,
+        1,
+        7,
+        0,
+        3,
+        9,
+        2,
+        0,
+        0,
+        5,
+        6,
+        9,
+        6,
+        1,
+        0,
+        0,
+        7,
+        2,
+        8,
+        4,
+        2,
+        8,
+        7,
+        0,
+        1,
+        9,
+        6,
+        3,
+        5,
+        3,
+        4,
+        5,
+        2,
+        8,
+        6,
+        1,
+        7,
+        9
+      ],
+      "domains": [
+        16,
+        4,
+        8,
+        32,
+        64,
+        149,
+        256,
+        1,
+        2,
+        32,
+        64,
+        2,
+        149,
+        256,
+        149,
+        148,
+        8,
+        128,
+        1,
+        256,
+        128,
+        28,
+        28,
+        2,
+        20,
+        32,
+        64,
+        128,
+        16,
+        256,
+        64,
+        32,
+        137,
+        136,
+        2,
+        4,
+        8,
+        2,
+        32,
+        148,
+        20,
+        148,
+        64,
+        256,
+        1,
+        64,
+        1,
+        4,
+        256,
+        2,
+        137,
+        136,
+        16,
+        32,
+        256,
+        32,
+        1,
+        20,
+        20,
+        64,
+        2,
+        128,
+        8,
+        2,
+        128,
+        64,
+        8,
+        1,
+        256,
+        32,
+        4,
+        16,
+        4,
+        8,
+        16,
+        2,
+        128,
+        32,
+        1,
+        64,
+        256
+      ]
+    },
+    "expectedPattern": {
+      "alias": "Sue de Coq",
+      "line": "column:5",
+      "box": "box:1",
+      "intersection": [
+        5,
+        14
+      ],
+      "lineSide": [
+        32,
+        50
+      ],
+      "boxSide": [
+        21,
+        22
+      ],
+      "intersectionSymbols": [
+        1,
+        3,
+        5,
+        8
+      ],
+      "lineSymbols": [
+        1,
+        4,
+        8
+      ],
+      "boxSymbols": [
+        3,
+        4,
+        5
+      ],
+      "sharedOutsideSymbols": [
+        4
+      ]
+    },
+    "expectedEffects": [
+      {
+        "kind": "remove",
+        "cell": 12,
+        "symbol": 3
+      }
+    ],
+    "independentLocalAssignments": 32,
+    "prefix": "Only original-given peer exclusions; no solution-derived candidate axioms.",
+    "origin": {
+      "author": "Independent repository fixture author",
+      "license": "Repository-owned; no external puzzle copied",
+      "sourceRevision": "independent-sdc-shared-seeds@1"
+    },
+    "oracleRecord": {
+      "method": "independent-algorithm-x@1",
+      "inputHash": "435cd4a54cae5c010d0f97e6bd843beb9279200d039834f34e1169ba5d3be640",
+      "command": "npm test -- tests/unit/solver/set-arguments.test.ts",
+      "satisfiable": true,
+      "forceForbidExhausted": true
+    },
+    "grammar": "c20-grammar@1",
+    "alias": "Sue de Coq",
+    "expectation": "productive",
+    "reachability": "original-clue-path"
+  },
+  {
+    "givens": "000000000000000040000340500009761423000803091010904056900537084080419635045206170",
+    "preState": {
+      "values": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        4,
+        0,
+        0,
+        0,
+        0,
+        3,
+        4,
+        0,
+        5,
+        0,
+        0,
+        8,
+        5,
+        9,
+        7,
+        6,
+        1,
+        4,
+        2,
+        3,
+        0,
+        2,
+        0,
+        8,
+        5,
+        3,
+        7,
+        9,
+        1,
+        7,
+        1,
+        3,
+        9,
+        2,
+        4,
+        8,
+        5,
+        6,
+        9,
+        6,
+        1,
+        5,
+        3,
+        7,
+        2,
+        8,
+        4,
+        2,
+        8,
+        7,
+        4,
+        1,
+        9,
+        6,
+        3,
+        5,
+        3,
+        4,
+        5,
+        2,
+        8,
+        6,
+        1,
+        7,
+        9
+      ],
+      "domains": [
+        24,
+        324,
+        138,
+        33,
+        320,
+        146,
+        260,
+        33,
+        194,
+        49,
+        324,
+        162,
+        33,
+        320,
+        146,
+        260,
+        8,
+        194,
+        33,
+        320,
+        162,
+        4,
+        8,
+        130,
+        16,
+        33,
+        194,
+        128,
+        16,
+        256,
+        64,
+        32,
+        1,
+        8,
+        2,
+        4,
+        40,
+        2,
+        40,
+        128,
+        16,
+        4,
+        64,
+        256,
+        1,
+        64,
+        1,
+        4,
+        256,
+        2,
+        8,
+        128,
+        16,
+        32,
+        256,
+        32,
+        1,
+        16,
+        4,
+        64,
+        2,
+        128,
+        8,
+        2,
+        128,
+        64,
+        8,
+        1,
+        256,
+        32,
+        4,
+        16,
+        4,
+        8,
+        16,
+        2,
+        128,
+        32,
+        1,
+        64,
+        256
+      ]
+    },
+    "expectedPattern": {
+      "line": "row:0",
+      "box": "box:0",
+      "intersection": [
+        0,
+        1,
+        2
+      ],
+      "lineSide": [
+        3,
+        4,
+        6,
+        7
+      ],
+      "boxSide": [
+        9,
+        11,
+        18,
+        20
+      ],
+      "intersectionSymbols": [
+        2,
+        3,
+        4,
+        5,
+        7,
+        8,
+        9
+      ],
+      "lineSymbols": [
+        1,
+        3,
+        6,
+        7,
+        9
+      ],
+      "boxSymbols": [
+        1,
+        2,
+        5,
+        6,
+        8
+      ],
+      "alias": "Sue de Coq"
+    },
+    "independentPrefix": [
+      {
+        "kind": "singleton-peer",
+        "cell": 28,
+        "mask": 16,
+        "effects": [
+          [
+            1,
+            358
+          ],
+          [
+            10,
+            358
+          ],
+          [
+            27,
+            128
+          ],
+          [
+            36,
+            106
+          ],
+          [
+            37,
+            98
+          ]
+        ],
+        "appliedPlacement": {
+          "cell": 28,
+          "symbol": 5
+        }
+      },
+      {
+        "kind": "singleton-peer",
+        "cell": 27,
+        "mask": 128,
+        "effects": [
+          [
+            0,
+            127
+          ],
+          [
+            9,
+            119
+          ],
+          [
+            18,
+            99
+          ],
+          [
+            45,
+            70
+          ],
+          [
+            47,
+            70
+          ]
+        ],
+        "appliedPlacement": {
+          "cell": 27,
+          "symbol": 8
+        }
+      },
+      {
+        "kind": "singleton-peer",
+        "cell": 42,
+        "mask": 64,
+        "effects": [
+          [
+            6,
+            390
+          ],
+          [
+            15,
+            390
+          ],
+          [
+            36,
+            42
+          ],
+          [
+            37,
+            34
+          ],
+          [
+            38,
+            42
+          ],
+          [
+            51,
+            128
+          ]
+        ],
+        "appliedPlacement": {
+          "cell": 42,
+          "symbol": 7
+        }
+      },
+      {
+        "kind": "singleton-peer",
+        "cell": 49,
+        "mask": 2,
+        "effects": [
+          [
+            4,
+            464
+          ],
+          [
+            13,
+            464
+          ],
+          [
+            40,
+            16
+          ],
+          [
+            45,
+            68
+          ],
+          [
+            47,
+            68
+          ]
+        ],
+        "appliedPlacement": {
+          "cell": 49,
+          "symbol": 2
+        }
+      },
+      {
+        "kind": "singleton-peer",
+        "cell": 40,
+        "mask": 16,
+        "effects": [
+          [
+            4,
+            448
+          ],
+          [
+            13,
+            448
+          ]
+        ],
+        "appliedPlacement": {
+          "cell": 40,
+          "symbol": 5
+        }
+      },
+      {
+        "kind": "singleton-peer",
+        "cell": 51,
+        "mask": 128,
+        "effects": [
+          [
+            6,
+            262
+          ],
+          [
+            15,
+            262
+          ]
+        ],
+        "appliedPlacement": {
+          "cell": 51,
+          "symbol": 8
+        }
+      },
+      {
+        "kind": "singleton-peer",
+        "cell": 60,
+        "mask": 2,
+        "effects": [
+          [
+            6,
+            260
+          ],
+          [
+            15,
+            260
+          ],
+          [
+            55,
+            32
+          ],
+          [
+            56,
+            33
+          ]
+        ],
+        "appliedPlacement": {
+          "cell": 60,
+          "symbol": 2
+        }
+      },
+      {
+        "kind": "singleton-peer",
+        "cell": 55,
+        "mask": 32,
+        "effects": [
+          [
+            1,
+            326
+          ],
+          [
+            10,
+            326
+          ],
+          [
+            19,
+            322
+          ],
+          [
+            37,
+            2
+          ],
+          [
+            56,
+            1
+          ]
+        ],
+        "appliedPlacement": {
+          "cell": 55,
+          "symbol": 6
+        }
+      },
+      {
+        "kind": "singleton-peer",
+        "cell": 37,
+        "mask": 2,
+        "effects": [
+          [
+            1,
+            324
+          ],
+          [
+            10,
+            324
+          ],
+          [
+            19,
+            320
+          ],
+          [
+            36,
+            40
+          ],
+          [
+            38,
+            40
+          ]
+        ],
+        "appliedPlacement": {
+          "cell": 37,
+          "symbol": 2
+        }
+      },
+      {
+        "kind": "singleton-peer",
+        "cell": 56,
+        "mask": 1,
+        "effects": [
+          [
+            2,
+            238
+          ],
+          [
+            11,
+            230
+          ],
+          [
+            20,
+            226
+          ]
+        ],
+        "appliedPlacement": {
+          "cell": 56,
+          "symbol": 1
+        }
+      },
+      {
+        "kind": "singleton-peer",
+        "cell": 72,
+        "mask": 4,
+        "effects": [
+          [
+            0,
+            123
+          ],
+          [
+            9,
+            115
+          ],
+          [
+            45,
+            64
+          ]
+        ],
+        "appliedPlacement": {
+          "cell": 72,
+          "symbol": 3
+        }
+      },
+      {
+        "kind": "singleton-peer",
+        "cell": 45,
+        "mask": 64,
+        "effects": [
+          [
+            0,
+            59
+          ],
+          [
+            9,
+            51
+          ],
+          [
+            18,
+            35
+          ],
+          [
+            47,
+            4
+          ],
+          [
+            63,
+            2
+          ]
+        ],
+        "appliedPlacement": {
+          "cell": 45,
+          "symbol": 7
+        }
+      },
+      {
+        "kind": "singleton-peer",
+        "cell": 47,
+        "mask": 4,
+        "effects": [
+          [
+            2,
+            234
+          ],
+          [
+            11,
+            226
+          ]
+        ],
+        "appliedPlacement": {
+          "cell": 47,
+          "symbol": 3
+        }
+      },
+      {
+        "kind": "singleton-peer",
+        "cell": 63,
+        "mask": 2,
+        "effects": [
+          [
+            0,
+            57
+          ],
+          [
+            9,
+            49
+          ],
+          [
+            18,
+            33
+          ],
+          [
+            65,
+            64
+          ]
+        ],
+        "appliedPlacement": {
+          "cell": 63,
+          "symbol": 2
+        }
+      },
+      {
+        "kind": "singleton-peer",
+        "cell": 65,
+        "mask": 64,
+        "effects": [
+          [
+            2,
+            170
+          ],
+          [
+            11,
+            162
+          ],
+          [
+            20,
+            162
+          ]
+        ],
+        "appliedPlacement": {
+          "cell": 65,
+          "symbol": 7
+        }
+      },
+      {
+        "kind": "singleton-peer",
+        "cell": 76,
+        "mask": 128,
+        "effects": [
+          [
+            4,
+            320
+          ],
+          [
+            13,
+            320
+          ]
+        ],
+        "appliedPlacement": {
+          "cell": 76,
+          "symbol": 8
+        }
+      },
+      {
+        "kind": "singleton-peer",
+        "cell": 80,
+        "mask": 256,
+        "effects": [
+          [
+            8,
+            194
+          ],
+          [
+            17,
+            194
+          ],
+          [
+            26,
+            194
+          ]
+        ],
+        "appliedPlacement": {
+          "cell": 80,
+          "symbol": 9
+        }
+      },
+      {
+        "kind": "naked-subset",
+        "house": "row:0",
+        "cells": [
+          3,
+          7
+        ],
+        "mask": 33,
+        "effects": [
+          [
+            0,
+            24
+          ],
+          [
+            2,
+            138
+          ]
+        ]
+      }
+    ],
+    "attempt": 893,
+    "id": "C20-max11-symbol9",
+    "rowId": "C20",
+    "expectedEffects": [
+      {
+        "kind": "remove",
+        "cell": 8,
+        "symbol": 7
+      }
+    ],
+    "origin": {
+      "url": null,
+      "author": "Independent repository fixture author",
+      "license": "Repository-owned; no external puzzle copied",
+      "sourceRevision": "independent-sdc-max-prefix@1",
+      "construction": "Targeted original-given masks followed by independently authored singleton/hidden/locked/subset domain deductions; no production detector, checker, index or exact imports."
+    },
+    "prefix": "Replay each explicit singleton as a normal checked placement followed by peer removals, then the explicit naked subset; no synthetic domain axioms.",
+    "oracleRecord": {
+      "method": "independent-algorithm-x@1",
+      "inputHash": "94af6240c9a2e7eeff4d8ceab0416181dbfe1331bb342effb0ad953cd9859fd4",
+      "command": "npm test -- tests/unit/solver/set-arguments.test.ts",
+      "satisfiable": true,
+      "forceForbidExhausted": true
+    },
+    "independentLocalEnumeration": {
+      "allDifferentScopes": [
+        [
+          0,
+          1,
+          2,
+          3,
+          4,
+          6,
+          7
+        ],
+        [
+          0,
+          1,
+          2,
+          9,
+          11,
+          18,
+          20
+        ]
+      ],
+      "completeAssignments": 48,
+      "partialAssignmentTests": 978,
+      "targetCompatibleSurvivors": {
+        "0": 0
+      },
+      "prefixSteps": 18,
+      "appliedSingletons": 17
+    },
+    "grammar": "c20-grammar@1",
+    "alias": "Sue de Coq",
+    "expectation": "productive",
+    "reachability": "original-clue-path",
+    "independentLocalAssignments": 48
+  }
+]
