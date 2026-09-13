@@ -317,6 +317,8 @@ type ExactEvent = { kind: "work"; units: number; stats: ExactStats } |
     decisions: readonly Literal[]; stats: ExactStats } |
   { kind: "exhausted"; stats: ExactStats } |
   { kind: "cap-reached"; stats: ExactStats };
+interface ExactInitializationReservation { workUnits: number; workspaceBytes: number }
+exactInitializationReservation(problem: EngineProblem, assembly: Assembly): ExactInitializationReservation;
 exactSteps(problem: EngineProblem, assembly: Assembly): Generator<ExactEvent, void, void>;
 type CountEvidence =
   | { kind: "unknown"; witnesses: readonly (readonly SymbolId[])[]; lowerBound: 0 | 1 }
@@ -328,11 +330,29 @@ type HumanStatus = "not-started" | "solved" | "stalled-within-profile" |
   "incomplete" | "contradiction" | "invalidated";
 type Quality = "perfect-verified" | "not-established" | "not-applicable" | "inconsistent";
 isWitness(problem: EngineProblem, assembly: Assembly, values: unknown): boolean;
+interface QualityContext {
+  run: RunKey; assembly: Assembly;
+  initialView: ReadView; acceptedView: ReadView;
+}
 deriveQuality(snapshot: SolverSnapshot, human: HumanStatus,
-  accepted: readonly CheckedStep[], count: CountEvidence, usedFallback: boolean): Quality;
+  accepted: readonly CheckedStep[], count: CountEvidence, usedFallback: boolean,
+  context: QualityContext): Quality;
+interface EvidenceContext extends QualityContext {
+  snapshot: SolverSnapshot; accepted: readonly CheckedStep[]; human: HumanStatus;
+  activeExactRun: RunKey | null; phase: "human" | "exact" | "terminal";
+}
+interface EvidenceMerge { count: CountEvidence; human: HumanStatus; diagnostics: readonly string[] }
+mergeEvidence(previous: CountEvidence, incoming: CountEvidence,
+  context: EvidenceContext): EvidenceMerge;
+isAcceptedPath(initialView: ReadView, acceptedView: ReadView,
+  steps: readonly CheckedStep[]): boolean;
 ```
 
+Implementation refinement D069: quality requires explicit operation identity and authentic accepted-path context. An entirely unconditional prefix replayed in a conditional operation still cannot qualify for Perfect. Candidate ownership validates the exact original-root anchor and accepted step identities, including unchanged-revision proof caches; checking a proposal alone is not acceptance. Keep this validation linear in bundle count without replaying/copying all historical candidate maps. Validate the final board with the assembled complete rules. Evidence merging additionally receives the explicitly active primary exact RunKey/phase; matching problem semantics alone does not authorize exhaustion. Admitted count objects have local private authority; serialized lookalikes must be revalidated during the active exact phase. The caller retains the original registered module instances, authentic root-only initial view and accepted bundle sequence. Store returned human/count state and diagnostics together: historical count objects do not override a later inconsistency.
+
 Runtime `original-dfs@1`: explicit resumable MRV stack, lowest-cell tie and ascending symbol values. Initialize fresh full domains from original clues and declared rules. Classic exact propagation recomputes legal values, naked/hidden singles; use neither human subsets/chains nor human candidate buffers. Additional modules may supply sound pruning, but any pruning must be verified and retain complete search alternatives. Unknown complete-check semantics block assembly. Count only distinct fully checked assignments; a human witness supplies existence but is not pre-seeded into the exact counter.
+
+Exact setup uses `exactInitializationReservation` to bound descriptors/cardinalities before canonical traversal. The caller reserves it before constructing the iterator, checks deadlines before/after finite synchronous setup and charges the first emitted setup work once (nodes=0). The reservation includes one caller preflight and one internal preflight, copies, peers and maximum frontier; additional calls need additional accounting. Subsequent enumeration yields bounded operations. This establishes accounted limits, not measured browser latency or heap usage. T26 must measure setup and evidence validation as well as enumeration.
 
 Zero/unique requires an explicit root-exhausted event, except a checked duplicate-givens contradiction. One witness with an unfinished frontier remains unknown with lower bound one; two distinct valid witnesses prove at least two. Generator termination, deadline, node limit or missing terminal packet never means root exhaustion. A valid full input is directly checked but receives no Perfect badge. Exhaustion is tested process evidence bound to RunKey/method/frontier statistics, not a portable mathematical certificate.
 

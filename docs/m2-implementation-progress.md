@@ -17,8 +17,9 @@ Approved design/plan: `0e98c2b`, 2026-09-12. Authorization and coding convention
 | T03 Proof roots and checking boundary | Complete | `4427544`, `40a2603`; 64 focused tests and typecheck passed; independent review and fix review passed. |
 | T04 Candidate state and invalidation | Complete | `f7cf56f`; 203 tests and typecheck passed; independent task review passed. |
 | T05 Proof composition and replay | Complete | `10c2a52`; 242 tests and typecheck passed; independent task review passed. |
-| T06 Exact counting and quality | In progress | Original-problem MRV enumeration and run-bound evidence/quality. |
-| T07-T27 | Pending | Approved requirements remain in the implementation plan; no family dropped. |
+| T06 Exact counting and quality | Complete | `27f856c`; 280 tests and typecheck passed; independent task review passed. |
+| T07 Manifest and foundation techniques | In progress | Cataloguing all 38 rows; C01-C05 implementation and evidence gates. |
+| T08-T27 | Pending | Approved requirements remain in the implementation plan; no family dropped. |
 
 ## Coding conventions
 
@@ -35,3 +36,5 @@ T03 adds PrimitiveRegistry/ProofChecker, authentic immutable roots and proof-onl
 T04 adds CandidateOwner/CandidateIndexes, exact checked domain facts, atomic effects and cold/incremental support checks. Diagnostics remain separate from count evidence; newly exposed singles stay unresolved. A real 4,097-node proof verifies larger configured step limits. T07 must migrate internal placement certificates to named grammar; T19/T20 must reserve initialization work/workspace before synchronous initialization.
 
 T05 adds scoped proof composition, complete finite table DAGs, incidence counts, mixed-rule acceptance and original-clue replay. Its 39 focused tests include a 6,561-row table, incomplete/forged proofs and cumulative replay budgets. The complete suite passed 242 tests. Independent review found no blocking issue; Git line-ending notices and an occasional Vitest caching recommendation are informational tooling noise. D068 records representation bounds; named family grammars, exact counting and runtime operation accounting remain later gates.
+
+T06 adds original-clue MRV exact enumeration, local evidence authority, private accepted-path lineage and explicit primary-operation quality gating. All 38 focused tests and the full 280-test suite passed; independent review found no blocking issue. The second-witness/forged-view regression checks lineage rejection; an isolated authentic-domain compatibility fault test remains a T25 defense-in-depth follow-up. Exact setup and synchronous evidence validation require T20/T23 resource accounting and T26 measurement.

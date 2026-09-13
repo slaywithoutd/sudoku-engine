@@ -170,25 +170,25 @@ expect(mixedStep.rules).toEqual(expect.arrayContaining(["sum:0", "order:0", "row
 
 ## T06 — Independent production exact counting and quality
 
-**Files:** create `src/solver/exact.ts`, `evidence.ts`; tests `tests/unit/solver/exact.test.ts`, `evidence.test.ts`.
+**Files:** create `src/solver/exact.ts`, `evidence.ts`; extend `src/solver/state/candidates.ts` with private lightweight accepted-lineage validation under D069; tests `tests/unit/solver/exact.test.ts`, `evidence.test.ts`.
 
-**Interfaces:** `exactSteps`, `isWitness`, `deriveQuality`, CountEvidence/ExactEvent per contracts §7. `mergeEvidence(previous, incoming, context)` validates witnesses, monotonicity and consistency; context binds snapshot, assembly, accepted primary path and run identity.
+**Interfaces:** `exactSteps`, `isWitness`, `deriveQuality`, CountEvidence/ExactEvent per contracts §7. `mergeEvidence(previous, incoming, context)` validates witnesses, monotonicity and consistency; context binds snapshot, assembly, accepted primary path, active exact phase and full run identity. D069 requires a sixth QualityContext argument with run, assembly and authentic initial/accepted views; candidate lineage validates actual acceptance, including proof-only caches, without copying historical maps.
 
-- [ ] Write original-clue independence and interrupted-count assertions:
+- [x] Write original-clue independence and interrupted-count assertions:
 
 ```ts
 expect(countFrom(exactSteps(twoProblem, assembly)).kind).toBe("multiple");
 expect(stopAfterFirstWitness(exactSteps(uniqueProblem, assembly))).toMatchObject({
   kind: "unknown", lowerBound: 1,
 });
-expect(deriveQuality(snapshot, "solved", conditionalSteps, unique, false))
+expect(deriveQuality(snapshot, "solved", conditionalSteps, unique, false, conditionalContext))
   .toBe("not-established");
 ```
 
-- [ ] Run `npm test -- tests/unit/solver/exact.test.ts tests/unit/solver/evidence.test.ts`.
-- [ ] Implement explicit MRV DFS stack, ascending symbols, recomputed classic legal masks and singles, complete-rule leaf checking, witness deduplication and explicit root exhaustion. Emit bounded work between node/propagation operations. No human domains input. Encode duplicate zero proof and root-exhaustion process evidence with run identity/statistics. Preserve valid witnesses when rejecting inconsistent exhaustion/trace evidence. Full valid input is not-applicable quality.
-- [ ] Rerun tests/typecheck; differential-test all seed count fixtures plus seeded clue removals and mock complete-rule assignments. Verify exact cap two is “at least two,” closing a generator is not exhaustion, and a different second witness invalidates an incompatible human path.
-- [ ] Commit listed files: `feat: count original-problem solutions with independent evidence`.
+- [x] Run `npm test -- tests/unit/solver/exact.test.ts tests/unit/solver/evidence.test.ts`.
+- [x] Implement explicit MRV DFS stack, ascending symbols, recomputed classic legal masks and singles, complete-rule leaf checking, witness deduplication and explicit root exhaustion. Emit bounded work between node/propagation operations. No human domains input. Encode duplicate zero proof and root-exhaustion process evidence with run identity/statistics. Preserve valid witnesses when rejecting inconsistent exhaustion/trace evidence. Full valid input is not-applicable quality.
+- [x] Rerun tests/typecheck; differential-test all seed count fixtures plus seeded clue removals and mock complete-rule assignments. Verify exact cap two is “at least two,” closing a generator is not exhaustion, and a different second witness invalidates an incompatible human path.
+- [x] Commit listed files: `feat: count original-problem solutions with independent evidence`.
 
 ## T07 — Coverage manifest and foundation techniques C01–C05
 
