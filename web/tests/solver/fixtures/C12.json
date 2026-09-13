@@ -1893,5 +1893,314 @@
     "alias": "Bent almost-locked subsets",
     "expectation": "out-of-profile",
     "reachability": "original-clue-path"
+  },
+  {
+    "id": "C12-partition-n6",
+    "rowId": "C12",
+    "givens": "000678900600090308090302567859761423006853791000904856960537284080409600040086009",
+    "preState": {
+      "values": [
+        0,
+        0,
+        0,
+        6,
+        7,
+        8,
+        9,
+        0,
+        0,
+        6,
+        0,
+        0,
+        0,
+        9,
+        0,
+        3,
+        0,
+        8,
+        0,
+        9,
+        0,
+        3,
+        0,
+        2,
+        5,
+        6,
+        7,
+        8,
+        5,
+        9,
+        7,
+        6,
+        1,
+        4,
+        2,
+        3,
+        0,
+        0,
+        6,
+        8,
+        5,
+        3,
+        7,
+        9,
+        1,
+        0,
+        0,
+        0,
+        9,
+        0,
+        4,
+        8,
+        5,
+        6,
+        9,
+        6,
+        0,
+        5,
+        3,
+        7,
+        2,
+        8,
+        4,
+        0,
+        8,
+        0,
+        4,
+        0,
+        9,
+        6,
+        0,
+        0,
+        0,
+        4,
+        0,
+        0,
+        8,
+        6,
+        0,
+        0,
+        9
+      ],
+      "domains": [
+        31,
+        7,
+        31,
+        32,
+        64,
+        128,
+        256,
+        9,
+        2,
+        32,
+        67,
+        91,
+        1,
+        256,
+        16,
+        4,
+        9,
+        128,
+        9,
+        256,
+        137,
+        4,
+        9,
+        2,
+        16,
+        32,
+        64,
+        128,
+        16,
+        256,
+        64,
+        32,
+        1,
+        8,
+        2,
+        4,
+        10,
+        2,
+        32,
+        128,
+        16,
+        4,
+        64,
+        256,
+        1,
+        71,
+        71,
+        71,
+        256,
+        2,
+        8,
+        128,
+        16,
+        32,
+        256,
+        32,
+        1,
+        16,
+        4,
+        64,
+        2,
+        128,
+        8,
+        87,
+        128,
+        87,
+        8,
+        3,
+        256,
+        32,
+        69,
+        16,
+        87,
+        8,
+        87,
+        3,
+        128,
+        32,
+        1,
+        69,
+        256
+      ]
+    },
+    "expectedPattern": {
+      "alias": "Bent almost-locked subsets",
+      "cells": [
+        2,
+        11,
+        18,
+        47,
+        65,
+        74
+      ],
+      "symbols": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        7
+      ],
+      "nonrestrictedSymbol": 1,
+      "occurrences": {
+        "1": [
+          2,
+          11,
+          18,
+          47,
+          65,
+          74
+        ],
+        "2": [
+          2,
+          11,
+          47,
+          65,
+          74
+        ],
+        "3": [
+          2,
+          47,
+          65,
+          74
+        ],
+        "4": [
+          2,
+          11,
+          18
+        ],
+        "5": [
+          2,
+          11,
+          65,
+          74
+        ],
+        "7": [
+          11,
+          47,
+          65,
+          74
+        ]
+      },
+      "conflicts": [
+        [
+          2,
+          11
+        ],
+        [
+          2,
+          18
+        ],
+        [
+          2,
+          47
+        ],
+        [
+          2,
+          65
+        ],
+        [
+          2,
+          74
+        ],
+        [
+          11,
+          18
+        ],
+        [
+          11,
+          47
+        ],
+        [
+          11,
+          65
+        ],
+        [
+          11,
+          74
+        ],
+        [
+          47,
+          65
+        ],
+        [
+          47,
+          74
+        ],
+        [
+          65,
+          74
+        ]
+      ]
+    },
+    "expectedEffects": [
+      {
+        "kind": "remove",
+        "cell": 20,
+        "symbol": 1
+      }
+    ],
+    "independentLocalAssignments": 220,
+    "independentCartesianVolume": 5000,
+    "origin": {
+      "author": "Independent repository fixture author",
+      "license": "Repository-owned; no external puzzle copied",
+      "sourceRevision": "independent-bent-seeds@1"
+    },
+    "prefix": "Original clues followed by independently recomputed given-peer exclusions; reproduced by originalCluePrefix and independent-domain test.",
+    "oracleRecord": {
+      "method": "independent-algorithm-x@1",
+      "inputHash": "e0211c1da98d6eacb3202d6333a83151c1f92f2d4a3d3a888c65db497a37d91f",
+      "command": "cd web && npm test -- tests/unit/solver/short-patterns.test.ts tests/unit/solver/wings.test.ts",
+      "satisfiable": true,
+      "forceForbidExhausted": true
+    },
+    "grammar": "c12-grammar@1",
+    "alias": "Bent almost-locked subsets",
+    "expectation": "productive",
+    "reachability": "original-clue-path"
   }
 ]

@@ -120,7 +120,10 @@ and 7 C13. Their prestates, selected geometry, and effects are preserved. Alias
 serialization changes are explicit. Three Y-Wing presentations, a row Turbot
 presentation, and an independently transposed W-Wing add five positive fixtures.
 The transpose maps every clue, domain, cell and effect identically, without
-consulting discovery. Fifteen additional fixtures exercise invalid geometry and
+consulting discovery. A further independently authored original-clue six-cell fixture exercises 5,000
+Cartesian assignments and 220 surviving local assignments, requiring complete
+partition unions in both production and independent certificates. Fifteen
+additional fixtures exercise invalid geometry and
 profile boundaries.
 
 `short-pattern-acceptance.ts` independently compiles certificates from those
@@ -128,7 +131,7 @@ fixtures. It imports no production builder, detector implementation, named
 validator, or index. Its local resolution and table routines are separately
 written. Discovery matching is a separate harness function. Acceptance verifies
 both independent and discovered proposals, recomputes every given-peer domain
-independently, reproduces input hashes, establishes SAT, refutes 41 forced
+independently, reproduces input hashes, establishes SAT, refutes 42 forced
 counterfactuals, and confirms the corresponding forbidden cases remain SAT.
 Every positive certificate replays after its original-clue proof prefix.
 

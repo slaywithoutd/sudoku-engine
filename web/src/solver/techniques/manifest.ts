@@ -1598,7 +1598,8 @@ export const coverageEntries: readonly CoverageEntry[] = Object.freeze((
       "C12-restricted-lookalike",
       "C12-missing-occurrence",
       "C12-target-misses-occurrence",
-      "C12-n7"
+      "C12-n7",
+      "C12-partition-n6"
     ],
     "status": "independently-verified",
     "evidence": [
@@ -1689,6 +1690,36 @@ export const coverageEntries: readonly CoverageEntry[] = Object.freeze((
       {
         "kind": "independent-oracle",
         "fixtureId": "C12-n6",
+        "alias": "Bent almost-locked subsets",
+        "record": "web/tests/unit/solver/wings.test.ts#durable seed hashes reproduce SAT and both forced and forbidden counterfactuals independently"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "C12-partition-n6",
+        "alias": "Bent almost-locked subsets",
+        "record": "web/tests/unit/solver/wings.test.ts#C12 partitions a 5000-assignment original-clue local table and checks all 220 survivors"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "C12-partition-n6",
+        "alias": "Bent almost-locked subsets",
+        "record": "web/tests/unit/solver/wings.test.ts#both Dual Empty Rectangle roots and every C12 table boundary remain necessary"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "C12-partition-n6",
+        "alias": "Bent almost-locked subsets",
+        "record": "web/tests/unit/solver/wings.test.ts#C12 partitions a 5000-assignment original-clue local table and checks all 220 survivors"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C12-partition-n6",
+        "alias": "Bent almost-locked subsets",
+        "record": "web/tests/unit/solver/wings.test.ts#C12 partitions a 5000-assignment original-clue local table and checks all 220 survivors"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C12-partition-n6",
         "alias": "Bent almost-locked subsets",
         "record": "web/tests/unit/solver/wings.test.ts#durable seed hashes reproduce SAT and both forced and forbidden counterfactuals independently"
       }

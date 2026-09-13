@@ -74,7 +74,7 @@ test("durable seed hashes reproduce SAT and both forced and forbidden counterfac
       const forbid=oracle({...input,forbid:[e.cell,e.symbol]});expect(forbid.interrupted).toBe(false);expect(forbid.witnesses).toHaveLength(1);counterfactuals++;
     }
   }
-  expect(counterfactuals).toBe(41);
+  expect(counterfactuals).toBe(42);
 });
 test("named XY-Wing consumes a relation conflict through unconditional domain filters and clause projection",()=>{
   const result=assemble(canonicalProblem({schema:1,cells:[0,1,2,3,4,5,6],symbols:[1,2,3],givens:[0,0,0,0,3,2,1],constraints:[
@@ -123,3 +123,21 @@ test("named C12 requires nonempty survivors and cannot invent an unrestricted sy
   const omitted={...p,conflicts:p.conflicts.slice(1)};
   expect(()=>validateBentPattern(view,omitted as never,f.expectedEffects)).toThrow();
 });
+test("C12 partitions a 5000-assignment original-clue local table and checks all 220 survivors",()=>{
+  const f=shortFixtures.find(f=>f.id==="C12-partition-n6")!,view=fixtureView(f),independent=independentShortCertificate(f),found=findShort(f);
+  const pattern=f.expectedPattern as {cells:number[]};
+  const volume=pattern.cells.reduce((n,cell)=>n*Array.from({length:9},(_,i)=>i+1).filter(s=>view.state.domains[cell]&(1<<(s-1))).length,1);
+  expect(volume).toBe(5000);
+  for(const proposal of [independent,found.proposal]) {
+    const unions=proposal.proof.nodes.filter(n=>n.rule==="table-union@1");expect(unions.length).toBeGreaterThan(0);
+    expect(unions.at(-1)?.conclusion).toMatchObject({kind:"table",count:220,cells:pattern.cells});
+    expect(()=>assertSound(view,proposal)).not.toThrow();
+    for(const leaf of proposal.proof.nodes.filter(n=>n.rule==="table-filter@1")) {
+      const masks=(leaf.parameters as {box:number[]}).box;
+      expect(masks.reduce((n,mask)=>n*Array.from({length:9},(_,i)=>i+1).filter(s=>mask&(1<<(s-1))).length,1)).toBeLessThanOrEqual(256);
+    }
+    const events=[...replay({snapshotId:"partition-fixture",inputRevision:0,problem:view.assembly.problem,source:{kind:"manual"}},
+      [...originalCluePrefix(f),proposal],view.assembly,discoveryContext().limits)];
+    expect(events.at(-1)?.kind).toBe("checked");
+  }
+},30000);
