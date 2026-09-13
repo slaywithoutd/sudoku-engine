@@ -8,7 +8,7 @@
 
 **Tech Stack:** Existing TypeScript 7.0.2, Vite 8.3.0, Vitest 5.0.0, Playwright 1.63.0, native Worker/IndexedDB; retain lockfile and no new runtime dependency. These are inspected repository pins, not recommendations to upgrade.
 
-**Spec:** Read [screen/evidence design](../specs/2026-09-12-m2-classic-solver-design.md), [engine contracts](../specs/2026-09-12-m2-engine-contracts.md), [technique matrix](../specs/2026-09-12-m2-technique-coverage.md), [research rationale](../specs/2026-09-12-m2-engine-expansion-design.md) and [decisions](../../decisions.md). The contracts and matrix define signatures/grammars; this plan defines implementation sequence and evidence. All tasks are future work.
+**Spec:** Read [screen/evidence design](../specs/2026-09-12-m2-classic-solver-design.md), [engine contracts](../specs/2026-09-12-m2-engine-contracts.md), [technique matrix](../specs/2026-09-12-m2-technique-coverage.md), [research rationale](../specs/2026-09-12-m2-engine-expansion-design.md) and [decisions](../../decisions.md). The contracts and matrix define signatures/grammars; this plan defines implementation sequence and evidence. Checked steps record completed implementation; unchecked steps remain pending.
 
 **Status:** APPROVED at `0e98c2b`; implementation started 2026-09-12 under D065/D066. Replaces the obsolete ten-task/six-technique plan. See [implementation progress](../../m2-implementation-progress.md) for actual execution evidence. Review baseline `80471d2` on `docs/m2-solver-design`; preserve research `24e0d25` and D058 themes.
 
@@ -31,7 +31,7 @@
 
 After approval, inspect Git status/log and applicable instructions again; record the approved spec commit. Preserve unrelated edits, use an isolated checkout if implementation needs it. The current root has no AGENTS.md. Run baseline gates once from `web/`: `npm ci` only if needed, `npm run typecheck`, `npm test`, `npm run build`, `npm run test:e2e`. Diagnose existing failures before attributing them to M2. Latest recorded application evidence is 64 unit/storage/route tests and 23 Chromium browser tests, not fresh solver evidence.
 
-All task paths beginning `src/` or `tests/` are relative to `web/`. `docs/` paths are repository-root relative. Do not create future files in this planning session. Existing modifications are restricted to `web/src/app/{controller,application,router}.ts`, `web/src/ui/{home,library,player}.ts`, `web/src/styles.css`, `web/tsconfig.json`, `web/package.json`, and test/benchmark configs named below. Preserve `ui/board.ts` behavior; reuse its input API. Repository/domain/backup production files need no solver change.
+All task paths beginning `src/` or `tests/` are relative to `web/`. `docs/` paths are repository-root relative. Implementation is authorized under D065. Changes to pre-existing application files are restricted to `web/src/app/{controller,application,router}.ts`, `web/src/ui/{home,library,player}.ts`, `web/src/styles.css`, `web/tsconfig.json`, `web/package.json`, and test/benchmark configs named below. Preserve `ui/board.ts` behavior; reuse its input API. Repository/domain/backup production files need no solver change.
 
 New production file ownership:
 
@@ -90,7 +90,7 @@ expect(stopped.exhausted).toBe(false);
 
 **Interfaces:** `normalizeClassic`, `makeSnapshot`, `assemble`, EngineProblem/RunKey and RuleModule exactly as contracts §§1–2. `canonicalJson(value: Json): string` rejects nonfinite/unknown values before serialization. Test-only `makeMockProblem` and `mockRuleRegistry` cover sum/order and noncovering all-different scopes.
 
-- [ ] Write assertions for canonical order, deep copies and unknown rules:
+- [x] Write assertions for canonical order, deep copies and unknown rules:
 
 ```ts
 expect(assemble(withUnknownRule(problem), registry).ok).toBe(false);
@@ -100,10 +100,10 @@ expect(cageAssembly.covers).toHaveLength(0); // three-cell all-different is not 
 expect(snapshot.problem.givens[0]).toBe(5); // mutate original input after snapshot
 ```
 
-- [ ] Run `npm test -- tests/unit/solver/problem.test.ts tests/unit/solver/assembly.test.ts` and observe failure.
-- [ ] Implement strict normalize → canonical semantic key → roots → assembly. In this task capabilities can reference rule-root handles; T03 verifies them before a ReadView is exposed. Preserve ordered rule arrays, derive covers only with existence premises, and build sorted incidence/peer sets from scopes. Test helpers such as `withUnknownRule` are local builders declared in each test file, never production API.
-- [ ] Rerun tests/typecheck; verify all 81 classic peer sets (20 peers each) independently and registration permutations/malformed parameter rejection.
-- [ ] Commit listed files: `feat: normalize solver problems and assemble rule capabilities`.
+- [x] Run `npm test -- tests/unit/solver/problem.test.ts tests/unit/solver/assembly.test.ts` and observe failure.
+- [x] Implement strict normalize → canonical semantic key → roots → assembly. In this task capabilities can reference rule-root handles; T03 verifies them before a ReadView is exposed. Preserve ordered rule arrays, derive covers only with existence premises, and build sorted incidence/peer sets from scopes. Test helpers such as `withUnknownRule` are local builders declared in each test file, never production API.
+- [x] Rerun tests/typecheck; verify all 81 classic peer sets (20 peers each) independently and registration permutations/malformed parameter rejection.
+- [x] Commit listed files: `feat: normalize solver problems and assemble rule capabilities`.
 
 ## T03 — Proof roots and primitive checker boundary
 
