@@ -5,6 +5,7 @@ import { checkPatternProof } from "./pattern-contracts";
 import { checkFishPattern } from "./fish-certificate";
 import { checkChainPattern } from "./chains-grammar";
 import { checkColoringPattern } from "./coloring-grammar";
+import { checkAlsPattern } from "./als-grammar";
 
 function fields(p: Record<string, unknown>, names: string[]): void {
   requireProof(sameValue(Object.keys(p).sort(), names.sort()), "invalid-technique-pattern");
@@ -38,6 +39,9 @@ export function checkTechniqueGrammar(proposal: DeductionProposal, view: ReadVie
   for (const cell of view.assembly.problem.cells) {
     const fact = view.facts.get(view.state.domainFacts[cell]);
     requireProof(fact && sameValue(domainAssertion(fact.proposition), { cell, mask: domains[cell] }), "unproved-current-domain");
+  }
+  if (["c18@1", "c19@1"].includes(proposal.technique)) {
+    checkAlsPattern(proposal, view, available); return;
   }
   if (["c10@1","c11@1","c12@1","c13@1"].includes(proposal.technique)) {
     checkPatternProof(proposal,view,available); return;

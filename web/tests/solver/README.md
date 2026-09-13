@@ -79,3 +79,22 @@ Their distinct opaque results cannot enter owned candidate state, production
 replay or quality. Mixed-rule table tests do not advertise an unimplemented
 production technique. The approved grammar/cache boundary is documented in
 `docs/solver/techniques/foundation.md`.
+
+## ALS fixture provenance
+
+`C18.json` and `C19.json` retain the independent root-authored overlapping and
+double-RCC seeds, independently reinterpreted C11/T11 clue geometry, and locally
+authored chain/Blossom constructions. There are 14 productive examples and two
+primitive-sound examples outside the named stem/petal bounds. Their 16 original
+clue/domain input hashes and 18 forced-opposite checks reproduce through the
+unchanged Algorithm X oracle. No solution-derived candidate axioms are used.
+
+The separate test compiler is `tests/unit/solver/als-acceptance.ts`. Productive
+fixtures run independent certificates, exact production compilation and original
+clue replay. Production discovery also has family, overlap, double-RCC and stem
+size gates. See `docs/solver/techniques/als.md` for the exact bounds, proof
+substitution regressions, resource ownership tests and incomplete-search limits.
+
+```text
+npm test -- tests/unit/solver/als-patterns.test.ts
+```

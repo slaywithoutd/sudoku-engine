@@ -1,0 +1,2439 @@
+[
+  {
+    "id": "C19-chain-2",
+    "rowId": "C19",
+    "givens": "500678012672195348108302567850761423006853791713924856961537284207019635305286179",
+    "preState": {
+      "values": [
+        5,
+        0,
+        0,
+        6,
+        7,
+        8,
+        0,
+        1,
+        2,
+        6,
+        7,
+        2,
+        1,
+        9,
+        5,
+        3,
+        4,
+        8,
+        1,
+        0,
+        8,
+        3,
+        0,
+        2,
+        5,
+        6,
+        7,
+        8,
+        5,
+        0,
+        7,
+        6,
+        1,
+        4,
+        2,
+        3,
+        0,
+        0,
+        6,
+        8,
+        5,
+        3,
+        7,
+        9,
+        1,
+        7,
+        1,
+        3,
+        9,
+        2,
+        4,
+        8,
+        5,
+        6,
+        9,
+        6,
+        1,
+        5,
+        3,
+        7,
+        2,
+        8,
+        4,
+        2,
+        0,
+        7,
+        0,
+        1,
+        9,
+        6,
+        3,
+        5,
+        3,
+        0,
+        5,
+        2,
+        8,
+        6,
+        1,
+        7,
+        9
+      ],
+      "domains": [
+        16,
+        268,
+        264,
+        32,
+        64,
+        128,
+        256,
+        1,
+        2,
+        32,
+        64,
+        2,
+        1,
+        256,
+        16,
+        4,
+        8,
+        128,
+        1,
+        264,
+        128,
+        4,
+        8,
+        2,
+        16,
+        32,
+        64,
+        128,
+        16,
+        256,
+        64,
+        32,
+        1,
+        8,
+        2,
+        4,
+        8,
+        10,
+        32,
+        128,
+        16,
+        4,
+        64,
+        256,
+        1,
+        64,
+        1,
+        4,
+        256,
+        2,
+        8,
+        128,
+        16,
+        32,
+        256,
+        32,
+        1,
+        16,
+        4,
+        64,
+        2,
+        128,
+        8,
+        2,
+        136,
+        64,
+        8,
+        1,
+        256,
+        32,
+        4,
+        16,
+        4,
+        8,
+        16,
+        2,
+        128,
+        32,
+        1,
+        64,
+        256
+      ]
+    },
+    "expectedPattern": {
+      "alias": "ALS chains",
+      "sets": [
+        {
+          "cells": [
+            19,
+            37,
+            64
+          ],
+          "symbols": [
+            2,
+            4,
+            8,
+            9
+          ],
+          "house": "column:1",
+          "occurrences": {
+            "2": [
+              37
+            ],
+            "4": [
+              19,
+              37,
+              64
+            ],
+            "8": [
+              64
+            ],
+            "9": [
+              19
+            ]
+          }
+        },
+        {
+          "cells": [
+            2
+          ],
+          "house": "row:0",
+          "symbols": [
+            4,
+            9
+          ],
+          "occurrences": {
+            "4": [
+              2
+            ],
+            "9": [
+              2
+            ]
+          }
+        }
+      ],
+      "restrictedSymbols": [
+        9
+      ],
+      "eliminationSymbol": 4,
+      "overlap": []
+    },
+    "expectedEffects": [
+      {
+        "kind": "remove",
+        "cell": 1,
+        "symbol": 4
+      }
+    ],
+    "origin": {
+      "author": "Independent repository fixture author",
+      "license": "Repository-owned; no external puzzle copied",
+      "sourceRevision": "independent-als-link-seeds@1",
+      "reinterpretation": "Existing independent bent geometry decomposed into one ALS strong transition, full RCC weak conflict, and one bivalue strong transition; no production graph used."
+    },
+    "prefix": "Only original-given peer exclusions; no solution-derived candidate axioms.",
+    "independentAlsAssignments": 4,
+    "oracleRecord": {
+      "method": "independent-algorithm-x@1",
+      "inputHash": "05844aab0c286c725a98b32fb341e25ef8a1d2844f2346cdb395d7d8c036280f",
+      "command": "npm test -- tests/unit/solver/coloring.test.ts tests/unit/solver/chains.test.ts",
+      "satisfiable": true,
+      "forceForbidExhausted": true,
+      "durableCommand": "npm test -- tests/unit/solver/als-patterns.test.ts"
+    },
+    "grammar": "c19-grammar@1",
+    "alias": "ALS chains",
+    "expectation": "productive",
+    "reachability": "original-clue-path"
+  },
+  {
+    "id": "C19-chain-6",
+    "rowId": "C19",
+    "givens": "034678900670095348098340567859760403406853790703904856960537084087409635345086079",
+    "preState": {
+      "values": [
+        0,
+        3,
+        4,
+        6,
+        7,
+        8,
+        9,
+        0,
+        0,
+        6,
+        7,
+        0,
+        0,
+        9,
+        5,
+        3,
+        4,
+        8,
+        0,
+        9,
+        8,
+        3,
+        4,
+        0,
+        5,
+        6,
+        7,
+        8,
+        5,
+        9,
+        7,
+        6,
+        0,
+        4,
+        0,
+        3,
+        4,
+        0,
+        6,
+        8,
+        5,
+        3,
+        7,
+        9,
+        0,
+        7,
+        0,
+        3,
+        9,
+        0,
+        4,
+        8,
+        5,
+        6,
+        9,
+        6,
+        0,
+        5,
+        3,
+        7,
+        0,
+        8,
+        4,
+        0,
+        8,
+        7,
+        4,
+        0,
+        9,
+        6,
+        3,
+        5,
+        3,
+        4,
+        5,
+        0,
+        8,
+        6,
+        0,
+        7,
+        9
+      ],
+      "domains": [
+        19,
+        4,
+        8,
+        32,
+        64,
+        128,
+        256,
+        3,
+        3,
+        32,
+        64,
+        3,
+        3,
+        256,
+        16,
+        4,
+        8,
+        128,
+        3,
+        256,
+        128,
+        4,
+        8,
+        3,
+        16,
+        32,
+        64,
+        128,
+        16,
+        256,
+        64,
+        32,
+        3,
+        8,
+        3,
+        4,
+        8,
+        3,
+        32,
+        128,
+        16,
+        4,
+        64,
+        256,
+        3,
+        64,
+        3,
+        4,
+        256,
+        3,
+        8,
+        128,
+        16,
+        32,
+        256,
+        32,
+        3,
+        16,
+        4,
+        64,
+        3,
+        128,
+        8,
+        3,
+        128,
+        64,
+        8,
+        3,
+        256,
+        32,
+        4,
+        16,
+        4,
+        8,
+        16,
+        3,
+        128,
+        32,
+        3,
+        64,
+        256
+      ]
+    },
+    "expectedPattern": {
+      "alias": "ALS chains",
+      "sets": [
+        {
+          "cells": [
+            7
+          ],
+          "house": "row:0",
+          "symbols": [
+            1,
+            2
+          ],
+          "occurrences": {
+            "1": [
+              7
+            ],
+            "2": [
+              7
+            ]
+          }
+        },
+        {
+          "cells": [
+            34
+          ],
+          "house": "row:3",
+          "symbols": [
+            1,
+            2
+          ],
+          "occurrences": {
+            "1": [
+              34
+            ],
+            "2": [
+              34
+            ]
+          }
+        },
+        {
+          "cells": [
+            32
+          ],
+          "house": "row:3",
+          "symbols": [
+            1,
+            2
+          ],
+          "occurrences": {
+            "1": [
+              32
+            ],
+            "2": [
+              32
+            ]
+          }
+        },
+        {
+          "cells": [
+            23
+          ],
+          "house": "row:2",
+          "symbols": [
+            1,
+            2
+          ],
+          "occurrences": {
+            "1": [
+              23
+            ],
+            "2": [
+              23
+            ]
+          }
+        },
+        {
+          "cells": [
+            12
+          ],
+          "house": "row:1",
+          "symbols": [
+            1,
+            2
+          ],
+          "occurrences": {
+            "1": [
+              12
+            ],
+            "2": [
+              12
+            ]
+          }
+        },
+        {
+          "cells": [
+            11
+          ],
+          "house": "row:1",
+          "symbols": [
+            1,
+            2
+          ],
+          "occurrences": {
+            "1": [
+              11
+            ],
+            "2": [
+              11
+            ]
+          }
+        }
+      ],
+      "restrictedSymbols": [
+        2,
+        1,
+        2,
+        1,
+        2
+      ],
+      "eliminationSymbol": 1
+    },
+    "expectedEffects": [
+      {
+        "kind": "remove",
+        "cell": 0,
+        "symbol": 1
+      }
+    ],
+    "origin": {
+      "author": "Independent repository fixture author",
+      "license": "Repository-owned; no external puzzle copied",
+      "sourceRevision": "independent-chain-seeds@1"
+    },
+    "prefix": "Only original-given peer exclusions; no solution-derived candidate axioms.",
+    "oracleRecord": {
+      "method": "independent-algorithm-x@1",
+      "inputHash": "5e938b98082f0681af79a497800474cc05f1b2d28a235f5321d279d8dee04c8e",
+      "command": "npm test -- tests/unit/solver/coloring.test.ts tests/unit/solver/chains.test.ts",
+      "satisfiable": true,
+      "forceForbidExhausted": true,
+      "durableCommand": "npm test -- tests/unit/solver/als-patterns.test.ts"
+    },
+    "grammar": "c19-grammar@1",
+    "alias": "ALS chains",
+    "expectation": "productive",
+    "reachability": "original-clue-path"
+  },
+  {
+    "givens": "534008912672195348198342567859761403426853791713924856961530084287419635345000109",
+    "preState": {
+      "values": [
+        5,
+        3,
+        4,
+        0,
+        0,
+        8,
+        9,
+        1,
+        2,
+        6,
+        7,
+        2,
+        1,
+        9,
+        5,
+        3,
+        4,
+        8,
+        1,
+        9,
+        8,
+        3,
+        4,
+        2,
+        5,
+        6,
+        7,
+        8,
+        5,
+        9,
+        7,
+        6,
+        1,
+        4,
+        0,
+        3,
+        4,
+        2,
+        6,
+        8,
+        5,
+        3,
+        7,
+        9,
+        1,
+        7,
+        1,
+        3,
+        9,
+        2,
+        4,
+        8,
+        5,
+        6,
+        9,
+        6,
+        1,
+        5,
+        3,
+        0,
+        0,
+        8,
+        4,
+        2,
+        8,
+        7,
+        4,
+        1,
+        9,
+        6,
+        3,
+        5,
+        3,
+        4,
+        5,
+        0,
+        0,
+        0,
+        1,
+        0,
+        9
+      ],
+      "domains": [
+        16,
+        4,
+        8,
+        32,
+        64,
+        128,
+        256,
+        1,
+        2,
+        32,
+        64,
+        2,
+        1,
+        256,
+        16,
+        4,
+        8,
+        128,
+        1,
+        256,
+        128,
+        4,
+        8,
+        2,
+        16,
+        32,
+        64,
+        128,
+        16,
+        256,
+        64,
+        32,
+        1,
+        8,
+        2,
+        4,
+        8,
+        2,
+        32,
+        128,
+        16,
+        4,
+        64,
+        256,
+        1,
+        64,
+        1,
+        4,
+        256,
+        2,
+        8,
+        128,
+        16,
+        32,
+        256,
+        32,
+        1,
+        16,
+        4,
+        64,
+        2,
+        128,
+        8,
+        2,
+        128,
+        64,
+        8,
+        1,
+        256,
+        32,
+        4,
+        16,
+        4,
+        8,
+        16,
+        34,
+        192,
+        96,
+        1,
+        66,
+        256
+      ]
+    },
+    "expectedEffects": [
+      {
+        "kind": "remove",
+        "cell": 76,
+        "symbol": 7
+      }
+    ],
+    "origin": {
+      "author": "Independent repository fixture construction",
+      "license": "Repository-owned",
+      "sourceRevision": "independent-als-star@1"
+    },
+    "prefix": "Only original-given peer exclusions.",
+    "id": "C19-blossom-2",
+    "rowId": "C19",
+    "grammar": "c19-grammar@1",
+    "alias": "Death Blossom",
+    "expectedPattern": {
+      "alias": "Death Blossom",
+      "stem": 75,
+      "sets": [
+        {
+          "cells": [
+            79
+          ],
+          "house": "row:8",
+          "symbols": [
+            2,
+            7
+          ],
+          "occurrences": {
+            "2": [
+              79
+            ],
+            "7": [
+              79
+            ]
+          }
+        },
+        {
+          "cells": [
+            77
+          ],
+          "house": "row:8",
+          "symbols": [
+            6,
+            7
+          ],
+          "occurrences": {
+            "6": [
+              77
+            ],
+            "7": [
+              77
+            ]
+          }
+        }
+      ],
+      "stemSymbols": [
+        2,
+        6
+      ],
+      "eliminationSymbol": 7
+    },
+    "expectation": "productive",
+    "reachability": "original-clue-path",
+    "oracleRecord": {
+      "method": "independent-algorithm-x@1",
+      "satisfiable": true,
+      "forceForbidExhausted": true,
+      "inputHash": "99ac806dbe109c0fa9bf9b963cb9c31e45de8746312de3328391b8b5130728b3",
+      "durableCommand": "npm test -- tests/unit/solver/als-patterns.test.ts"
+    }
+  },
+  {
+    "givens": "504678910670195348198342567809761403400853791703904856900037284287419635340286179",
+    "preState": {
+      "values": [
+        5,
+        0,
+        4,
+        6,
+        7,
+        8,
+        9,
+        1,
+        0,
+        6,
+        7,
+        0,
+        1,
+        9,
+        5,
+        3,
+        4,
+        8,
+        1,
+        9,
+        8,
+        3,
+        4,
+        2,
+        5,
+        6,
+        7,
+        8,
+        0,
+        9,
+        7,
+        6,
+        1,
+        4,
+        0,
+        3,
+        4,
+        0,
+        0,
+        8,
+        5,
+        3,
+        7,
+        9,
+        1,
+        7,
+        0,
+        3,
+        9,
+        0,
+        4,
+        8,
+        5,
+        6,
+        9,
+        0,
+        0,
+        0,
+        3,
+        7,
+        2,
+        8,
+        4,
+        2,
+        8,
+        7,
+        4,
+        1,
+        9,
+        6,
+        3,
+        5,
+        3,
+        4,
+        0,
+        2,
+        8,
+        6,
+        1,
+        7,
+        9
+      ],
+      "domains": [
+        16,
+        6,
+        8,
+        32,
+        64,
+        128,
+        256,
+        1,
+        2,
+        32,
+        64,
+        2,
+        1,
+        256,
+        16,
+        4,
+        8,
+        128,
+        1,
+        256,
+        128,
+        4,
+        8,
+        2,
+        16,
+        32,
+        64,
+        128,
+        18,
+        256,
+        64,
+        32,
+        1,
+        8,
+        2,
+        4,
+        8,
+        34,
+        34,
+        128,
+        16,
+        4,
+        64,
+        256,
+        1,
+        64,
+        3,
+        4,
+        256,
+        2,
+        8,
+        128,
+        16,
+        32,
+        256,
+        49,
+        49,
+        16,
+        4,
+        64,
+        2,
+        128,
+        8,
+        2,
+        128,
+        64,
+        8,
+        1,
+        256,
+        32,
+        4,
+        16,
+        4,
+        8,
+        16,
+        2,
+        128,
+        32,
+        1,
+        64,
+        256
+      ]
+    },
+    "expectedEffects": [
+      {
+        "kind": "remove",
+        "cell": 1,
+        "symbol": 2
+      }
+    ],
+    "origin": {
+      "author": "Independent repository fixture construction",
+      "license": "Repository-owned",
+      "sourceRevision": "independent-als-star@1"
+    },
+    "prefix": "Only original-given peer exclusions.",
+    "id": "C19-blossom-3",
+    "rowId": "C19",
+    "grammar": "c19-grammar@1",
+    "alias": "Death Blossom",
+    "expectedPattern": {
+      "alias": "Death Blossom",
+      "stem": 55,
+      "sets": [
+        {
+          "cells": [
+            46
+          ],
+          "house": "row:5",
+          "symbols": [
+            1,
+            2
+          ],
+          "occurrences": {
+            "1": [
+              46
+            ],
+            "2": [
+              46
+            ]
+          }
+        },
+        {
+          "cells": [
+            28
+          ],
+          "house": "row:3",
+          "symbols": [
+            2,
+            5
+          ],
+          "occurrences": {
+            "2": [
+              28
+            ],
+            "5": [
+              28
+            ]
+          }
+        },
+        {
+          "cells": [
+            37
+          ],
+          "house": "row:4",
+          "symbols": [
+            2,
+            6
+          ],
+          "occurrences": {
+            "2": [
+              37
+            ],
+            "6": [
+              37
+            ]
+          }
+        }
+      ],
+      "stemSymbols": [
+        1,
+        5,
+        6
+      ],
+      "eliminationSymbol": 2
+    },
+    "expectation": "productive",
+    "reachability": "original-clue-path",
+    "oracleRecord": {
+      "method": "independent-algorithm-x@1",
+      "satisfiable": true,
+      "forceForbidExhausted": true,
+      "inputHash": "be9a3e973f26aeb0ec455df1e54928b09ec39aa5290a13f31062f3fe72fb2877",
+      "durableCommand": "npm test -- tests/unit/solver/als-patterns.test.ts"
+    }
+  },
+  {
+    "givens": "534008912672100348108002067859061420426850791013024856961030284280019635345286179",
+    "preState": {
+      "values": [
+        5,
+        3,
+        4,
+        0,
+        0,
+        8,
+        9,
+        1,
+        2,
+        6,
+        7,
+        2,
+        1,
+        0,
+        0,
+        3,
+        4,
+        8,
+        1,
+        0,
+        8,
+        0,
+        0,
+        2,
+        0,
+        6,
+        7,
+        8,
+        5,
+        9,
+        0,
+        6,
+        1,
+        4,
+        2,
+        0,
+        4,
+        2,
+        6,
+        8,
+        5,
+        0,
+        7,
+        9,
+        1,
+        0,
+        1,
+        3,
+        0,
+        2,
+        4,
+        8,
+        5,
+        6,
+        9,
+        6,
+        1,
+        0,
+        3,
+        0,
+        2,
+        8,
+        4,
+        2,
+        8,
+        0,
+        0,
+        1,
+        9,
+        6,
+        3,
+        5,
+        3,
+        4,
+        5,
+        2,
+        8,
+        6,
+        1,
+        7,
+        9
+      ],
+      "domains": [
+        16,
+        4,
+        8,
+        96,
+        64,
+        128,
+        256,
+        1,
+        2,
+        32,
+        64,
+        2,
+        1,
+        256,
+        16,
+        4,
+        8,
+        128,
+        1,
+        256,
+        128,
+        284,
+        264,
+        2,
+        16,
+        32,
+        64,
+        128,
+        16,
+        256,
+        68,
+        32,
+        1,
+        8,
+        2,
+        4,
+        8,
+        2,
+        32,
+        128,
+        16,
+        4,
+        64,
+        256,
+        1,
+        64,
+        1,
+        4,
+        320,
+        2,
+        8,
+        128,
+        16,
+        32,
+        256,
+        32,
+        1,
+        80,
+        4,
+        80,
+        2,
+        128,
+        8,
+        2,
+        128,
+        64,
+        72,
+        1,
+        256,
+        32,
+        4,
+        16,
+        4,
+        8,
+        16,
+        2,
+        128,
+        32,
+        1,
+        64,
+        256
+      ]
+    },
+    "expectedEffects": [
+      {
+        "kind": "remove",
+        "cell": 3,
+        "symbol": 7
+      }
+    ],
+    "origin": {
+      "author": "Independent repository fixture construction",
+      "license": "Repository-owned",
+      "sourceRevision": "independent-als-star@1"
+    },
+    "prefix": "Only original-given peer exclusions.",
+    "id": "C19-blossom-4",
+    "rowId": "C19",
+    "grammar": "c19-grammar@1",
+    "alias": "Death Blossom",
+    "expectedPattern": {
+      "alias": "Death Blossom",
+      "stem": 21,
+      "sets": [
+        {
+          "cells": [
+            30
+          ],
+          "house": "row:3",
+          "symbols": [
+            3,
+            7
+          ],
+          "occurrences": {
+            "3": [
+              30
+            ],
+            "7": [
+              30
+            ]
+          }
+        },
+        {
+          "cells": [
+            66
+          ],
+          "house": "row:7",
+          "symbols": [
+            4,
+            7
+          ],
+          "occurrences": {
+            "4": [
+              66
+            ],
+            "7": [
+              66
+            ]
+          }
+        },
+        {
+          "cells": [
+            57
+          ],
+          "house": "row:6",
+          "symbols": [
+            5,
+            7
+          ],
+          "occurrences": {
+            "5": [
+              57
+            ],
+            "7": [
+              57
+            ]
+          }
+        },
+        {
+          "cells": [
+            48
+          ],
+          "house": "row:5",
+          "symbols": [
+            7,
+            9
+          ],
+          "occurrences": {
+            "7": [
+              48
+            ],
+            "9": [
+              48
+            ]
+          }
+        }
+      ],
+      "stemSymbols": [
+        3,
+        4,
+        5,
+        9
+      ],
+      "eliminationSymbol": 7
+    },
+    "expectation": "productive",
+    "reachability": "original-clue-path",
+    "oracleRecord": {
+      "method": "independent-algorithm-x@1",
+      "satisfiable": true,
+      "forceForbidExhausted": true,
+      "inputHash": "d51eee89445d1362b3bb2103faa5e9a2527f41da2f6ea26098c70d9b16570780",
+      "durableCommand": "npm test -- tests/unit/solver/als-patterns.test.ts"
+    }
+  },
+  {
+    "givens": "534670910672195340000300007059761423426853791713924856960537004207419635345206179",
+    "preState": {
+      "values": [
+        5,
+        3,
+        4,
+        6,
+        7,
+        0,
+        9,
+        1,
+        0,
+        6,
+        7,
+        2,
+        1,
+        9,
+        5,
+        3,
+        4,
+        0,
+        0,
+        0,
+        0,
+        3,
+        0,
+        0,
+        0,
+        0,
+        7,
+        0,
+        5,
+        9,
+        7,
+        6,
+        1,
+        4,
+        2,
+        3,
+        4,
+        2,
+        6,
+        8,
+        5,
+        3,
+        7,
+        9,
+        1,
+        7,
+        1,
+        3,
+        9,
+        2,
+        4,
+        8,
+        5,
+        6,
+        9,
+        6,
+        0,
+        5,
+        3,
+        7,
+        0,
+        0,
+        4,
+        2,
+        0,
+        7,
+        4,
+        1,
+        9,
+        6,
+        3,
+        5,
+        3,
+        4,
+        5,
+        2,
+        0,
+        6,
+        1,
+        7,
+        9
+      ],
+      "domains": [
+        16,
+        4,
+        8,
+        32,
+        64,
+        130,
+        256,
+        1,
+        130,
+        32,
+        64,
+        2,
+        1,
+        256,
+        16,
+        4,
+        8,
+        128,
+        129,
+        384,
+        129,
+        4,
+        136,
+        130,
+        18,
+        160,
+        64,
+        128,
+        16,
+        256,
+        64,
+        32,
+        1,
+        8,
+        2,
+        4,
+        8,
+        2,
+        32,
+        128,
+        16,
+        4,
+        64,
+        256,
+        1,
+        64,
+        1,
+        4,
+        256,
+        2,
+        8,
+        128,
+        16,
+        32,
+        256,
+        32,
+        129,
+        16,
+        4,
+        64,
+        2,
+        128,
+        8,
+        2,
+        128,
+        64,
+        8,
+        1,
+        256,
+        32,
+        4,
+        16,
+        4,
+        8,
+        16,
+        2,
+        128,
+        32,
+        1,
+        64,
+        256
+      ]
+    },
+    "expectedEffects": [
+      {
+        "kind": "remove",
+        "cell": 24,
+        "symbol": 2
+      }
+    ],
+    "origin": {
+      "author": "Independent repository fixture construction",
+      "license": "Repository-owned",
+      "sourceRevision": "independent-als-shared-petal@1"
+    },
+    "prefix": "Only original-given peer exclusions.",
+    "id": "C19-blossom-shared-petal-5",
+    "rowId": "C19",
+    "grammar": "c19-grammar@1",
+    "alias": "Death Blossom",
+    "expectedPattern": {
+      "alias": "Death Blossom",
+      "stem": 20,
+      "sets": [
+        {
+          "cells": [
+            18,
+            19,
+            22,
+            23,
+            25
+          ],
+          "house": "row:2",
+          "symbols": [
+            1,
+            2,
+            4,
+            6,
+            8,
+            9
+          ],
+          "occurrences": {
+            "1": [
+              18
+            ],
+            "2": [
+              23
+            ],
+            "4": [
+              22
+            ],
+            "6": [
+              25
+            ],
+            "8": [
+              18,
+              19,
+              22,
+              23,
+              25
+            ],
+            "9": [
+              19
+            ]
+          }
+        }
+      ],
+      "petals": [
+        0,
+        0
+      ],
+      "stemSymbols": [
+        1,
+        8
+      ],
+      "eliminationSymbol": 2
+    },
+    "expectation": "productive",
+    "reachability": "original-clue-path",
+    "oracleRecord": {
+      "method": "independent-algorithm-x@1",
+      "satisfiable": true,
+      "forceForbidExhausted": true,
+      "inputHash": "bc8a07fb91fccaaecb6070b8912b212cc8d156b839835b20d2229adc38dca658",
+      "durableCommand": "npm test -- tests/unit/solver/als-patterns.test.ts"
+    }
+  },
+  {
+    "givens": "504678912072195348198342567859761423426853791710924856901507284087419035000086179",
+    "preState": {
+      "values": [
+        5,
+        0,
+        4,
+        6,
+        7,
+        8,
+        9,
+        1,
+        2,
+        0,
+        7,
+        2,
+        1,
+        9,
+        5,
+        3,
+        4,
+        8,
+        1,
+        9,
+        8,
+        3,
+        4,
+        2,
+        5,
+        6,
+        7,
+        8,
+        5,
+        9,
+        7,
+        6,
+        1,
+        4,
+        2,
+        3,
+        4,
+        2,
+        6,
+        8,
+        5,
+        3,
+        7,
+        9,
+        1,
+        7,
+        1,
+        0,
+        9,
+        2,
+        4,
+        8,
+        5,
+        6,
+        9,
+        0,
+        1,
+        5,
+        0,
+        7,
+        2,
+        8,
+        4,
+        0,
+        8,
+        7,
+        4,
+        1,
+        9,
+        0,
+        3,
+        5,
+        0,
+        0,
+        0,
+        0,
+        8,
+        6,
+        1,
+        7,
+        9
+      ],
+      "domains": [
+        16,
+        4,
+        8,
+        32,
+        64,
+        128,
+        256,
+        1,
+        2,
+        32,
+        64,
+        2,
+        1,
+        256,
+        16,
+        4,
+        8,
+        128,
+        1,
+        256,
+        128,
+        4,
+        8,
+        2,
+        16,
+        32,
+        64,
+        128,
+        16,
+        256,
+        64,
+        32,
+        1,
+        8,
+        2,
+        4,
+        8,
+        2,
+        32,
+        128,
+        16,
+        4,
+        64,
+        256,
+        1,
+        64,
+        1,
+        4,
+        256,
+        2,
+        8,
+        128,
+        16,
+        32,
+        256,
+        36,
+        1,
+        16,
+        4,
+        64,
+        2,
+        128,
+        8,
+        34,
+        128,
+        64,
+        8,
+        1,
+        256,
+        32,
+        4,
+        16,
+        6,
+        12,
+        20,
+        2,
+        128,
+        32,
+        1,
+        64,
+        256
+      ]
+    },
+    "expectedEffects": [
+      {
+        "kind": "remove",
+        "cell": 73,
+        "symbol": 3
+      }
+    ],
+    "origin": {
+      "author": "Independent repository fixture construction",
+      "license": "Repository-owned",
+      "sourceRevision": "independent-als-overlap-blossom@1"
+    },
+    "prefix": "Only original-given peer exclusions.",
+    "id": "C19-blossom-overlap",
+    "rowId": "C19",
+    "grammar": "c19-grammar@1",
+    "alias": "Death Blossom",
+    "expectedPattern": {
+      "alias": "Death Blossom",
+      "stem": 63,
+      "sets": [
+        {
+          "cells": [
+            72,
+            74
+          ],
+          "house": "row:8",
+          "symbols": [
+            2,
+            3,
+            5
+          ],
+          "occurrences": {
+            "2": [
+              72
+            ],
+            "3": [
+              72,
+              74
+            ],
+            "5": [
+              74
+            ]
+          }
+        },
+        {
+          "cells": [
+            55,
+            74
+          ],
+          "house": "box:6",
+          "symbols": [
+            3,
+            5,
+            6
+          ],
+          "occurrences": {
+            "3": [
+              55,
+              74
+            ],
+            "5": [
+              74
+            ],
+            "6": [
+              55
+            ]
+          }
+        }
+      ],
+      "stemSymbols": [
+        2,
+        6
+      ],
+      "eliminationSymbol": 3
+    },
+    "expectation": "productive",
+    "reachability": "original-clue-path",
+    "oracleRecord": {
+      "method": "independent-algorithm-x@1",
+      "satisfiable": true,
+      "forceForbidExhausted": true,
+      "inputHash": "5a09da5f8e18442dc768b16257cb82d2ac36e8438858946898514de5b2ff4739",
+      "durableCommand": "npm test -- tests/unit/solver/als-patterns.test.ts"
+    }
+  },
+  {
+    "givens": "000678012070105348000342567850761423426853791703924856061537284087419635345286179",
+    "preState": {
+      "values": [
+        0,
+        0,
+        0,
+        6,
+        7,
+        8,
+        0,
+        1,
+        2,
+        0,
+        7,
+        0,
+        1,
+        0,
+        5,
+        3,
+        4,
+        8,
+        0,
+        0,
+        0,
+        3,
+        4,
+        2,
+        5,
+        6,
+        7,
+        8,
+        5,
+        0,
+        7,
+        6,
+        1,
+        4,
+        2,
+        3,
+        4,
+        2,
+        6,
+        8,
+        5,
+        3,
+        7,
+        9,
+        1,
+        7,
+        0,
+        3,
+        9,
+        2,
+        4,
+        8,
+        5,
+        6,
+        0,
+        6,
+        1,
+        5,
+        3,
+        7,
+        2,
+        8,
+        4,
+        0,
+        8,
+        7,
+        4,
+        1,
+        9,
+        6,
+        3,
+        5,
+        3,
+        4,
+        5,
+        2,
+        8,
+        6,
+        1,
+        7,
+        9
+      ],
+      "domains": [
+        272,
+        260,
+        264,
+        32,
+        64,
+        128,
+        256,
+        1,
+        2,
+        290,
+        64,
+        258,
+        1,
+        256,
+        16,
+        4,
+        8,
+        128,
+        257,
+        257,
+        384,
+        4,
+        8,
+        2,
+        16,
+        32,
+        64,
+        128,
+        16,
+        256,
+        64,
+        32,
+        1,
+        8,
+        2,
+        4,
+        8,
+        2,
+        32,
+        128,
+        16,
+        4,
+        64,
+        256,
+        1,
+        64,
+        1,
+        4,
+        256,
+        2,
+        8,
+        128,
+        16,
+        32,
+        256,
+        32,
+        1,
+        16,
+        4,
+        64,
+        2,
+        128,
+        8,
+        2,
+        128,
+        64,
+        8,
+        1,
+        256,
+        32,
+        4,
+        16,
+        4,
+        8,
+        16,
+        2,
+        128,
+        32,
+        1,
+        64,
+        256
+      ]
+    },
+    "expectedEffects": [
+      {
+        "kind": "remove",
+        "cell": 9,
+        "symbol": 2
+      }
+    ],
+    "origin": {
+      "author": "Independent repository boundary construction",
+      "license": "Repository-owned",
+      "sourceRevision": "independent-als-boundaries@1"
+    },
+    "prefix": "Only original-given peer exclusions.",
+    "id": "C19-petal6-out-of-profile",
+    "rowId": "C19",
+    "grammar": "c19-grammar@1",
+    "alias": "Death Blossom",
+    "expectedPattern": {
+      "alias": "Death Blossom",
+      "stem": 19,
+      "sets": [
+        {
+          "cells": [
+            0,
+            1,
+            2,
+            11,
+            18,
+            20
+          ],
+          "house": "box:0",
+          "symbols": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            8,
+            9
+          ],
+          "occurrences": {
+            "1": [
+              18
+            ],
+            "2": [
+              11
+            ],
+            "3": [
+              1
+            ],
+            "4": [
+              2
+            ],
+            "5": [
+              0
+            ],
+            "8": [
+              20
+            ],
+            "9": [
+              0,
+              1,
+              2,
+              11,
+              18,
+              20
+            ]
+          }
+        }
+      ],
+      "petals": [
+        0,
+        0
+      ],
+      "stemSymbols": [
+        1,
+        9
+      ],
+      "eliminationSymbol": 2
+    },
+    "expectation": "out-of-profile",
+    "reachability": "original-clue-path",
+    "oracleRecord": {
+      "method": "independent-algorithm-x@1",
+      "satisfiable": true,
+      "forceForbidExhausted": true,
+      "inputHash": "6b440c39511681470064738d479e50f74bdacf18ba143687fd4b8b5578744037",
+      "durableCommand": "npm test -- tests/unit/solver/als-patterns.test.ts"
+    }
+  },
+  {
+    "givens": "534678912672105340190302567059701423426853791713924056000507000207000605345280179",
+    "preState": {
+      "values": [
+        5,
+        3,
+        4,
+        6,
+        7,
+        8,
+        9,
+        1,
+        2,
+        6,
+        7,
+        2,
+        1,
+        0,
+        5,
+        3,
+        4,
+        0,
+        1,
+        9,
+        0,
+        3,
+        0,
+        2,
+        5,
+        6,
+        7,
+        0,
+        5,
+        9,
+        7,
+        0,
+        1,
+        4,
+        2,
+        3,
+        4,
+        2,
+        6,
+        8,
+        5,
+        3,
+        7,
+        9,
+        1,
+        7,
+        1,
+        3,
+        9,
+        2,
+        4,
+        0,
+        5,
+        6,
+        0,
+        0,
+        0,
+        5,
+        0,
+        7,
+        0,
+        0,
+        0,
+        2,
+        0,
+        7,
+        0,
+        0,
+        0,
+        6,
+        0,
+        5,
+        3,
+        4,
+        5,
+        2,
+        8,
+        0,
+        1,
+        7,
+        9
+      ],
+      "domains": [
+        16,
+        4,
+        8,
+        32,
+        64,
+        128,
+        256,
+        1,
+        2,
+        32,
+        64,
+        2,
+        1,
+        256,
+        16,
+        4,
+        8,
+        128,
+        1,
+        256,
+        128,
+        4,
+        8,
+        2,
+        16,
+        32,
+        64,
+        128,
+        16,
+        256,
+        64,
+        32,
+        1,
+        8,
+        2,
+        4,
+        8,
+        2,
+        32,
+        128,
+        16,
+        4,
+        64,
+        256,
+        1,
+        64,
+        1,
+        4,
+        256,
+        2,
+        8,
+        128,
+        16,
+        32,
+        384,
+        160,
+        129,
+        16,
+        301,
+        64,
+        130,
+        132,
+        136,
+        2,
+        128,
+        64,
+        8,
+        269,
+        256,
+        32,
+        132,
+        16,
+        4,
+        8,
+        16,
+        2,
+        128,
+        32,
+        1,
+        64,
+        256
+      ]
+    },
+    "expectedEffects": [
+      {
+        "kind": "remove",
+        "cell": 60,
+        "symbol": 8
+      }
+    ],
+    "origin": {
+      "author": "Independent repository boundary construction",
+      "license": "Repository-owned",
+      "sourceRevision": "independent-als-boundaries@1"
+    },
+    "prefix": "Only original-given peer exclusions.",
+    "id": "C19-stem5-out-of-profile",
+    "rowId": "C19",
+    "grammar": "c19-grammar@1",
+    "alias": "Death Blossom",
+    "expectedPattern": {
+      "alias": "Death Blossom",
+      "stem": 58,
+      "sets": [
+        {
+          "cells": [
+            56
+          ],
+          "house": "row:6",
+          "symbols": [
+            1,
+            8
+          ],
+          "occurrences": {
+            "1": [
+              56
+            ],
+            "8": [
+              56
+            ]
+          }
+        },
+        {
+          "cells": [
+            61
+          ],
+          "house": "row:6",
+          "symbols": [
+            3,
+            8
+          ],
+          "occurrences": {
+            "3": [
+              61
+            ],
+            "8": [
+              61
+            ]
+          }
+        },
+        {
+          "cells": [
+            62
+          ],
+          "house": "row:6",
+          "symbols": [
+            4,
+            8
+          ],
+          "occurrences": {
+            "4": [
+              62
+            ],
+            "8": [
+              62
+            ]
+          }
+        },
+        {
+          "cells": [
+            55
+          ],
+          "house": "row:6",
+          "symbols": [
+            6,
+            8
+          ],
+          "occurrences": {
+            "6": [
+              55
+            ],
+            "8": [
+              55
+            ]
+          }
+        },
+        {
+          "cells": [
+            54
+          ],
+          "house": "row:6",
+          "symbols": [
+            8,
+            9
+          ],
+          "occurrences": {
+            "8": [
+              54
+            ],
+            "9": [
+              54
+            ]
+          }
+        }
+      ],
+      "stemSymbols": [
+        1,
+        3,
+        4,
+        6,
+        9
+      ],
+      "eliminationSymbol": 8
+    },
+    "expectation": "out-of-profile",
+    "reachability": "original-clue-path",
+    "oracleRecord": {
+      "method": "independent-algorithm-x@1",
+      "satisfiable": true,
+      "forceForbidExhausted": true,
+      "inputHash": "73e95817f995eb39f9ee07d4fb59757cc085b64605105e5aec53ad80421f34d7",
+      "durableCommand": "npm test -- tests/unit/solver/als-patterns.test.ts"
+    }
+  }
+]

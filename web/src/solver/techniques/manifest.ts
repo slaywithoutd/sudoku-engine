@@ -4470,16 +4470,81 @@ export const coverageEntries: readonly CoverageEntry[] = Object.freeze((
     "grammarId": "c18-grammar@1",
     "detectorId": "c18@1",
     "checkerId": "c18-grammar@1",
-    "descriptionPath": "docs/superpowers/specs/2026-09-12-m2-technique-coverage.md",
+    "descriptionPath": "docs/solver/techniques/als.md",
     "fixtureIds": [
-      "C18-xz-single-rcc",
-      "C18-xz-double-rcc",
       "C18-overlap",
+      "C18-xz-double-rcc",
+      "C18-double-rcc-locked-effects",
+      "C18-als-size-4",
+      "C18-xz-single-rcc",
+      "C18-als-size-3",
       "C18-xy"
     ],
-    "status": "specified",
-    "evidence": []
+    "status": "independently-verified",
+    "evidence": [
+      {
+        "kind": "positive",
+        "fixtureId": "C18-overlap",
+        "alias": "ALS-XZ",
+        "record": "web/tests/unit/solver/als-patterns.test.ts#independent named proof and exhaustive counterfactual evidence"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "C18-overlap",
+        "alias": "ALS-XZ",
+        "record": "web/tests/unit/solver/als-patterns.test.ts#independently compiled proof"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "C18-overlap",
+        "alias": "ALS-XZ",
+        "record": "web/tests/unit/solver/als-patterns.test.ts#all advertised ALS and stem bounds have explicit authored geometry"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C18-overlap",
+        "alias": "ALS-XZ",
+        "record": "web/tests/unit/solver/als-patterns.test.ts#replays original clues and declared rules"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C18-overlap",
+        "alias": "ALS-XZ",
+        "record": "web/tests/unit/solver/als-patterns.test.ts#durable input hashes reproduce every satisfiable prestate and exhaustive opposite"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "C18-xy",
+        "alias": "ALS-XY-Wing",
+        "record": "web/tests/unit/solver/als-patterns.test.ts#independent named proof and exhaustive counterfactual evidence"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "C18-xy",
+        "alias": "ALS-XY-Wing",
+        "record": "web/tests/unit/solver/als-patterns.test.ts#independently compiled proof"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "C18-xy",
+        "alias": "ALS-XY-Wing",
+        "record": "web/tests/unit/solver/als-patterns.test.ts#all advertised ALS and stem bounds have explicit authored geometry"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C18-xy",
+        "alias": "ALS-XY-Wing",
+        "record": "web/tests/unit/solver/als-patterns.test.ts#replays original clues and declared rules"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C18-xy",
+        "alias": "ALS-XY-Wing",
+        "record": "web/tests/unit/solver/als-patterns.test.ts#durable input hashes reproduce every satisfiable prestate and exhaustive opposite"
+      }
+    ]
   },
+
   {
     "id": "C19",
     "version": "c19@1",
@@ -4499,14 +4564,83 @@ export const coverageEntries: readonly CoverageEntry[] = Object.freeze((
     "grammarId": "c19-grammar@1",
     "detectorId": "c19@1",
     "checkerId": "c19-grammar@1",
-    "descriptionPath": "docs/superpowers/specs/2026-09-12-m2-technique-coverage.md",
+    "descriptionPath": "docs/solver/techniques/als.md",
     "fixtureIds": [
-      "C19-chain-2/6",
-      "C19-blossom-2/3/4"
+      "C19-chain-2",
+      "C19-chain-6",
+      "C19-blossom-2",
+      "C19-blossom-3",
+      "C19-blossom-4",
+      "C19-blossom-shared-petal-5",
+      "C19-blossom-overlap",
+      "C19-petal6-out-of-profile",
+      "C19-stem5-out-of-profile"
     ],
-    "status": "specified",
-    "evidence": []
+    "status": "independently-verified",
+    "evidence": [
+      {
+        "kind": "positive",
+        "fixtureId": "C19-chain-2",
+        "alias": "ALS chains",
+        "record": "web/tests/unit/solver/als-patterns.test.ts#independent named proof and exhaustive counterfactual evidence"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "C19-chain-2",
+        "alias": "ALS chains",
+        "record": "web/tests/unit/solver/als-patterns.test.ts#independently compiled proof"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "C19-chain-2",
+        "alias": "ALS chains",
+        "record": "web/tests/unit/solver/als-patterns.test.ts#all advertised ALS and stem bounds have explicit authored geometry"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C19-chain-2",
+        "alias": "ALS chains",
+        "record": "web/tests/unit/solver/als-patterns.test.ts#replays original clues and declared rules"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C19-chain-2",
+        "alias": "ALS chains",
+        "record": "web/tests/unit/solver/als-patterns.test.ts#durable input hashes reproduce every satisfiable prestate and exhaustive opposite"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "C19-blossom-2",
+        "alias": "Death Blossom",
+        "record": "web/tests/unit/solver/als-patterns.test.ts#independent named proof and exhaustive counterfactual evidence"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "C19-blossom-2",
+        "alias": "Death Blossom",
+        "record": "web/tests/unit/solver/als-patterns.test.ts#independently compiled proof"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "C19-blossom-2",
+        "alias": "Death Blossom",
+        "record": "web/tests/unit/solver/als-patterns.test.ts#all advertised ALS and stem bounds have explicit authored geometry"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C19-blossom-2",
+        "alias": "Death Blossom",
+        "record": "web/tests/unit/solver/als-patterns.test.ts#replays original clues and declared rules"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C19-blossom-2",
+        "alias": "Death Blossom",
+        "record": "web/tests/unit/solver/als-patterns.test.ts#durable input hashes reproduce every satisfiable prestate and exhaustive opposite"
+      }
+    ]
   },
+
   {
     "id": "C20",
     "version": "c20@1",
