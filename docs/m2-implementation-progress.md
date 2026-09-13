@@ -16,8 +16,9 @@ Approved design/plan: `0e98c2b`, 2026-09-12. Authorization and coding convention
 | T02 Normalization and capabilities | Complete | `c0f93ca`, `8eb00d9`; 35 focused tests and typecheck passed; independent review and fix review passed. |
 | T03 Proof roots and checking boundary | Complete | `4427544`, `40a2603`; 64 focused tests and typecheck passed; independent review and fix review passed. |
 | T04 Candidate state and invalidation | Complete | `f7cf56f`; 203 tests and typecheck passed; independent task review passed. |
-| T05 Proof composition and replay | In progress | Assumptions, finite tables, cross-rule provenance and independent acceptance. |
-| T06-T27 | Pending | Approved requirements remain in the implementation plan; no family dropped. |
+| T05 Proof composition and replay | Complete | `10c2a52`; 242 tests and typecheck passed; independent task review passed. |
+| T06 Exact counting and quality | In progress | Original-problem MRV enumeration and run-bound evidence/quality. |
+| T07-T27 | Pending | Approved requirements remain in the implementation plan; no family dropped. |
 
 ## Coding conventions
 
@@ -32,3 +33,5 @@ T02 adds documented RuleRegistry/CapabilityAssembler and AllDifferentRule object
 T03 adds PrimitiveRegistry/ProofChecker, authentic immutable roots and proof-only checked certificates. Regression checks cover retained-premise substitution, M2 preflight bounds, UTF-8 accounting and cooperative node staging. Full suite before review fixes: 161 tests passed; post-fix focused suite: 64 tests passed. No effectful deduction is accepted by the T03 boundary yet. D067 records the resulting implementation refinements; timing targets remain unmeasured.
 
 T04 adds CandidateOwner/CandidateIndexes, exact checked domain facts, atomic effects and cold/incremental support checks. Diagnostics remain separate from count evidence; newly exposed singles stay unresolved. A real 4,097-node proof verifies larger configured step limits. T07 must migrate internal placement certificates to named grammar; T19/T20 must reserve initialization work/workspace before synchronous initialization.
+
+T05 adds scoped proof composition, complete finite table DAGs, incidence counts, mixed-rule acceptance and original-clue replay. Its 39 focused tests include a 6,561-row table, incomplete/forged proofs and cumulative replay budgets. The complete suite passed 242 tests. Independent review found no blocking issue; Git line-ending notices and an occasional Vitest caching recommendation are informational tooling noise. D068 records representation bounds; named family grammars, exact counting and runtime operation accounting remain later gates.

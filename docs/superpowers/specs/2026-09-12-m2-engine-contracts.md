@@ -134,6 +134,7 @@ type Proposition =
   | { kind: "all-different"; cells: readonly CellId[] }
   | { kind: "cover"; symbol: SymbolId; cells: readonly CellId[] }
   | { kind: "relation"; cells: readonly CellId[]; tuples: readonly (readonly SymbolId[])[] }
+  | { kind: "table"; cells: readonly CellId[]; count: number; definition: NodeId }
   | { kind: "false" };
 interface Fact {
   id: FactId; proposition: Proposition; root: NodeId;
@@ -248,6 +249,13 @@ type CheckEvent = { kind: "work"; units: number } |
 checkProposal(proposal: DeductionProposal, context: CheckContext): Generator<CheckEvent, void, void>;
 replay(snapshot: SolverSnapshot, bundles: readonly DeductionProposal[],
   assembly: Assembly, limits: Limits): Generator<CheckEvent, void, void>;
+retainCheckedFacts(view: ReadView, step: CheckedStep): ReadView;
+interface InitializationReservation {
+  nodes: number; proofBytes: number; workUnits: number; workspaceBytes: number;
+}
+initializationReservation(assembly: Assembly): Generator<CheckEvent, InitializationReservation, void>;
+checkedHeaderBytes(step: CheckedStep): number;
+checkedWorkUnits(step: CheckedStep): number;
 ```
 
 Proofs are DAGs in topological node order with unique monotonically allocated IDs within a run; imports reference already accepted nodes in the same run/prefix. Branch-local imports require compatible scopes. Validate no forward reference, cycle, dangling root, unknown primitive, unsupported parameter, unexplained effect or missing dependency. Derive assumption/rule provenance in the checker; never trust worker metadata. Each node has bounded arity/serialized length; large case tables are trees of bounded nodes. Node limits include initialization, certificates and their referenced table entries; table data is not a way around proof caps.
@@ -263,9 +271,13 @@ Primitive registry and checker rules:
 | `assume@1`, `contradiction@1` | Fresh scoped assumption; false from opposing literals, empty domain or falsified proved clause. |
 | `discharge@1`, `cases@1` | From A leading to false infer not-A in the parent scope; or prove C under every member of a proved exhaustive clause and infer C. Only those assumptions are removed. |
 | `hall@1`, `cover-count@1` | Finite all-different/coverage cardinality inequalities with explicit incidence and complete supports. Overlaps must be counted by coefficients, not assumed disjoint. |
-| `table-filter@1`, `table-join@1`, `table-project@1` | Complete Cartesian enumeration or a referenced proved relation; each rejected tuple has a checked conflict. Joins match shared cells and cite both relation roots. Incomplete tables cannot authorize a projection. |
+| `table-filter@1`, `table-union@1`, `table-join@1`, `table-project@1` | Complete Cartesian enumeration or a referenced proved relation; each rejected tuple has a checked conflict. Bounded filter leaves and disjoint/exhaustive partition unions retain exact source-domain/constraint identities. Joins match shared cells and cite both complete table definitions. Incomplete tables cannot authorize joining or projection. |
 | `template-cover@1` | Independently reconstruct all legal per-digit placements through each row/column/box from domains; decision DAG with every outgoing alternative, including rejection reason. |
 | `unique-transform@1` | Prior independent unique evidence, a nontrivial alternate assignment transformation, preservation of original givens and every declared rule, and a closed proof that the rejected condition would enable it. Marks all descendants conditional. |
+
+Implementation refinement D068: a large finite table is a checked definition DAG, represented by a table proposition containing cells, exact count and its defining NodeId. The producing node owns the immutable definition; metadata is authenticated by actual node identity. Equal cells/count do not make two table propositions interchangeable. This primitive version bounds table scopes to 16 cells and definition depth to 64; explicit projected relations contain at most 256 distinct rows and must fit the node-byte cap. Filter leaves enumerate at most 256 Cartesian input tuples from explicit proved domain facts and rule/relation premises. A leaf box may be only a partial partition; binary table-union validates matching source identities and disjoint masks differing on exactly one axis before forming their union. Joining or projecting requires complete coverage of the source domains, with inherited assumptions and rule provenance intact. Small explicit relation tuples remain supported: projection independently enumerates and deduplicates the exact requested columns/rows within the per-node byte cap. General table-to-table projection is not part of this primitive version; keep the complete definition and project a bounded relation or proved effect. Heavy tuple/join checking uses a resumable primitive path and charges every tuple/pair; no large row list, compressed payload or lazy uncharged iteration can evade node/work/byte caps. This representation supports bounded local technique certificates; it does not authorize whole-grid completion enumeration as logic.
+
+An effect-free checked bundle may be retained through `retainCheckedFacts(view, step)` without changing candidates or candidate revision. Admission still authenticates the complete current state and exact imported proof prefix. Retained nodes/facts consume the same cumulative proof/workspace budget; replay rechecks them before dependent bundles. Scheduling deduplicates these cache proposals and cannot treat them as productive board progress. Transport requires a separate bundle sequence/acceptance identity because unchanged candidate revision does not imply an unchanged retained proof prefix. Replay validates limits on empty input, reserves startup before initialization and accumulates actual checker work and retained header/framing bytes. `initializationReservation` emits estimator work separately from returned synchronous construction reservation. Its workspace estimate is an accounted-entry model, not measured heap. `checkedHeaderBytes` includes between-node separators; `checkedWorkUnits` includes bookkeeping not emitted as public work events. Avoid charging the same retained node bytes once per bundle; reserve operation-specific cache/ledger/transport memory additionally.
 
 Named family checkers validate geometry/grammar/bounds and compile premises into these primitives. A detector must not call its own discovery routine to check its output. Checkers can share immutable types and elementary mask utilities; independent acceptance oracles share neither candidate/index logic nor checking code. Human-readable text comes from validated typed parameters via `textContent`, never worker HTML.
 

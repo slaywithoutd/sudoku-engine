@@ -153,7 +153,7 @@ expect(next.changes.cells).toContain(cell);
 
 **Interfaces:** `replay`, `checkProposal` plus resolution/conjunction/cases/discharge/Hall/cover-count/table primitive decoders from contracts §5. Test helper `assertSound(view, proposal)` drains the checker, checks pre-state satisfiability with oracle, force/forbids effects and requires exhaustive no-witness counterfactuals. Helper implementation must throw on oracle interruption. Fixture lookup/discovery helpers are added in T07 when the registry exists; T05 passes hand-authored proposal objects directly, avoiding a dependency on future detectors.
 
-- [ ] Add mutation and mixed-rule tests:
+- [x] Add mutation and mixed-rule tests:
 
 ```ts
 expect(checkToEnd(removeOneCase(proof), context).kind).toBe("rejected");
@@ -163,10 +163,10 @@ expect(mixedStep.effects).toContainEqual({ kind: "place", cell: 0, symbol: 4 });
 expect(mixedStep.rules).toEqual(expect.arrayContaining(["sum:0", "order:0", "row:0"]));
 ```
 
-- [ ] Run `npm test -- tests/unit/solver/proof-graph.test.ts tests/unit/solver/composition.test.ts`.
-- [ ] Implement topological node verification, scope propagation and allowed discharge; complete table enumeration trees with rejection reasons, sound joins/projections, coefficient-based incidence counts. Rebuild supports from proved domains during checking. `assertSound` uses `oracle({...preState, force:[cell,symbol],limit:1})` for removals and `forbid` for placements; require `exhausted && witnesses.length===0`. Exhaustively enumerate mock sum/order domains and compare both rule orders; keep mock production registration impossible.
-- [ ] Rerun tests/typecheck; reject omitted provenance, wrong strong/weak premise, cycles, unsupported primitives, false tuple coverage and hidden uniqueness. Replay one-hole from original clues without detector enumeration.
-- [ ] Commit listed files: `feat: check proof graphs and cross-rule deductions independently`.
+- [x] Run `npm test -- tests/unit/solver/proof-graph.test.ts tests/unit/solver/composition.test.ts`.
+- [x] Implement topological node verification, scope propagation and allowed discharge; complete table enumeration trees with rejection reasons, sound joins/projections, coefficient-based incidence counts. Rebuild supports from proved domains during checking. `assertSound` uses `oracle({...preState, force:[cell,symbol],limit:1})` for removals and `forbid` for placements; require `exhausted && witnesses.length===0`. Exhaustively enumerate mock sum/order domains and compare both rule orders; keep mock production registration impossible.
+- [x] Rerun tests/typecheck; reject omitted provenance, wrong strong/weak premise, cycles, unsupported primitives, false tuple coverage and hidden uniqueness. Replay one-hole from original clues without detector enumeration.
+- [x] Commit listed files: `feat: check proof graphs and cross-rule deductions independently`.
 
 ## T06 — Independent production exact counting and quality
 
