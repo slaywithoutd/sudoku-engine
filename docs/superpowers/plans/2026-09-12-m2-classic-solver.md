@@ -277,11 +277,11 @@ expect(checkFixtureMutation("C09-siamese", "delete-second-root").kind).toBe("rej
 
 ## T11 — Coloring, chains and loops C14–C17
 
-**Files:** create `src/solver/techniques/coloring.ts`, `chains.ts`, `loops.ts`; fixtures `C14.json`–`C17.json`; tests `tests/unit/solver/coloring.test.ts`, `chains.test.ts`; `docs/solver/techniques/chains-and-coloring.md`; update registry/manifest/provenance.
+**Files:** create `src/solver/techniques/coloring.ts`, `coloring-grammar.ts`, `chains.ts`, `chains-runtime.ts`, `chains-certificate.ts`, `chains-grammar.ts`, `loops.ts`; independent helper `tests/solver/chains-acceptance.ts`; fixtures `C14.json`–`C17.json`; tests `tests/unit/solver/coloring.test.ts`, `chains.test.ts`; `docs/solver/techniques/chains-and-coloring.md`; update grammar/registry/manifest/provenance and the coverage status sentinel.
 
-**Interfaces:** descriptor arrays for coloring/Medusa, X/XY/AIC and grouped/ALS loops. Each path certificate records ordered links, group members, premise roots and discontinuity polarity; graph traversal is separate from resolution checking.
+**Interfaces:** `coloringTechniques`, `chainTechniques` and `loopTechniques` descriptors; `Coloring`/`ChainSearch` discovery; untrusted `ChainCertificate`/`compileChain`; independent `checkColoringPattern`/`checkChainPattern`. `ChainEvent` preserves all members, `StrongSource` binds exact cell/house/proved-cover/ALS recipes, and ordered `ChainLink` records carry premise roots. Every effect root must cover its complete named proof. See [actual contracts and evidence](../../solver/techniques/chains-and-coloring.md).
 
-- [ ] Write grammar and assumption tests:
+- [x] Write grammar and assumption tests:
 
 ```ts
 for (const id of ["C14-multi", "C15-cell-wrap", "C16-aic", "C17-continuous", "C17-group"]) {
@@ -291,10 +291,10 @@ expect(checkFixtureMutation("C17-group", "omit-group-member").kind).toBe("reject
 expect(discoverFixture("C16-length25").status).toBe("out-of-profile");
 ```
 
-- [ ] Run `npm test -- tests/unit/solver/coloring.test.ts tests/unit/solver/chains.test.ts`.
-- [ ] Implement conjugate-component color alternatives and complete trap/wrap cases; Medusa includes cell and house XOR edges. Traverse simple paths by increasing length, lexical endpoints/edges, <=24 links and <=4 group/ALS nodes. Validate alternation, loop closure and effect polarity with resolution/discharge; no implication edge is trusted because it was colored. Multi-color uses exactly two components/four branches.
-- [ ] Rerun all named classes/bounds/negative fixtures, force/forbid and original-clue replay; prove no assumption escapes an accepted step; typecheck.
-- [ ] Commit listed files: `feat: add checked coloring chains and grouped loops`.
+- [x] Run `npm test -- tests/unit/solver/coloring.test.ts tests/unit/solver/chains.test.ts`.
+- [x] Implement conjugate-component color alternatives and complete trap/wrap cases; Medusa includes cell and house XOR edges. Traverse simple paths by increasing length, lexical endpoints/edges, <=24 links and <=4 group/ALS nodes. Validate alternation, loop closure and effect polarity with resolution/discharge; no implication edge is trusted because it was colored. Multi-color uses exactly two components/four branches, represented by two discharged lexical assumptions (D082). Count ordinary group vertices plus semantic ALS visits under D078; each visit keeps its full occurrences and separate complete local table. D077 distinguishes 4/24 open vertices (3/23 links) from a continuous loop with 24 links including closure.
+- [x] Rerun all named classes/bounds/negative fixtures, force/forbid and original-clue replay; prove no assumption escapes an accepted step; typecheck.
+- [x] Commit listed files: `feat: add checked coloring chains and grouped loops`.
 
 ## T12 — ALS relationships and Death Blossom C18–C19
 
