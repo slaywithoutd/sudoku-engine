@@ -56,6 +56,21 @@ export class HallStrategy {
 }
 
 interface WeightedPremise { readonly premise: number; readonly coefficient: number }
+/** Count-only evidence: negative coefficients require x=0. All other x are
+ * nonnegative already, so their domains add no necessary inequality premise.
+ * Validate optional evidence too; silently ignoring an extra would hide taint.
+ * Keep provedDomains' complete-scope contract for support and other clients.
+ */
+function countDomains(sources: readonly Proposition[], coefficients: ReadonlyMap<number,number>, symbol:number): void {
+  const domains=new Map<number,number>();
+  for(const source of sources) {
+    const domain=domainAssertion(source);
+    requireProof(domain && coefficients.has(domain.cell) && !domains.has(domain.cell), "invalid-count-domain-evidence");
+    domains.set(domain.cell,domain.mask);
+  }
+  for(const [cell,coefficient] of coefficients) if(coefficient<0)
+    requireProof(domains.has(cell) && !(domains.get(cell)! & (1 << (symbol-1))), "uncovered-count-incidence");
+}
 /**
  * Sum weighted covers (at least one) and all-different capacities (at most one).
  * Per-candidate coefficients preserve overlaps. If u-l is nonnegative, then
@@ -82,9 +97,7 @@ export class CoverCountStrategy {
         for (const cell of scope.cells) coefficients.set(cell, (coefficients.get(cell) ?? 0) + direction * entry.coefficient);
       }
     }
-    const domains = provedDomains([...domainIds].map(id => context.retained.get(id)!.conclusion), [...coefficients.keys()]);
-    for (const [cell, coefficient] of coefficients) if (domains.get(cell)! & (1 << (symbol - 1)))
-      requireProof(coefficient >= 0, "uncovered-count-incidence");
+    countDomains([...domainIds].map(id => context.retained.get(id)!.conclusion), coefficients, symbol);
     const claim = input.conclusion;
     requireProof(bound < 0 ? sameValue(claim, { kind: "false" }) : claim.kind === "literal" && validLiteral(claim.value, context) &&
       sameValue(claim, { kind: "literal", value: claim.value }) && !claim.value.positive &&

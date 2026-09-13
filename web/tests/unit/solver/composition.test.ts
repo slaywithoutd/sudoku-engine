@@ -39,6 +39,26 @@ function builder(view: ReadView, retained = retainedProof(view)) {
   return { add, table, proposal, check, nodes, context };
 }
 
+test("count-only omission preserves weighted inequalities, provenance and complete support contracts",()=>{
+  const result=assemble(canonicalProblem({schema:1,cells:[0,1,2],symbols:[1,2],givens:[2,0,0],constraints:[
+    {id:"base",type:"all-different@1",cells:[0,1],parameters:{}},
+    {id:"capacity",type:"all-different@1",cells:[1,2],parameters:{}}]}),[new AllDifferentRule()]);
+  if(!result.ok)throw Error("count-fixture");const view=initialize(result.value,"primary");
+  const cover=[...view.facts.values()].find(f=>f.proposition.kind==="cover"&&f.proposition.symbol===1&&f.proposition.cells.join()==="0,1")!.id;
+  const capacity=[...view.facts.values()].find(f=>f.proposition.kind==="all-different"&&f.proposition.cells.join()==="1,2")!.id;
+  // The only complete assignment is (2,1,2). These weights independently
+  // predict when every negative coefficient is proved zero and target w>B.
+  for(let lower=1;lower<=3;lower++)for(let upper=1;upper<=3;upper++) {
+    const b=builder(view),root=b.add("cover-count@1",[cover,capacity,view.state.domainFacts[0]],
+      {kind:"literal",value:{cell:2,symbol:1,positive:false}},
+      {symbol:1,covers:[{premise:cover,coefficient:lower}],capacities:[{premise:capacity,coefficient:upper}]});
+    const terminal=b.check([root]);expect(terminal.kind,`weights ${lower}/${upper}`).toBe(upper>=lower?"verified":"rejected");
+    if(terminal.kind==="verified")expect(terminal.certificate.consequences[0]).toMatchObject({rules:["base","capacity"],conditional:false,openAssumptions:[]});
+  }
+  const b=builder(view),support=b.add("support@1",[cover,view.state.domainFacts[0]],{kind:"cover",symbol:1,cells:[1]});
+  expect(b.check([support])).toMatchObject({kind:"rejected",code:"incomplete-domain-evidence"});
+});
+
 test("checks a 6,561-row Cartesian table as a bounded coverage DAG", () => {
   const b = builder(fixture());
   const rows: number[] = [];

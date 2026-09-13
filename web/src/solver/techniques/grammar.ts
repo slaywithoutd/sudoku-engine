@@ -2,6 +2,7 @@ import type { DeductionProposal, Effect, ProofNode } from "../proof/types";
 import type { ReadView } from "../state/types";
 import { domainAssertion, requireProof, sameValue } from "../proof/primitives";
 import { checkPatternProof } from "./pattern-contracts";
+import { checkFishPattern } from "./fish-certificate";
 
 function fields(p: Record<string, unknown>, names: string[]): void {
   requireProof(sameValue(Object.keys(p).sort(), names.sort()), "invalid-technique-pattern");
@@ -38,6 +39,9 @@ export function checkTechniqueGrammar(proposal: DeductionProposal, view: ReadVie
   }
   if (["c10@1","c11@1","c12@1","c13@1"].includes(proposal.technique)) {
     checkPatternProof(proposal,view,available); return;
+  }
+  if (["c06@1","c07@1","c08@1","c09@1"].includes(proposal.technique)) {
+    checkFishPattern(proposal,view,available); return;
   }
   let sourceCells: readonly number[] = [], symbol = 0, coverCells: readonly number[] | null = null;
   const allowedHall: { house: readonly number[]; cells: readonly number[] }[] = [];

@@ -801,13 +801,386 @@ export const coverageEntries: readonly CoverageEntry[] = Object.freeze((
     "grammarId": "c06-grammar@1",
     "detectorId": "c06@1",
     "checkerId": "c06-grammar@1",
-    "descriptionPath": "docs/superpowers/specs/2026-09-12-m2-technique-coverage.md",
+    "descriptionPath": "docs/solver/techniques/fish.md",
     "fixtureIds": [
-      "C06-size-2",
-      "C06-size-7"
+      "C06-size-2-row",
+      "C06-size-2-column",
+      "C06-size-3-row",
+      "C06-size-3-column",
+      "C06-size-4-row",
+      "C06-size-4-column",
+      "C06-size-5-row",
+      "C06-size-5-column",
+      "C06-size-6-row",
+      "C06-size-6-column",
+      "C06-size-7-row",
+      "C06-size-7-column",
+      "C06-size-8-outside",
+      "C06-missing-base-coverage"
     ],
-    "status": "specified",
-    "evidence": []
+    "status": "independently-verified",
+    "evidence": [
+      {
+        "kind": "positive",
+        "fixtureId": "C06-size-2-row",
+        "alias": "X-Wing",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#actual discovery proves the required named bound class"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "C06-size-2-row",
+        "alias": "X-Wing",
+        "record": "web/tests/unit/solver/fish.test.ts#rejects changed incidence, aliases, fins, size and complete-source premises"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "C06-size-2-row",
+        "alias": "X-Wing",
+        "record": "web/tests/unit/solver/fish.test.ts#independently rejects the documented negative/profile shape"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C06-size-2-row",
+        "alias": "X-Wing",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#replays its independent certificate from original clues"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C06-size-2-row",
+        "alias": "X-Wing",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#all 63 unchanged original inputs reproduce hashes, SAT and 98 forced counterfactuals"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "C06-size-2-column",
+        "alias": "X-Wing",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#actual discovery proves the required named bound class"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "C06-size-2-column",
+        "alias": "X-Wing",
+        "record": "web/tests/unit/solver/fish.test.ts#rejects changed incidence, aliases, fins, size and complete-source premises"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "C06-size-2-column",
+        "alias": "X-Wing",
+        "record": "web/tests/unit/solver/fish.test.ts#independently rejects the documented negative/profile shape"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C06-size-2-column",
+        "alias": "X-Wing",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#replays its independent certificate from original clues"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C06-size-2-column",
+        "alias": "X-Wing",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#all 63 unchanged original inputs reproduce hashes, SAT and 98 forced counterfactuals"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "C06-size-3-row",
+        "alias": "Swordfish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#actual discovery proves the required named bound class"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "C06-size-3-row",
+        "alias": "Swordfish",
+        "record": "web/tests/unit/solver/fish.test.ts#rejects changed incidence, aliases, fins, size and complete-source premises"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "C06-size-3-row",
+        "alias": "Swordfish",
+        "record": "web/tests/unit/solver/fish.test.ts#independently rejects the documented negative/profile shape"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C06-size-3-row",
+        "alias": "Swordfish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#replays its independent certificate from original clues"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C06-size-3-row",
+        "alias": "Swordfish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#all 63 unchanged original inputs reproduce hashes, SAT and 98 forced counterfactuals"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "C06-size-3-column",
+        "alias": "Swordfish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#actual discovery proves the required named bound class"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "C06-size-3-column",
+        "alias": "Swordfish",
+        "record": "web/tests/unit/solver/fish.test.ts#rejects changed incidence, aliases, fins, size and complete-source premises"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "C06-size-3-column",
+        "alias": "Swordfish",
+        "record": "web/tests/unit/solver/fish.test.ts#independently rejects the documented negative/profile shape"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C06-size-3-column",
+        "alias": "Swordfish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#replays its independent certificate from original clues"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C06-size-3-column",
+        "alias": "Swordfish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#all 63 unchanged original inputs reproduce hashes, SAT and 98 forced counterfactuals"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "C06-size-4-row",
+        "alias": "Jellyfish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#actual discovery proves the required named bound class"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "C06-size-4-row",
+        "alias": "Jellyfish",
+        "record": "web/tests/unit/solver/fish.test.ts#rejects changed incidence, aliases, fins, size and complete-source premises"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "C06-size-4-row",
+        "alias": "Jellyfish",
+        "record": "web/tests/unit/solver/fish.test.ts#independently rejects the documented negative/profile shape"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C06-size-4-row",
+        "alias": "Jellyfish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#replays its independent certificate from original clues"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C06-size-4-row",
+        "alias": "Jellyfish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#all 63 unchanged original inputs reproduce hashes, SAT and 98 forced counterfactuals"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "C06-size-4-column",
+        "alias": "Jellyfish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#actual discovery proves the required named bound class"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "C06-size-4-column",
+        "alias": "Jellyfish",
+        "record": "web/tests/unit/solver/fish.test.ts#rejects changed incidence, aliases, fins, size and complete-source premises"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "C06-size-4-column",
+        "alias": "Jellyfish",
+        "record": "web/tests/unit/solver/fish.test.ts#independently rejects the documented negative/profile shape"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C06-size-4-column",
+        "alias": "Jellyfish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#replays its independent certificate from original clues"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C06-size-4-column",
+        "alias": "Jellyfish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#all 63 unchanged original inputs reproduce hashes, SAT and 98 forced counterfactuals"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "C06-size-5-row",
+        "alias": "Squirmbag",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#actual discovery proves the required named bound class"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "C06-size-5-row",
+        "alias": "Squirmbag",
+        "record": "web/tests/unit/solver/fish.test.ts#rejects changed incidence, aliases, fins, size and complete-source premises"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "C06-size-5-row",
+        "alias": "Squirmbag",
+        "record": "web/tests/unit/solver/fish.test.ts#independently rejects the documented negative/profile shape"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C06-size-5-row",
+        "alias": "Squirmbag",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#replays its independent certificate from original clues"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C06-size-5-row",
+        "alias": "Squirmbag",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#all 63 unchanged original inputs reproduce hashes, SAT and 98 forced counterfactuals"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "C06-size-5-column",
+        "alias": "Squirmbag",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#actual discovery proves the required named bound class"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "C06-size-5-column",
+        "alias": "Squirmbag",
+        "record": "web/tests/unit/solver/fish.test.ts#rejects changed incidence, aliases, fins, size and complete-source premises"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "C06-size-5-column",
+        "alias": "Squirmbag",
+        "record": "web/tests/unit/solver/fish.test.ts#independently rejects the documented negative/profile shape"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C06-size-5-column",
+        "alias": "Squirmbag",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#replays its independent certificate from original clues"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C06-size-5-column",
+        "alias": "Squirmbag",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#all 63 unchanged original inputs reproduce hashes, SAT and 98 forced counterfactuals"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "C06-size-6-row",
+        "alias": "Whale",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#actual discovery proves the required named bound class"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "C06-size-6-row",
+        "alias": "Whale",
+        "record": "web/tests/unit/solver/fish.test.ts#rejects changed incidence, aliases, fins, size and complete-source premises"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "C06-size-6-row",
+        "alias": "Whale",
+        "record": "web/tests/unit/solver/fish.test.ts#independently rejects the documented negative/profile shape"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C06-size-6-row",
+        "alias": "Whale",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#replays its independent certificate from original clues"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C06-size-6-row",
+        "alias": "Whale",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#all 63 unchanged original inputs reproduce hashes, SAT and 98 forced counterfactuals"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "C06-size-6-column",
+        "alias": "Whale",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#actual discovery proves the required named bound class"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "C06-size-6-column",
+        "alias": "Whale",
+        "record": "web/tests/unit/solver/fish.test.ts#rejects changed incidence, aliases, fins, size and complete-source premises"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "C06-size-6-column",
+        "alias": "Whale",
+        "record": "web/tests/unit/solver/fish.test.ts#independently rejects the documented negative/profile shape"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C06-size-6-column",
+        "alias": "Whale",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#replays its independent certificate from original clues"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C06-size-6-column",
+        "alias": "Whale",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#all 63 unchanged original inputs reproduce hashes, SAT and 98 forced counterfactuals"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "C06-size-7-row",
+        "alias": "Leviathan",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#actual discovery proves the required named bound class"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "C06-size-7-row",
+        "alias": "Leviathan",
+        "record": "web/tests/unit/solver/fish.test.ts#rejects changed incidence, aliases, fins, size and complete-source premises"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "C06-size-7-row",
+        "alias": "Leviathan",
+        "record": "web/tests/unit/solver/fish.test.ts#independently rejects the documented negative/profile shape"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C06-size-7-row",
+        "alias": "Leviathan",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#replays its independent certificate from original clues"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C06-size-7-row",
+        "alias": "Leviathan",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#all 63 unchanged original inputs reproduce hashes, SAT and 98 forced counterfactuals"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "C06-size-7-column",
+        "alias": "Leviathan",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#actual discovery proves the required named bound class"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "C06-size-7-column",
+        "alias": "Leviathan",
+        "record": "web/tests/unit/solver/fish.test.ts#rejects changed incidence, aliases, fins, size and complete-source premises"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "C06-size-7-column",
+        "alias": "Leviathan",
+        "record": "web/tests/unit/solver/fish.test.ts#independently rejects the documented negative/profile shape"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C06-size-7-column",
+        "alias": "Leviathan",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#replays its independent certificate from original clues"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C06-size-7-column",
+        "alias": "Leviathan",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#all 63 unchanged original inputs reproduce hashes, SAT and 98 forced counterfactuals"
+      }
+    ]
   },
   {
     "id": "C07",
@@ -828,10 +1201,1130 @@ export const coverageEntries: readonly CoverageEntry[] = Object.freeze((
     "grammarId": "c07-grammar@1",
     "detectorId": "c07@1",
     "checkerId": "c07-grammar@1",
-    "descriptionPath": "docs/superpowers/specs/2026-09-12-m2-technique-coverage.md",
-    "fixtureIds": [],
-    "status": "specified",
-    "evidence": []
+    "descriptionPath": "docs/solver/techniques/fish.md",
+    "fixtureIds": [
+      "C07-finned-2-row",
+      "C07-finned-2-column",
+      "C07-sashimi-2-row",
+      "C07-sashimi-2-column",
+      "C07-finned-3-row",
+      "C07-finned-3-column",
+      "C07-sashimi-3-row",
+      "C07-sashimi-3-column",
+      "C07-finned-4-row",
+      "C07-finned-4-column",
+      "C07-sashimi-4-row",
+      "C07-sashimi-4-column",
+      "C07-finned-5-row",
+      "C07-finned-5-column",
+      "C07-sashimi-5-row",
+      "C07-sashimi-5-column",
+      "C07-finned-6-row",
+      "C07-finned-6-column",
+      "C07-sashimi-6-row",
+      "C07-sashimi-6-column",
+      "C07-finned-7-row",
+      "C07-finned-7-column",
+      "C07-sashimi-7-row",
+      "C07-sashimi-7-column",
+      "C07-finned-fins-2-row",
+      "C07-finned-fins-2-column",
+      "C07-finned-fins-3-row",
+      "C07-finned-fins-3-column",
+      "C07-finned-fins-4-row",
+      "C07-finned-fins-4-column",
+      "C07-sashimi-fins-2-row",
+      "C07-sashimi-fins-2-column",
+      "C07-sashimi-fins-3-row",
+      "C07-sashimi-fins-3-column",
+      "C07-sashimi-fins-4-row",
+      "C07-sashimi-fins-4-column",
+      "C07-five-fins-outside",
+      "C07-nonseeing-target"
+    ],
+    "status": "independently-verified",
+    "evidence": [
+      {
+        "kind": "positive",
+        "fixtureId": "C07-finned-2-row",
+        "alias": "Finned fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#actual discovery proves the required named bound class"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "C07-finned-2-row",
+        "alias": "Finned fish",
+        "record": "web/tests/unit/solver/fish.test.ts#rejects changed incidence, aliases, fins, size and complete-source premises"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "C07-finned-2-row",
+        "alias": "Finned fish",
+        "record": "web/tests/unit/solver/fish.test.ts#independently rejects the documented negative/profile shape"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C07-finned-2-row",
+        "alias": "Finned fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#replays its independent certificate from original clues"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C07-finned-2-row",
+        "alias": "Finned fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#all 63 unchanged original inputs reproduce hashes, SAT and 98 forced counterfactuals"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "C07-finned-2-column",
+        "alias": "Finned fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#actual discovery proves the required named bound class"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "C07-finned-2-column",
+        "alias": "Finned fish",
+        "record": "web/tests/unit/solver/fish.test.ts#rejects changed incidence, aliases, fins, size and complete-source premises"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "C07-finned-2-column",
+        "alias": "Finned fish",
+        "record": "web/tests/unit/solver/fish.test.ts#independently rejects the documented negative/profile shape"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C07-finned-2-column",
+        "alias": "Finned fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#replays its independent certificate from original clues"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C07-finned-2-column",
+        "alias": "Finned fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#all 63 unchanged original inputs reproduce hashes, SAT and 98 forced counterfactuals"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "C07-sashimi-2-row",
+        "alias": "Sashimi fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#actual discovery proves the required named bound class"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "C07-sashimi-2-row",
+        "alias": "Sashimi fish",
+        "record": "web/tests/unit/solver/fish.test.ts#rejects changed incidence, aliases, fins, size and complete-source premises"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "C07-sashimi-2-row",
+        "alias": "Sashimi fish",
+        "record": "web/tests/unit/solver/fish.test.ts#independently rejects the documented negative/profile shape"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C07-sashimi-2-row",
+        "alias": "Sashimi fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#replays its independent certificate from original clues"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C07-sashimi-2-row",
+        "alias": "Sashimi fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#all 63 unchanged original inputs reproduce hashes, SAT and 98 forced counterfactuals"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "C07-sashimi-2-column",
+        "alias": "Sashimi fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#actual discovery proves the required named bound class"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "C07-sashimi-2-column",
+        "alias": "Sashimi fish",
+        "record": "web/tests/unit/solver/fish.test.ts#rejects changed incidence, aliases, fins, size and complete-source premises"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "C07-sashimi-2-column",
+        "alias": "Sashimi fish",
+        "record": "web/tests/unit/solver/fish.test.ts#independently rejects the documented negative/profile shape"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C07-sashimi-2-column",
+        "alias": "Sashimi fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#replays its independent certificate from original clues"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C07-sashimi-2-column",
+        "alias": "Sashimi fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#all 63 unchanged original inputs reproduce hashes, SAT and 98 forced counterfactuals"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "C07-finned-3-row",
+        "alias": "Finned fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#actual discovery proves the required named bound class"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "C07-finned-3-row",
+        "alias": "Finned fish",
+        "record": "web/tests/unit/solver/fish.test.ts#rejects changed incidence, aliases, fins, size and complete-source premises"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "C07-finned-3-row",
+        "alias": "Finned fish",
+        "record": "web/tests/unit/solver/fish.test.ts#independently rejects the documented negative/profile shape"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C07-finned-3-row",
+        "alias": "Finned fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#replays its independent certificate from original clues"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C07-finned-3-row",
+        "alias": "Finned fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#all 63 unchanged original inputs reproduce hashes, SAT and 98 forced counterfactuals"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "C07-finned-3-column",
+        "alias": "Finned fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#actual discovery proves the required named bound class"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "C07-finned-3-column",
+        "alias": "Finned fish",
+        "record": "web/tests/unit/solver/fish.test.ts#rejects changed incidence, aliases, fins, size and complete-source premises"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "C07-finned-3-column",
+        "alias": "Finned fish",
+        "record": "web/tests/unit/solver/fish.test.ts#independently rejects the documented negative/profile shape"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C07-finned-3-column",
+        "alias": "Finned fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#replays its independent certificate from original clues"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C07-finned-3-column",
+        "alias": "Finned fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#all 63 unchanged original inputs reproduce hashes, SAT and 98 forced counterfactuals"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "C07-sashimi-3-row",
+        "alias": "Sashimi fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#actual discovery proves the required named bound class"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "C07-sashimi-3-row",
+        "alias": "Sashimi fish",
+        "record": "web/tests/unit/solver/fish.test.ts#rejects changed incidence, aliases, fins, size and complete-source premises"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "C07-sashimi-3-row",
+        "alias": "Sashimi fish",
+        "record": "web/tests/unit/solver/fish.test.ts#independently rejects the documented negative/profile shape"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C07-sashimi-3-row",
+        "alias": "Sashimi fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#replays its independent certificate from original clues"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C07-sashimi-3-row",
+        "alias": "Sashimi fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#all 63 unchanged original inputs reproduce hashes, SAT and 98 forced counterfactuals"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "C07-sashimi-3-column",
+        "alias": "Sashimi fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#actual discovery proves the required named bound class"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "C07-sashimi-3-column",
+        "alias": "Sashimi fish",
+        "record": "web/tests/unit/solver/fish.test.ts#rejects changed incidence, aliases, fins, size and complete-source premises"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "C07-sashimi-3-column",
+        "alias": "Sashimi fish",
+        "record": "web/tests/unit/solver/fish.test.ts#independently rejects the documented negative/profile shape"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C07-sashimi-3-column",
+        "alias": "Sashimi fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#replays its independent certificate from original clues"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C07-sashimi-3-column",
+        "alias": "Sashimi fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#all 63 unchanged original inputs reproduce hashes, SAT and 98 forced counterfactuals"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "C07-finned-4-row",
+        "alias": "Finned fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#actual discovery proves the required named bound class"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "C07-finned-4-row",
+        "alias": "Finned fish",
+        "record": "web/tests/unit/solver/fish.test.ts#rejects changed incidence, aliases, fins, size and complete-source premises"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "C07-finned-4-row",
+        "alias": "Finned fish",
+        "record": "web/tests/unit/solver/fish.test.ts#independently rejects the documented negative/profile shape"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C07-finned-4-row",
+        "alias": "Finned fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#replays its independent certificate from original clues"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C07-finned-4-row",
+        "alias": "Finned fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#all 63 unchanged original inputs reproduce hashes, SAT and 98 forced counterfactuals"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "C07-finned-4-column",
+        "alias": "Finned fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#actual discovery proves the required named bound class"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "C07-finned-4-column",
+        "alias": "Finned fish",
+        "record": "web/tests/unit/solver/fish.test.ts#rejects changed incidence, aliases, fins, size and complete-source premises"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "C07-finned-4-column",
+        "alias": "Finned fish",
+        "record": "web/tests/unit/solver/fish.test.ts#independently rejects the documented negative/profile shape"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C07-finned-4-column",
+        "alias": "Finned fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#replays its independent certificate from original clues"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C07-finned-4-column",
+        "alias": "Finned fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#all 63 unchanged original inputs reproduce hashes, SAT and 98 forced counterfactuals"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "C07-sashimi-4-row",
+        "alias": "Sashimi fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#actual discovery proves the required named bound class"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "C07-sashimi-4-row",
+        "alias": "Sashimi fish",
+        "record": "web/tests/unit/solver/fish.test.ts#rejects changed incidence, aliases, fins, size and complete-source premises"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "C07-sashimi-4-row",
+        "alias": "Sashimi fish",
+        "record": "web/tests/unit/solver/fish.test.ts#independently rejects the documented negative/profile shape"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C07-sashimi-4-row",
+        "alias": "Sashimi fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#replays its independent certificate from original clues"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C07-sashimi-4-row",
+        "alias": "Sashimi fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#all 63 unchanged original inputs reproduce hashes, SAT and 98 forced counterfactuals"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "C07-sashimi-4-column",
+        "alias": "Sashimi fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#actual discovery proves the required named bound class"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "C07-sashimi-4-column",
+        "alias": "Sashimi fish",
+        "record": "web/tests/unit/solver/fish.test.ts#rejects changed incidence, aliases, fins, size and complete-source premises"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "C07-sashimi-4-column",
+        "alias": "Sashimi fish",
+        "record": "web/tests/unit/solver/fish.test.ts#independently rejects the documented negative/profile shape"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C07-sashimi-4-column",
+        "alias": "Sashimi fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#replays its independent certificate from original clues"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C07-sashimi-4-column",
+        "alias": "Sashimi fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#all 63 unchanged original inputs reproduce hashes, SAT and 98 forced counterfactuals"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "C07-finned-5-row",
+        "alias": "Finned fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#actual discovery proves the required named bound class"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "C07-finned-5-row",
+        "alias": "Finned fish",
+        "record": "web/tests/unit/solver/fish.test.ts#rejects changed incidence, aliases, fins, size and complete-source premises"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "C07-finned-5-row",
+        "alias": "Finned fish",
+        "record": "web/tests/unit/solver/fish.test.ts#independently rejects the documented negative/profile shape"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C07-finned-5-row",
+        "alias": "Finned fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#replays its independent certificate from original clues"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C07-finned-5-row",
+        "alias": "Finned fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#all 63 unchanged original inputs reproduce hashes, SAT and 98 forced counterfactuals"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "C07-finned-5-column",
+        "alias": "Finned fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#actual discovery proves the required named bound class"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "C07-finned-5-column",
+        "alias": "Finned fish",
+        "record": "web/tests/unit/solver/fish.test.ts#rejects changed incidence, aliases, fins, size and complete-source premises"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "C07-finned-5-column",
+        "alias": "Finned fish",
+        "record": "web/tests/unit/solver/fish.test.ts#independently rejects the documented negative/profile shape"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C07-finned-5-column",
+        "alias": "Finned fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#replays its independent certificate from original clues"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C07-finned-5-column",
+        "alias": "Finned fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#all 63 unchanged original inputs reproduce hashes, SAT and 98 forced counterfactuals"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "C07-sashimi-5-row",
+        "alias": "Sashimi fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#actual discovery proves the required named bound class"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "C07-sashimi-5-row",
+        "alias": "Sashimi fish",
+        "record": "web/tests/unit/solver/fish.test.ts#rejects changed incidence, aliases, fins, size and complete-source premises"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "C07-sashimi-5-row",
+        "alias": "Sashimi fish",
+        "record": "web/tests/unit/solver/fish.test.ts#independently rejects the documented negative/profile shape"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C07-sashimi-5-row",
+        "alias": "Sashimi fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#replays its independent certificate from original clues"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C07-sashimi-5-row",
+        "alias": "Sashimi fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#all 63 unchanged original inputs reproduce hashes, SAT and 98 forced counterfactuals"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "C07-sashimi-5-column",
+        "alias": "Sashimi fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#actual discovery proves the required named bound class"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "C07-sashimi-5-column",
+        "alias": "Sashimi fish",
+        "record": "web/tests/unit/solver/fish.test.ts#rejects changed incidence, aliases, fins, size and complete-source premises"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "C07-sashimi-5-column",
+        "alias": "Sashimi fish",
+        "record": "web/tests/unit/solver/fish.test.ts#independently rejects the documented negative/profile shape"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C07-sashimi-5-column",
+        "alias": "Sashimi fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#replays its independent certificate from original clues"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C07-sashimi-5-column",
+        "alias": "Sashimi fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#all 63 unchanged original inputs reproduce hashes, SAT and 98 forced counterfactuals"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "C07-finned-6-row",
+        "alias": "Finned fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#actual discovery proves the required named bound class"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "C07-finned-6-row",
+        "alias": "Finned fish",
+        "record": "web/tests/unit/solver/fish.test.ts#rejects changed incidence, aliases, fins, size and complete-source premises"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "C07-finned-6-row",
+        "alias": "Finned fish",
+        "record": "web/tests/unit/solver/fish.test.ts#independently rejects the documented negative/profile shape"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C07-finned-6-row",
+        "alias": "Finned fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#replays its independent certificate from original clues"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C07-finned-6-row",
+        "alias": "Finned fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#all 63 unchanged original inputs reproduce hashes, SAT and 98 forced counterfactuals"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "C07-finned-6-column",
+        "alias": "Finned fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#actual discovery proves the required named bound class"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "C07-finned-6-column",
+        "alias": "Finned fish",
+        "record": "web/tests/unit/solver/fish.test.ts#rejects changed incidence, aliases, fins, size and complete-source premises"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "C07-finned-6-column",
+        "alias": "Finned fish",
+        "record": "web/tests/unit/solver/fish.test.ts#independently rejects the documented negative/profile shape"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C07-finned-6-column",
+        "alias": "Finned fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#replays its independent certificate from original clues"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C07-finned-6-column",
+        "alias": "Finned fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#all 63 unchanged original inputs reproduce hashes, SAT and 98 forced counterfactuals"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "C07-sashimi-6-row",
+        "alias": "Sashimi fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#actual discovery proves the required named bound class"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "C07-sashimi-6-row",
+        "alias": "Sashimi fish",
+        "record": "web/tests/unit/solver/fish.test.ts#rejects changed incidence, aliases, fins, size and complete-source premises"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "C07-sashimi-6-row",
+        "alias": "Sashimi fish",
+        "record": "web/tests/unit/solver/fish.test.ts#independently rejects the documented negative/profile shape"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C07-sashimi-6-row",
+        "alias": "Sashimi fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#replays its independent certificate from original clues"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C07-sashimi-6-row",
+        "alias": "Sashimi fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#all 63 unchanged original inputs reproduce hashes, SAT and 98 forced counterfactuals"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "C07-sashimi-6-column",
+        "alias": "Sashimi fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#actual discovery proves the required named bound class"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "C07-sashimi-6-column",
+        "alias": "Sashimi fish",
+        "record": "web/tests/unit/solver/fish.test.ts#rejects changed incidence, aliases, fins, size and complete-source premises"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "C07-sashimi-6-column",
+        "alias": "Sashimi fish",
+        "record": "web/tests/unit/solver/fish.test.ts#independently rejects the documented negative/profile shape"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C07-sashimi-6-column",
+        "alias": "Sashimi fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#replays its independent certificate from original clues"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C07-sashimi-6-column",
+        "alias": "Sashimi fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#all 63 unchanged original inputs reproduce hashes, SAT and 98 forced counterfactuals"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "C07-finned-7-row",
+        "alias": "Finned fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#actual discovery proves the required named bound class"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "C07-finned-7-row",
+        "alias": "Finned fish",
+        "record": "web/tests/unit/solver/fish.test.ts#rejects changed incidence, aliases, fins, size and complete-source premises"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "C07-finned-7-row",
+        "alias": "Finned fish",
+        "record": "web/tests/unit/solver/fish.test.ts#independently rejects the documented negative/profile shape"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C07-finned-7-row",
+        "alias": "Finned fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#replays its independent certificate from original clues"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C07-finned-7-row",
+        "alias": "Finned fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#all 63 unchanged original inputs reproduce hashes, SAT and 98 forced counterfactuals"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "C07-finned-7-column",
+        "alias": "Finned fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#actual discovery proves the required named bound class"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "C07-finned-7-column",
+        "alias": "Finned fish",
+        "record": "web/tests/unit/solver/fish.test.ts#rejects changed incidence, aliases, fins, size and complete-source premises"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "C07-finned-7-column",
+        "alias": "Finned fish",
+        "record": "web/tests/unit/solver/fish.test.ts#independently rejects the documented negative/profile shape"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C07-finned-7-column",
+        "alias": "Finned fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#replays its independent certificate from original clues"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C07-finned-7-column",
+        "alias": "Finned fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#all 63 unchanged original inputs reproduce hashes, SAT and 98 forced counterfactuals"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "C07-sashimi-7-row",
+        "alias": "Sashimi fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#actual discovery proves the required named bound class"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "C07-sashimi-7-row",
+        "alias": "Sashimi fish",
+        "record": "web/tests/unit/solver/fish.test.ts#rejects changed incidence, aliases, fins, size and complete-source premises"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "C07-sashimi-7-row",
+        "alias": "Sashimi fish",
+        "record": "web/tests/unit/solver/fish.test.ts#independently rejects the documented negative/profile shape"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C07-sashimi-7-row",
+        "alias": "Sashimi fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#replays its independent certificate from original clues"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C07-sashimi-7-row",
+        "alias": "Sashimi fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#all 63 unchanged original inputs reproduce hashes, SAT and 98 forced counterfactuals"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "C07-sashimi-7-column",
+        "alias": "Sashimi fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#actual discovery proves the required named bound class"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "C07-sashimi-7-column",
+        "alias": "Sashimi fish",
+        "record": "web/tests/unit/solver/fish.test.ts#rejects changed incidence, aliases, fins, size and complete-source premises"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "C07-sashimi-7-column",
+        "alias": "Sashimi fish",
+        "record": "web/tests/unit/solver/fish.test.ts#independently rejects the documented negative/profile shape"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C07-sashimi-7-column",
+        "alias": "Sashimi fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#replays its independent certificate from original clues"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C07-sashimi-7-column",
+        "alias": "Sashimi fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#all 63 unchanged original inputs reproduce hashes, SAT and 98 forced counterfactuals"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "C07-finned-fins-2-row",
+        "alias": "Finned fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#actual discovery proves the required named bound class"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "C07-finned-fins-2-row",
+        "alias": "Finned fish",
+        "record": "web/tests/unit/solver/fish.test.ts#rejects changed incidence, aliases, fins, size and complete-source premises"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "C07-finned-fins-2-row",
+        "alias": "Finned fish",
+        "record": "web/tests/unit/solver/fish.test.ts#independently rejects the documented negative/profile shape"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C07-finned-fins-2-row",
+        "alias": "Finned fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#replays its independent certificate from original clues"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C07-finned-fins-2-row",
+        "alias": "Finned fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#all 63 unchanged original inputs reproduce hashes, SAT and 98 forced counterfactuals"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "C07-finned-fins-2-column",
+        "alias": "Finned fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#actual discovery proves the required named bound class"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "C07-finned-fins-2-column",
+        "alias": "Finned fish",
+        "record": "web/tests/unit/solver/fish.test.ts#rejects changed incidence, aliases, fins, size and complete-source premises"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "C07-finned-fins-2-column",
+        "alias": "Finned fish",
+        "record": "web/tests/unit/solver/fish.test.ts#independently rejects the documented negative/profile shape"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C07-finned-fins-2-column",
+        "alias": "Finned fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#replays its independent certificate from original clues"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C07-finned-fins-2-column",
+        "alias": "Finned fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#all 63 unchanged original inputs reproduce hashes, SAT and 98 forced counterfactuals"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "C07-finned-fins-3-row",
+        "alias": "Finned fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#actual discovery proves the required named bound class"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "C07-finned-fins-3-row",
+        "alias": "Finned fish",
+        "record": "web/tests/unit/solver/fish.test.ts#rejects changed incidence, aliases, fins, size and complete-source premises"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "C07-finned-fins-3-row",
+        "alias": "Finned fish",
+        "record": "web/tests/unit/solver/fish.test.ts#independently rejects the documented negative/profile shape"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C07-finned-fins-3-row",
+        "alias": "Finned fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#replays its independent certificate from original clues"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C07-finned-fins-3-row",
+        "alias": "Finned fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#all 63 unchanged original inputs reproduce hashes, SAT and 98 forced counterfactuals"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "C07-finned-fins-3-column",
+        "alias": "Finned fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#actual discovery proves the required named bound class"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "C07-finned-fins-3-column",
+        "alias": "Finned fish",
+        "record": "web/tests/unit/solver/fish.test.ts#rejects changed incidence, aliases, fins, size and complete-source premises"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "C07-finned-fins-3-column",
+        "alias": "Finned fish",
+        "record": "web/tests/unit/solver/fish.test.ts#independently rejects the documented negative/profile shape"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C07-finned-fins-3-column",
+        "alias": "Finned fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#replays its independent certificate from original clues"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C07-finned-fins-3-column",
+        "alias": "Finned fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#all 63 unchanged original inputs reproduce hashes, SAT and 98 forced counterfactuals"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "C07-finned-fins-4-row",
+        "alias": "Finned fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#actual discovery proves the required named bound class"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "C07-finned-fins-4-row",
+        "alias": "Finned fish",
+        "record": "web/tests/unit/solver/fish.test.ts#rejects changed incidence, aliases, fins, size and complete-source premises"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "C07-finned-fins-4-row",
+        "alias": "Finned fish",
+        "record": "web/tests/unit/solver/fish.test.ts#independently rejects the documented negative/profile shape"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C07-finned-fins-4-row",
+        "alias": "Finned fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#replays its independent certificate from original clues"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C07-finned-fins-4-row",
+        "alias": "Finned fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#all 63 unchanged original inputs reproduce hashes, SAT and 98 forced counterfactuals"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "C07-finned-fins-4-column",
+        "alias": "Finned fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#actual discovery proves the required named bound class"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "C07-finned-fins-4-column",
+        "alias": "Finned fish",
+        "record": "web/tests/unit/solver/fish.test.ts#rejects changed incidence, aliases, fins, size and complete-source premises"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "C07-finned-fins-4-column",
+        "alias": "Finned fish",
+        "record": "web/tests/unit/solver/fish.test.ts#independently rejects the documented negative/profile shape"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C07-finned-fins-4-column",
+        "alias": "Finned fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#replays its independent certificate from original clues"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C07-finned-fins-4-column",
+        "alias": "Finned fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#all 63 unchanged original inputs reproduce hashes, SAT and 98 forced counterfactuals"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "C07-sashimi-fins-2-row",
+        "alias": "Sashimi fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#actual discovery proves the required named bound class"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "C07-sashimi-fins-2-row",
+        "alias": "Sashimi fish",
+        "record": "web/tests/unit/solver/fish.test.ts#rejects changed incidence, aliases, fins, size and complete-source premises"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "C07-sashimi-fins-2-row",
+        "alias": "Sashimi fish",
+        "record": "web/tests/unit/solver/fish.test.ts#independently rejects the documented negative/profile shape"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C07-sashimi-fins-2-row",
+        "alias": "Sashimi fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#replays its independent certificate from original clues"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C07-sashimi-fins-2-row",
+        "alias": "Sashimi fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#all 63 unchanged original inputs reproduce hashes, SAT and 98 forced counterfactuals"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "C07-sashimi-fins-2-column",
+        "alias": "Sashimi fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#actual discovery proves the required named bound class"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "C07-sashimi-fins-2-column",
+        "alias": "Sashimi fish",
+        "record": "web/tests/unit/solver/fish.test.ts#rejects changed incidence, aliases, fins, size and complete-source premises"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "C07-sashimi-fins-2-column",
+        "alias": "Sashimi fish",
+        "record": "web/tests/unit/solver/fish.test.ts#independently rejects the documented negative/profile shape"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C07-sashimi-fins-2-column",
+        "alias": "Sashimi fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#replays its independent certificate from original clues"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C07-sashimi-fins-2-column",
+        "alias": "Sashimi fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#all 63 unchanged original inputs reproduce hashes, SAT and 98 forced counterfactuals"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "C07-sashimi-fins-3-row",
+        "alias": "Sashimi fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#actual discovery proves the required named bound class"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "C07-sashimi-fins-3-row",
+        "alias": "Sashimi fish",
+        "record": "web/tests/unit/solver/fish.test.ts#rejects changed incidence, aliases, fins, size and complete-source premises"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "C07-sashimi-fins-3-row",
+        "alias": "Sashimi fish",
+        "record": "web/tests/unit/solver/fish.test.ts#independently rejects the documented negative/profile shape"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C07-sashimi-fins-3-row",
+        "alias": "Sashimi fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#replays its independent certificate from original clues"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C07-sashimi-fins-3-row",
+        "alias": "Sashimi fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#all 63 unchanged original inputs reproduce hashes, SAT and 98 forced counterfactuals"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "C07-sashimi-fins-3-column",
+        "alias": "Sashimi fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#actual discovery proves the required named bound class"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "C07-sashimi-fins-3-column",
+        "alias": "Sashimi fish",
+        "record": "web/tests/unit/solver/fish.test.ts#rejects changed incidence, aliases, fins, size and complete-source premises"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "C07-sashimi-fins-3-column",
+        "alias": "Sashimi fish",
+        "record": "web/tests/unit/solver/fish.test.ts#independently rejects the documented negative/profile shape"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C07-sashimi-fins-3-column",
+        "alias": "Sashimi fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#replays its independent certificate from original clues"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C07-sashimi-fins-3-column",
+        "alias": "Sashimi fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#all 63 unchanged original inputs reproduce hashes, SAT and 98 forced counterfactuals"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "C07-sashimi-fins-4-row",
+        "alias": "Sashimi fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#actual discovery proves the required named bound class"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "C07-sashimi-fins-4-row",
+        "alias": "Sashimi fish",
+        "record": "web/tests/unit/solver/fish.test.ts#rejects changed incidence, aliases, fins, size and complete-source premises"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "C07-sashimi-fins-4-row",
+        "alias": "Sashimi fish",
+        "record": "web/tests/unit/solver/fish.test.ts#independently rejects the documented negative/profile shape"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C07-sashimi-fins-4-row",
+        "alias": "Sashimi fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#replays its independent certificate from original clues"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C07-sashimi-fins-4-row",
+        "alias": "Sashimi fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#all 63 unchanged original inputs reproduce hashes, SAT and 98 forced counterfactuals"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "C07-sashimi-fins-4-column",
+        "alias": "Sashimi fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#actual discovery proves the required named bound class"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "C07-sashimi-fins-4-column",
+        "alias": "Sashimi fish",
+        "record": "web/tests/unit/solver/fish.test.ts#rejects changed incidence, aliases, fins, size and complete-source premises"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "C07-sashimi-fins-4-column",
+        "alias": "Sashimi fish",
+        "record": "web/tests/unit/solver/fish.test.ts#independently rejects the documented negative/profile shape"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C07-sashimi-fins-4-column",
+        "alias": "Sashimi fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#replays its independent certificate from original clues"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C07-sashimi-fins-4-column",
+        "alias": "Sashimi fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#all 63 unchanged original inputs reproduce hashes, SAT and 98 forced counterfactuals"
+      }
+    ]
   },
   {
     "id": "C08",
@@ -852,13 +2345,200 @@ export const coverageEntries: readonly CoverageEntry[] = Object.freeze((
     "grammarId": "c08-grammar@1",
     "detectorId": "c08@1",
     "checkerId": "c08-grammar@1",
-    "descriptionPath": "docs/superpowers/specs/2026-09-12-m2-technique-coverage.md",
+    "descriptionPath": "docs/solver/techniques/fish.md",
     "fixtureIds": [
-      "C08-franken-2/3/4",
-      "C08-mutant-2/3/4"
+      "C08-mutant-3",
+      "C08-mutant-4",
+      "C08-franken-2",
+      "C08-mutant-2",
+      "C08-franken-3",
+      "C08-franken-4",
+      "C08-size-5-outside",
+      "C08-omitted-overlap"
     ],
-    "status": "specified",
-    "evidence": []
+    "status": "independently-verified",
+    "evidence": [
+      {
+        "kind": "positive",
+        "fixtureId": "C08-mutant-3",
+        "alias": "Mutant fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#actual discovery proves the required named bound class"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "C08-mutant-3",
+        "alias": "Mutant fish",
+        "record": "web/tests/unit/solver/fish.test.ts#rejects changed incidence, aliases, fins, size and complete-source premises"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "C08-mutant-3",
+        "alias": "Mutant fish",
+        "record": "web/tests/unit/solver/fish.test.ts#independently rejects the documented negative/profile shape"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C08-mutant-3",
+        "alias": "Mutant fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#replays its independent certificate from original clues"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C08-mutant-3",
+        "alias": "Mutant fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#all 63 unchanged original inputs reproduce hashes, SAT and 98 forced counterfactuals"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "C08-mutant-4",
+        "alias": "Mutant fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#actual discovery proves the required named bound class"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "C08-mutant-4",
+        "alias": "Mutant fish",
+        "record": "web/tests/unit/solver/fish.test.ts#rejects changed incidence, aliases, fins, size and complete-source premises"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "C08-mutant-4",
+        "alias": "Mutant fish",
+        "record": "web/tests/unit/solver/fish.test.ts#independently rejects the documented negative/profile shape"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C08-mutant-4",
+        "alias": "Mutant fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#replays its independent certificate from original clues"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C08-mutant-4",
+        "alias": "Mutant fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#all 63 unchanged original inputs reproduce hashes, SAT and 98 forced counterfactuals"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "C08-franken-2",
+        "alias": "Franken fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#actual discovery proves the required named bound class"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "C08-franken-2",
+        "alias": "Franken fish",
+        "record": "web/tests/unit/solver/fish.test.ts#rejects changed incidence, aliases, fins, size and complete-source premises"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "C08-franken-2",
+        "alias": "Franken fish",
+        "record": "web/tests/unit/solver/fish.test.ts#independently rejects the documented negative/profile shape"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C08-franken-2",
+        "alias": "Franken fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#replays its independent certificate from original clues"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C08-franken-2",
+        "alias": "Franken fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#all 63 unchanged original inputs reproduce hashes, SAT and 98 forced counterfactuals"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "C08-mutant-2",
+        "alias": "Mutant fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#actual discovery proves the required named bound class"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "C08-mutant-2",
+        "alias": "Mutant fish",
+        "record": "web/tests/unit/solver/fish.test.ts#rejects changed incidence, aliases, fins, size and complete-source premises"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "C08-mutant-2",
+        "alias": "Mutant fish",
+        "record": "web/tests/unit/solver/fish.test.ts#independently rejects the documented negative/profile shape"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C08-mutant-2",
+        "alias": "Mutant fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#replays its independent certificate from original clues"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C08-mutant-2",
+        "alias": "Mutant fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#all 63 unchanged original inputs reproduce hashes, SAT and 98 forced counterfactuals"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "C08-franken-3",
+        "alias": "Franken fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#actual discovery proves the required named bound class"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "C08-franken-3",
+        "alias": "Franken fish",
+        "record": "web/tests/unit/solver/fish.test.ts#rejects changed incidence, aliases, fins, size and complete-source premises"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "C08-franken-3",
+        "alias": "Franken fish",
+        "record": "web/tests/unit/solver/fish.test.ts#independently rejects the documented negative/profile shape"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C08-franken-3",
+        "alias": "Franken fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#replays its independent certificate from original clues"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C08-franken-3",
+        "alias": "Franken fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#all 63 unchanged original inputs reproduce hashes, SAT and 98 forced counterfactuals"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "C08-franken-4",
+        "alias": "Franken fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#actual discovery proves the required named bound class"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "C08-franken-4",
+        "alias": "Franken fish",
+        "record": "web/tests/unit/solver/fish.test.ts#rejects changed incidence, aliases, fins, size and complete-source premises"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "C08-franken-4",
+        "alias": "Franken fish",
+        "record": "web/tests/unit/solver/fish.test.ts#independently rejects the documented negative/profile shape"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C08-franken-4",
+        "alias": "Franken fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#replays its independent certificate from original clues"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C08-franken-4",
+        "alias": "Franken fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#all 63 unchanged original inputs reproduce hashes, SAT and 98 forced counterfactuals"
+      }
+    ]
   },
   {
     "id": "C09",
@@ -880,14 +2560,294 @@ export const coverageEntries: readonly CoverageEntry[] = Object.freeze((
     "grammarId": "c09-grammar@1",
     "detectorId": "c09@1",
     "checkerId": "c09-grammar@1",
-    "descriptionPath": "docs/superpowers/specs/2026-09-12-m2-technique-coverage.md",
+    "descriptionPath": "docs/solver/techniques/fish.md",
     "fixtureIds": [
-      "C09-endo",
-      "C09-cannibal",
-      "C09-siamese"
+      "C09-endo-4",
+      "C09-endo-3",
+      "C09-endo-2",
+      "C09-cannibal-4",
+      "C09-cannibal-2",
+      "C09-cannibal-3",
+      "C09-siamese-2",
+      "C09-siamese-3",
+      "C09-siamese-4",
+      "C09-size-5-outside",
+      "C09-third-component-outside",
+      "C09-missing-second-component"
     ],
-    "status": "specified",
-    "evidence": []
+    "status": "independently-verified",
+    "evidence": [
+      {
+        "kind": "positive",
+        "fixtureId": "C09-endo-4",
+        "alias": "Endo-fin fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#actual discovery proves the required named bound class"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "C09-endo-4",
+        "alias": "Endo-fin fish",
+        "record": "web/tests/unit/solver/fish.test.ts#rejects changed incidence, aliases, fins, size and complete-source premises"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "C09-endo-4",
+        "alias": "Endo-fin fish",
+        "record": "web/tests/unit/solver/fish.test.ts#independently rejects the documented negative/profile shape"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C09-endo-4",
+        "alias": "Endo-fin fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#replays its independent certificate from original clues"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C09-endo-4",
+        "alias": "Endo-fin fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#all 63 unchanged original inputs reproduce hashes, SAT and 98 forced counterfactuals"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "C09-endo-3",
+        "alias": "Endo-fin fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#actual discovery proves the required named bound class"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "C09-endo-3",
+        "alias": "Endo-fin fish",
+        "record": "web/tests/unit/solver/fish.test.ts#rejects changed incidence, aliases, fins, size and complete-source premises"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "C09-endo-3",
+        "alias": "Endo-fin fish",
+        "record": "web/tests/unit/solver/fish.test.ts#independently rejects the documented negative/profile shape"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C09-endo-3",
+        "alias": "Endo-fin fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#replays its independent certificate from original clues"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C09-endo-3",
+        "alias": "Endo-fin fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#all 63 unchanged original inputs reproduce hashes, SAT and 98 forced counterfactuals"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "C09-endo-2",
+        "alias": "Endo-fin fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#actual discovery proves the required named bound class"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "C09-endo-2",
+        "alias": "Endo-fin fish",
+        "record": "web/tests/unit/solver/fish.test.ts#rejects changed incidence, aliases, fins, size and complete-source premises"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "C09-endo-2",
+        "alias": "Endo-fin fish",
+        "record": "web/tests/unit/solver/fish.test.ts#independently rejects the documented negative/profile shape"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C09-endo-2",
+        "alias": "Endo-fin fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#replays its independent certificate from original clues"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C09-endo-2",
+        "alias": "Endo-fin fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#all 63 unchanged original inputs reproduce hashes, SAT and 98 forced counterfactuals"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "C09-cannibal-4",
+        "alias": "Cannibalistic fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#actual discovery proves the required named bound class"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "C09-cannibal-4",
+        "alias": "Cannibalistic fish",
+        "record": "web/tests/unit/solver/fish.test.ts#rejects changed incidence, aliases, fins, size and complete-source premises"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "C09-cannibal-4",
+        "alias": "Cannibalistic fish",
+        "record": "web/tests/unit/solver/fish.test.ts#independently rejects the documented negative/profile shape"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C09-cannibal-4",
+        "alias": "Cannibalistic fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#replays its independent certificate from original clues"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C09-cannibal-4",
+        "alias": "Cannibalistic fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#all 63 unchanged original inputs reproduce hashes, SAT and 98 forced counterfactuals"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "C09-cannibal-2",
+        "alias": "Cannibalistic fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#actual discovery proves the required named bound class"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "C09-cannibal-2",
+        "alias": "Cannibalistic fish",
+        "record": "web/tests/unit/solver/fish.test.ts#rejects changed incidence, aliases, fins, size and complete-source premises"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "C09-cannibal-2",
+        "alias": "Cannibalistic fish",
+        "record": "web/tests/unit/solver/fish.test.ts#independently rejects the documented negative/profile shape"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C09-cannibal-2",
+        "alias": "Cannibalistic fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#replays its independent certificate from original clues"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C09-cannibal-2",
+        "alias": "Cannibalistic fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#all 63 unchanged original inputs reproduce hashes, SAT and 98 forced counterfactuals"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "C09-cannibal-3",
+        "alias": "Cannibalistic fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#actual discovery proves the required named bound class"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "C09-cannibal-3",
+        "alias": "Cannibalistic fish",
+        "record": "web/tests/unit/solver/fish.test.ts#rejects changed incidence, aliases, fins, size and complete-source premises"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "C09-cannibal-3",
+        "alias": "Cannibalistic fish",
+        "record": "web/tests/unit/solver/fish.test.ts#independently rejects the documented negative/profile shape"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C09-cannibal-3",
+        "alias": "Cannibalistic fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#replays its independent certificate from original clues"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C09-cannibal-3",
+        "alias": "Cannibalistic fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#all 63 unchanged original inputs reproduce hashes, SAT and 98 forced counterfactuals"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "C09-siamese-2",
+        "alias": "Siamese fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#actual discovery proves the required named bound class"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "C09-siamese-2",
+        "alias": "Siamese fish",
+        "record": "web/tests/unit/solver/fish.test.ts#rejects changed incidence, aliases, fins, size and complete-source premises"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "C09-siamese-2",
+        "alias": "Siamese fish",
+        "record": "web/tests/unit/solver/fish.test.ts#independently rejects the documented negative/profile shape"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C09-siamese-2",
+        "alias": "Siamese fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#replays its independent certificate from original clues"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C09-siamese-2",
+        "alias": "Siamese fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#all 63 unchanged original inputs reproduce hashes, SAT and 98 forced counterfactuals"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "C09-siamese-3",
+        "alias": "Siamese fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#actual discovery proves the required named bound class"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "C09-siamese-3",
+        "alias": "Siamese fish",
+        "record": "web/tests/unit/solver/fish.test.ts#rejects changed incidence, aliases, fins, size and complete-source premises"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "C09-siamese-3",
+        "alias": "Siamese fish",
+        "record": "web/tests/unit/solver/fish.test.ts#independently rejects the documented negative/profile shape"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C09-siamese-3",
+        "alias": "Siamese fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#replays its independent certificate from original clues"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C09-siamese-3",
+        "alias": "Siamese fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#all 63 unchanged original inputs reproduce hashes, SAT and 98 forced counterfactuals"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "C09-siamese-4",
+        "alias": "Siamese fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#actual discovery proves the required named bound class"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "C09-siamese-4",
+        "alias": "Siamese fish",
+        "record": "web/tests/unit/solver/fish.test.ts#rejects changed incidence, aliases, fins, size and complete-source premises"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "C09-siamese-4",
+        "alias": "Siamese fish",
+        "record": "web/tests/unit/solver/fish.test.ts#independently rejects the documented negative/profile shape"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C09-siamese-4",
+        "alias": "Siamese fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#replays its independent certificate from original clues"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C09-siamese-4",
+        "alias": "Siamese fish",
+        "record": "web/tests/unit/solver/fish-complex.test.ts#all 63 unchanged original inputs reproduce hashes, SAT and 98 forced counterfactuals"
+      }
+    ]
   },
   {
     "id": "C10",
