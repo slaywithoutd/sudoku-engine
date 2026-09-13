@@ -265,7 +265,7 @@ test.each(["C20-intersection-2", "C20-intersection-3", "C20-line-side-4", "C20-b
     if (event.kind !== "proposal") continue;
     expect(() => assertSound(view, event.proposal)).not.toThrow(); proposals++;
     const p = event.proposal.pattern as unknown as SetPattern;
-    let matches = id.includes("count") ? p.kind === "count" : id.includes("aligned") ? p.kind === "aligned" && p.selected.length === Number(id.at(-1)) : p.kind === "sdc";
+    let matches = id.includes("count") ? p.kind === "count" && p.symbols.length > 1 : id.includes("aligned") ? p.kind === "aligned" && p.selected.length === Number(id.at(-1)) : p.kind === "sdc";
     if (p.kind === "sdc") {
       if (id === "C20-intersection-3") matches &&= p.intersection.length === 3;
       if (id === "C20-line-side-4") matches &&= p.lineSide.length === 4;
