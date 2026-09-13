@@ -10,7 +10,7 @@
 
 **Spec:** Read [screen/evidence design](../specs/2026-09-12-m2-classic-solver-design.md), [engine contracts](../specs/2026-09-12-m2-engine-contracts.md), [technique matrix](../specs/2026-09-12-m2-technique-coverage.md), [research rationale](../specs/2026-09-12-m2-engine-expansion-design.md) and [decisions](../../decisions.md). The contracts and matrix define signatures/grammars; this plan defines implementation sequence and evidence. All tasks are future work.
 
-**Status:** COMPLETE REVISED PLAN FOR REVIEW, 2026-09-12. Replaces the obsolete ten-task/six-technique plan. No solver implementation or benchmarks have been performed. Review baseline `80471d2` on `docs/m2-solver-design`; preserve research `24e0d25` and D058 themes.
+**Status:** APPROVED at `0e98c2b`; implementation started 2026-09-12 under D065/D066. Replaces the obsolete ten-task/six-technique plan. See [implementation progress](../../m2-implementation-progress.md) for actual execution evidence. Review baseline `80471d2` on `docs/m2-solver-design`; preserve research `24e0d25` and D058 themes.
 
 ## Global constraints
 

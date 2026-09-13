@@ -1,5 +1,7 @@
 # M2 technique coverage and acceptance matrix
 
+**Approval update:** The user approved this design at `0e98c2b` and authorized implementation under D065/D066. Earlier review-only wording below records the drafting state; benchmarks and runtime acceptance remain required.
+
 Date: 2026-09-12. Status: **specified target profile for review, none implemented or independently verified**. This supplements the [researched inventory](2026-09-12-m2-engine-expansion-design.md) with finite contracts. Read the [proof/discovery contracts](2026-09-12-m2-engine-contracts.md) and [implementation batches](../plans/2026-09-12-m2-classic-solver.md). Every row remains in M2's planned delivery. Bounds are recommendations, not claims that a detector can exhaust them within ten seconds.
 
 ## 1. Coverage meaning and manifest

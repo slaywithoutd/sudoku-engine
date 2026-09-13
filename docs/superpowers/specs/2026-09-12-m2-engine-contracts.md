@@ -1,5 +1,7 @@
 # M2 engine contracts
 
+**Approval update:** The user approved this design at `0e98c2b` and authorized implementation under D065/D066. Earlier review-only wording below records the drafting state; benchmarks and runtime acceptance remain required.
+
 Date: 2026-09-12. Status: **complete technical proposal for review; no implementation authorization**. Companion to the [expanded design](2026-09-12-m2-engine-expansion-design.md), [coverage matrix](2026-09-12-m2-technique-coverage.md), [screen/evidence specification](2026-09-12-m2-classic-solver-design.md) and [implementation plan](../plans/2026-09-12-m2-classic-solver.md). Contracts here replace earlier sketches. Numerical choices are proposed, unmeasured profile parameters.
 
 ## 1. Boundaries and identity

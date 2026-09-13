@@ -1,6 +1,6 @@
 # Sudoku platform roadmap
 
-Updated: 2026-09-12. Status: **M1a + M1b implemented and verified**, with subsequent UI/appearance under D053/D058. **M2 expanded specification, concrete contracts, bounded matrix and complete revised plan are ready for review; implementation is not authorized.** M2 direction is D046–D057; completed planning and proposed choices are D059–D064.
+Updated: 2026-09-12. Status: **M1a + M1b implemented and verified**, with subsequent UI/appearance under D053/D058. **M2 design is approved and implementation is underway under D065/D066.** See [implementation progress](m2-implementation-progress.md). M2 direction is D046–D057; completed planning and proposed choices are D059–D064.
 
 ## Delivery sequence
 
@@ -8,7 +8,7 @@ Updated: 2026-09-12. Status: **M1a + M1b implemented and verified**, with subseq
 | --- | --- | --- | --- |
 | M1a | Classic creator, autosaved drafts, manual/string entry, conflict checks, Finish into personal library. | Conflicting drafts survive reopen; Finish rejects conflicts; finished definitions are immutable. | Approved first-release specification and detailed plan. |
 | M1b | Classic play, notes, arrows, undo/redo, personal library, settings, JSON backups. First usable release includes M1a + M1b. | First-release acceptance checks and a local startup guide pass. | Approved first-release specification and detailed plan. |
-| M2 | Broad classic deduction engine, Explain/Analyze modes, independent count evidence and expandable proofs; shared constraint interfaces designed now. | All 33 primary/five conditional coverage rows accepted at declared bounds; independent proofs/counts, fair scheduling, identified fallback, bounded transport/Cancel, measured budgets and no false Perfect. | [Concrete contracts](superpowers/specs/2026-09-12-m2-engine-contracts.md), [coverage matrix](superpowers/specs/2026-09-12-m2-technique-coverage.md) and [complete 27-task plan](superpowers/plans/2026-09-12-m2-classic-solver.md) await design approval. No gameplay hints yet. |
+| M2 | Broad classic deduction engine, Explain/Analyze modes, independent count evidence and expandable proofs; shared constraint interfaces designed now. | All 33 primary/five conditional coverage rows accepted at declared bounds; independent proofs/counts, fair scheduling, identified fallback, bounded transport/Cancel, measured budgets and no false Perfect. | [Concrete contracts](superpowers/specs/2026-09-12-m2-engine-contracts.md), [coverage matrix](superpowers/specs/2026-09-12-m2-technique-coverage.md) and [complete 27-task plan](superpowers/plans/2026-09-12-m2-classic-solver.md) are approved; execution/acceptance tracked in the implementation record. No gameplay hints yet. |
 | M3 | Classic construction assistant. | Existing clues preserved; additions-only proposal; target evidence; honest removability status; applying proposal undoable. | Define target evaluator and irreducibility evidence, resource budgets, deterministic/randomized construction, and impossible input handling. |
 | M4 | Diagonal, killer, and thermometer creation/play on classic 9×9; combinable constraints. | Rule definitions round-trip; graphics match declared semantics; support limitations visible. | Set exact variant semantics, editing gestures, overlaps/coverage, capability display, and file version migration. |
 | M5 | Solver support for the initial variants and their supported combinations. | Exact and logical fixtures for individual/mixed constraints; trace replay; unsupported rules never ignored in full-puzzle claims. | Define shared propagation, mixed-rule techniques, soundness checks, and performance budgets. |
@@ -57,7 +57,7 @@ For Perfect minimality, define the verification contract at M3 before promising 
 
 ## First release and continuation
 
-M1 is complete under the [approved behavior specification](superpowers/specs/2026-09-12-first-release-design.md) and [implementation plan](superpowers/plans/2026-09-12-first-release.md), with D053/D058 refinements. **Review the completed M2 specification and revised detailed plan before authorizing implementation.** Broad techniques and scheduling are not implemented; M2–M6 and later branches remain product direction, not work included in M1.
+M1 is complete under the [approved behavior specification](superpowers/specs/2026-09-12-first-release-design.md) and [implementation plan](superpowers/plans/2026-09-12-first-release.md), with D053/D058 refinements. **Execute and independently verify the approved expanded M2 plan.** Broad techniques and scheduling are not implemented; M2–M6 and later branches remain product direction, not work included in M1.
 
 M2 implementation batches preserve the full bounded target: oracle/contracts/shared proofs → foundation → graph/short patterns/fish → coloring/chains/ALS → combinations/forcing/generalized/specialized/templates → conditional techniques → scheduling/orchestration → bounded worker/controller/UI → independent integration and benchmark gates. Intermediate batches are reviewable; completing the first six techniques does not complete M2. No universal technique completeness is promised.
 

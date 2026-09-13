@@ -1,5 +1,7 @@
 # Sudoku Engine: expanded deductions and adaptive reasoning
 
+**Approval update:** The user approved this design at `0e98c2b` and authorized implementation under D065/D066. Earlier review-only wording below records the drafting state; benchmarks and runtime acceptance remain required.
+
 Date: 2026-09-12. Status: **DETAILED DESIGN PROPOSAL READY FOR REVIEW — not implementation authorization.**
 
 This research rationale accompanies the revised [screen/evidence specification](2026-09-12-m2-classic-solver-design.md), [concrete engine contracts](2026-09-12-m2-engine-contracts.md), [bounded technique coverage matrix](2026-09-12-m2-technique-coverage.md) and [complete implementation plan](../plans/2026-09-12-m2-classic-solver.md). Those annexes finish the technical design and replace the former six-technique/flat-proof/full-checkpoint contracts. Where this research discussion offers several experimental choices or sketches, the concrete contracts state the proposed implementation choice. All remain subject to design approval.

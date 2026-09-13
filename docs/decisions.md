@@ -583,3 +583,18 @@ Record each answer here with its rationale and consequences. If an answer change
 - User flow: manual/paste/live-draft/original-puzzle clues inside Solve, English read-only results/expandable proof graph/coverage ledger/separate solution verification, configurable advanced limits and explicit Save Clues as Draft. No gameplay hints. Preserve all play/session/history/settings state except that explicit new draft action.
 - Review: no unresolved product question blocks the completed specification/plan. Approval concerns the concrete proposed choices; measured calibration remains an implementation gate. Implementation still requires explicit design approval.
 
+
+## D065 ? Approve expanded M2 design and begin implementation
+
+- Status: Confirmed by the user, 2026-09-12.
+- Source: explicit approval of the completed expanded design and implementation plan at `0e98c2b`, followed by permission to start implementing.
+- Decision: execute the approved 27-task plan and its bounded 38-row coverage contract, preserving existing application work and all evidence/isolation safeguards. Earlier design-only gates are satisfied by this approval; historical planning records remain historical evidence.
+- Workspace: isolated `.worktrees/m2-engine` on `feat/m2-engine`, based on `f3eb4ac` (approved planning plus workspace ignore rules); the original checkout retains `docs/m2-solver-design`.
+- Progress and runtime evidence: [M2 implementation record](m2-implementation-progress.md). Task completion requires actual tests and review; approval does not make any technique implemented or verified.
+
+## D066 ? Document engine reasoning and use purposeful object-oriented design
+
+- Status: Confirmed coding preference from the user, 2026-09-12.
+- Decision: document public contracts, invariants, proof reasoning, identity/lifecycle ownership, resource limits and non-obvious algorithm choices in the code. Explain why a deduction is sound and why a boundary exists; avoid comments that merely repeat syntax.
+- Implementation approach: prefer cohesive classes owning state/lifecycles, Strategy interfaces for rules/detectors/policies, registries/factories for compatible assembly, and observer/subscription boundaries for application state where these improve clarity. Favor composition over inheritance. Immutable value records and small mathematical/validation functions remain pure functions where classes add no value.
+- Compatibility: retain the approved public operations through methods or thin function entry points; use documented adapters rather than breaking downstream signatures gratuitously. Do not add a DI framework, pattern boilerplate, broad inheritance hierarchy or unrelated M1 refactoring.

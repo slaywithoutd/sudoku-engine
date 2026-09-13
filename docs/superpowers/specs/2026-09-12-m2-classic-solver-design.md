@@ -1,5 +1,7 @@
 # M2 classic Sudoku solver: screen and evidence design
 
+**Approval update:** The user approved this design at `0e98c2b` and authorized implementation under D065/D066. Earlier review-only wording below records the drafting state; benchmarks and runtime acceptance remain required.
+
 Date: 2026-09-12. Status: **revised detailed proposal ready for review; implementation is not authorized**.
 
 This replaces the initial six-technique specification. The complete design comprises this screen/evidence contract, the [expanded research and rationale](2026-09-12-m2-engine-expansion-design.md), the [concrete engine contracts](2026-09-12-m2-engine-contracts.md), the [bounded technique matrix](2026-09-12-m2-technique-coverage.md) and the [revised implementation plan](../plans/2026-09-12-m2-classic-solver.md). Contract annexes supersede earlier sketches; the research inventory supplies sources, not conflicting executable interfaces. Decisions [D046–D064](../../decisions.md#d046--m2-design-authorization-and-preserved-requirements) distinguish confirmed requirements from recommendations.
