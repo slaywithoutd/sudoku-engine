@@ -1,3 +1,4 @@
+import { discoveryContext } from "../../solver/discovery-context";
 import { expect, test } from "vitest";
 import { canonicalProblem, normalizeClassic } from "../../../src/solver/problem";
 import { assemble } from "../../../src/solver/rules/assemble";
@@ -111,7 +112,7 @@ test("replays a one-hole completion from original clues without discovery", () =
       proposals.push(event.proposal); view = commitChecked(view, checked.step).view;
     }
   }
-  const single = [...getTechniques("classic-expanded@1")[0].discover(view)].find(e => e.kind === "proposal");
+  const single = [...getTechniques("classic-expanded@1")[0].discover(view, discoveryContext())].find(e => e.kind === "proposal");
   if (single?.kind !== "proposal") throw Error("single"); proposals.push(single.proposal);
   const snapshot = makeSnapshot(problem, { kind: "manual" }, "replay", 0);
   expect([...replay(snapshot, proposals, result.value, limits)].at(-1)).toMatchObject({ kind: "checked" });

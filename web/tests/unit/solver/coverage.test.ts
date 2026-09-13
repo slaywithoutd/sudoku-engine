@@ -1,3 +1,4 @@
+import { discoveryContext } from "../../solver/discovery-context";
 import { expect, test } from "vitest";
 import { readFileSync } from "node:fs";
 import { coverageEntries, validateCoverage, aliasMappings, unsupportedAliases } from "../../../src/solver/techniques/manifest";
@@ -15,12 +16,12 @@ test("preserves exact UTF8 matrix bounds for every catalogue row", () => {
   }
 });
 
-test("catalogues all 38 exact matrix rows without claiming advanced implementation", () => {
+test("catalogues all 38 exact matrix rows and only independently accepted implementations", () => {
   expect(coverageEntries).toHaveLength(38);
   expect(new Set(coverageEntries.map(e => e.id)).size).toBe(38);
-  expect(coverageEntries.filter(e => e.id > "C05").every(e => e.status === "specified")).toBe(true);
+  expect(coverageEntries.filter(e => e.id > "C05" && !["C10","C11","C12","C13"].includes(e.id)).every(e => e.status === "specified")).toBe(true);
   expect(validateCoverage(coverageEntries)).toEqual([]);
-  expect(coverageEntries.filter(e=>e.status==="independently-verified").map(e=>e.id)).toEqual(["C01","C02","C03","C04","C05"]);
+  expect(coverageEntries.filter(e=>e.status==="independently-verified").map(e=>e.id)).toEqual(["C01","C02","C03","C04","C05","C10","C11","C12","C13"]);
   expect(new Set(aliasMappings.map(e=>e.alias)).size).toBe(aliasMappings.length);
   expect(unsupportedAliases.every(e=>e.reason && e.nearestSupportedForm)).toBe(true);
   expect(getTechniques("classic-expanded@1")).toHaveLength(33);
@@ -33,7 +34,7 @@ test("partial catalogue cannot start an expanded run or silently stall as exhaus
   expect(()=>assembleTechniqueJobs(fake,"classic-expanded@1")).toThrow("profile-job-limit");
   const future=getTechniques("classic-expanded@1").find(t=>t.id==="c06@1")!;
   expect(future.eligible(view)).toMatchObject({kind:"excluded",reason:"specified-not-implemented"});
-  expect(()=>[...future.discover(view)]).toThrow("specified-not-implemented");
+  expect(()=>[...future.discover(view, discoveryContext())]).toThrow("specified-not-implemented");
 });
 test("refuses unsupported profile versions and verified rows lacking independent evidence", () => {
   expect(() => getTechniques("classic-expanded@2")).toThrow("unknown-profile");

@@ -1,3 +1,4 @@
+import { discoveryContext } from "./discovery-context";
 import { checkProposal, verifyCertificate } from "../../src/solver/proof/checker";
 import type { CheckedStep, DeductionProposal, Limits, ProofNode, Proposition } from "../../src/solver/proof/types";
 import { retainedProof } from "../../src/solver/state/candidates";
@@ -67,10 +68,13 @@ export function fixtureView(fixture: TechniqueFixture): ReadView {
 export function fixturePrefix(id: string): readonly DeductionProposal[] {
   const fixture=fixtureCase(id); fixtureView(fixture); return prefixBundles.get(fixture.givens)!;
 }
+export function originalCluePrefix(fixture: TechniqueFixture): readonly DeductionProposal[] {
+  fixtureView(fixture);return prefixBundles.get(fixture.givens)!;
+}
 export function discoverFixture(id: string) {
   const fixture = fixtureCase(id), view = fixtureView(fixture);
   const detector = getTechniques("classic-expanded@1").find(d => d.id === `${fixture.rowId.toLowerCase()}@1`)!;
-  const events = [...detector.discover(view)];
+  const events = [...detector.discover(view, discoveryContext())];
   const proposals = events.flatMap(e => e.kind === "proposal" && JSON.stringify(e.proposal.pattern) === JSON.stringify(fixture.expectedPattern) ? [e.proposal] : []);
   const p = fixture.expectedPattern as { cells?: number[]; kind?: string };
   const outside = p.cells && (fixture.rowId === "C03" ? p.cells.length < 2 || p.cells.length > 3 :

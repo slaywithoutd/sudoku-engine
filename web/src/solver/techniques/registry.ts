@@ -1,13 +1,17 @@
 import type { VersionId } from "../problem";
 import type { ReadView } from "../state/types";
 import type { Assembly } from "../rules/types";
-import type { Discovery, TechniqueDescriptor } from "./types";
+import type { Discovery, DiscoveryContext, TechniqueDescriptor } from "./types";
 import { coverageEntries } from "./manifest";
 import { NakedSingles, HiddenSingles } from "./singles";
 import { LockedCandidates } from "./intersections";
 import { Subsets, LockedSubsets } from "./subsets";
+import { shortPatternTechniques } from "./short-patterns";
+import { wingTechniques } from "./wings";
+import { bentSubsetTechniques } from "./bent-subsets";
+import { remotePairTechniques } from "./remote-pairs";
 
-const detectors = new Map<string, { discover(view: ReadView): Discovery }>([
+const detectors = new Map<string, { discover(view: ReadView, context: DiscoveryContext): Discovery }>([
   ["C01", new NakedSingles()], ["C02", new HiddenSingles()],
   ["C03", new LockedCandidates()], ["C04", new Subsets()], ["C05", new LockedSubsets()],
 ]);
@@ -16,13 +20,14 @@ const detectors = new Map<string, { discover(view: ReadView): Discovery }>([
 const dimensions: Record<string, readonly [number,number,number,number,number]> = {
   C01:[0,0,1,1,1],C02:[0,0,9,9,1],C03:[0,0,3,18,3],C04:[0,0,9,9,4],C05:[0,0,9,15,3],
   C06:[0,0,9,81,7],C07:[0,1,2,81,7],C08:[0,1,2,81,4],C09:[0,1,2,81,4],
-  C10:[3,0,3,81,3],C11:[0,0,3,5,3],C12:[0,1,9,6,6],C13:[24,0,2,81,2],C14:[0,1,4,81,0],C15:[0,1,2,81,0],
+  C10:[3,0,3,12,3],C11:[0,0,3,5,3],C12:[0,1,9,6,6],C13:[24,0,2,12,2],C14:[0,1,4,81,0],C15:[0,1,2,81,0],
   C16:[24,1,2,81,0],C17:[24,1,3,81,5],C18:[0,0,9,15,5],C19:[24,1,4,31,5],C20:[0,0,9,11,4],C21:[0,1,9,12,5],
   C22:[24,1,9,81,0],C23:[24,2,9,81,0],C24:[24,1,2,81,4],C25:[12,1,9,81,0],C26:[12,1,9,81,0],C27:[12,1,9,81,3],
   C28:[24,1,4,81,4],C29:[0,0,9,4,4],C30:[0,0,9,16,3],C31:[0,0,9,81,4],C32:[0,1,6,12,4],C33:[0,0,9,81,3],
   U01:[24,1,2,4,2],U02:[24,1,3,6,3],U03:[12,0,4,12,2],U04:[0,0,1,81,2],U05:[24,1,4,81,4],
 };
-const descriptors: readonly TechniqueDescriptor[] = Object.freeze(coverageEntries.map(entry => Object.freeze({
+const advanced=[...shortPatternTechniques,...wingTechniques,...bentSubsetTechniques,...remotePairTechniques];
+const descriptors: readonly TechniqueDescriptor[] = Object.freeze(coverageEntries.map(entry => advanced.find(d=>d.id===entry.version)??Object.freeze({
   id: entry.version, aliases: entry.aliases, tier: entry.tier, requires: entry.capabilities,
   assumptionPolicy: entry.assumptionPolicy,
   bounds: Object.freeze({ maxLength: dimensions[entry.id][0], maxBranchDepth: dimensions[entry.id][1],
@@ -36,10 +41,10 @@ const descriptors: readonly TechniqueDescriptor[] = Object.freeze(coverageEntrie
     return { kind: "yes" as const };
   },
   estimate: (_view: ReadView) => Object.freeze({ hit: 1, gain: 1, cost: entry.tier+1 }),
-  *discover(view: ReadView): Discovery {
+  *discover(view: ReadView, context: DiscoveryContext): Discovery {
     const detector = detectors.get(entry.id);
     if (!detector) throw Error("specified-not-implemented");
-    yield* detector.discover(view);
+    yield* detector.discover(view, context);
   },
 })));
 

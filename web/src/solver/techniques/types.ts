@@ -3,10 +3,16 @@ import type { StateKey } from "../snapshot";
 import type { Watch } from "../state/events";
 import type { AssumptionPolicy, DeductionProposal } from "../proof/types";
 import type { ReadView } from "../state/types";
+import type { Limits } from "../limits";
+import type { IndexWorkspace, IndexInterruption } from "../indexes/workspace";
+
+/** Operation-owned resources; detectors neither create run budgets nor retain globals. */
+export interface DiscoveryContext { readonly workspace: IndexWorkspace; readonly limits: Limits }
 
 export type DiscoveryEvent = { readonly kind: "work"; readonly units: number }
   | { readonly kind: "proposal"; readonly proposal: DeductionProposal }
-  | { readonly kind: "exhausted" };
+  | { readonly kind: "exhausted" }
+  | { readonly kind: "interrupted"; readonly reason: IndexInterruption | "proof-step-limit" };
 export type Discovery = Generator<DiscoveryEvent, void, void>;
 export interface TechniqueBounds {
   readonly maxLength: number; readonly maxBranchDepth: number; readonly maxAlternatives: number;
@@ -21,7 +27,7 @@ export interface TechniqueDescriptor {
   eligible(view: ReadView): { readonly kind: "yes" } |
     { readonly kind: "excluded"; readonly reason: string; readonly dependencies: readonly Watch[] };
   estimate(view: ReadView): Estimate;
-  discover(view: ReadView): Discovery;
+  discover(view: ReadView, context: DiscoveryContext): Discovery;
 }
 
 export type DetectorStatus = "pending" | "in-progress" | "found" | "exhausted" | "excluded" | "interrupted";

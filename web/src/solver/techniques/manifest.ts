@@ -912,10 +912,294 @@ export const coverageEntries: readonly CoverageEntry[] = Object.freeze((
     "grammarId": "c10-grammar@1",
     "detectorId": "c10@1",
     "checkerId": "c10-grammar@1",
-    "descriptionPath": "docs/superpowers/specs/2026-09-12-m2-technique-coverage.md",
-    "fixtureIds": [],
-    "status": "specified",
-    "evidence": []
+    "descriptionPath": "docs/solver/techniques/wings-and-short-patterns.md",
+    "fixtureIds": [
+      "C10-turbot",
+      "C10-skyscraper-column",
+      "C10-skyscraper-row",
+      "C10-kite-row",
+      "C10-er-column",
+      "C10-er-row",
+      "C10-dual-er",
+      "C10-kite-column",
+      "C10-er-extra-support",
+      "C10-incorrect-strong",
+      "C10-nonseeing-target",
+      "C10-turbot-row"
+    ],
+    "status": "independently-verified",
+    "evidence": [
+      {
+        "kind": "positive",
+        "fixtureId": "C10-turbot",
+        "alias": "Turbot Fish",
+        "record": "web/tests/unit/solver/short-patterns.test.ts#independent named evidence and productive discovery"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "C10-turbot",
+        "alias": "Turbot Fish",
+        "record": "web/tests/unit/solver/wings.test.ts#rejects primitive mutations and replays the original clue prefix"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "C10-turbot",
+        "alias": "Turbot Fish",
+        "record": "web/tests/unit/solver/wings.test.ts#enforces its named alias and exact tuple/path boundary"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C10-turbot",
+        "alias": "Turbot Fish",
+        "record": "web/tests/unit/solver/wings.test.ts#rejects primitive mutations and replays the original clue prefix"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C10-turbot",
+        "alias": "Turbot Fish",
+        "record": "web/tests/unit/solver/wings.test.ts#durable seed hashes reproduce SAT and both forced and forbidden counterfactuals independently"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "C10-turbot-row",
+        "alias": "Turbot Fish",
+        "record": "web/tests/unit/solver/short-patterns.test.ts#independent named evidence and productive discovery"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "C10-turbot-row",
+        "alias": "Turbot Fish",
+        "record": "web/tests/unit/solver/wings.test.ts#rejects primitive mutations and replays the original clue prefix"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "C10-turbot-row",
+        "alias": "Turbot Fish",
+        "record": "web/tests/unit/solver/wings.test.ts#enforces its named alias and exact tuple/path boundary"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C10-turbot-row",
+        "alias": "Turbot Fish",
+        "record": "web/tests/unit/solver/wings.test.ts#rejects primitive mutations and replays the original clue prefix"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C10-turbot-row",
+        "alias": "Turbot Fish",
+        "record": "web/tests/unit/solver/wings.test.ts#durable seed hashes reproduce SAT and both forced and forbidden counterfactuals independently"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "C10-skyscraper-column",
+        "alias": "Skyscraper",
+        "record": "web/tests/unit/solver/short-patterns.test.ts#independent named evidence and productive discovery"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "C10-skyscraper-column",
+        "alias": "Skyscraper",
+        "record": "web/tests/unit/solver/wings.test.ts#rejects primitive mutations and replays the original clue prefix"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "C10-skyscraper-column",
+        "alias": "Skyscraper",
+        "record": "web/tests/unit/solver/wings.test.ts#enforces its named alias and exact tuple/path boundary"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C10-skyscraper-column",
+        "alias": "Skyscraper",
+        "record": "web/tests/unit/solver/wings.test.ts#rejects primitive mutations and replays the original clue prefix"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C10-skyscraper-column",
+        "alias": "Skyscraper",
+        "record": "web/tests/unit/solver/wings.test.ts#durable seed hashes reproduce SAT and both forced and forbidden counterfactuals independently"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "C10-skyscraper-row",
+        "alias": "Skyscraper",
+        "record": "web/tests/unit/solver/short-patterns.test.ts#independent named evidence and productive discovery"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "C10-skyscraper-row",
+        "alias": "Skyscraper",
+        "record": "web/tests/unit/solver/wings.test.ts#rejects primitive mutations and replays the original clue prefix"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "C10-skyscraper-row",
+        "alias": "Skyscraper",
+        "record": "web/tests/unit/solver/wings.test.ts#enforces its named alias and exact tuple/path boundary"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C10-skyscraper-row",
+        "alias": "Skyscraper",
+        "record": "web/tests/unit/solver/wings.test.ts#rejects primitive mutations and replays the original clue prefix"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C10-skyscraper-row",
+        "alias": "Skyscraper",
+        "record": "web/tests/unit/solver/wings.test.ts#durable seed hashes reproduce SAT and both forced and forbidden counterfactuals independently"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "C10-kite-row",
+        "alias": "Two-String Kite",
+        "record": "web/tests/unit/solver/short-patterns.test.ts#independent named evidence and productive discovery"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "C10-kite-row",
+        "alias": "Two-String Kite",
+        "record": "web/tests/unit/solver/wings.test.ts#rejects primitive mutations and replays the original clue prefix"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "C10-kite-row",
+        "alias": "Two-String Kite",
+        "record": "web/tests/unit/solver/wings.test.ts#enforces its named alias and exact tuple/path boundary"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C10-kite-row",
+        "alias": "Two-String Kite",
+        "record": "web/tests/unit/solver/wings.test.ts#rejects primitive mutations and replays the original clue prefix"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C10-kite-row",
+        "alias": "Two-String Kite",
+        "record": "web/tests/unit/solver/wings.test.ts#durable seed hashes reproduce SAT and both forced and forbidden counterfactuals independently"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "C10-kite-column",
+        "alias": "Two-String Kite",
+        "record": "web/tests/unit/solver/short-patterns.test.ts#independent named evidence and productive discovery"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "C10-kite-column",
+        "alias": "Two-String Kite",
+        "record": "web/tests/unit/solver/wings.test.ts#rejects primitive mutations and replays the original clue prefix"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "C10-kite-column",
+        "alias": "Two-String Kite",
+        "record": "web/tests/unit/solver/wings.test.ts#enforces its named alias and exact tuple/path boundary"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C10-kite-column",
+        "alias": "Two-String Kite",
+        "record": "web/tests/unit/solver/wings.test.ts#rejects primitive mutations and replays the original clue prefix"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C10-kite-column",
+        "alias": "Two-String Kite",
+        "record": "web/tests/unit/solver/wings.test.ts#durable seed hashes reproduce SAT and both forced and forbidden counterfactuals independently"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "C10-er-column",
+        "alias": "Empty Rectangle",
+        "record": "web/tests/unit/solver/short-patterns.test.ts#independent named evidence and productive discovery"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "C10-er-column",
+        "alias": "Empty Rectangle",
+        "record": "web/tests/unit/solver/wings.test.ts#rejects primitive mutations and replays the original clue prefix"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "C10-er-column",
+        "alias": "Empty Rectangle",
+        "record": "web/tests/unit/solver/wings.test.ts#enforces its named alias and exact tuple/path boundary"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C10-er-column",
+        "alias": "Empty Rectangle",
+        "record": "web/tests/unit/solver/wings.test.ts#rejects primitive mutations and replays the original clue prefix"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C10-er-column",
+        "alias": "Empty Rectangle",
+        "record": "web/tests/unit/solver/wings.test.ts#durable seed hashes reproduce SAT and both forced and forbidden counterfactuals independently"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "C10-er-row",
+        "alias": "Empty Rectangle",
+        "record": "web/tests/unit/solver/short-patterns.test.ts#independent named evidence and productive discovery"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "C10-er-row",
+        "alias": "Empty Rectangle",
+        "record": "web/tests/unit/solver/wings.test.ts#rejects primitive mutations and replays the original clue prefix"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "C10-er-row",
+        "alias": "Empty Rectangle",
+        "record": "web/tests/unit/solver/wings.test.ts#enforces its named alias and exact tuple/path boundary"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C10-er-row",
+        "alias": "Empty Rectangle",
+        "record": "web/tests/unit/solver/wings.test.ts#rejects primitive mutations and replays the original clue prefix"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C10-er-row",
+        "alias": "Empty Rectangle",
+        "record": "web/tests/unit/solver/wings.test.ts#durable seed hashes reproduce SAT and both forced and forbidden counterfactuals independently"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "C10-dual-er",
+        "alias": "Dual Empty Rectangle",
+        "record": "web/tests/unit/solver/short-patterns.test.ts#independent named evidence and productive discovery"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "C10-dual-er",
+        "alias": "Dual Empty Rectangle",
+        "record": "web/tests/unit/solver/wings.test.ts#rejects primitive mutations and replays the original clue prefix"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "C10-dual-er",
+        "alias": "Dual Empty Rectangle",
+        "record": "web/tests/unit/solver/wings.test.ts#enforces its named alias and exact tuple/path boundary"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C10-dual-er",
+        "alias": "Dual Empty Rectangle",
+        "record": "web/tests/unit/solver/wings.test.ts#rejects primitive mutations and replays the original clue prefix"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C10-dual-er",
+        "alias": "Dual Empty Rectangle",
+        "record": "web/tests/unit/solver/wings.test.ts#durable seed hashes reproduce SAT and both forced and forbidden counterfactuals independently"
+      }
+    ]
   },
   {
     "id": "C11",
@@ -937,14 +1221,356 @@ export const coverageEntries: readonly CoverageEntry[] = Object.freeze((
     "grammarId": "c11-grammar@1",
     "detectorId": "c11@1",
     "checkerId": "c11-grammar@1",
-    "descriptionPath": "docs/superpowers/specs/2026-09-12-m2-technique-coverage.md",
+    "descriptionPath": "docs/solver/techniques/wings-and-short-patterns.md",
     "fixtureIds": [
-      "C11-xy",
-      "C11-xyz",
-      "C11-w"
+      "C11-xyz-row",
+      "C11-xy-box",
+      "C11-xyz-box",
+      "C11-xy-row",
+      "C11-xy-column",
+      "C11-xyz-column",
+      "C11-w",
+      "C11-y-box",
+      "C11-y-row",
+      "C11-y-column",
+      "C11-wrong-pivot-size",
+      "C11-xyz-missing-visibility",
+      "C11-nonconjugate-bridge",
+      "C11-w-row"
     ],
-    "status": "specified",
-    "evidence": []
+    "status": "independently-verified",
+    "evidence": [
+      {
+        "kind": "positive",
+        "fixtureId": "C11-xy-box",
+        "alias": "XY-Wing",
+        "record": "web/tests/unit/solver/wings.test.ts#independent named evidence and productive discovery"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "C11-xy-box",
+        "alias": "XY-Wing",
+        "record": "web/tests/unit/solver/wings.test.ts#rejects primitive mutations and replays the original clue prefix"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "C11-xy-box",
+        "alias": "XY-Wing",
+        "record": "web/tests/unit/solver/wings.test.ts#enforces its named alias and exact tuple/path boundary"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C11-xy-box",
+        "alias": "XY-Wing",
+        "record": "web/tests/unit/solver/wings.test.ts#rejects primitive mutations and replays the original clue prefix"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C11-xy-box",
+        "alias": "XY-Wing",
+        "record": "web/tests/unit/solver/wings.test.ts#durable seed hashes reproduce SAT and both forced and forbidden counterfactuals independently"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "C11-xy-row",
+        "alias": "XY-Wing",
+        "record": "web/tests/unit/solver/wings.test.ts#independent named evidence and productive discovery"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "C11-xy-row",
+        "alias": "XY-Wing",
+        "record": "web/tests/unit/solver/wings.test.ts#rejects primitive mutations and replays the original clue prefix"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "C11-xy-row",
+        "alias": "XY-Wing",
+        "record": "web/tests/unit/solver/wings.test.ts#enforces its named alias and exact tuple/path boundary"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C11-xy-row",
+        "alias": "XY-Wing",
+        "record": "web/tests/unit/solver/wings.test.ts#rejects primitive mutations and replays the original clue prefix"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C11-xy-row",
+        "alias": "XY-Wing",
+        "record": "web/tests/unit/solver/wings.test.ts#durable seed hashes reproduce SAT and both forced and forbidden counterfactuals independently"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "C11-xy-column",
+        "alias": "XY-Wing",
+        "record": "web/tests/unit/solver/wings.test.ts#independent named evidence and productive discovery"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "C11-xy-column",
+        "alias": "XY-Wing",
+        "record": "web/tests/unit/solver/wings.test.ts#rejects primitive mutations and replays the original clue prefix"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "C11-xy-column",
+        "alias": "XY-Wing",
+        "record": "web/tests/unit/solver/wings.test.ts#enforces its named alias and exact tuple/path boundary"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C11-xy-column",
+        "alias": "XY-Wing",
+        "record": "web/tests/unit/solver/wings.test.ts#rejects primitive mutations and replays the original clue prefix"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C11-xy-column",
+        "alias": "XY-Wing",
+        "record": "web/tests/unit/solver/wings.test.ts#durable seed hashes reproduce SAT and both forced and forbidden counterfactuals independently"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "C11-y-box",
+        "alias": "Y-Wing",
+        "record": "web/tests/unit/solver/wings.test.ts#independent named evidence and productive discovery"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "C11-y-box",
+        "alias": "Y-Wing",
+        "record": "web/tests/unit/solver/wings.test.ts#rejects primitive mutations and replays the original clue prefix"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "C11-y-box",
+        "alias": "Y-Wing",
+        "record": "web/tests/unit/solver/wings.test.ts#enforces its named alias and exact tuple/path boundary"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C11-y-box",
+        "alias": "Y-Wing",
+        "record": "web/tests/unit/solver/wings.test.ts#rejects primitive mutations and replays the original clue prefix"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C11-y-box",
+        "alias": "Y-Wing",
+        "record": "web/tests/unit/solver/wings.test.ts#durable seed hashes reproduce SAT and both forced and forbidden counterfactuals independently"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "C11-y-row",
+        "alias": "Y-Wing",
+        "record": "web/tests/unit/solver/wings.test.ts#independent named evidence and productive discovery"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "C11-y-row",
+        "alias": "Y-Wing",
+        "record": "web/tests/unit/solver/wings.test.ts#rejects primitive mutations and replays the original clue prefix"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "C11-y-row",
+        "alias": "Y-Wing",
+        "record": "web/tests/unit/solver/wings.test.ts#enforces its named alias and exact tuple/path boundary"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C11-y-row",
+        "alias": "Y-Wing",
+        "record": "web/tests/unit/solver/wings.test.ts#rejects primitive mutations and replays the original clue prefix"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C11-y-row",
+        "alias": "Y-Wing",
+        "record": "web/tests/unit/solver/wings.test.ts#durable seed hashes reproduce SAT and both forced and forbidden counterfactuals independently"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "C11-y-column",
+        "alias": "Y-Wing",
+        "record": "web/tests/unit/solver/wings.test.ts#independent named evidence and productive discovery"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "C11-y-column",
+        "alias": "Y-Wing",
+        "record": "web/tests/unit/solver/wings.test.ts#rejects primitive mutations and replays the original clue prefix"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "C11-y-column",
+        "alias": "Y-Wing",
+        "record": "web/tests/unit/solver/wings.test.ts#enforces its named alias and exact tuple/path boundary"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C11-y-column",
+        "alias": "Y-Wing",
+        "record": "web/tests/unit/solver/wings.test.ts#rejects primitive mutations and replays the original clue prefix"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C11-y-column",
+        "alias": "Y-Wing",
+        "record": "web/tests/unit/solver/wings.test.ts#durable seed hashes reproduce SAT and both forced and forbidden counterfactuals independently"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "C11-xyz-row",
+        "alias": "XYZ-Wing",
+        "record": "web/tests/unit/solver/wings.test.ts#independent named evidence and productive discovery"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "C11-xyz-row",
+        "alias": "XYZ-Wing",
+        "record": "web/tests/unit/solver/wings.test.ts#rejects primitive mutations and replays the original clue prefix"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "C11-xyz-row",
+        "alias": "XYZ-Wing",
+        "record": "web/tests/unit/solver/wings.test.ts#enforces its named alias and exact tuple/path boundary"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C11-xyz-row",
+        "alias": "XYZ-Wing",
+        "record": "web/tests/unit/solver/wings.test.ts#rejects primitive mutations and replays the original clue prefix"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C11-xyz-row",
+        "alias": "XYZ-Wing",
+        "record": "web/tests/unit/solver/wings.test.ts#durable seed hashes reproduce SAT and both forced and forbidden counterfactuals independently"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "C11-xyz-box",
+        "alias": "XYZ-Wing",
+        "record": "web/tests/unit/solver/wings.test.ts#independent named evidence and productive discovery"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "C11-xyz-box",
+        "alias": "XYZ-Wing",
+        "record": "web/tests/unit/solver/wings.test.ts#rejects primitive mutations and replays the original clue prefix"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "C11-xyz-box",
+        "alias": "XYZ-Wing",
+        "record": "web/tests/unit/solver/wings.test.ts#enforces its named alias and exact tuple/path boundary"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C11-xyz-box",
+        "alias": "XYZ-Wing",
+        "record": "web/tests/unit/solver/wings.test.ts#rejects primitive mutations and replays the original clue prefix"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C11-xyz-box",
+        "alias": "XYZ-Wing",
+        "record": "web/tests/unit/solver/wings.test.ts#durable seed hashes reproduce SAT and both forced and forbidden counterfactuals independently"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "C11-xyz-column",
+        "alias": "XYZ-Wing",
+        "record": "web/tests/unit/solver/wings.test.ts#independent named evidence and productive discovery"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "C11-xyz-column",
+        "alias": "XYZ-Wing",
+        "record": "web/tests/unit/solver/wings.test.ts#rejects primitive mutations and replays the original clue prefix"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "C11-xyz-column",
+        "alias": "XYZ-Wing",
+        "record": "web/tests/unit/solver/wings.test.ts#enforces its named alias and exact tuple/path boundary"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C11-xyz-column",
+        "alias": "XYZ-Wing",
+        "record": "web/tests/unit/solver/wings.test.ts#rejects primitive mutations and replays the original clue prefix"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C11-xyz-column",
+        "alias": "XYZ-Wing",
+        "record": "web/tests/unit/solver/wings.test.ts#durable seed hashes reproduce SAT and both forced and forbidden counterfactuals independently"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "C11-w",
+        "alias": "W-Wing",
+        "record": "web/tests/unit/solver/wings.test.ts#independent named evidence and productive discovery"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "C11-w",
+        "alias": "W-Wing",
+        "record": "web/tests/unit/solver/wings.test.ts#rejects primitive mutations and replays the original clue prefix"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "C11-w",
+        "alias": "W-Wing",
+        "record": "web/tests/unit/solver/wings.test.ts#enforces its named alias and exact tuple/path boundary"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C11-w",
+        "alias": "W-Wing",
+        "record": "web/tests/unit/solver/wings.test.ts#rejects primitive mutations and replays the original clue prefix"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C11-w",
+        "alias": "W-Wing",
+        "record": "web/tests/unit/solver/wings.test.ts#durable seed hashes reproduce SAT and both forced and forbidden counterfactuals independently"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "C11-w-row",
+        "alias": "W-Wing",
+        "record": "web/tests/unit/solver/wings.test.ts#independent named evidence and productive discovery"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "C11-w-row",
+        "alias": "W-Wing",
+        "record": "web/tests/unit/solver/wings.test.ts#rejects primitive mutations and replays the original clue prefix"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "C11-w-row",
+        "alias": "W-Wing",
+        "record": "web/tests/unit/solver/wings.test.ts#enforces its named alias and exact tuple/path boundary"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C11-w-row",
+        "alias": "W-Wing",
+        "record": "web/tests/unit/solver/wings.test.ts#rejects primitive mutations and replays the original clue prefix"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C11-w-row",
+        "alias": "W-Wing",
+        "record": "web/tests/unit/solver/wings.test.ts#durable seed hashes reproduce SAT and both forced and forbidden counterfactuals independently"
+      }
+    ]
   },
   {
     "id": "C12",
@@ -964,12 +1590,109 @@ export const coverageEntries: readonly CoverageEntry[] = Object.freeze((
     "grammarId": "c12-grammar@1",
     "detectorId": "c12@1",
     "checkerId": "c12-grammar@1",
-    "descriptionPath": "docs/superpowers/specs/2026-09-12-m2-technique-coverage.md",
+    "descriptionPath": "docs/solver/techniques/wings-and-short-patterns.md",
     "fixtureIds": [
-      "C12-n4/5/6"
+      "C12-n5",
+      "C12-n6",
+      "C12-n4",
+      "C12-restricted-lookalike",
+      "C12-missing-occurrence",
+      "C12-target-misses-occurrence",
+      "C12-n7"
     ],
-    "status": "specified",
-    "evidence": []
+    "status": "independently-verified",
+    "evidence": [
+      {
+        "kind": "positive",
+        "fixtureId": "C12-n4",
+        "alias": "WXYZ-Wing",
+        "record": "web/tests/unit/solver/wings.test.ts#independent named evidence and productive discovery"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "C12-n4",
+        "alias": "WXYZ-Wing",
+        "record": "web/tests/unit/solver/wings.test.ts#rejects primitive mutations and replays the original clue prefix"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "C12-n4",
+        "alias": "WXYZ-Wing",
+        "record": "web/tests/unit/solver/wings.test.ts#enforces its named alias and exact tuple/path boundary"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C12-n4",
+        "alias": "WXYZ-Wing",
+        "record": "web/tests/unit/solver/wings.test.ts#rejects primitive mutations and replays the original clue prefix"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C12-n4",
+        "alias": "WXYZ-Wing",
+        "record": "web/tests/unit/solver/wings.test.ts#durable seed hashes reproduce SAT and both forced and forbidden counterfactuals independently"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "C12-n5",
+        "alias": "Bent almost-locked subsets",
+        "record": "web/tests/unit/solver/wings.test.ts#independent named evidence and productive discovery"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "C12-n5",
+        "alias": "Bent almost-locked subsets",
+        "record": "web/tests/unit/solver/wings.test.ts#rejects primitive mutations and replays the original clue prefix"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "C12-n5",
+        "alias": "Bent almost-locked subsets",
+        "record": "web/tests/unit/solver/wings.test.ts#enforces its named alias and exact tuple/path boundary"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C12-n5",
+        "alias": "Bent almost-locked subsets",
+        "record": "web/tests/unit/solver/wings.test.ts#rejects primitive mutations and replays the original clue prefix"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C12-n5",
+        "alias": "Bent almost-locked subsets",
+        "record": "web/tests/unit/solver/wings.test.ts#durable seed hashes reproduce SAT and both forced and forbidden counterfactuals independently"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "C12-n6",
+        "alias": "Bent almost-locked subsets",
+        "record": "web/tests/unit/solver/wings.test.ts#independent named evidence and productive discovery"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "C12-n6",
+        "alias": "Bent almost-locked subsets",
+        "record": "web/tests/unit/solver/wings.test.ts#rejects primitive mutations and replays the original clue prefix"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "C12-n6",
+        "alias": "Bent almost-locked subsets",
+        "record": "web/tests/unit/solver/wings.test.ts#enforces its named alias and exact tuple/path boundary"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C12-n6",
+        "alias": "Bent almost-locked subsets",
+        "record": "web/tests/unit/solver/wings.test.ts#rejects primitive mutations and replays the original clue prefix"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C12-n6",
+        "alias": "Bent almost-locked subsets",
+        "record": "web/tests/unit/solver/wings.test.ts#durable seed hashes reproduce SAT and both forced and forbidden counterfactuals independently"
+      }
+    ]
   },
   {
     "id": "C13",
@@ -986,17 +1709,238 @@ export const coverageEntries: readonly CoverageEntry[] = Object.freeze((
       "K"
     ],
     "assumptionPolicy": "unconditional",
-    "bounds": "Connected identical-bivalue cells; even alternating path <=24 links; target conflicts with opposite endpoint colors for the same symbol. Chute alias requires all path cells in one band/stack.",
+    "bounds": "Simple path of m=4/6/8/10/12 identical-bivalue cells; 2m-1 explicit inference links (internal cell strong edges included), <=24. Opposite endpoint colors; target conflicts with both endpoints for the same symbol. Target-conflict premises are additional. Chute requires all path cells in one band/stack (D074).",
     "grammarId": "c13-grammar@1",
     "detectorId": "c13@1",
     "checkerId": "c13-grammar@1",
-    "descriptionPath": "docs/superpowers/specs/2026-09-12-m2-technique-coverage.md",
+    "descriptionPath": "docs/solver/techniques/wings-and-short-patterns.md",
     "fixtureIds": [
-      "C13-remote",
-      "C13-chute"
+      "C13-length-6",
+      "C13-length-8",
+      "C13-length-10",
+      "C13-length-12",
+      "C13-length-4",
+      "C13-chute-stack",
+      "C13-chute-band",
+      "C13-parity-negative",
+      "C13-length-13",
+      "C13-length-14",
+      "C13-out-of-chute",
+      "C13-wrong-inference-count"
     ],
-    "status": "specified",
-    "evidence": []
+    "status": "independently-verified",
+    "evidence": [
+      {
+        "kind": "positive",
+        "fixtureId": "C13-length-6",
+        "alias": "Remote Pairs",
+        "record": "web/tests/unit/solver/short-patterns.test.ts#independent named evidence and productive discovery"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "C13-length-6",
+        "alias": "Remote Pairs",
+        "record": "web/tests/unit/solver/wings.test.ts#rejects primitive mutations and replays the original clue prefix"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "C13-length-6",
+        "alias": "Remote Pairs",
+        "record": "web/tests/unit/solver/wings.test.ts#enforces its named alias and exact tuple/path boundary"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C13-length-6",
+        "alias": "Remote Pairs",
+        "record": "web/tests/unit/solver/wings.test.ts#rejects primitive mutations and replays the original clue prefix"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C13-length-6",
+        "alias": "Remote Pairs",
+        "record": "web/tests/unit/solver/wings.test.ts#durable seed hashes reproduce SAT and both forced and forbidden counterfactuals independently"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "C13-length-8",
+        "alias": "Remote Pairs",
+        "record": "web/tests/unit/solver/short-patterns.test.ts#independent named evidence and productive discovery"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "C13-length-8",
+        "alias": "Remote Pairs",
+        "record": "web/tests/unit/solver/wings.test.ts#rejects primitive mutations and replays the original clue prefix"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "C13-length-8",
+        "alias": "Remote Pairs",
+        "record": "web/tests/unit/solver/wings.test.ts#enforces its named alias and exact tuple/path boundary"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C13-length-8",
+        "alias": "Remote Pairs",
+        "record": "web/tests/unit/solver/wings.test.ts#rejects primitive mutations and replays the original clue prefix"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C13-length-8",
+        "alias": "Remote Pairs",
+        "record": "web/tests/unit/solver/wings.test.ts#durable seed hashes reproduce SAT and both forced and forbidden counterfactuals independently"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "C13-length-10",
+        "alias": "Remote Pairs",
+        "record": "web/tests/unit/solver/short-patterns.test.ts#independent named evidence and productive discovery"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "C13-length-10",
+        "alias": "Remote Pairs",
+        "record": "web/tests/unit/solver/wings.test.ts#rejects primitive mutations and replays the original clue prefix"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "C13-length-10",
+        "alias": "Remote Pairs",
+        "record": "web/tests/unit/solver/wings.test.ts#enforces its named alias and exact tuple/path boundary"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C13-length-10",
+        "alias": "Remote Pairs",
+        "record": "web/tests/unit/solver/wings.test.ts#rejects primitive mutations and replays the original clue prefix"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C13-length-10",
+        "alias": "Remote Pairs",
+        "record": "web/tests/unit/solver/wings.test.ts#durable seed hashes reproduce SAT and both forced and forbidden counterfactuals independently"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "C13-length-12",
+        "alias": "Remote Pairs",
+        "record": "web/tests/unit/solver/short-patterns.test.ts#independent named evidence and productive discovery"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "C13-length-12",
+        "alias": "Remote Pairs",
+        "record": "web/tests/unit/solver/wings.test.ts#rejects primitive mutations and replays the original clue prefix"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "C13-length-12",
+        "alias": "Remote Pairs",
+        "record": "web/tests/unit/solver/wings.test.ts#enforces its named alias and exact tuple/path boundary"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C13-length-12",
+        "alias": "Remote Pairs",
+        "record": "web/tests/unit/solver/wings.test.ts#rejects primitive mutations and replays the original clue prefix"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C13-length-12",
+        "alias": "Remote Pairs",
+        "record": "web/tests/unit/solver/wings.test.ts#durable seed hashes reproduce SAT and both forced and forbidden counterfactuals independently"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "C13-length-4",
+        "alias": "Remote Pairs",
+        "record": "web/tests/unit/solver/short-patterns.test.ts#independent named evidence and productive discovery"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "C13-length-4",
+        "alias": "Remote Pairs",
+        "record": "web/tests/unit/solver/wings.test.ts#rejects primitive mutations and replays the original clue prefix"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "C13-length-4",
+        "alias": "Remote Pairs",
+        "record": "web/tests/unit/solver/wings.test.ts#enforces its named alias and exact tuple/path boundary"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C13-length-4",
+        "alias": "Remote Pairs",
+        "record": "web/tests/unit/solver/wings.test.ts#rejects primitive mutations and replays the original clue prefix"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C13-length-4",
+        "alias": "Remote Pairs",
+        "record": "web/tests/unit/solver/wings.test.ts#durable seed hashes reproduce SAT and both forced and forbidden counterfactuals independently"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "C13-chute-stack",
+        "alias": "Chute Remote Pairs",
+        "record": "web/tests/unit/solver/short-patterns.test.ts#independent named evidence and productive discovery"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "C13-chute-stack",
+        "alias": "Chute Remote Pairs",
+        "record": "web/tests/unit/solver/wings.test.ts#rejects primitive mutations and replays the original clue prefix"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "C13-chute-stack",
+        "alias": "Chute Remote Pairs",
+        "record": "web/tests/unit/solver/wings.test.ts#enforces its named alias and exact tuple/path boundary"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C13-chute-stack",
+        "alias": "Chute Remote Pairs",
+        "record": "web/tests/unit/solver/wings.test.ts#rejects primitive mutations and replays the original clue prefix"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C13-chute-stack",
+        "alias": "Chute Remote Pairs",
+        "record": "web/tests/unit/solver/wings.test.ts#durable seed hashes reproduce SAT and both forced and forbidden counterfactuals independently"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "C13-chute-band",
+        "alias": "Chute Remote Pairs",
+        "record": "web/tests/unit/solver/short-patterns.test.ts#independent named evidence and productive discovery"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "C13-chute-band",
+        "alias": "Chute Remote Pairs",
+        "record": "web/tests/unit/solver/wings.test.ts#rejects primitive mutations and replays the original clue prefix"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "C13-chute-band",
+        "alias": "Chute Remote Pairs",
+        "record": "web/tests/unit/solver/wings.test.ts#enforces its named alias and exact tuple/path boundary"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C13-chute-band",
+        "alias": "Chute Remote Pairs",
+        "record": "web/tests/unit/solver/wings.test.ts#rejects primitive mutations and replays the original clue prefix"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C13-chute-band",
+        "alias": "Chute Remote Pairs",
+        "record": "web/tests/unit/solver/wings.test.ts#durable seed hashes reproduce SAT and both forced and forbidden counterfactuals independently"
+      }
+    ]
   },
   {
     "id": "C14",

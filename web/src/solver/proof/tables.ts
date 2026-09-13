@@ -1,4 +1,4 @@
-import { derived, domainAssertion, requireProof, sameValue, validLiteral } from "./primitives";
+import { clause, derived, domainAssertion, requireProof, sameValue, validLiteral } from "./primitives";
 import type { CheckContext, CheckedInference, PrimitiveInput, ProofNode } from "./types";
 
 export interface TableDefinition {
@@ -115,6 +115,26 @@ export class TableChecker {
       requireProof(sources.length === 1 && sameValue(input.parameters, {}), "invalid-table-projection");
       this.complete(sources[0]);
       const claim = input.conclusion;
+      // Complete-source clause entailment preserves the relation's exact taint.
+      // It cannot turn one partition into an exhaustive weak-link premise.
+      if (claim.kind === "clause") {
+        const cells = this.cells(sources[0]);
+        requireProof(claim.alternatives.length >= 2 && claim.alternatives.length <= 64 &&
+          claim.alternatives.every(value => validLiteral(value, context) && cells.includes(value.cell)) &&
+          sameValue(claim, clause(claim.alternatives)), "invalid-table-projection");
+        for (const row of this.rows(sources[0])) {
+          if (row !== null) {
+            let satisfied = false;
+            for (const value of claim.alternatives) {
+              satisfied ||= (row[cells.indexOf(value.cell)] === value.symbol) === value.positive;
+              yield 1;
+            }
+            requireProof(satisfied, "invalid-table-projection");
+          }
+          yield 1;
+        }
+        return derived(input, context);
+      }
       if (claim.kind === "relation") {
         const originalCells = this.cells(sources[0]);
         requireProof(claim.cells.length > 0 && claim.cells.every((cell,index) => originalCells.includes(cell) &&

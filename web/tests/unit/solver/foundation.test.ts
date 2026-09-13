@@ -1,3 +1,4 @@
+import { discoveryContext } from "../../solver/discovery-context";
 import { expect, test } from "vitest";
 import { normalizeClassic } from "../../../src/solver/problem";
 import { AllDifferentRule } from "../../../src/solver/rules/all-different";
@@ -43,12 +44,12 @@ test("covers every cell and all 27 houses × nine symbols through original-clue 
     const f = fixtureCase("C01-one-hole"), values = [...SOLUTION].map(Number), symbol = values[cell]; values[cell]=0;
     f.givens=values.join(""); f.preState={values,domains:[...SOLUTION].map(d => 2**(Number(d)-1))};
     const view=fixtureView(f);
-    const naked=[...descriptors[0].discover(view)].flatMap(e => e.kind === "proposal" ? [e.proposal] : []);
+    const naked=[...descriptors[0].discover(view, discoveryContext())].flatMap(e => e.kind === "proposal" ? [e.proposal] : []);
     for (const alias of ["Naked Single","Full House","Last Digit"]) {
       const proposal=naked.find(p => (p.pattern as {alias:string}).alias===alias)!;
       expect(proposal.effects).toEqual([{kind:"place",cell,symbol}]); assertSound(view,proposal);
     }
-    const hidden=[...descriptors[1].discover(view)].flatMap(e => e.kind === "proposal" ? [e.proposal] : []);
+    const hidden=[...descriptors[1].discover(view, discoveryContext())].flatMap(e => e.kind === "proposal" ? [e.proposal] : []);
     expect(hidden).toHaveLength(3);
     for (const proposal of hidden) { covers.add((proposal.pattern as {cover:string}).cover); assertSound(view,proposal); }
   }
@@ -57,7 +58,7 @@ test("covers every cell and all 27 houses × nine symbols through original-clue 
 
 test.each(["Locked Candidates","direct forms"])("independently checks the %s alias without automatically placing a direct consequence", alias => {
   const f=fixtureCase("C03-point-row"), view=fixtureView(f);
-  const events=[...getTechniques("classic-expanded@1")[2].discover(view)];
+  const events=[...getTechniques("classic-expanded@1")[2].discover(view, discoveryContext())];
   const proposal=events.flatMap(e => e.kind === "proposal" ? [e.proposal] : []).find(p =>
     JSON.stringify(p.pattern) === JSON.stringify({...f.expectedPattern as object,alias}))!;
   expect(proposal.effects).toEqual(f.expectedEffects); expect(proposal.effects.every(e=>e.kind==="remove")).toBe(true); assertSound(view,proposal);
@@ -69,7 +70,7 @@ test("small all-different scopes cannot produce Hidden Single covers", () => {
   if(!result.ok)throw Error("fixture");
   const view=initialize(result.value,"primary");
   expect(view.assembly.covers).toEqual([]);
-  expect([...getTechniques("classic-expanded@1")[1].discover(view)].filter(e=>e.kind==="proposal")).toEqual([]);
+  expect([...getTechniques("classic-expanded@1")[1].discover(view, discoveryContext())].filter(e=>e.kind==="proposal")).toEqual([]);
 });
 test.each(["record", "getter", "proxy"])("a forged candidate view (%s) cannot promote a naked single to a false Full House", kind => {
   const result=assemble(canonicalProblem({schema:1,cells:[0,1,2,3],symbols:[1,2],givens:[1,0,0,2],
@@ -78,7 +79,7 @@ test.each(["record", "getter", "proxy"])("a forged candidate view (%s) cannot pr
   let view=initialize(result.value,"primary");
   for(const rule of view.assembly.problem.constraints) for(const e of [...view.assembly.modules.get(rule.id)!.propagate(view,rule)])
     if(e.kind==="proposal") view=commitChecked(view,assertSound(view,e.proposal)).view;
-  const event=[...getTechniques("classic-expanded@1")[0].discover(view)].find(e=>e.kind==="proposal" &&
+  const event=[...getTechniques("classic-expanded@1")[0].discover(view, discoveryContext())].find(e=>e.kind==="proposal" &&
     (e.proposal.pattern as {cell:number;alias:string}).cell===1 && (e.proposal.pattern as {alias:string}).alias==="Naked Single");
   if(event?.kind!=="proposal")throw Error("single");
   const forged={...event.proposal,pattern:{kind:"single",alias:"Full House",cell:1,symbol:2,house:"edge:1"}};
@@ -141,7 +142,7 @@ test("C01 independently checks the one-hole placement after checked maintenance"
     }
   }
   const technique = getTechniques("classic-expanded@1").find(t => t.id === "c01@1")!;
-  const event = [...technique.discover(view)].find(e => e.kind === "proposal");
+  const event = [...technique.discover(view, discoveryContext())].find(e => e.kind === "proposal");
   expect(event?.kind).toBe("proposal");
   if (event?.kind !== "proposal") return;
   expect(event.proposal.effects).toEqual([{ kind: "place", cell: 0, symbol: 5 }]);

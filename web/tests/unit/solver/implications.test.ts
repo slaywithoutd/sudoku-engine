@@ -1,3 +1,4 @@
+import { discoveryContext } from "../../solver/discovery-context";
 import { expect, test } from "vitest";
 import { canonicalProblem, normalizeClassic } from "../../../src/solver/problem";
 import { assemble } from "../../../src/solver/rules/assemble";
@@ -9,6 +10,7 @@ import { IndexWorkspace } from "../../../src/solver/indexes/workspace";
 import type { IndexEvent } from "../../../src/solver/indexes/workspace";
 import { checkProposal, verifyCertificate } from "../../../src/solver/proof/checker";
 import { primitiveRegistry } from "../../../src/solver/proof/primitives";
+import { CertificateSession } from "../../../src/solver/proof/certificates";
 import { CertificateBuilder, proposedClause } from "../../../src/solver/proof/builder";
 import { fixtureCase, fixtureView, fixtureCertificate } from "../../solver/acceptance";
 import { getTechniques } from "../../../src/solver/techniques/registry";
@@ -190,7 +192,7 @@ test("seeded checked changes invalidate all indexes and match full cold reconstr
   for (let turn = 0; turn < 3; turn++) {
     const shared = budget(), before = ready(buildImplications(view, shared));
     const proposals = getTechniques("classic-expanded@1").slice(0,5).flatMap(detector =>
-      [...detector.discover(view)].flatMap(event => event.kind === "proposal" ? [event.proposal] : []));
+      [...detector.discover(view, discoveryContext())].flatMap(event => event.kind === "proposal" ? [event.proposal] : []));
     expect(proposals.length).toBeGreaterThan(0);
     seed = (Math.imul(seed,1664525)+1013904223) >>> 0;
     const proposal = proposals[seed % proposals.length];
@@ -261,6 +263,74 @@ function classic() {
   if (!result.ok) throw Error("fixture");
   return initialize(result.value, "primary");
 }
+
+test("complete local relation joins project an unconditional conflict only after the third domain filter", () => {
+  const result=assemble(canonicalProblem({schema:1,cells:[0,1,2],symbols:[1,2,3],givens:[0,0,1],
+    constraints:[{id:"triple",type:"all-different@1",cells:[0,1,2],parameters:{}}]}),mockRuleRegistry);
+  if(!result.ok) throw Error("fixture");
+  const view=initialize(result.value,"primary"), retained=retainedProof(view);
+  const nodes:ProofNode[]=[], imports=new Set<number>();
+  let next=Math.max(...retained.keys())+1;
+  const add=(rule:string,premises:number[],conclusion:Proposition,parameters={},scope:number[]=[])=>{
+    premises.filter(id=>retained.has(id)).forEach(id=>imports.add(id)); const id=next++;
+    nodes.push({id,rule,premises,conclusion,parameters,scope});return id;
+  };
+  const table=(rule:string,premises:number[],cells:number[],count:number,parameters={})=>
+    add(rule,premises,{kind:"table",cells,count,definition:next},parameters);
+  const originalDomains=[0,1,2];
+  const scope=[...view.facts.values()].find(f=>f.proposition.kind==="all-different")!.id;
+  const all=table("table-filter@1",[...originalDomains,scope],[0,1,2],6,{cells:[0,1,2],box:[7,7,7]});
+  const tuples=[[1,2,3],[1,3,2],[2,1,3],[2,3,1],[3,1,2],[3,2,1]];
+  const relation=add("table-project@1",[all],{kind:"relation",cells:[0,1,2],tuples});
+  const filter=table("table-filter@1",[view.state.domainFacts[2]],[2],1,{cells:[2],box:[1]});
+  const joined=table("table-join@1",[relation,filter],[0,1,2],2);
+  const conclusion=proposedClause([{cell:0,symbol:1,positive:false},{cell:1,symbol:2,positive:false}]);
+  const root=add("table-project@1",[joined],conclusion);
+  const check=()=>[...verifyCertificate({technique:"independent-relation-algebra@1",pattern:{},effects:[],state:view.state.key,
+    proof:{state:view.state.key,nodes,imports:[...imports].sort((a,b)=>a-b),roots:[root]}},
+    {view,retained,limits,policy:"unconditional",uniqueEvidenceId:null})].at(-1);
+  expect(check()).toMatchObject({kind:"verified",certificate:{consequences:[{conditional:false,openAssumptions:[],rules:["triple"]}]}});
+  // Independently expand the original T08 assumption/filter/join/projection recipe
+  // in a non-applying session, discharging the contradiction before retaining it.
+  const session=new CertificateSession({view,retained,limits,policy:"discharged",uniqueEvidenceId:null});
+  const baseProposal={technique:"independent-relation-algebra@1",pattern:{},effects:[],state:view.state.key,
+    proof:{state:view.state.key,nodes:[...nodes],imports:[...imports].sort((a,b)=>a-b),roots:[root]}};
+  const base=[...session.verify(baseProposal)].at(-1);if(base?.kind!=="verified")throw Error("session-base");session.retain(base.certificate);
+  const scoped:ProofNode[]=[];let scopedNext=next;
+  const local=(rule:string,premises:number[],conclusion:Proposition,scope:number[]=[],parameters={})=>{
+    const id=scopedNext++;scoped.push({id,rule,premises,conclusion,scope,parameters});return id;
+  };
+  const assumption=local("assume@1",[],{kind:"literal",value:positive(0,1)});
+  const restricted=local("domain-restrict@1",[view.state.domainFacts[0],assumption],{kind:"domain",cell:0,mask:1},[assumption]);
+  const restrictedTable=local("table-filter@1",[restricted],{kind:"table",cells:[0],count:1,definition:scopedNext},[assumption],{cells:[0],box:[1]});
+  const empty=local("table-join@1",[joined,restrictedTable],{kind:"table",cells:[0,1,2],count:0,definition:scopedNext},[assumption]);
+  const negative=local("table-project@1",[empty],{kind:"literal",value:{cell:2,symbol:1,positive:false}},[assumption]);
+  const falseRoot=local("contradiction@1",[view.state.domainFacts[2],negative],{kind:"false"},[assumption]);
+  const discharged=local("discharge@1",[assumption,falseRoot],{kind:"literal",value:{cell:0,symbol:1,positive:false}});
+  const algebra={...baseProposal,proof:{state:view.state.key,nodes:scoped,roots:[discharged],imports:
+    [...new Set(scoped.flatMap(n=>n.premises).filter(id=>session.context.retained.has(id)))].sort((a,b)=>a-b)}};
+  const expanded=[...session.verify(algebra)].at(-1);
+  expect(expanded).toMatchObject({kind:"verified",certificate:{consequences:[{openAssumptions:[],conditional:false,rules:["triple"]}]}});
+  expect(retainedProof(view).size).toBe(retained.size);
+  const original=nodes.at(-1)!;
+  nodes[nodes.length-1]={...original,premises:[relation]};
+  expect(check()?.kind).toBe("rejected");
+  nodes[nodes.length-1]={...original,conclusion:proposedClause([{cell:0,symbol:2,positive:false},{cell:1,symbol:3,positive:false}])};
+  expect(check()?.kind).toBe("rejected");
+  nodes[nodes.length-1]={...original,conclusion:proposedClause([{cell:0,symbol:1,positive:false},{cell:8,symbol:2,positive:false}])};
+  expect(check()?.kind).toBe("rejected");
+  nodes[nodes.length-1]={...original,premises:[filter]};
+  expect(check()?.kind).toBe("rejected");
+});
+
+test("clause projection rejects a satisfying but incomplete table partition",()=>{
+  const view=small(),builder=new CertificateBuilder(view),first=Math.max(...view.facts.keys())+1;
+  const table=builder.add("table-filter@1",[view.state.domainFacts[0]],{kind:"table",cells:[0],count:2,definition:first},{cells:[0],box:[3]});
+  const root=builder.add("table-project@1",[table],proposedClause([positive(0,1),positive(0,2)]));
+  const p=builder.finish("independent-partial-table@1",{}),proposal={...p,proof:{...p.proof,roots:[root]}};
+  expect([...verifyCertificate(proposal,{view,retained:retainedProof(view),limits,policy:"unconditional",uniqueEvidenceId:null})].at(-1))
+    .toMatchObject({kind:"rejected",code:"incomplete-table"});
+});
 
 test("all-different subset permits a complete local table and inherits the exact rule", () => {
   const view = classic(), retained = retainedProof(view);
