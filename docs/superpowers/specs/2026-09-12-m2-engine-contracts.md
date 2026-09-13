@@ -171,6 +171,8 @@ Applying a placement restricts its domain to the chosen singleton, records assig
 
 At commit, derive `ChangeSet` centrally from actual differences and incidence maps. Rebuild affected supports/tuple projections before querying them; invalidate all dependent graph/ALS caches transitively. Initial implementation uses conservative whole-graph invalidation for global techniques. Cache keys contain StateKey, primitive/profile versions and watched-input fingerprints. Carry an exhausted/excluded detector result forward only when all its dependency fingerprints are unchanged; stale resumable cursors are discarded and re-enqueued. Missing watches are a correctness bug. Test every edit against a cold rebuild/full rescan. An invalid proposal causes an engine error, never a zero-solution conclusion.
 
+D086 specifies the T14 hypothetical-session authority extension (implemented and independently reviewed through `7f1c374`): caller-budgeted forks copy candidates/index ownership and share exact immutable parent prefix objects. Engine-issued identities and lexical assumption ancestry authorize branch-local checking; a separate BranchCertificate never authorizes ordinary commits or retained primary facts. Ordinary admission rejects even assumption-free hypothetical forks. Branch verification binds the complete exact source prefix; publication rejects all existing node IDs before allocation. Branch facts and domains publish atomically; a checked empty domain ends in contradiction rather than becoming a usable view. Parent replay imports/remaps the full DAG, checks every reference and discharges assumptions. Authenticate views before reading fields, reject sibling/child-to-parent imports, and release leases on every exit. Closed primary index source rules remain unchanged; hypothetical indexes may consume only exact facts in their authentic lexical ancestry. Labels or supplied assumption arrays grant no authority.
+
 ## 4. Discovery and ledger
 
 ```ts
@@ -191,10 +193,12 @@ interface TechniqueDescriptor {
 }
 interface DiscoveryContext { workspace: IndexWorkspace; limits: Limits } // D073; one operation
 interface Estimate { hit: number; gain: number; cost: number } // bounded integers
+type DiscoveryInterruption = "time-limit" | "work-limit" | "proof-step-limit" |
+  "cancelled" | "workspace-entry-limit" | "workspace-byte-limit";
 type DiscoveryEvent = { kind: "work"; units: number } |
   { kind: "proposal"; proposal: DeductionProposal } |
   { kind: "excluded"; reason: string; dependencies: readonly Watch[] } |
-  { kind: "exhausted" } | { kind: "interrupted"; reason: string };
+  { kind: "exhausted" } | { kind: "interrupted"; reason: DiscoveryInterruption };
 type Discovery = Generator<DiscoveryEvent, void, void>;
 type DetectorStatus = "pending" | "in-progress" | "found" |
   "exhausted" | "excluded" | "interrupted";
@@ -209,6 +213,8 @@ type Ledger = readonly LedgerEntry[];
 Discovery is read-only and resumable at explicit bounded loop units. Generator return, cancellation or an empty current result list does not mean exhaustion: require the explicit exhausted event. Use one live job per technique descriptor and one per rule instance, each with a resumable cursor over sorted scopes (cell/house/digit/pattern seed). Do not materialize combinatorial scope jobs. At most 256 ledger jobs are supported by protocol 2; assembly rejects a larger operation explicitly. The classic profile needs fewer than this cap. Declare all structural profile bounds before the run. Reaching the end of a finite length/size profile is `exhausted within profile`; hitting time, work, cache/proof memory or serialization limits is `interrupted`, even if shorter patterns finished. Record individual reasons, bounds, exclusions and disabled conditional families in the result coverage panel.
 
 D080 permits an explicit terminal `excluded` discovery event for an authenticated view missing necessary capabilities, with the same reason and watched dependencies as eligibility. This is distinct from exhausted enumeration. Resolve actual classic scope geometry and proved full-cover sources rather than trusting familiar IDs or an 81-cell count. A partial set of authentic classic sources can support deductions using those sources; requiring all 27 houses or all nine digit covers per house would be an unnecessary filter. Forged/unowned views remain admission errors. Scheduler and transport ledger projections preserve the exclusion reason/dependencies and invalidate them when those sources change.
+
+T14 extends the D080 event contract with explicit `time-limit` interruption when a branch checker exhausts its time allowance, independently of outer work accounting (implemented and independently reviewed through `7f1c374`). Preserve actual local time/work/proof/workspace reasons; a failed allowance never proves candidate impossibility or enumeration exhaustion. A local limit does not by itself establish that the operation's global deadline expired. T19-T23 map the final reviewed event union and retain cancellation/deadline precedence.
 
 Candidates proposed under the same revision are independently checked before selection. Deduplicate equivalent effects using sorted effects then normalized proof key; keep the least-complex checked proof, not the first wall-clock arrival. A proposal is not an accepted step. Primitive labels and aliases cannot bypass the checker or the family grammar. Before each technique-selection window, drain mandatory rule-propagation jobs to a checked fixed point. They use descriptor `rule-propagation@1`, normal proof/effect checking and revisions, and a preamble presentation; they are semantic maintenance, not an extra named matrix technique. They consume the same human/work/proof budgets. Interruption here is incomplete initialization/logic, never a valid unfiltered candidate premise. Initial root construction itself is bounded by M2 cells/rules and checked under the total deadline before starting discovery.
 

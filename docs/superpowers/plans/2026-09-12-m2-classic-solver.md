@@ -340,7 +340,7 @@ expect(checkFixtureMutation("C21-aligned-4", "drop-surviving-tuple").kind).toBe(
 
 **Files:** create `src/solver/techniques/forcing.ts`, `nets.ts`, `kraken.ts`; fixtures `C22.json`–`C24.json`; tests `tests/unit/solver/forcing.test.ts`, `nets.test.ts`; `docs/solver/techniques/forcing.md`; update registry/manifest/provenance.
 
-**Interfaces:** fresh branch ReadViews; bounded discovery uses graph resolution and C01–C05 descriptors only inside nets. `forkView(view, branchId)` in state/facts shares immutable accepted roots and copies mutable domains/index ownership; add its tests to candidate suite. No call to exactSteps or recursive human/run.
+**Interfaces:** fresh branch ReadViews owned by a confined hypothetical session; bounded discovery uses graph resolution and C01-C05 descriptors only inside nets. D086 replaces the earlier unbudgeted two-argument fork sketch: require a caller-owned resource lease before copying domains/indexes, engine-issued branch identity, exact parent/prefix/lexical ancestry and a separately branded BranchCertificate. Ordinary proof/certificate admission and commits reject all hypothetical views. Final parent replay remaps every node reference and discharges assumptions. Add authority, atomicity and disposal tests to the candidate suite. No call to exactSteps or recursive human/run.
 
 - [ ] Test branch isolation and named limitations:
 
@@ -360,7 +360,7 @@ expect(discoverFixture("C23-nested-depth3").status).toBe("out-of-profile");
 
 **Files:** create `src/solver/techniques/csp-variables.ts`, `generalized-chains.ts`, `or-forcing.ts`; fixtures `C25.json`–`C28.json`; test `tests/unit/solver/generalized-chains.test.ts`; `docs/solver/techniques/generalized-chains.md`; update registry/manifest/provenance.
 
-**Interfaces:** `buildCspVariables(view)` yields complete cell/house-symbol alternatives with FactIds; generalized pair certificate contains variable ID, left/right literals or group, every excluded alternative and conflict reference. OR forcing consumes proved clauses, not arbitrary lists.
+**Interfaces:** `buildCspVariables(view)` yields complete cell/house-symbol alternatives with FactIds; generalized pair certificate contains variable ID, left/right literals or group, every excluded alternative and conflict reference. OR forcing consumes authentic proved clauses, not arbitrary lists. D087 separately requires an inserted-OR-whip grammar with a scalar C26 prefix, exactly one OR2...4 position and suffix, twelve total positions including OR/terminal, and one discharged target assumption. A closed retained-clause source iterator must bind exact publication/premises and invalidate completeness on same-revision source growth; cover/relation indexes alone do not enumerate direct clauses.
 
 - [ ] Test each distinct grammar and name rejection:
 
@@ -373,7 +373,7 @@ expect(checkFixtureMutation("C26-whip", "forward-right-dependency").kind).toBe("
 ```
 
 - [ ] Run `npm test -- tests/unit/solver/generalized-chains.test.ts`.
-- [ ] Implement pair-by-pair bounded enumeration <=12 pairs, checking all excluded alternatives under z-only/t-only/combined policies. Braids can cite any earlier right; whips require predecessor continuity. Groups require all-member conflicts; max four groups/three members. OR2…4 closes the same effect in every proved clause alternative. Final no-right variable needs complete domain/support contradiction. Keep source revision and exact mapping in theorem documentation.
+- [ ] Implement pair-by-pair bounded enumeration <=12 pairs, checking all excluded alternatives under z-only/t-only/combined policies. Braids can cite any earlier right; whips require predecessor continuity. Groups require all-member conflicts; max four groups/three members. OR2...4 forcing closes the same effect in every proved clause alternative. Separately implement D087 inserted OR2/3/4 with complete ordered OR reduction, actual prefix/suffix continuity, every-root source lineage and no inferred XOR. Test both forms independently, including twelve-position admission/thirteenth-position rejection and valid-forcing/invalid-inserted relabeling. Final no-right variable needs complete domain/support contradiction. Keep source revision and exact mapping in theorem documentation.
 - [ ] Run each grammar at min/max bounds, just-over-limit and valid-general/invalid-narrow aliases, force/forbid and original-clue fixtures; typecheck. An AIC solved example cannot substitute for z/t/braid discovery evidence.
 - [ ] Commit listed files: `feat: add distinct bounded whip braid and OR proof grammars`.
 
@@ -381,7 +381,7 @@ expect(checkFixtureMutation("C26-whip", "forward-right-dependency").kind).toBe("
 
 **Files:** create `src/solver/techniques/fireworks.ts`, `sk-loops.ts`, `exocet.ts`, `tridagon.ts`; fixtures `C29.json`–`C32.json`; tests `tests/unit/solver/fireworks.test.ts`, `sk-loops.test.ts`, `exocet.test.ts`, `tridagon.test.ts`; docs `docs/solver/techniques/fireworks.md`, `sk-loops.md`, `exocet.md`, `tridagon.md`; update registry/manifest/provenance.
 
-**Interfaces:** four descriptor arrays; named pattern records contain full geometry and finite cover/table certificate. No generic `special-pattern-is-valid` trusted primitive. C32 guardian clauses feed T15 OR discovery through proved relation facts.
+**Interfaces:** four descriptor arrays; named pattern records contain full geometry and finite cover/table certificate. No generic `special-pattern-is-valid` trusted primitive. C32 publishes genuine guardian clause facts for T15 OR discovery. T16/T25 must exercise actual same-revision C32 retention followed by C28 source invalidation, discovery, admission and original-clue replay; relation-only indexing is insufficient.
 
 - [ ] Write one positive and a decisive counterexample for each family:
 
