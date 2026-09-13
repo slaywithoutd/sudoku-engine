@@ -175,6 +175,27 @@ test.each(["C14", "C15", "C16", "C17"])("%s closes owned leases on return, cance
   }
 }, 60000);
 
+test.each(["C16", "C17"])("%s releases the published index at the exact work-limit boundary", row => {
+  const view = fixtureView(fixtureCase("C01-one-hole")), measured = discoveryContext();
+  let workEvents = 0, index: ImplicationIndex | undefined;
+  try {
+    for (const event of buildImplications(view, measured.workspace)) {
+      if (event.kind === "work") workEvents++;
+      else if (event.kind === "ready") index = event.value;
+      else throw Error("measurement interrupted");
+    }
+    expect(index).toBeDefined();
+    expect(workEvents).toBe(2750);
+  } finally { index?.dispose(); }
+  expect(measured.workspace.usage).toEqual({ entries: 0, bytes: 0 });
+
+  const context = discoveryContext(); context.limits.workUnits = workEvents;
+  const events = [...getTechniques("classic-expanded@1").find(d => d.id === row.toLowerCase() + "@1")!.discover(view, context)];
+  expect(events.at(-1)).toEqual({ kind: "interrupted", reason: "work-limit" });
+  expect(events.some(event => event.kind === "proposal" || event.kind === "exhausted")).toBe(false);
+  expect(context.workspace.usage).toEqual({ entries: 0, bytes: 0 });
+});
+
 test.each(["C14", "C15", "C16", "C17"])("%s reports exhaustion only after a completed unproductive search", row => {
   const view = fixtureView(fixtureCase("C01-one-hole")), context = discoveryContext();
   const events = [...getTechniques("classic-expanded@1").find(d => d.id === row.toLowerCase() + "@1")!.discover(view, context)];

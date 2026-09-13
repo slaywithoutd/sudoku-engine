@@ -196,8 +196,10 @@ export function chainDescriptor(id: "C16" | "C17"): TechniqueDescriptor {
       const tick = () => { context.workspace.checkpoint(); if (++work > context.limits.workUnits) throw Error("chain-work-limit"); };
       try {
         for (const event of buildImplications(view, context.workspace)) {
-          tick(); if (event.kind === "ready") index = event.value;
-          else { yield event; if (event.kind === "interrupted") return; }
+          // A ready event transfers ownership before either checkpoint in tick can throw.
+          if (event.kind === "ready") index = event.value;
+          tick();
+          if (event.kind !== "ready") { yield event; if (event.kind === "interrupted") return; }
         }
         if (!index?.completeFor(view)) throw Error("incomplete-chain-index");
         lease = context.workspace.reserve(0, 65536);
