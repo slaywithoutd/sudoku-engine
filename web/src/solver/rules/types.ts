@@ -54,11 +54,10 @@ export interface ExhaustedDiscoveryEvent {
 export type DiscoveryEvent = ExhaustedDiscoveryEvent;
 export type Discovery = Generator<DiscoveryEvent, void, void>;
 
-/** Later tasks own these payloads. They are opaque here so T02 cannot forge facts. */
-export type ReadView = Readonly<Record<string, unknown>>;
-export type PrimitiveInput = Readonly<Record<string, unknown>>;
-export type CheckContext = Readonly<Record<string, unknown>>;
-export type CheckedInference = Readonly<Record<string, unknown>>;
+import type { ReadView } from "../state/types";
+import type { PrimitiveInput, CheckContext, CheckedInference } from "../proof/types";
+export type { ReadView } from "../state/types";
+export type { PrimitiveInput, CheckContext, CheckedInference } from "../proof/types";
 
 export interface RuleModule {
   type: VersionId;

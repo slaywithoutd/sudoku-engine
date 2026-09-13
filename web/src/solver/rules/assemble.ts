@@ -3,6 +3,7 @@ import {
   canonicalProblem,
   ProblemInputError,
 } from "../problem";
+import { primitiveRegistry } from "../proof/primitives";
 import type {
   CellId,
   ConstraintId,
@@ -289,12 +290,12 @@ function validateCapabilities(
     )
   )
     issues.push(capabilityIssue(rule, "primitive IDs must be unique versioned identifiers"));
-  else if (capabilities.primitiveIds.length > 0)
+  else if (capabilities.primitiveIds.some(id => !primitiveRegistry.has(id)))
     issues.push(
       issue(
         "unsupported-primitive",
         rule.id,
-        `no checker is registered for primitive ${capabilities.primitiveIds[0]}`,
+        `no checker is registered for primitive ${capabilities.primitiveIds.find(id => !primitiveRegistry.has(id))}`,
       ),
     );
   return issues;
@@ -409,7 +410,7 @@ export class CapabilityAssembler {
     relations.sort((left, right) => compareText(left.id, right.id));
     const moduleTypes = [...new Set(modules.map(([, module]) => module.type))].sort();
     const supportSignature = canonicalJson({
-      primitiveIds: [],
+      primitiveIds: primitiveRegistry.ids,
       ruleTypes: moduleTypes,
     } as Json);
     return Object.freeze({

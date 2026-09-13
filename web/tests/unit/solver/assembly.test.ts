@@ -121,7 +121,19 @@ describe("capability assembly", () => {
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     const rule = result.value.problem.constraints[0];
-    expect([...result.value.modules.get(rule.id)!.propagate({}, rule)]).toEqual([
+    const problem = result.value.problem;
+    const view = {
+      assembly: result.value,
+      state: {
+        key: { problemKey: problem.key, branch: "primary", revision: 0 },
+        values: problem.givens,
+        domains: problem.cells.map(() => 2 ** problem.symbols.length - 1),
+        domainFacts: [],
+      },
+      facts: new Map(),
+      supports: () => [],
+    };
+    expect([...result.value.modules.get(rule.id)!.propagate(view, rule)]).toEqual([
       { kind: "exhausted" },
     ]);
   });

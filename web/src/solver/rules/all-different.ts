@@ -1,4 +1,6 @@
 import type { ConstraintInstance, EngineProblem } from "../problem";
+import { inference, requireProof, sameValue } from "../proof/primitives";
+import type { PrimitiveInput, CheckContext, CheckedInference } from "../proof/types";
 import type {
   Assignment,
   Discovery,
@@ -87,7 +89,7 @@ export class AllDifferentRule implements RuleModule {
       allDifferent: [{ id: rule.id, cells: [...rule.cells], premise }],
       covers,
       relations: [],
-      primitiveIds: [],
+      primitiveIds: ["rule-instance@1", "all-different@1", "cover@1"],
     };
   }
 
@@ -95,7 +97,27 @@ export class AllDifferentRule implements RuleModule {
     yield { kind: "exhausted" };
   }
 
-  checkPrimitive(): never {
-    throw new Error("all-different@1 declares no proof primitives in T02");
+  checkPrimitive(input: PrimitiveInput, context: CheckContext): CheckedInference {
+    const problem = context.view.assembly.problem;
+    const id = input.conclusion.kind === "rule" ? input.conclusion.constraintId :
+      (input.parameters as { constraintId?: string } | null)?.constraintId;
+    const rule = problem.constraints.find(rule => rule.id === id);
+    requireProof(rule?.type === this.type && this.validate(problem, rule).length === 0, "invalid-rule-instance");
+    if (input.rule === "rule-instance@1") {
+      requireProof(input.premises.length === 0 && sameValue(input.parameters, {}) &&
+        sameValue(input.conclusion, { kind: "rule", constraintId: rule.id }), "invalid-rule-root");
+    } else {
+      requireProof(sameValue(input.parameters, { constraintId: rule.id }), "invalid-capability-parameters");
+      requireProof(input.premises.length === 1 && sameValue(
+        context.retained.get(input.premises[0])?.conclusion, { kind: "rule", constraintId: rule.id }), "missing-rule-premise");
+      if (input.rule === "all-different@1") {
+        requireProof(sameValue(input.conclusion, { kind: "all-different", cells: rule.cells }), "invalid-all-different-scope");
+      } else {
+        requireProof(input.rule === "cover@1" && input.conclusion.kind === "cover" &&
+          problem.symbols.includes(input.conclusion.symbol) && rule.cells.length === problem.symbols.length &&
+          sameValue(input.conclusion, { kind: "cover", symbol: input.conclusion.symbol, cells: rule.cells }), "invalid-cover-scope");
+      }
+    }
+    return inference(input, [rule.id]);
   }
 }
