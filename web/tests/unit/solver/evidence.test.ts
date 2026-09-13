@@ -81,6 +81,16 @@ describe("accepted-path authority and quality", () => {
     expect(isAcceptedPath(initialize(c.assembly, "primary"), c.acceptedView, c.accepted)).toBe(false);
     expect(isAcceptedPath(c.initialView, c.initialView, c.accepted)).toBe(false);
   });
+  test.each(["getter", "proxy"])("rejects %s publications for accepted lineage and quality while trusting cold rebuilds", kind => {
+    const c=solved(), count=mergeEvidence(unknown,exhaustion(c),c).count;
+    const fake=kind==="getter" ? {...c.acceptedView,get state(){return c.acceptedView.state;}} :
+      new Proxy({...c.acceptedView},{});
+    expect(isAcceptedPath(c.initialView,fake,c.accepted)).toBe(false);
+    expect(deriveQuality(c.snapshot,"solved",c.accepted,count,false,{...c,acceptedView:fake})).toBe("inconsistent");
+    expect(mergeEvidence(unknown,count,{...c,acceptedView:fake}).diagnostics).toContain("invalid-accepted-path");
+    const cold={...c,initialView:rebuildIndexes(c.initialView),acceptedView:rebuildIndexes(c.acceptedView)};
+    expect(deriveQuality(c.snapshot,"solved",c.accepted,count,false,cold)).toBe("perfect-verified");
+  });
   test("requires accepted unconditional completion plus authenticated independent uniqueness", () => {
     const c = solved(), raw = exhaustion(c);
     expect(deriveQuality(c.snapshot, "solved", c.accepted, raw, false, c)).toBe("not-established");

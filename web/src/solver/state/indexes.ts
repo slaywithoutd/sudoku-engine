@@ -2,6 +2,7 @@ import type { Assembly } from "../rules/types";
 import type { ReadView, CandidateState } from "./types";
 import { ImmutableMap } from "./facts";
 import { requireProof } from "../proof/primitives";
+import { rebuildOwnedIndexes } from "./candidates";
 
 interface Incidence {
   readonly constraints: readonly string[];
@@ -48,6 +49,5 @@ export class CandidateIndexes {
 
 /** Cold baseline deliberately ignores incremental indexes and support caches. */
 export function rebuildIndexes(view: ReadView): ReadView {
-  const indexes = new CandidateIndexes(view.assembly, view.state);
-  return Object.freeze({ ...view, supports: (id: string) => indexes.supports(id) });
+  return rebuildOwnedIndexes(view);
 }

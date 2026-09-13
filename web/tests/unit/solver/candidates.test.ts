@@ -2,7 +2,7 @@ import { describe, expect, test } from "vitest";
 import { canonicalProblem } from "../../../src/solver/problem";
 import { assemble } from "../../../src/solver/rules/assemble";
 import { AllDifferentRule } from "../../../src/solver/rules/all-different";
-import { initialize, commitChecked, retainedProof, diagnose } from "../../../src/solver/state/candidates";
+import { initialize, commitChecked, retainedProof, diagnose, retainCheckedFacts } from "../../../src/solver/state/candidates";
 import { rebuildIndexes } from "../../../src/solver/state/indexes";
 import { checkProposal, verifyCertificate } from "../../../src/solver/proof/checker";
 import type { CheckContext, CheckedStep, DeductionProposal, Effect, ProofNode, Proposition } from "../../../src/solver/proof/types";
@@ -64,6 +64,23 @@ describe("shared candidate ownership", () => {
     expect(view.facts.get(view.state.domainFacts[0])?.proposition).toEqual({ kind: "literal", value: { cell: 0, symbol: 1, positive: true } });
     expect(() => (view.state.domains as number[]).push(7)).toThrow();
     expect(() => (view.supports("a:symbol:1") as number[]).pop()).toThrow();
+  });
+  test.each(["getter", "proxy"])("rejects %s view lookalikes at every ownership boundary without reading their properties", kind => {
+    const view=fixture(), step=check(view,firstRemoval(view));
+    let reads=0;
+    const fake=kind==="getter" ? {...view,get state(){reads++;return view.state;}} :
+      new Proxy({...view},{get(target,key,receiver){reads++;return Reflect.get(target,key,receiver);}});
+    expect(()=>retainedProof(fake)).toThrow("inauthentic-candidate-view");
+    expect(()=>commitChecked(fake,step)).toThrow("inauthentic-candidate-view");
+    expect(()=>retainCheckedFacts(fake,step)).toThrow("inauthentic-candidate-view");
+    expect(()=>rebuildIndexes(fake)).toThrow("inauthentic-candidate-view");
+    expect(reads).toBe(0);
+    const cold=rebuildIndexes(view);
+    expect(cold).not.toBe(view);
+    expect(cold.state).toBe(view.state);
+    expect(cold.facts).toBe(view.facts);
+    expect(retainedProof(cold)).toBe(retainedProof(view));
+    expect(commitChecked(cold,step).view.state.domains).toEqual([1,2,3,3]);
   });
   test("commits a checked removal without automatically placing an exposed single", () => {
     const before = fixture(), step = check(before, firstRemoval(before));

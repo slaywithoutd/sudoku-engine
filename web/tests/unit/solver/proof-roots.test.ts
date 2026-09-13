@@ -257,7 +257,7 @@ describe("original proof authority", () => {
   });
   test("charges UTF-8 bytes of object keys against the individual node cap", () => {
     const { context, proposal, node } = fixture();
-    const oversized: ProofNode = { ...node, parameters: { ["ðŸ˜€".repeat(4100)]: true } };
+    const oversized: ProofNode = { ...node, parameters: { ["😀".repeat(4100)]: true } };
     expect(terminal({ ...proposal, proof: { ...proposal.proof, nodes: [oversized] } }, context)).toEqual({ kind: "rejected", code: "proof-byte-limit" });
   });
 });

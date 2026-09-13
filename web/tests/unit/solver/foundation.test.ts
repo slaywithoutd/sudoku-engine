@@ -71,7 +71,7 @@ test("small all-different scopes cannot produce Hidden Single covers", () => {
   expect(view.assembly.covers).toEqual([]);
   expect([...getTechniques("classic-expanded@1")[1].discover(view)].filter(e=>e.kind==="proposal")).toEqual([]);
 });
-test("a forged candidate view cannot promote a naked single to a false Full House", () => {
+test.each(["record", "getter", "proxy"])("a forged candidate view (%s) cannot promote a naked single to a false Full House", kind => {
   const result=assemble(canonicalProblem({schema:1,cells:[0,1,2,3],symbols:[1,2],givens:[1,0,0,2],
     constraints:[0,1,2].map(i=>({id:`edge:${i}`,type:"all-different@1",cells:[i,i+1],parameters:{}}))}),[new AllDifferentRule()]);
   if(!result.ok)throw Error("fixture");
@@ -82,12 +82,19 @@ test("a forged candidate view cannot promote a naked single to a false Full Hous
     (e.proposal.pattern as {cell:number;alias:string}).cell===1 && (e.proposal.pattern as {alias:string}).alias==="Naked Single");
   if(event?.kind!=="proposal")throw Error("single");
   const forged={...event.proposal,pattern:{kind:"single",alias:"Full House",cell:1,symbol:2,house:"edge:1"}};
-  const spoof={...view,state:{...view.state,values:[1,0,1,2]}};
+  const spoof=() => {
+    const altered={...view.state,values:[1,0,1,2]};
+    let reads=0;
+    const state=()=>++reads===1?view.state:altered;
+    if(kind==="getter") return {...view,get state(){return state();}};
+    if(kind==="proxy") return new Proxy({...view},{get(target,key,receiver){return key==="state"?state():Reflect.get(target,key,receiver);}});
+    return {...view,state:altered};
+  };
   const limits={timeMs:20000,workUnits:1000000,exactNodes:1000000,stepNodes:4096,runNodes:65536,proofBytes:8000000,stepBytes:2000000,batchBytes:65536,inFlightBatches:2,workspaceBytes:64000000};
-  const checked=[...checkProposal(forged,{view:spoof,retained:retainedProof(view),policy:"unconditional",uniqueEvidenceId:null,limits})].at(-1);
+  const checked=[...checkProposal(forged,{view:spoof(),retained:retainedProof(view),policy:"unconditional",uniqueEvidenceId:null,limits})].at(-1);
   expect(checked?.kind).toBe("rejected");
   const cache={...forged,effects:[],proof:{...forged.proof,nodes:forged.proof.nodes.slice(0,1),roots:[forged.proof.nodes[0].id]}};
-  expect([...checkProposal(cache,{view:spoof,retained:retainedProof(view),policy:"unconditional",uniqueEvidenceId:null,limits})].at(-1))
+  expect([...checkProposal(cache,{view:spoof(),retained:retainedProof(view),policy:"unconditional",uniqueEvidenceId:null,limits})].at(-1))
     .toMatchObject({kind:"rejected",code:"inauthentic-candidate-view"});
 });
 

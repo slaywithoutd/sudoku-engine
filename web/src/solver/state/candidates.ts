@@ -9,7 +9,9 @@ import { CandidateIndexes } from "./indexes";
 import type { CandidateState, Fact, Literal, ReadView } from "./types";
 import type { ChangeSet } from "./events";
 
-const owners = new WeakMap<CandidateState, CandidateOwner>();
+// Authority belongs to the exact frozen publication, never a state-shaped
+// wrapper whose property accessors or Proxy traps can change after admission.
+const owners = new WeakMap<ReadView, CandidateOwner>();
 
 interface AcceptedLineage {
   readonly anchor: object;
@@ -38,7 +40,7 @@ class CandidateOwner {
     this.indexes = new CandidateIndexes(assembly, state, previous?.indexes, cells);
     this.view = Object.freeze({ assembly, state, facts: new ImmutableMap(facts),
       supports: (id: string) => this.indexes.supports(id) });
-    owners.set(state, this);
+    owners.set(this.view, this);
     Object.freeze(this);
   }
 
@@ -107,13 +109,27 @@ class CandidateOwner {
 }
 
 function owner(view: ReadView): CandidateOwner {
-  const owned = owners.get(view.state);
-  requireProof(owned && owned.view.assembly === view.assembly && owned.view.facts === view.facts, "inauthentic-candidate-view");
+  const owned = owners.get(view);
+  requireProof(owned, "inauthentic-candidate-view");
   return owned;
 }
 
 /** Read-only authenticity gate; it cannot register a view or create authority. */
 export function assertOwnedView(view: ReadView): void { owner(view); }
+
+/**
+ * Publish a cold index rebuild only from an authenticated publication. The
+ * owner chooses every field and preserves the exact proof prefix and lineage;
+ * callers cannot register wrappers, replacements or supplied index callbacks.
+ */
+export function rebuildOwnedIndexes(view: ReadView): ReadView {
+  const owned = owner(view);
+  const { assembly, state, facts } = owned.view;
+  const indexes = new CandidateIndexes(assembly, state);
+  const rebuilt = Object.freeze({ assembly, state, facts, supports: (id: string) => indexes.supports(id) });
+  owners.set(rebuilt, owned);
+  return rebuilt;
+}
 
 /**
  * Starts with full unresolved domains and given singletons, never peer pruning.

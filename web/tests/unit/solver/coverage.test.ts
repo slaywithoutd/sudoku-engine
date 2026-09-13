@@ -1,7 +1,19 @@
 import { expect, test } from "vitest";
+import { readFileSync } from "node:fs";
 import { coverageEntries, validateCoverage, aliasMappings, unsupportedAliases } from "../../../src/solver/techniques/manifest";
 import { getTechniques, assembleTechniqueJobs } from "../../../src/solver/techniques/registry";
 import { fixtureCase, fixtureView } from "../../solver/acceptance";
+
+test("preserves exact UTF8 matrix bounds for every catalogue row", () => {
+  const source=readFileSync(new URL("../../../../docs/superpowers/specs/2026-09-12-m2-technique-coverage.md",import.meta.url),"utf8");
+  const rows=source.split(/\r?\n/).filter(line=>/^\| [CU]\d\d/.test(line));
+  expect(rows).toHaveLength(38);
+  for(const line of rows){
+    const columns=line.split("|").slice(1,-1).map(value=>value.trim());
+    const id=columns[0].slice(0,3), direct=id.startsWith("C") && Number(id.slice(1))<=24;
+    expect(coverageEntries.find(entry=>entry.id===id)?.bounds,id).toBe(columns[direct?3:2]);
+  }
+});
 
 test("catalogues all 38 exact matrix rows without claiming advanced implementation", () => {
   expect(coverageEntries).toHaveLength(38);

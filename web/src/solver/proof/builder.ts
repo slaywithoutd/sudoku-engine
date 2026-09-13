@@ -24,7 +24,11 @@ export class CertificateBuilder {
   readonly #effects = new Map<string, { effect: Effect; root: number }>();
   readonly #additionalRoots: number[] = [];
   #next: number;
-  constructor(readonly view: ReadView) { this.#next = Math.max(-1, ...view.facts.keys()) + 1; }
+  constructor(readonly view: ReadView) {
+    let maximum = -1;
+    for (const id of view.facts.keys()) maximum = Math.max(maximum, id);
+    this.#next = maximum + 1;
+  }
   add(rule: string, premises: readonly number[], conclusion: Proposition, parameters: Json = {}): number {
     for (const id of premises) if (this.view.facts.has(id)) this.#imports.add(id);
     const id = this.#next++;

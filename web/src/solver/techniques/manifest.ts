@@ -208,7 +208,7 @@ export const coverageEntries: readonly CoverageEntry[] = Object.freeze((
       "H"
     ],
     "assumptionPolicy": "unconditional",
-    "bounds": "Nonempty proper intersection of a cover and all-different group; supports confined to intersection, remove outside. Classic both boxâ†’line and lineâ†’box, support size 2â€“3; singleton reported C02. Direct-single consequence is a subsequent C01/C02 step.",
+    "bounds": "Nonempty proper intersection of a cover and all-different group; supports confined to intersection, remove outside. Classic both box→line and line→box, support size 2–3; singleton reported C02. Direct-single consequence is a subsequent C01/C02 step.",
     "grammarId": "c03-grammar@1",
     "detectorId": "c03@1",
     "checkerId": "c03-grammar@1",
@@ -378,7 +378,7 @@ export const coverageEntries: readonly CoverageEntry[] = Object.freeze((
       "A; hidden also H"
     ],
     "assumptionPolicy": "unconditional",
-    "bounds": "n=2â€¦4 direct enumeration; complementary house forms n=5â€¦7 recognized through the n=4â€¦2 complement with explicit alias metadata, not separate discovery. Naked union size n; hidden complete supports in n cells.",
+    "bounds": "n=2…4 direct enumeration; complementary house forms n=5…7 recognized through the n=4…2 complement with explicit alias metadata, not separate discovery. Naked union size n; hidden complete supports in n cells.",
     "grammarId": "c04-grammar@1",
     "detectorId": "c04@1",
     "checkerId": "c04-grammar@1",
@@ -700,7 +700,7 @@ export const coverageEntries: readonly CoverageEntry[] = Object.freeze((
       "H"
     ],
     "assumptionPolicy": "unconditional",
-    "bounds": "C04 n=2â€¦3 entirely within a box-line intersection, with separate proved effects in each applicable house; combine only roots already checked.",
+    "bounds": "C04 n=2…3 entirely within a box-line intersection, with separate proved effects in each applicable house; combine only roots already checked.",
     "grammarId": "c05-grammar@1",
     "detectorId": "c05@1",
     "checkerId": "c05-grammar@1",
@@ -797,7 +797,7 @@ export const coverageEntries: readonly CoverageEntry[] = Object.freeze((
       "K"
     ],
     "assumptionPolicy": "unconditional",
-    "bounds": "n=2â€¦7 disjoint parallel base lines and n orthogonal cover lines, one symbol. Supports of every base contained in covers; remove from covers outside bases. Both orientations, all support densities including smaller equivalent fish.",
+    "bounds": "n=2…7 disjoint parallel base lines and n orthogonal cover lines, one symbol. Supports of every base contained in covers; remove from covers outside bases. Both orientations, all support densities including smaller equivalent fish.",
     "grammarId": "c06-grammar@1",
     "detectorId": "c06@1",
     "checkerId": "c06-grammar@1",
@@ -824,7 +824,7 @@ export const coverageEntries: readonly CoverageEntry[] = Object.freeze((
       "K"
     ],
     "assumptionPolicy": "discharged",
-    "bounds": "Basic n=2â€¦7, 1â€¦4 exo-fin candidate occurrences confined to one box. Under target=true all fins conflict and finless cover argument follows. Sashimi permits missing corners and <2 residual supports; exact incidence proof required.",
+    "bounds": "Basic n=2…7, 1…4 exo-fin candidate occurrences confined to one box. Under target=true all fins conflict and finless cover argument follows. Sashimi permits missing corners and <2 residual supports; exact incidence proof required.",
     "grammarId": "c07-grammar@1",
     "detectorId": "c07@1",
     "checkerId": "c07-grammar@1",
@@ -848,7 +848,7 @@ export const coverageEntries: readonly CoverageEntry[] = Object.freeze((
       "K"
     ],
     "assumptionPolicy": "discharged",
-    "bounds": "n=2â€¦4, any distinct classic base/cover house sets. Franken mixes boxes with one line orientation per side; Mutant permits row/column/box mixing. <=4 fin occurrences. Overlaps handled by the incidence certificate below.",
+    "bounds": "n=2…4, any distinct classic base/cover house sets. Franken mixes boxes with one line orientation per side; Mutant permits row/column/box mixing. <=4 fin occurrences. Overlaps handled by the incidence certificate below.",
     "grammarId": "c08-grammar@1",
     "detectorId": "c08@1",
     "checkerId": "c08-grammar@1",
@@ -876,7 +876,7 @@ export const coverageEntries: readonly CoverageEntry[] = Object.freeze((
       "K"
     ],
     "assumptionPolicy": "discharged",
-    "bounds": "C08 sizes 2â€¦4; <=4 combined endo/exo-fin occurrences; cannibalistic target may lie in a base. Siamese is exactly two same-symbol fish sharing the base set with different covers, each separately checked (union of effects, no unsupported synergistic claim).",
+    "bounds": "C08 sizes 2…4; <=4 combined endo/exo-fin occurrences; cannibalistic target may lie in a base. Siamese is exactly two same-symbol fish sharing the base set with different covers, each separately checked (union of effects, no unsupported synergistic claim).",
     "grammarId": "c09-grammar@1",
     "detectorId": "c09@1",
     "checkerId": "c09-grammar@1",
@@ -960,7 +960,7 @@ export const coverageEntries: readonly CoverageEntry[] = Object.freeze((
       "R"
     ],
     "assumptionPolicy": "discharged",
-    "bounds": "n=4â€¦6 cells with n symbols; one nonrestricted common symbol z, every other shared symbol restricted across non-seeing portions. Enumerate the selected n-cell assignments using only cited conflict edges and domains; all surviving assignments contain z in the pattern. Remove z only from targets seeing every possible z occurrence. No uniqueness premise.",
+    "bounds": "n=4…6 cells with n symbols; one nonrestricted common symbol z, every other shared symbol restricted across non-seeing portions. Enumerate the selected n-cell assignments using only cited conflict edges and domains; all surviving assignments contain z in the pattern. Remove z only from targets seeing every possible z occurrence. No uniqueness premise.",
     "grammarId": "c12-grammar@1",
     "detectorId": "c12@1",
     "checkerId": "c12-grammar@1",
@@ -1131,7 +1131,7 @@ export const coverageEntries: readonly CoverageEntry[] = Object.freeze((
       "R"
     ],
     "assumptionPolicy": "unconditional",
-    "bounds": "Two/three ALSs each 1â€¦5 cells. Support disjoint and overlapping sets only with overlap excluded from RCC and a checked table/cover argument; one or two RCCs, all cross-occurrences conflict. XZ uses two sets, XY-Wing three; eliminate only from targets seeing all relevant z occurrences.",
+    "bounds": "Two/three ALSs each 1…5 cells. Support disjoint and overlapping sets only with overlap excluded from RCC and a checked table/cover argument; one or two RCCs, all cross-occurrences conflict. XZ uses two sets, XY-Wing three; eliminate only from targets seeing all relevant z occurrences.",
     "grammarId": "c18-grammar@1",
     "detectorId": "c18@1",
     "checkerId": "c18-grammar@1",
@@ -1160,7 +1160,7 @@ export const coverageEntries: readonly CoverageEntry[] = Object.freeze((
       "G"
     ],
     "assumptionPolicy": "discharged",
-    "bounds": "ALS chain <=6 sets and <=24 links, each <=5 cells; Death Blossom one stem of 2â€¦4 candidates with one petal per candidate, all stem alternatives covered, petals <=5 cells. Proof may share petals but cannot ignore overlap conflicts.",
+    "bounds": "ALS chain <=6 sets and <=24 links, each <=5 cells; Death Blossom one stem of 2…4 candidates with one petal per candidate, all stem alternatives covered, petals <=5 cells. Proof may share petals but cannot ignore overlap conflicts.",
     "grammarId": "c19-grammar@1",
     "detectorId": "c19@1",
     "checkerId": "c19-grammar@1",
@@ -1188,7 +1188,7 @@ export const coverageEntries: readonly CoverageEntry[] = Object.freeze((
       "K"
     ],
     "assumptionPolicy": "unconditional",
-    "bounds": "Box-line intersection of 2â€¦3 cells, plus disjoint side ALSs of 1â€¦4 cells each outside intersection in line/box; total <=11 cells, <=9 symbols. Reconstruct allowed symbol allocations with Hall/cover counts; only proved side/intersection eliminations.",
+    "bounds": "Box-line intersection of 2…3 cells, plus disjoint side ALSs of 1…4 cells each outside intersection in line/box; total <=11 cells, <=9 symbols. Reconstruct allowed symbol allocations with Hall/cover counts; only proved side/intersection eliminations.",
     "grammarId": "c20-grammar@1",
     "detectorId": "c20@1",
     "checkerId": "c20-grammar@1",
@@ -1215,7 +1215,7 @@ export const coverageEntries: readonly CoverageEntry[] = Object.freeze((
       "R"
     ],
     "assumptionPolicy": "discharged",
-    "bounds": "Selected 2â€¦4 cells; Cartesian assignments <=9^4=6,561; auxiliary ALSs <=5 cells. Reject tuple only by a cited direct conflict or empty auxiliary-set matching. Eliminate a selected candidate absent in all surviving tuples. Subset-counting uses <=4 all-different scopes/<=12 cells, symbol counts 1â€¦9 and explicit inequalities.",
+    "bounds": "Selected 2…4 cells; Cartesian assignments <=9^4=6,561; auxiliary ALSs <=5 cells. Reject tuple only by a cited direct conflict or empty auxiliary-set matching. Eliminate a selected candidate absent in all surviving tuples. Subset-counting uses <=4 all-different scopes/<=12 cells, symbol counts 1…9 and explicit inequalities.",
     "grammarId": "c21-grammar@1",
     "detectorId": "c21@1",
     "checkerId": "c21-grammar@1",
@@ -1244,7 +1244,7 @@ export const coverageEntries: readonly CoverageEntry[] = Object.freeze((
       "G"
     ],
     "assumptionPolicy": "discharged",
-    "bounds": "Candidate true/false split; all 2â€¦9 cell alternatives; all 2â€¦9 house-symbol supports. <=24 links per branch. Nishio is one digit, one target=true, only single-digit cover/weak-link consequences until contradiction.",
+    "bounds": "Candidate true/false split; all 2…9 cell alternatives; all 2…9 house-symbol supports. <=24 links per branch. Nishio is one digit, one target=true, only single-digit cover/weak-link consequences until contradiction.",
     "grammarId": "c22-grammar@1",
     "detectorId": "c22@1",
     "checkerId": "c22-grammar@1",
@@ -1275,7 +1275,7 @@ export const coverageEntries: readonly CoverageEntry[] = Object.freeze((
       "R"
     ],
     "assumptionPolicy": "discharged",
-    "bounds": "<=128 inference nodes/branch, <=9 alternatives, nesting depth <=2, <=81 cells. Static uses original graph; dynamic rebuilds links only from proved branch domains. Nested branches use C01â€“C05 propagation and graph resolution only; no recursive whole-solver calls or MRV DFS.",
+    "bounds": "<=128 inference nodes/branch, <=9 alternatives, nesting depth <=2, <=81 cells. Static uses original graph; dynamic rebuilds links only from proved branch domains. Nested branches use C01–C05 propagation and graph resolution only; no recursive whole-solver calls or MRV DFS.",
     "grammarId": "c23-grammar@1",
     "detectorId": "c23@1",
     "checkerId": "c23-grammar@1",
@@ -1303,7 +1303,7 @@ export const coverageEntries: readonly CoverageEntry[] = Object.freeze((
       "K"
     ],
     "assumptionPolicy": "discharged",
-    "bounds": "C07/C08 fish size 2â€¦4, <=4 fins; instead of direct target/fin visibility, prove target=true forces every fin false via <=24-link branches. Apply underlying checked fish certificate.",
+    "bounds": "C07/C08 fish size 2…4, <=4 fins; instead of direct target/fin visibility, prove target=true forces every fin false via <=24-link branches. Apply underlying checked fish certificate.",
     "grammarId": "c24-grammar@1",
     "detectorId": "c24@1",
     "checkerId": "c24-grammar@1",
@@ -1357,7 +1357,7 @@ export const coverageEntries: readonly CoverageEntry[] = Object.freeze((
       "G"
     ],
     "assumptionPolicy": "discharged",
-    "bounds": "<=12 pairs. t-pairs exclude extras through earlier right candidates only; whips permit Z and earlier right candidates. Continuous Liâ†’previous Ri is required; final no-right variable must list every eliminated alternative with its allowed conflict witness.",
+    "bounds": "<=12 pairs. t-pairs exclude extras through earlier right candidates only; whips permit Z and earlier right candidates. Continuous Li→previous Ri is required; final no-right variable must list every eliminated alternative with its allowed conflict witness.",
     "grammarId": "c26-grammar@1",
     "detectorId": "c26@1",
     "checkerId": "c26-grammar@1",
@@ -1412,7 +1412,7 @@ export const coverageEntries: readonly CoverageEntry[] = Object.freeze((
       "R"
     ],
     "assumptionPolicy": "discharged",
-    "bounds": "k=2â€¦4 alternatives from an already proved clause (e.g. guardians), not a guessed list. Per branch C25â€“C27 <=12 pairs or static C22 chains <=24 links. Shared conclusion under every branch, no additional nesting.",
+    "bounds": "k=2…4 alternatives from an already proved clause (e.g. guardians), not a guessed list. Per branch C25–C27 <=12 pairs or static C22 chains <=24 links. Shared conclusion under every branch, no additional nesting.",
     "grammarId": "c28-grammar@1",
     "detectorId": "c28@1",
     "checkerId": "c28-grammar@1",
@@ -1467,7 +1467,7 @@ export const coverageEntries: readonly CoverageEntry[] = Object.freeze((
       "R"
     ],
     "assumptionPolicy": "unconditional",
-    "bounds": "Exactly four boxes at two bands/two stacks and eight two-cell groups around their row/column rectangle. Adjacent groups share a house; link symbol sets size 1â€¦3, total link multiplicity <=16. Enumerate each pair's local tuples, join count/compatibility relations around the eight-group ring, close the ring, and project only full-ring supported effects. Support vanilla and 1/2/3-link distributions satisfying this checked relation, including solved singleton members. No assertion that a visual rectangle alone proves a locked set.",
+    "bounds": "Exactly four boxes at two bands/two stacks and eight two-cell groups around their row/column rectangle. Adjacent groups share a house; link symbol sets size 1…3, total link multiplicity <=16. Enumerate each pair's local tuples, join count/compatibility relations around the eight-group ring, close the ring, and project only full-ring supported effects. Support vanilla and 1/2/3-link distributions satisfying this checked relation, including solved singleton members. No assertion that a visual rectangle alone proves a locked set.",
     "grammarId": "c30-grammar@1",
     "detectorId": "c30@1",
     "checkerId": "c30-grammar@1",
@@ -1497,7 +1497,7 @@ export const coverageEntries: readonly CoverageEntry[] = Object.freeze((
       "R"
     ],
     "assumptionPolicy": "unconditional",
-    "bounds": "Junior: two base cells on one box-line with union 3â€¦4 symbols; two non-seeing targets in the other boxes of that band/stack; three cross-lines through targets and unused base mini-line cell; companions exclude base symbols; all occurrences (including assigned values) of each base symbol in S-cells outside band/stack covered by <=2 houses. Prove each of the two true base symbols must occur in targets through explicit cover-count certificates. Apply target restriction and base-symbol impossibility when S coverage <=1. Double: exactly two independently checked Junior relations sharing band/stack, <=4 base cells, four targets and <=4 symbols; derive further effects only by joining their proved base-target relations and shared cover counts.",
+    "bounds": "Junior: two base cells on one box-line with union 3…4 symbols; two non-seeing targets in the other boxes of that band/stack; three cross-lines through targets and unused base mini-line cell; companions exclude base symbols; all occurrences (including assigned values) of each base symbol in S-cells outside band/stack covered by <=2 houses. Prove each of the two true base symbols must occur in targets through explicit cover-count certificates. Apply target restriction and base-symbol impossibility when S coverage <=1. Double: exactly two independently checked Junior relations sharing band/stack, <=4 base cells, four targets and <=4 symbols; derive further effects only by joining their proved base-target relations and shared cover counts.",
     "grammarId": "c31-grammar@1",
     "detectorId": "c31@1",
     "checkerId": "c31-grammar@1",
@@ -1619,7 +1619,7 @@ export const coverageEntries: readonly CoverageEntry[] = Object.freeze((
       "H"
     ],
     "assumptionPolicy": "unique-only",
-    "bounds": "Hidden uses same 2Ã—2 geometry plus certified strong links. Avoidable allows derived assignments but never changed givens and includes all assignment provenance. Extended supports 2Ã—3 or 3Ã—2 six-cell rectangles, <=3 core symbols, explicit nonidentity permutation preserving every affected house and clue.",
+    "bounds": "Hidden uses same 2×2 geometry plus certified strong links. Avoidable allows derived assignments but never changed givens and includes all assignment provenance. Extended supports 2×3 or 3×2 six-cell rectangles, <=3 core symbols, explicit nonidentity permutation preserving every affected house and clue.",
     "grammarId": "u02-grammar@1",
     "detectorId": "u02@1",
     "checkerId": "u02-grammar@1",
@@ -1646,7 +1646,7 @@ export const coverageEntries: readonly CoverageEntry[] = Object.freeze((
       "H"
     ],
     "assumptionPolicy": "unique-only",
-    "bounds": "Even loop of 4â€¦12 cells, two core symbols, each affected house contains zero or two loop cells; no original given changed. <=4 extra guardian literals; core alternation enables a nontrivial preserved assignment swap.",
+    "bounds": "Even loop of 4…12 cells, two core symbols, each affected house contains zero or two loop cells; no original given changed. <=4 extra guardian literals; core alternation enables a nontrivial preserved assignment swap.",
     "grammarId": "u03-grammar@1",
     "detectorId": "u03@1",
     "checkerId": "u03-grammar@1",
@@ -1699,7 +1699,7 @@ export const coverageEntries: readonly CoverageEntry[] = Object.freeze((
       "H"
     ],
     "assumptionPolicy": "unique-only",
-    "bounds": "n=2â€¦4 extra candidate occurrences over a checked U04 core; derive OR of every extra, then direct common conflict or <=24-link conditional forcing consequences. No arbitrary multivalue residual labeled BUG.",
+    "bounds": "n=2…4 extra candidate occurrences over a checked U04 core; derive OR of every extra, then direct common conflict or <=24-link conditional forcing consequences. No arbitrary multivalue residual labeled BUG.",
     "grammarId": "u05-grammar@1",
     "detectorId": "u05@1",
     "checkerId": "u05-grammar@1",
