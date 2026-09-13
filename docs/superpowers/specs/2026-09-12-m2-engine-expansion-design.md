@@ -1,14 +1,14 @@
 # Sudoku Engine: expanded deductions and adaptive reasoning
 
-Date: 2026-09-12. Status: **RESEARCHED DESIGN PROPOSAL — brainstorming revision, not implementation authorization.**
+Date: 2026-09-12. Status: **DETAILED DESIGN PROPOSAL READY FOR REVIEW — not implementation authorization.**
 
-This revises the [initial M2 specification](2026-09-12-m2-classic-solver-design.md) and its [initial plan](../plans/2026-09-12-m2-classic-solver.md). Their fixed six-technique scope, single ordering policy and flat-only explanation contract are no longer the proposed final engine scope. Preserve their snapshot isolation, independent count evidence, cancellation and backup safeguards unless a change is explicitly described here.
+This research rationale accompanies the revised [screen/evidence specification](2026-09-12-m2-classic-solver-design.md), [concrete engine contracts](2026-09-12-m2-engine-contracts.md), [bounded technique coverage matrix](2026-09-12-m2-technique-coverage.md) and [complete implementation plan](../plans/2026-09-12-m2-classic-solver.md). Those annexes finish the technical design and replace the former six-technique/flat-proof/full-checkpoint contracts. Where this research discussion offers several experimental choices or sketches, the concrete contracts state the proposed implementation choice. All remain subject to design approval.
 
 ## 1. Confirmed steering and current boundary
 
 The user requested a much broader logical-technique repertoire, investigation of chess-like board/technique scoring, primary-source research, and an architecture prepared now for interacting puzzle constraints. The user then explicitly selected **Explain and Analyze modes, defaulting to Explain**, and **Perfect deductions must follow from clues and rules alone; uniqueness-dependent paths are shown separately**. These are confirmed directions. Algorithms, numerical budgets, rollout strategy and other proof details below are recommendations for review, not approved implementations.
 
-The application now uses English under D053. Preserve the newer sidebar, board presentation, notes and input work committed after the initial M2 documents. Existing UI verification is not solver verification. This session adds Markdown only; no solver, benchmark engine or variant implementation is created.
+The application now uses English under D053 and persistent light/dark pastel themes under D058. Latest inspection found clean `docs/m2-solver-design` at `80471d2`, preserving research `24e0d25`. Preserve the newer sidebar, board presentation, notes, input and appearance work. Existing UI verification is not solver verification. This session changes Markdown only; no solver, benchmark engine or variant implementation is created.
 
 “All logical techniques” needs an auditable coverage contract rather than a claim of unlimited completeness. Technique names overlap; a general chain can cover several named patterns, and new patterns and generalizations continue to appear. The original Sudoku Explainer FAQ explicitly discusses the lack of a single technique count and terminology. We will inventory families, aliases, exact pattern bounds and verified coverage, and expose omissions rather than quietly limiting the engine to six techniques. A finite human-technique catalogue does not establish that every valid puzzle has a discoverable human-style path within any time limit. [Sudoku Explainer FAQ](https://github.com/SudokuMonster/SukakuExplainer/wiki/SE121---FAQ).
 
@@ -131,7 +131,7 @@ ProofContext = { problemIdentity, candidateRevision, ruleVersions,
                  availableFacts, allowedAssumptions, proofBudget }
 ```
 
-This boundary should be concretized in the revised implementation plan before coding, with compile-time contracts and executable mock-rule tests. It does not require implementing real killer/thermometer UI in M2. M2's classic adapter supplies the familiar 27 houses; the orchestration/scheduler/proof interfaces must not contain hardcoded `27`, `classic@1` or special cases for future variant names. Optimize bitmasks for the current nine-symbol domain without claiming general geometry is implemented.
+This boundary is now concretized in [engine contracts §§1–5](2026-09-12-m2-engine-contracts.md#1-boundaries-and-identity), with compile-time contracts and planned executable mock-rule tests. It does not require real killer/thermometer UI in M2. M2's classic adapter supplies the familiar 27 houses; orchestration/scheduler/proof infrastructure must not contain hardcoded `27`, `classic@1` or future variant-name special cases. Optimize bitmasks for the current nine-symbol domain without claiming general geometry is implemented.
 
 New internal problem identity must include canonical constraint IDs/versions/parameters, not only the previous `classic@1:<81 digits>` key. The classic-only adapter can preserve the old external input format. Unknown semantics still block complete-puzzle claims. Shared candidate buffers, indexes and caches belong to a single snapshot/branch; no reuse across differing rule versions or speculative branches without explicit identity checks.
 
@@ -182,9 +182,9 @@ Required validation additions:
 
 No speedup is claimed yet. Event scheduling is well supported by primary engineering references, but our exact features/weights, deeper path search and proposed limits are hypotheses for this implementation to test.
 
-## 10. Impact on the implementation plan and review
+## 10. Completed detailed planning and review
 
-The original ten-task plan must not be executed unchanged. Its persistence and entry-flow work remains useful, but the required dependency sequence expands:
+The original ten-task plan has been replaced by the [27-task expanded plan](../plans/2026-09-12-m2-classic-solver.md). Its reviewable sequence covers:
 
 1. Normalize the internal constraint problem, capability assembly and snapshot identity; retain the existing classic input adapter.
 2. Build proof primitives/checker and shared candidate/fact/index infrastructure; test mock mixed constraints now.
@@ -199,6 +199,8 @@ The original ten-task plan must not be executed unchanged. Its persistence and e
 11. Integrate the English solver screen, profile/coverage display, explanation tree and separate conditional analysis without adding gameplay hints.
 12. Differential correctness, mixed-rule contract tests, production worker acceptance and benchmark-driven limits; then record actual release coverage.
 
-This sequence is a planning revision outline, not a replacement detailed executable task plan. Before implementation, turn it into exact files/interfaces/tests and settle each advanced family's parameter bounds. That is a technical design task under the current broader scope; it is not a reason to reopen the completed first-release interview.
+The sequence above is a reading summary; the linked plan supplies exact files, interface ownership, dependencies, failing assertions, implementation algorithms, test commands, integration, focused commit boundaries and acceptance gates. The [coverage matrix](2026-09-12-m2-technique-coverage.md) specifies 33 primary and five conditional rows, names/aliases, prerequisites, proof grammars, finite bounds and independently labeled fixture requirements. No fixture or technique is claimed implemented by writing this plan.
 
-The two product choices raised during research have been answered: Explain is the default of two modes, and Perfect excludes uniqueness-dependent paths. No further user answer is needed to explain the recommendation. Remaining technical decisions are proof-family contracts/bounds, scheduling weights and measured resource limits; they must be recorded as proposals and verified rather than presented as established facts.
+The two product choices raised during research remain answered: Explain is the default of two modes, and Perfect excludes uniqueness-dependent paths. No new product question blocks this proposal. Technical choices are now concrete recommendations: singleton filled domains; proof-derived shared capabilities; permanent uniqueness provenance; separate chunk ACK and atomic step acceptance; fixed-work fair scheduling; rollout initially off; configurable proof/work caps; and a proposed 70% human ceiling within the total budget. The ceiling preserves an opportunity for independent classification and reports incomplete logical coverage on expiry. See [contracts §§6–9](2026-09-12-m2-engine-contracts.md#6-scheduling-determinism-and-bounded-lookahead).
+
+Remaining empirical questions are calibrated cost tables, phase share, practical time/proof/heap defaults and whether Analyze rollout helps on held-out cases. The plan defines comparisons and release gates; none is a measured speedup. General non-Junior Exocet and other unbounded/generalized extensions are explicitly outside the finite matrix, while every requested family retains a planned bounded form. Review the completed design and plan before authorizing implementation; do not reopen the completed first-release interview.
