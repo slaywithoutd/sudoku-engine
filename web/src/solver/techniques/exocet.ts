@@ -53,13 +53,17 @@ export function* compileExocet(view:ReadView,p:ExocetPlan,lease?:WorkspaceReserv
  return b.finish("c31@1",{...p,certificate:{components:components.map(({value,...c})=>c),table:table.id}},effects,roots);
 }
 
-/** Canonical geometries, complete companion exclusions, then minimal one/two
- * house covers including assigned S occurrences. New components service their
- * Junior job and all prior compatible Double joins before enumeration resumes. */
+/** Separate Junior/Double searches in each orientation prevent an expensive
+ * compiler (or a long geometry cursor) from blocking the other forms. Double
+ * owns its own bounded-by-workspace catalogue of prior Junior geometries. */
 export class ExocetSearch implements SpecializedStrategy {
+ constructor(private readonly form:"junior"|"double"|"all"="all",private readonly orientation?:"row"|"column"){}
+ subfamilies():readonly SpecializedStrategy[] {
+  return this.form==="all"?[new ExocetSearch("junior","row"),new ExocetSearch("double","row"),new ExocetSearch("junior","column"),new ExocetSearch("double","column")]:[this];
+ }
  *plans(view:ReadView,lease?:WorkspaceReservation) {
   const h=new ClassicHouses(view),prior:JuniorPlan[]=[];
-  for(const orientation of ["row","column"] as const) {
+  for(const orientation of this.orientation?[this.orientation]:["row","column"] as const) {
    const at=(r:number,c:number)=>orientation==="row"?r*9+c:c*9+r;
    for(let band=0;band<3;band++)for(let line=band*3;line<band*3+3;line++)for(let stack=0;stack<3;stack++)for(const selected of choose([0,1,2],2)) {
     yield specializedWork;const base=selected.map(i=>at(line,stack*3+i)).sort((a,b)=>a-b),baseSymbols=sortedCells(base.flatMap(c=>candidates(view,c)));
@@ -78,7 +82,8 @@ export class ExocetSearch implements SpecializedStrategy {
      }
      if(covers.length!==baseSymbols.length)continue;
      const plan:JuniorPlan={orientation,base,targets,companions,crossLines,sCells,baseSymbols,covers};
-     yield {kind:"plan" as const,plan:{alias:"Junior Exocet",...plan}};
+     if(this.form!=="double")yield {kind:"plan" as const,plan:{alias:"Junior Exocet",...plan}};
+     if(this.form==="junior")continue;
      for(const previous of prior) {
       yield specializedWork;if(previous.orientation!==orientation||Math.floor((orientation==="row"?Math.floor(previous.base[0]/9):previous.base[0]%9)/3)!==band||new Set([...previous.targets,...targets]).size!==4||new Set([...previous.baseSymbols,...baseSymbols]).size>4)continue;
       yield {kind:"plan" as const,plan:{alias:"Double Exocet",components:[previous,plan]}};

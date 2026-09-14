@@ -239,5 +239,9 @@
     "kind": "repository-owned-construction",
     "license": "Repository-owned original fixture; no copied puzzle or code",
     "method": "Fixed canonical Sudoku construction; erase selected triples and one guardian digit peer set. The recorded complete core assignment remains a witness, so this is not a Tridagon obstruction."
+  },
+  "oracleRecord": {
+    "command": "npm test -- tests/unit/solver/specialized-negatives.test.ts -t C32-surviving-core-negative",
+    "method": "Independent surviving core assignment and AlgorithmX SAT witness after guardian denial."
   }
 }

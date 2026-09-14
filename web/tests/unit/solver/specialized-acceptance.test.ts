@@ -37,6 +37,7 @@ test.each(fixtures)("$id has a complete independent finite enumeration",f=> {
  if(f.rowId==="C30") {const r=independentRing(f);expect(r.survivors).toBe(f.independentLocalEnumeration.ringSurvivors);expect(r.local).toEqual(f.independentLocalEnumeration.groupTupleCounts);}
  if(f.rowId==="C31") {
   const relation=independentExocet(f);expect(relation.rows.length).toBeGreaterThan(0);
+  for(const e of f.expectedEffects)expect(relation.rows.every(row=>row[relation.cells.indexOf(e.cell)]!==e.symbol)).toBe(true);
   if(f.expectedPattern.components) {
    expect(relation.rows.length).toBe(f.independentLocalEnumeration.jointSurvivors);
    for(const e of f.expectedEffects) {

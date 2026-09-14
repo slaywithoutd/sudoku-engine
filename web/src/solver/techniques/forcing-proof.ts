@@ -26,7 +26,15 @@ export class ForcingProof {
   readonly nodes: ProofNode[] = [];
   scope: readonly number[] = [];
   #next: number;
-  constructor(readonly view: ReadView, readonly lease?: WorkspaceReservation) { this.#next = Math.max(...view.facts.keys()) + 1; }
+  constructor(readonly view: ReadView, readonly lease?: WorkspaceReservation) {
+    // One finite, constant-scratch prefix scan avoids argument-count limits.
+    // This synchronous constructor scan is not a scheduler work quantum;
+    // T19/T20 must account initialization latency in the invoking operation.
+    let maximum=0;for(const id of view.facts.keys())if(id>maximum)maximum=id;
+    this.#next=maximum+1;
+  }
+  /** Read-only next allocation, for self-referencing table conclusions. */
+  get nextId():number {return this.#next;}
   add(rule: string, premises: readonly number[], conclusion: Proposition, parameters: Json = {}): number {
     this.lease?.grow(1,4096 + premises.length * 32);
     const id = this.#next++; this.nodes.push({ id, rule, premises: [...premises], conclusion, parameters, scope: [...this.scope] }); return id;

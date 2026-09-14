@@ -278,7 +278,7 @@
     "oracleRecord": {
       "method": "independent-algorithm-x@1",
       "inputHash": "9d1bd1ad5d754381febd23223e18e7fd6ca17d5968db054bc9b50eee4d96d142",
-      "command": "npm test -- tests/unit/solver/exocet.test.ts",
+      "command": "npm test -- tests/unit/solver/specialized-acceptance.test.ts -t C31-junior-3",
       "satisfiable": true,
       "forceForbidExhausted": true
     },
@@ -579,7 +579,7 @@
     "oracleRecord": {
       "method": "independent-algorithm-x@1",
       "inputHash": "d77b3ceda5420d7d05fa9e78c3608943b9f60921fc082ab54e0420734d3e34a9",
-      "command": "npm test -- tests/unit/solver/exocet.test.ts",
+      "command": "npm test -- tests/unit/solver/specialized-acceptance.test.ts -t C31-junior-4",
       "satisfiable": true,
       "forceForbidExhausted": true
     },
@@ -884,7 +884,7 @@
     "oracleRecord": {
       "method": "independent-algorithm-x@1",
       "inputHash": "b991db8919516bf044cd87758fcf051298a2c4c5c4e5828bf98b7a5d1ff6198d",
-      "command": "npm test -- tests/unit/solver/exocet.test.ts",
+      "command": "npm test -- tests/unit/solver/specialized-acceptance.test.ts -t C31-cover-one",
       "satisfiable": true,
       "forceForbidExhausted": true
     },
@@ -1349,7 +1349,7 @@
     "oracleRecord": {
       "method": "independent-algorithm-x@1",
       "inputHash": "825ffa2dca27910a580c9b0b122ab3b2db456e2a187c4479f38131cfc6fff1d3",
-      "command": "npm test -- tests/unit/solver/exocet.test.ts",
+      "command": "npm test -- tests/unit/solver/specialized-acceptance.test.ts -t C31-double-shared-base",
       "satisfiable": true,
       "forceForbidExhausted": true
     },
@@ -1765,7 +1765,7 @@
     "oracleRecord": {
       "method": "independent-algorithm-x@1",
       "inputHash": "cb99f6037179bf693b5fad73aa55bbb56b99c149c29e1ca41519f7a912723cf4",
-      "command": "npm test -- tests/unit/solver/exocet.test.ts",
+      "command": "npm test -- tests/unit/solver/specialized-acceptance.test.ts -t C31-double-four-base-independent",
       "satisfiable": true,
       "forceForbidExhausted": true
     },

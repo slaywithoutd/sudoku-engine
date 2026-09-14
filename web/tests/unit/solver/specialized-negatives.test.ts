@@ -76,7 +76,7 @@ test("Tridagon rejects omitted permutations, a fake parity rejection, and an inc
  const a=subject(c32[1]);a.p.certificate.rejections[0]=[a.p.triples[0][0],a.p.triples[0][0]];expect(()=>a.named()).toThrow();
  const d=subject(c32[1]);d.p.guardians.pop();expect(()=>d.named()).toThrow();
 });
-test("a real complete core witness defeats the visual four-box pattern",()=> {
+test("C32-surviving-core-negative: a real complete core witness defeats the visual four-box pattern",()=> {
  const f=coreSurvivor,{view}=specializedState(f as any),p:any=structuredClone(f.expectedPattern),all=p.triples.flat(),witness=f.survivingCore.flat();
  expect(all.every((c:number,i:number)=>all.every((d:number,j:number)=>!independentPeer(c,d)||witness[i]!==witness[j]))).toBe(true);
  const permutations=p.triples.map((t:number[])=>[...independentProduct(t.map(c=>independentDigits(f.preState.domains[c]).filter(s=>p.coreSymbols.includes(s))))].filter(r=>new Set(r).size===3));

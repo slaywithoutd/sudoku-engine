@@ -243,7 +243,7 @@
     "oracleRecord": {
       "method": "independent-algorithm-x@1",
       "inputHash": "379539b853b712780da6edbec4bce63ea65106dd9b9598c02cb91e56ffecc357",
-      "command": "npm test -- tests/unit/solver/fireworks.test.ts",
+      "command": "npm test -- tests/unit/solver/specialized-acceptance.test.ts -t C29-triple",
       "satisfiable": true,
       "forceForbidExhausted": true
     },
@@ -528,7 +528,7 @@
     "oracleRecord": {
       "method": "independent-algorithm-x@1",
       "inputHash": "456e09582b4eca5537486a535e4180951c9e6b04604464d2be5ef9022da73828",
-      "command": "npm test -- tests/unit/solver/fireworks.test.ts",
+      "command": "npm test -- tests/unit/solver/specialized-acceptance.test.ts -t C29-quad",
       "satisfiable": true,
       "forceForbidExhausted": true
     },

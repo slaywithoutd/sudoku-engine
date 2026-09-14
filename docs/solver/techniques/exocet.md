@@ -36,8 +36,12 @@ assumption scopes, and original-rule provenance survive. The existing
 `cover-count@1` keeps its conclusion semantics and shares only the incidence
 validator. Count arithmetic alone never establishes the Junior geometry.
 
-`ExocetSearch` enumerates base/target geometries, complete minimal S covers,
-each Junior, and compatible prior Double components. `compileExocet` accepts
+`ExocetSearch.subfamilies()` returns four fixed jobs: Junior and Double in each
+row/column orientation. Each enumerates canonical base/target geometries and
+complete minimal S covers independently. Each Double search owns its own
+workspace-charged prior Junior geometries; it does not wait for a Junior compiler.
+The adapter advances every live search/compiler once per round with shared
+invocation limits and at most one current compiler per job. `compileExocet` accepts
 `JuniorPlan`/`ExocetPlan` values and composes the common wire and finite-table
 builder. `ExocetAdmission` separately reconstructs every component count before
 admitting its table. A Double has four targets, at most four base cells and four
@@ -47,8 +51,14 @@ shared conflicts. Every supplied effect root must have that lineage.
 [C31.json](../../../web/tests/solver/fixtures/C31.json) retains five original-clue
 examples: Junior three/four-symbol, one-cover, shared-base Double, and exact
 four-base Double. The Double expected effects require the joint relation.
-Independent algebra, an independent proof assembler, both-orientation replay,
-and force/forbid oracle checks cover every example. Discovery separately reaches
+Independent algebra reconstructs the full Junior geometry and every S occurrence,
+then enumerates all three cross-line placements under each base truth and target
+denial against the cited house capacities. One-cover cases deny each target
+individually. This derives the base implications before forming a finite relation;
+base/target multiset equality and expected effects are never input axioms.
+Every Junior and Double expected effect is checked against that relation in both
+orientations. An independent proof assembler, original-clue replay, and separate
+force/forbid oracle checks also cover every example. Discovery separately reaches
 Junior and Double proposals. Assigned-S omission, component reuse, every-root
 substitution, bounds, and interruption have focused regressions. See
 [provenance](../../../web/tests/solver/README.md). Limits remain honest incomplete

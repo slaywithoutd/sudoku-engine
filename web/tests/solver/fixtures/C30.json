@@ -463,7 +463,7 @@
     "oracleRecord": {
       "method": "independent-algorithm-x@1",
       "inputHash": "423089c8034c819a481adaee4dd6962102183bbd02fae2d9db832b0e6c7a3177",
-      "command": "npm test -- tests/unit/solver/sk-loops.test.ts",
+      "command": "npm test -- tests/unit/solver/specialized-acceptance.test.ts -t C30-mixed-1-3",
       "satisfiable": true,
       "forceForbidExhausted": true
     },
@@ -931,7 +931,7 @@
     "oracleRecord": {
       "method": "independent-algorithm-x@1",
       "inputHash": "fc38a70a15e2454f05c4c78cd76a65011c9571b538ddbf570637c961a2f6c937",
-      "command": "npm test -- tests/unit/solver/sk-loops.test.ts",
+      "command": "npm test -- tests/unit/solver/specialized-acceptance.test.ts -t C30-all-double",
       "satisfiable": true,
       "forceForbidExhausted": true
     },
@@ -1360,7 +1360,7 @@
     "oracleRecord": {
       "method": "independent-algorithm-x@1",
       "inputHash": "46bbf45f723ca3b6b185f0541fb6ef33a67da7b8edc961d5dc7f21006e63b724",
-      "command": "npm test -- tests/unit/solver/sk-loops.test.ts",
+      "command": "npm test -- tests/unit/solver/specialized-acceptance.test.ts -t C30-singleton",
       "satisfiable": true,
       "forceForbidExhausted": true
     },

@@ -68,8 +68,12 @@ export function* compileFireworks(view:ReadView,plan:FireworksPlan,lease?:Worksp
   return b.finish("c29@1",{...plan,certificate},effects,roots);
 }
 
-/** Geometry cursors service triples and canonical quads together per corner. */
+/** Two independent canonical geometry/compilation jobs share one invocation. */
 export class FireworksSearch implements SpecializedStrategy {
+  constructor(private readonly form:"triple"|"quad"|"all"="all"){}
+  subfamilies():readonly SpecializedStrategy[] {
+    return this.form==="all"?[new FireworksSearch("triple"),new FireworksSearch("quad")]:[this];
+  }
   *plans(view:ReadView) {
     const h=new ClassicHouses(view);
     for(let x=0;x<81;x++) {
@@ -81,7 +85,8 @@ export class FireworksSearch implements SpecializedStrategy {
           h.rows[Math.floor(a/9)]!.every(q=>boxOf(q)===boxOf(a)||q===b||!candidates(view,q).includes(s))&&
           h.columns[a%9]!.every(q=>boxOf(q)===boxOf(a)||q===c||!candidates(view,q).includes(s)));
         const symbols=valid(x,y,z);
-        for(const core of choose(symbols,3))yield {kind:"plan" as const,plan:{alias:"Triple Fireworks",components:[{intersection:x,rowWing:y,columnWing:z,symbols:core}],selected:sortedCells([x,y,z])}};
+        if(this.form!=="quad")for(const core of choose(symbols,3))yield {kind:"plan" as const,plan:{alias:"Triple Fireworks",components:[{intersection:x,rowWing:y,columnWing:z,symbols:core}],selected:sortedCells([x,y,z])}};
+        if(this.form==="triple")continue;
         const opposite=Math.floor(z/9)*9+y%9;
         if(opposite<=x||view.state.values[opposite]||!h.rows[Math.floor(opposite/9)]||!h.columns[opposite%9]||!h.boxes[boxOf(opposite)])continue;
         const other=valid(opposite,z,y);

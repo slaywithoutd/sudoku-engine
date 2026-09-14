@@ -65,7 +65,7 @@ export class SpecializedProof {
   }
   add(rule:string,premises:readonly number[],conclusion:Proposition,parameters:any={}):number {return this.wire.add(rule,premises,conclusion,parameters);}
   private table(rule:string,premises:readonly number[],cells:readonly number[],rows:readonly (readonly number[])[],parameters:any={}):LocalRelation {
-    const next=(this.nodes.at(-1)?.id??Math.max(...this.view.facts.keys()))+1;
+    const next=this.wire.nextId;
     return {id:this.add(rule,premises,{kind:"table",cells,count:rows.length,definition:next},parameters),cells,rows};
   }
   scope(cells:readonly number[],house?:readonly number[]):number {
@@ -134,8 +134,19 @@ export class SpecializedProof {
 export interface SpecializedStrategy {
   plans(view:ReadView,lease?:WorkspaceReservation):Generator<SpecializedWork|{kind:"plan";plan:unknown}>;
   compile(view:ReadView,plan:any,lease?:WorkspaceReservation):Generator<SpecializedWork,DeductionProposal|null>;
+  /** A fixed family decomposition, never one job per candidate combination. */
+  subfamilies?():readonly SpecializedStrategy[];
 }
-/** One deterministic cursor per family; accounting includes consumer time. */
+interface LiveSpecializedJob {
+  readonly strategy:SpecializedStrategy;
+  readonly plans:ReturnType<SpecializedStrategy["plans"]>;
+  readonly search:WorkspaceReservation;
+  compiler?:ReturnType<SpecializedStrategy["compile"]>;
+  compilation?:WorkspaceReservation;
+  exhausted:boolean;
+}
+/** At most four internal jobs, one search/current compiler per job. Each round
+ * advances each live job once, sharing invocation limits and consumer time. */
 export function specializedDescriptor(rowId:string,strategy:SpecializedStrategy,bounds:readonly[number,number,number,number,number]):TechniqueDescriptor {
   const row=coverageEntries.find(r=>r.id===rowId)!;
   const eligible=(view:ReadView)=>view.assembly.problem.cells.length===81&&view.assembly.problem.symbols.length===9&&view.assembly.allDifferent.length>0?
@@ -147,18 +158,34 @@ export function specializedDescriptor(rowId:string,strategy:SpecializedStrategy,
       const status=eligible(view);if(status.kind==="excluded"){yield {kind:"excluded",reason:status.reason,dependencies:status.dependencies};return;}
       const deadline=performance.now()+context.limits.timeMs;let work=0;
       const tick=()=>{context.workspace.checkpoint();if(performance.now()>=deadline)throw Error("specialized-time-limit");if(++work>context.limits.workUnits)throw Error("specialized-work-limit");};
-      let search:WorkspaceReservation|undefined;
+      let search:WorkspaceReservation|undefined;const jobs:LiveSpecializedJob[]=[];
       try {
         search=context.workspace.reserve(1,2000000);
-        for(const e of strategy.plans(view,search)) {
-          tick();if(e.kind==="work"){yield e;continue;}
-          const lease=context.workspace.reserve(0,65536);
-          try {
-            const cursor=strategy.compile(view,e.plan,lease);let result:DeductionProposal|null;
-            try {while(true){tick();const n=cursor.next();if(n.done){result=n.value;break;}yield n.value;}}
-            finally{cursor.return(null);}
-            if(result) {if(!forcingProofFits(result,context.limits))throw Error("specialized-proof-step-limit");yield {kind:"proposal",proposal:result};}
-          }finally{lease.dispose();}
+        const strategies=strategy.subfamilies?.()??[strategy];
+        if(strategies.length<1||strategies.length>4)throw Error("invalid-specialized-job-count");
+        for(const subfamily of strategies) {
+          const owner=context.workspace.reserve(0,0);
+          try {jobs.push({strategy:subfamily,plans:subfamily.plans(view,owner),search:owner,exhausted:false});}
+          catch(error){owner.dispose();throw error;}
+        }
+        while(jobs.some(job=>!job.exhausted))for(const job of jobs) {
+          if(job.exhausted)continue;tick();
+          if(job.compiler) {
+            const n=job.compiler.next();
+            if(!n.done){yield n.value;continue;}
+            job.compiler=undefined;
+            try {
+              if(n.value){if(!forcingProofFits(n.value,context.limits))throw Error("specialized-proof-step-limit");yield {kind:"proposal",proposal:n.value};}
+            }finally{job.compilation!.dispose();job.compilation=undefined;}
+          }else {
+            const n=job.plans.next();
+            if(n.done){job.exhausted=true;job.search.dispose();continue;}
+            if(n.value.kind==="work"){yield n.value;continue;}
+            // Capture ownership before invoking the compiler factory. A yielded
+            // proposal remains borrowed under this lease until the next resume.
+            job.compilation=context.workspace.reserve(0,65536);
+            job.compiler=job.strategy.compile(view,n.value.plan,job.compilation);
+          }
         }
         yield {kind:"exhausted"};
       }catch(error) {
@@ -166,6 +193,12 @@ export function specializedDescriptor(rowId:string,strategy:SpecializedStrategy,
         else if(error instanceof Error&&error.message.startsWith("specialized-")&&error.message.endsWith("-limit"))
           yield {kind:"interrupted",reason:error.message.slice(12) as "time-limit"|"work-limit"|"proof-step-limit"};
         else throw error;
-      }finally{search?.dispose();}
+      }finally{
+        for(const job of jobs) {
+          try{job.compiler?.return(null);job.plans.return(undefined);}
+          finally{job.compilation?.dispose();job.search.dispose();}
+        }
+        search?.dispose();
+      }
     }};
 }

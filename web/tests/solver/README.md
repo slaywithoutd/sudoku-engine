@@ -280,6 +280,25 @@ discovery reaches triple/quad, an eight-group sixteen-link ring, Junior/Double,
 and a multi-guardian Tridagon; maximum seeded proofs do not claim that every
 presentation is found within default limits or that the technique is essential.
 
+The independent Junior algebra derives its relation from a separate complete
+three-cross-line placement enumeration, under each base occurrence and target
+denial, using the cited capacities. It validates exact base/target/companion and
+cross-line geometry, complete S domains and assigned occurrences, and every
+one-cover individual-target implication. It assumes no base/target multiset
+equality and uses no expected effect to filter rows. Every expected Junior and
+Double removal is absent from that independent relation, in both orientations;
+the checker itself rejects companion, cross-line, S and cover mutations.
+
+`specialized-runtime.test.ts` covers the configured 262,144-key allocator bound
+with explicitly nonauthoritative structural input, scope-free first-table
+allocation and interruption. It also checks cheap-later service while an earlier
+compiler is live, actual Fireworks/Exocet job composition, both orientations,
+all-four-live teardown and borrowed proposal lifetime. Subfamily jobs are fixed
+(Fireworks2, Exocet4, other families1), with one search/current compiler per job
+and shared limits. Per-fixture `oracleRecord.command` now selects the actual
+original-clue/oracle acceptance record by ID, including SK mixed/singleton and
+the native guardian source/consumer cases.
+
 Negative tests include complete-component reuse, mixed valid/substituted effect
 roots that first pass primitive verification, bounds, aliases, assigned-S
 omission, incomplete ring/core/guardian data, and all discovery lease exits.

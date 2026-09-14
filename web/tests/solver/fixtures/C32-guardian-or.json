@@ -407,7 +407,7 @@
     "oracleRecord": {
       "method": "independent-algorithm-x@1",
       "inputHash": "22b1dd5623e57fad3673eea3a72c7fc6ca2209f8188eee9c4e54cfccf2383077",
-      "command": "npm test -- tests/unit/solver/tridagon-or.test.ts",
+      "command": "npm test -- tests/unit/solver/tridagon-or.test.ts -t C28-inserted-guardian2",
       "satisfiable": true,
       "forceForbidExhausted": true,
       "guardianDenialExhausted": true,
@@ -929,7 +929,7 @@
     "oracleRecord": {
       "method": "independent-algorithm-x@1",
       "inputHash": "edfb3b23443d251a2fc5df3107ca9ac7f33ba7cd736f72ce30acbcf192120d5b",
-      "command": "npm test -- tests/unit/solver/tridagon-or.test.ts",
+      "command": "npm test -- tests/unit/solver/tridagon-or.test.ts -t C28-inserted-guardian3",
       "satisfiable": true,
       "forceForbidExhausted": true,
       "guardianDenialExhausted": true,
@@ -1487,7 +1487,7 @@
     "oracleRecord": {
       "method": "independent-algorithm-x@1",
       "inputHash": "bb7e78b34cb6cc4e499be8a63cb16ab910559aaf2f1ef314b1802b8d7352e575",
-      "command": "npm test -- tests/unit/solver/tridagon-or.test.ts",
+      "command": "npm test -- tests/unit/solver/tridagon-or.test.ts -t C28-inserted-guardian4",
       "satisfiable": true,
       "forceForbidExhausted": true,
       "guardianDenialExhausted": true,

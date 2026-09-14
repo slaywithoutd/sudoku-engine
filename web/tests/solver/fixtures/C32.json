@@ -241,7 +241,7 @@
     "oracleRecord": {
       "method": "independent-algorithm-x@1",
       "inputHash": "bb7e78b34cb6cc4e499be8a63cb16ab910559aaf2f1ef314b1802b8d7352e575",
-      "command": "npm test -- tests/unit/solver/tridagon.test.ts",
+      "command": "npm test -- tests/unit/solver/specialized-acceptance.test.ts -t C32-guardian-4",
       "satisfiable": true,
       "guardianClauseExhausted": true,
       "forceForbidExhausted": true
@@ -485,7 +485,7 @@
     "oracleRecord": {
       "method": "independent-algorithm-x@1",
       "inputHash": "22b1dd5623e57fad3673eea3a72c7fc6ca2209f8188eee9c4e54cfccf2383077",
-      "command": "npm test -- tests/unit/solver/tridagon.test.ts",
+      "command": "npm test -- tests/unit/solver/specialized-acceptance.test.ts -t C32-guardian-2",
       "satisfiable": true,
       "guardianClauseExhausted": true,
       "forceForbidExhausted": true
@@ -731,7 +731,7 @@
     "oracleRecord": {
       "method": "independent-algorithm-x@1",
       "inputHash": "ac3615011243cd6eab2483e7991f289cc4dcf9a57bf0bf0df35c27abc7e1b852",
-      "command": "npm test -- tests/unit/solver/tridagon.test.ts",
+      "command": "npm test -- tests/unit/solver/specialized-acceptance.test.ts -t C32-guardian-1",
       "satisfiable": true,
       "guardianClauseExhausted": true,
       "forceForbidExhausted": true
@@ -988,7 +988,7 @@
     "oracleRecord": {
       "method": "independent-algorithm-x@1",
       "inputHash": "0f36d88f99e3e87da1eefe3a276edb004a0efe702ddf3f04374318345b0cbaf5",
-      "command": "npm test -- tests/unit/solver/tridagon.test.ts",
+      "command": "npm test -- tests/unit/solver/specialized-acceptance.test.ts -t C32-degenerate",
       "satisfiable": true,
       "guardianClauseExhausted": true,
       "forceForbidExhausted": true
