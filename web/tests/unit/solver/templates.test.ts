@@ -765,7 +765,7 @@ test.each(fixtures)(
 );
 test("read-only C33 verified-status projection has real evidence for every alias", () => {
   const entry = coverageEntries.find((e) => e.id === "C33")!;
-  expect(entry.status).toBe("implemented");
+  expect(entry.status).toBe("independently-verified");
   expect(
     validateCoverage(
       coverageEntries.map((e) =>

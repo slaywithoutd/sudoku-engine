@@ -6357,7 +6357,7 @@ export const coverageEntries: readonly CoverageEntry[] = Object.freeze((
       "C33-incompatibility",
       "C33-incompatibility-nine"
     ],
-    "status": "implemented",
+    "status": "independently-verified",
     "evidence": [
       {
         "kind": "positive",

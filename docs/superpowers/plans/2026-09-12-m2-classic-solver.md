@@ -1,6 +1,6 @@
 # M2 Expanded Sudoku Engine Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task **after explicit design approval**. Steps use checkbox (`- [ ]`) syntax for tracking. This plan authorizes neither execution nor delegation.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task. The user approved implementation under D065; the current implementation record tracks progress and reviews. Steps retain checkbox (`- [ ]`) syntax as acceptance criteria. This document alone does not grant authority to merge, publish or deploy.
 
 **Goal:** Deliver a broad, bounded classic logical engine with Explain/Analyze, independently checked explanations and count evidence, responsive workers and isolated temporary analysis.
 
@@ -406,11 +406,17 @@ expect(checkFixtureMutation("C32-parity", "retain-valid-core-permutation").kind)
 
 ## T17 — Templates and pattern overlay C33
 
+**Completed:** `414b5f7`, independently reviewed through `2fec0e0`. The initial full suite passed 1,564 tests; 163 covering tests and typecheck passed after review fixes. The actual uniqueness-derived placement-to-C33 lifecycle remains a required T18/T25 integration gate; no synthetic authority was added. Detailed evidence is in [implementation progress](../../m2-implementation-progress.md).
+
 **Files:** create `src/solver/indexes/templates.ts`, `src/solver/techniques/templates.ts`; fixture `C33.json`; test `tests/unit/solver/templates.test.ts`; `docs/solver/techniques/templates.md`; update registry/manifest/provenance.
 
-**Interfaces:** `buildTemplates(view, symbol)` yields bounded work and a complete template relation or interruption; template-cover checker reconstructs enumeration independently. Descriptor includes single/pair/triple overlay and incompatibility bounds; all tuple tests count toward work.
+**Interfaces:** `buildTemplates(view, symbol, workspace)` yields bounded work and a complete template index or interruption. D091 resolves the concrete representation: `template-cover@1` contains mode/symbols and packed complete base-9 column-position lists, authentic one-level source conjunctions, and independent complete recomputation. Its complete unsupported-negative conjunction feeds ordinary indexed projections and domain restriction; every effect root must match this certificate. No new proposition or wider ordinary table cap. `DiscoveryContext.templates?: TemplateOperationContext` explicitly owns the operation's actual views/assembly/problem/branch; monotone `advance(view, charge)` and `consumeTuple(view)` retain one 100,000-test discovery allowance across modes and restarts at each candidate revision. Same-revision proof-prefix changes cannot reset it; missing context is a configuration error. Independent certificate recomputation uses the same per-certificate semantic bound and separately charges actual verifier work. Descriptor includes template-specific single/pair/triple overlay bounds, pairwise incompatibility over two through nine symbols, 46,656 templates per symbol and 100,000 tuple tests; unfinished products/fixed points and proof overflow explicitly interrupt. Discover full-nine-symbol pairwise closure and independently admit both the three-symbol/two-round and nine-symbol/four-round fixtures; never enumerate nine-symbol completion products.
 
-- [ ] Test exhaustive set and interruption:
+**Concrete API handoff:** `compileTemplates(view, plan, context)` yields work and returns an owned complete proposal or `null`; `discoverTemplates` yields borrowed proposals until resume/close, shares nine source indexes and fairly services four mode cursors. Full-nine incompatibility precedes the other lazily enumerated subsets. `TemplateOperationContext.advance(nextView, charge)` uses the read-only `isAcceptedDescendant` query and propagates charge interruption before reset. `TechniqueBounds.templates` exposes `maxTemplatesPerSymbol`, `maxOverlaySymbols`, `maxIncompatibilitySymbols` and `maxTupleTestsPerRevision`. See the [template guide](../../solver/techniques/templates.md) for final ownership and proof parameters.
+
+**Concrete integration:** add `proof/template-cover.ts` and the primitive dispatch in `proof/primitives.ts`; extend `techniques/types.ts` with the optional operation context and `techniques/grammar.ts` with exact C33 lineage admission. Keep the existing 64-premise/16 KiB node caps using source packs of at most 27 authentic facts and template-code chunks of at most 1,024 numbers. Check exact list ordering, decoding, source completeness and every projection; preflight scratch before allocation. Three domain packs and one scope pack precede cover packs of at most 27 (nine covers per selected symbol), followed by nonempty canonical positive-anchor packs of at most 27. Anchors include every original given or checked placement with its actual proof root; unresolved singleton domains remain candidate restrictions. Test absent/extra/duplicate/derived anchors, provenance and original replay without redefining the prepared candidate-mask template lists. Test owned-context cross-operation/revision/restart rejection, independent empty-grid set equality, every mode's actual discovery, unfinished computations, all-root substitution and bounded proof replay. The T19/T20 handoff must document actual context ownership and both exploration/verifier accounting. Catalogue readiness must validate a read-only projected C33 status before independent review; tracked status changes only after review.
+
+- [x] Test exhaustive set and interruption:
 
 ```ts
 expect(independentEmptyGridTemplates().length).toBe(46656);
@@ -419,10 +425,10 @@ expect(checkFixtureMutation("C33-single", "omit-legal-template").kind).toBe("rej
 expect(stopTemplateEnumerationBeforeEnd().canEliminate).toBe(false);
 ```
 
-- [ ] Run `npm test -- tests/unit/solver/templates.test.ts`.
-- [ ] Enumerate one cell/row with column/box occupancy, respecting current clue/domain premises, encode complete branch alternatives/rejections as shared DAG nodes. Project one-digit relations; remove templates lacking any pairwise compatible partner; enumerate two/three-symbol compatible tuples within 100,000 tuple tests/revision. Never infer absence from an unfinished list. Apply proof/node/byte caps before publishing; an overlarge proof is explicit incomplete work.
-- [ ] Rerun single/pair/triple/incompatibility, independent template set comparison, local and original-clue soundness, overflow and typecheck. Do not promise full nine-symbol POM.
-- [ ] Commit listed files: `feat: add bounded template and overlay certificates`.
+- [x] Run `npm test -- tests/unit/solver/templates.test.ts`.
+- [x] Enumerate one cell/row with column/box occupancy, respecting current clue/domain premises, encode complete canonical source lists for independent recomputation under D091. Project complete one-digit support; remove templates lacking any pairwise compatible partner; enumerate two/three-symbol compatible tuples within 100,000 tuple tests/revision. Never infer absence from an unfinished list. Apply proof/node/byte caps before publishing; an overlarge proof is explicit incomplete work.
+- [x] Rerun single/pair/triple/incompatibility, independent template set comparison, local and original-clue soundness, overflow and typecheck. Do not promise full nine-symbol POM.
+- [x] Commit listed files: `feat: add bounded template and overlay certificates`.
 
 ## T18 — Uniqueness-dependent families U01–U05
 
@@ -641,8 +647,8 @@ expect(report.samples.every(s => s.correctness === "passed"))
 | Worker identity, bounded transport, atomic acceptance, backpressure/Cancel/deadlines | Contracts §8 | T21/T22/T23/T25; >2-chunk credit test and real browser races |
 | Resource/persistence policy and measured defaults | Contracts §9; screen §§2–3 | T20/T23/T26; phase reserve, backup equivalence, full benchmark matrix |
 | English read-only solved/partial board, expandable proofs and separate counts | Screen §4 | T24/T25; keyboard, actual fallback, two witnesses, ten themes |
-| Design approval and reviewable complete plan | Screen §6; contracts §10 | Current planning verification; execution waits for explicit approval |
+| Design approval and reviewable complete plan | Screen §6; contracts §10 | D065 records approval; implementation record tracks execution and independent review |
 
 ## Review handoff
 
-The plan is complete for design review. No first-release interview answer is outstanding. Proposed choices are finite broad profiles, shared proof/fact contracts, separate uniqueness-dependent operation, event-driven fair scoring, a 70% human ceiling, bounded ACK/accept transport and memory-only results/preferences. Work/time/proof defaults and rollout benefit are empirical gates in T26. Unbounded generalizations are named exclusions in the matrix; every requested family has a planned bounded form and independent gate. **Do not execute this plan until the user approves the design.**
+The design and plan were approved under D065. No first-release interview answer is outstanding. Proposed choices are finite broad profiles, shared proof/fact contracts, separate uniqueness-dependent operation, event-driven fair scoring, a 70% human ceiling, bounded ACK/accept transport and memory-only results/preferences. Work/time/proof defaults and rollout benefit are empirical gates in T26. Unbounded generalizations are named exclusions in the matrix; every requested family has a planned bounded form and independent gate. **Continue authorized implementation, including application integration, through the acceptance gates; merging this branch, publishing and deployment require separate authority.**
