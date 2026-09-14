@@ -95,24 +95,43 @@ test("named XY-Wing consumes a relation conflict through unconditional domain fi
   expect(context.workspace.usage).toEqual({entries:0,bytes:0});
 });
 
-test("both Dual Empty Rectangle roots and every C12 table boundary remain necessary",()=>{
+const boundaryTestName="both Dual Empty Rectangle roots and every C12 table boundary remain necessary";
+// This reviewed matrix is independent of certificate construction: a missing
+// leaf must fail coverage rather than silently remove its mutation test.
+const c12BoundaryFixtures=[
+  {id:"C12-n5",leafCount:1},
+  {id:"C12-n6",leafCount:1},
+  {id:"C12-n4",leafCount:1},
+  {id:"C12-partition-n6",leafCount:25},
+];
+test(`${boundaryTestName}: complete fixture matrix`,()=>{
+  expect(c12BoundaryFixtures.map(f=>f.id).sort()).toEqual(shortFixtures.filter(f=>f.rowId==="C12").map(f=>f.id).sort());
+  expect(c12BoundaryFixtures.every(f=>f.leafCount>0)).toBe(true);
+});
+test(`${boundaryTestName}: Dual Empty Rectangle`,()=>{
   const dual=shortFixtures.find(f=>f.id==="C10-dual-er")!,view=fixtureView(dual),proposal=independentShortCertificate(dual),limits=discoveryContext().limits;
   const check=(p:typeof proposal)=>[...checkProposal(p,{view,retained:retainedProof(view),limits,policy:"discharged",uniqueEvidenceId:null})].at(-1);
   const pattern=proposal.pattern as {alias:string;paths:Json[]};
   for(const index of [0,1])expect(check({...proposal,pattern:{...pattern,paths:pattern.paths.filter((_,i)=>i!==index)}})?.kind).toBe("rejected");
   for(const node of proposal.proof.nodes.filter(n=>n.rule==="support@1"))
     expect(check({...proposal,proof:{...proposal.proof,nodes:proposal.proof.nodes.map(n=>n.id===node.id?{...n,premises:n.premises.slice(0,-1)}:n)}})?.kind).toBe("rejected");
-  for(const f of shortFixtures.filter(f=>f.rowId==="C12")) {
-    const localView=fixtureView(f),p=independentShortCertificate(f),base={view:localView,retained:retainedProof(localView),limits,policy:"discharged" as const,uniqueEvidenceId:null};
-    for(const filter of p.proof.nodes.filter(n=>n.rule==="table-filter@1")) {
-      const params=filter.parameters as {cells:number[];box:number[]};
-      const foreign={...p,proof:{...p.proof,nodes:p.proof.nodes.map(n=>n.id===filter.id?{...n,parameters:{...params,cells:[80,...params.cells.slice(1)]}}:n)}};
-      expect([...checkProposal(foreign,base)].at(-1)?.kind).toBe("rejected");
-      const partial={...p,proof:{...p.proof,nodes:p.proof.nodes.map(n=>n.id===filter.id?{...n,premises:n.premises.slice(1)}:n)}};
-      expect([...checkProposal(partial,base)].at(-1)?.kind).toBe("rejected");
-    }
-  }
 });
+test.each(c12BoundaryFixtures.flatMap(f=>Array.from({length:f.leafCount},(_,filterIndex)=>({...f,filterIndex}))))(
+  `${boundaryTestName}: $id filter $filterIndex`,({id,leafCount,filterIndex})=>{
+    const f=shortFixtures.find(f=>f.id===id)!;
+    expect(f).toBeDefined();
+    const localView=fixtureView(f),p=independentShortCertificate(f);
+    const filters=p.proof.nodes.filter(n=>n.rule==="table-filter@1");
+    expect(filters).toHaveLength(leafCount);
+    const filter=filters[filterIndex];
+    expect(filter).toBeDefined();
+    const base={view:localView,retained:retainedProof(localView),limits:discoveryContext().limits,policy:"discharged" as const,uniqueEvidenceId:null};
+    const params=filter.parameters as {cells:number[];box:number[]};
+    const foreign={...p,proof:{...p.proof,nodes:p.proof.nodes.map(n=>n.id===filter.id?{...n,parameters:{...params,cells:[80,...params.cells.slice(1)]}}:n)}};
+    expect([...checkProposal(foreign,base)].at(-1)?.kind).toBe("rejected");
+    const partial={...p,proof:{...p.proof,nodes:p.proof.nodes.map(n=>n.id===filter.id?{...n,premises:n.premises.slice(1)}:n)}};
+    expect([...checkProposal(partial,base)].at(-1)?.kind).toBe("rejected");
+  });
 test("named C12 requires nonempty survivors and cannot invent an unrestricted symbol by omitting a conflict",()=>{
   const f=shortFixtures.find(f=>f.id==="C12-n4")!,view=fixtureView(f),p=f.expectedPattern as Record<string,any>;
   const table:ProofNode={id:9999,rule:"table-filter@1",premises:[],parameters:{},scope:[],conclusion:{kind:"table",cells:p.cells,count:0,definition:9999}};
