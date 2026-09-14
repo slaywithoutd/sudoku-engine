@@ -36,6 +36,15 @@ test.each(fixtures)("$id retains genuine C32 lineage and independently checks/re
   const consumer=independentGeneralized(view,plan);let terminal;
   for(const e of checkProposal(consumer,{view,retained:retainedProof(view),limits:context.limits,policy:"discharged",uniqueEvidenceId:null}))if(e.kind!=="work")terminal=e;
   expect(terminal?.kind,JSON.stringify(terminal)).toBe("checked");expect(consumer.proof.imports).toContain(id);
+  if(terminal?.kind!=="checked")throw Error(JSON.stringify(terminal));
+  const effects=terminal.step.proposal.effects;
+  expect(effects.length).toBeGreaterThan(0);expect(effects).toEqual(expect.arrayContaining(f.expectedEffects));
+  const input={givens:[...f.givens].map(Number),domains:f.preState.domains,limit:1,maxNodes:1000000};
+  expect(oracle(input)).toMatchObject({interrupted:false,witnesses:[expect.any(Array)]});
+  for(const effect of effects) {
+   const counter=effect.kind==="remove"?{force:[effect.cell,effect.symbol] as [number,number]}:{forbid:[effect.cell,effect.symbol] as [number,number]};
+   expect(oracle({...input,...counter}),`${f.id}:${JSON.stringify(effect)}`).toMatchObject({exhausted:true,interrupted:false,witnesses:[]});
+  }
   const stale=[...checkProposal(consumer,{view:base,retained:retainedProof(base),limits:context.limits,policy:"discharged",uniqueEvidenceId:null})].at(-1);expect(stale?.kind).toBe("rejected");
   let accepted=0;for(const e of replay({problem:view.assembly.problem} as SolverSnapshot,[...originalCluePrefix(f as unknown as TechniqueFixture),proposal,consumer],view.assembly,{...context.limits,timeMs:120000,workUnits:100000000})) {
    if(e.kind==="rejected")throw Error(e.code);if(e.kind==="checked")accepted++;
