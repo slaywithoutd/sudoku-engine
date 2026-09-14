@@ -52,3 +52,23 @@ test("reviewed U rows retain complete per-alias evidence",()=>{
  expect(validateCoverage(proposed)).toEqual([]);
  expect(coverageEntries.filter(e=>e.id.startsWith("U")).every(e=>e.status==="independently-verified")).toBe(true);
 });
+
+test("C25-C28 have complete evidence for review without promoting live statuses", () => {
+  const pending = coverageEntries.filter(
+    (entry) => entry.id >= "C25" && entry.id <= "C28",
+  );
+  expect(pending).toHaveLength(4);
+  expect(pending.every((entry) => entry.status === "implemented")).toBe(true);
+
+  const projected = coverageEntries.map((entry) =>
+    entry.id >= "C25" && entry.id <= "C28"
+      ? { ...entry, status: "independently-verified" as const }
+      : entry,
+  );
+  expect(validateCoverage(projected)).toEqual([]);
+
+  const view = fixtureView(fixtureCase("C01-one-hole"));
+  expect(() =>
+    assembleTechniqueJobs(view.assembly, "classic-expanded@1"),
+  ).toThrow("profile-incomplete");
+});

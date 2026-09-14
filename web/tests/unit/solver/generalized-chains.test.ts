@@ -1080,20 +1080,80 @@ test("actual OR discovery includes an independently checked generalized case", (
   expect(context.workspace.usage).toEqual({ entries: 0, bytes: 0 });
 }, 150000);
 
-test.each(["bivalue", "z", "t", "whip", "braid"] as const)(
+const scalarGrammarAliases = [
+  ["bivalue", "Bivalue chains"],
+  ["z", "z-chains"],
+  ["t", "t-whips"],
+  ["whip", "Whips"],
+  ["braid", "Braids"],
+] as const;
+
+test.each(scalarGrammarAliases)(
   "inclusive %s grammar admits a genuine twelve-pair certificate",
-  (grammar) => {
+  (grammar, alias) => {
     const f = c25.find((f) => f.id === "C25-bivalue-12-no-premature-close")!,
       view = fixtureView(f as unknown as TechniqueFixture);
     const plan = {
       ...f.expectedPattern,
       grammar,
     } as unknown as GeneralizedPlan;
-    const proposal = compileGeneralized(view, plan);
     expect(plan.positions).toHaveLength(12);
     expect(plan.positions.every((p) => p.right !== null)).toBe(true);
-    assertSound(view, proposal);
+    for (const [assembly, proposal] of [
+      ["production", compileGeneralized(view, plan)],
+      ["independent", independentGeneralized(view, plan)],
+    ] as const) {
+      expect((proposal.pattern as any).alias, assembly).toBe(alias);
+      assertSound(view, proposal);
+    }
   },
+  60000,
+);
+
+test.each(
+  scalarGrammarAliases.filter(
+    ([grammar]) => grammar !== "bivalue" && grammar !== "braid",
+  ),
+)(
+  "a genuine thirteen-pair %s certificate is primitive-valid and rejected by the named bound",
+  (grammar, alias) => {
+    const f = c25.find((f) => f.id === "C25-bivalue-13-no-premature-close")!,
+      view = fixtureView(f as unknown as TechniqueFixture),
+      plan = {
+        ...f.expectedPattern,
+        grammar,
+      } as unknown as GeneralizedPlan,
+      context = {
+        view,
+        retained: retainedProof(view),
+        policy: "discharged" as const,
+        uniqueEvidenceId: null,
+        limits: discoveryContext().limits,
+      };
+    expect(plan.positions).toHaveLength(13);
+    expect(plan.positions.every((position) => position.right !== null)).toBe(
+      true,
+    );
+    for (const [assembly, proposal] of [
+      ["production", compileGeneralized(view, plan)],
+      ["independent", independentGeneralized(view, plan)],
+    ] as const) {
+      expect((proposal.pattern as any).alias, assembly).toBe(alias);
+      expect(
+        [...verifyCertificate(proposal, context)].at(-1),
+        assembly,
+      ).toMatchObject({ kind: "verified" });
+      assertCertificateSound(view, proposal);
+      expect(
+        [...checkProposal(proposal, context)].at(-1),
+        assembly,
+      ).toMatchObject({
+        kind: "rejected",
+        code: "generalized-position-bound",
+      });
+    }
+  },
+  60000,
 );
 
 test("inclusive scalar grammars admit the one-position minimum without fake padding", () => {

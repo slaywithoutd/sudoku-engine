@@ -5272,6 +5272,18 @@ export const coverageEntries: readonly CoverageEntry[] = Object.freeze((
         "record": "web/tests/unit/solver/generalized-chains.test.ts#C25-z"
       },
       {
+        "kind": "boundary",
+        "fixtureId": "C25-bivalue-13-no-premature-close",
+        "alias": "z-chains",
+        "record": "web/tests/unit/solver/generalized-chains.test.ts"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "C25-bivalue-13-no-premature-close",
+        "alias": "z-chains",
+        "record": "web/tests/unit/solver/generalized-chains.test.ts"
+      },
+      {
         "kind": "positive",
         "fixtureId": "C25-bivalue-12-no-premature-close",
         "alias": "Bivalue chains",
@@ -5325,7 +5337,9 @@ export const coverageEntries: readonly CoverageEntry[] = Object.freeze((
     "descriptionPath": "docs/solver/techniques/generalized-chains.md",
     "fixtureIds": [
       "C26-t",
-      "C26-whip"
+      "C26-whip",
+      "C25-bivalue-12-no-premature-close",
+      "C25-bivalue-13-no-premature-close"
     ],
     "status": "implemented",
     "evidence": [
@@ -5348,6 +5362,18 @@ export const coverageEntries: readonly CoverageEntry[] = Object.freeze((
         "record": "web/tests/unit/solver/generalized-chains.test.ts#C26-t"
       },
       {
+        "kind": "boundary",
+        "fixtureId": "C25-bivalue-13-no-premature-close",
+        "alias": "t-whips",
+        "record": "web/tests/unit/solver/generalized-chains.test.ts"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "C25-bivalue-13-no-premature-close",
+        "alias": "t-whips",
+        "record": "web/tests/unit/solver/generalized-chains.test.ts"
+      },
+      {
         "kind": "positive",
         "fixtureId": "C26-whip",
         "alias": "Whips",
@@ -5364,6 +5390,18 @@ export const coverageEntries: readonly CoverageEntry[] = Object.freeze((
         "fixtureId": "C26-whip",
         "alias": "Whips",
         "record": "web/tests/unit/solver/generalized-chains.test.ts#C26-whip"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "C25-bivalue-13-no-premature-close",
+        "alias": "Whips",
+        "record": "web/tests/unit/solver/generalized-chains.test.ts"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "C25-bivalue-13-no-premature-close",
+        "alias": "Whips",
+        "record": "web/tests/unit/solver/generalized-chains.test.ts"
       }
     ]
   },
@@ -5696,6 +5734,12 @@ export const coverageEntries: readonly CoverageEntry[] = Object.freeze((
         "record": "web/tests/unit/solver/generalized-chains.test.ts#C28-or3"
       },
       {
+        "kind": "negative",
+        "fixtureId": "C28-or3",
+        "alias": "OR-k forcing",
+        "record": "web/tests/unit/solver/generalized-chains.test.ts"
+      },
+      {
         "kind": "positive",
         "fixtureId": "C28-generalized-C25-z",
         "alias": "OR-k forcing",
@@ -5868,6 +5912,12 @@ export const coverageEntries: readonly CoverageEntry[] = Object.freeze((
         "fixtureId": "C28-signed-or2-static24",
         "alias": "OR-k forcing",
         "record": "web/tests/unit/solver/generalized-chains.test.ts#C28-signed-or2-static24"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "C28-signed-or2-static24",
+        "alias": "OR-k forcing",
+        "record": "web/tests/unit/solver/generalized-chains.test.ts"
       }
     ]
   },
