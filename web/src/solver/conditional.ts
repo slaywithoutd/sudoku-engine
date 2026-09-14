@@ -215,21 +215,37 @@ export class ConditionalOperation {
    * checks acceptsResult before accepting any worker output. No witness crosses.
    */
   async grantBootstrap(port: MessagePort, nonce: string, generation: number): Promise<ConditionalBootstrap> {
-    requireProof(port instanceof MessagePort && this.active && this.#record.parent && !installedPorts.has(port), "conditional-grant-lifecycle");
+    requireProof(port instanceof MessagePort && this.active && this.#record.parent && !installedPorts.has(port),
+      "conditional-grant-lifecycle");
     MessagePort.prototype.start.call(port);
     requireProof(typeof nonce === "string" && nonce.length >= 16 && nonce.length <= 128 &&
       Number.isSafeInteger(generation) && generation >= 0, "conditional-grant-binding");
-    await this.digestPrefix();
-    requireProof(this.active, "revoked-unique-authority");
-    const lease = this.#workspace.reserve(1, 32768*4);
+
+    // Claim synchronously before hashing can yield. A failed attempt consumes
+    // and closes this endpoint; a retry must supply a new dedicated channel.
+    // A duplicate caller fails above and must not close the first caller's port.
+    installedPorts.add(port);
     try {
-      const frame = captureProofRecord({kind:"conditional-grant@1",envelope:{run:this.run,snapshot:this.snapshot,prefix:this.#descriptor!,nonce,generation}}, 32768).value;
-      const envelope=frame.envelope;
-      this.charge(32); installedPorts.add(port);
-      port.postMessage(frame);
-      this.#teardowns.push(() => { port.postMessage({kind:"conditional-revoke@1",nonce,generation}); port.close(); });
-      return envelope;
-    } finally { lease.dispose(); }
+      await this.digestPrefix();
+      requireProof(this.active, "revoked-unique-authority");
+      const lease = this.#workspace.reserve(1, 32768 * 4);
+      try {
+        const frame = captureProofRecord({
+          kind: "conditional-grant@1",
+          envelope: { run: this.run, snapshot: this.snapshot, prefix: this.#descriptor!, nonce, generation },
+        }, 32768).value;
+        this.charge(32);
+        port.postMessage(frame);
+        this.#teardowns.push(() => {
+          port.postMessage({ kind: "conditional-revoke@1", nonce, generation });
+          port.close();
+        });
+        return frame.envelope;
+      } finally { lease.dispose(); }
+    } catch (error) {
+      port.close();
+      throw error;
+    }
   }
 
   /** Main rejects stale/revoked results independently of worker delivery timing. */

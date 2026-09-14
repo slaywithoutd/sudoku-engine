@@ -110,6 +110,61 @@ test("dedicated grant waits for exact prefix, refuses duplicates and releases bo
   h.operation.dispose();expect(h.workspace.usage).toEqual({entries:0,bytes:0});
 });
 
+test("concurrent native-port grants claim the endpoint exactly once before hashing", async () => {
+  const h = emptyOperation(), channel = new MessageChannel();
+  const frames: { kind: string }[] = [];
+  channel.port2.onmessage = event => { frames.push(event.data); };
+  try {
+    const results = await Promise.allSettled([
+      h.operation.grantBootstrap(channel.port1, "nonce-concurrent-first", 1),
+      h.operation.grantBootstrap(channel.port1, "nonce-concurrent-second", 2),
+    ]);
+    expect(results.map(result => result.status)).toEqual(["fulfilled", "rejected"]);
+    if (results[1].status === "rejected")
+      expect(results[1].reason.message).toBe("conditional-grant-lifecycle");
+    await vi.waitFor(() => expect(frames.map(frame => frame.kind)).toEqual(["conditional-grant@1"]));
+    h.operation.dispose();
+    await vi.waitFor(() => expect(frames.map(frame => frame.kind)).toEqual([
+      "conditional-grant@1", "conditional-revoke@1",
+    ]));
+    expect(h.workspace.usage).toEqual({ entries: 0, bytes: 0 });
+  } finally {
+    h.operation.dispose();
+    channel.port1.close();
+    channel.port2.close();
+  }
+});
+
+test("an asynchronous failed grant closes its claimed endpoint permanently", async () => {
+  const h = emptyOperation(), failed = new MessageChannel(), later = new MessageChannel();
+  const close = vi.spyOn(failed.port1, "close");
+  const digest = vi.spyOn(crypto.subtle, "digest").mockRejectedValueOnce(Error("test-hash-failure"));
+  const before = h.workspace.usage;
+  try {
+    await expect(h.operation.grantBootstrap(failed.port1, "nonce-failed-attempt", 1))
+      .rejects.toThrow("test-hash-failure");
+    digest.mockRestore();
+    expect(close).toHaveBeenCalledOnce();
+    expect(h.workspace.usage).toEqual(before);
+    expect(h.operation.active).toBe(true);
+    await expect(h.operation.grantBootstrap(failed.port1, "nonce-failed-retry", 2))
+      .rejects.toThrow("conditional-grant-lifecycle");
+    expect(close).toHaveBeenCalledOnce();
+    await expect(h.operation.grantBootstrap(later.port1, "nonce-new-endpoint", 3)).resolves.toHaveProperty("generation", 3);
+    h.operation.dispose();
+    expect(h.workspace.usage).toEqual({ entries: 0, bytes: 0 });
+    expect(close).toHaveBeenCalledOnce();
+  } finally {
+    digest.mockRestore();
+    close.mockRestore();
+    h.operation.dispose();
+    failed.port1.close();
+    failed.port2.close();
+    later.port1.close();
+    later.port2.close();
+  }
+});
+
 test("foreign or changed grant cannot mint worker authority",async()=>{
   const h=emptyOperation(), source=new MessageChannel(), foreign=new MessageChannel();
   const expected=await h.operation.grantBootstrap(source.port1,"nonce-unique-port-0002",2);
