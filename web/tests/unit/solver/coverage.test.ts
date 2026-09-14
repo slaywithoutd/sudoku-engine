@@ -19,11 +19,11 @@ test("preserves exact UTF8 matrix bounds for every catalogue row", () => {
 test("catalogues all 38 exact matrix rows and only independently accepted implementations", () => {
   expect(coverageEntries).toHaveLength(38);
   expect(new Set(coverageEntries.map(e => e.id)).size).toBe(38);
-  expect(coverageEntries.filter(e => e.id > "C33").every(e => e.status === "implemented")).toBe(true);
+  expect(coverageEntries.filter(e => e.id > "C33").every(e => e.status === "independently-verified")).toBe(true);
   expect(coverageEntries.find(e=>e.id==="C33")?.status).toBe("independently-verified");
   expect(coverageEntries.filter(e=>e.id>="C25"&&e.id<="C28").every(e=>e.status==="implemented")).toBe(true);
   expect(validateCoverage(coverageEntries)).toEqual([]);
-  expect(coverageEntries.filter(e=>e.status==="independently-verified").map(e=>e.id)).toEqual(["C01","C02","C03","C04","C05","C06","C07","C08","C09","C10","C11","C12","C13","C14","C15","C16","C17","C18","C19","C20","C21","C22","C23","C24","C29","C30","C31","C32","C33"]);
+  expect(coverageEntries.filter(e=>e.status==="independently-verified").map(e=>e.id)).toEqual(["C01","C02","C03","C04","C05","C06","C07","C08","C09","C10","C11","C12","C13","C14","C15","C16","C17","C18","C19","C20","C21","C22","C23","C24","C29","C30","C31","C32","C33","U01","U02","U03","U04","U05"]);
   expect(new Set(aliasMappings.map(e=>e.alias)).size).toBe(aliasMappings.length);
   expect(unsupportedAliases.every(e=>e.reason && e.nearestSupportedForm)).toBe(true);
   expect(getTechniques("classic-expanded@1")).toHaveLength(33);
@@ -47,8 +47,8 @@ test("refuses unsupported profile versions and verified rows lacking independent
   expect(validateCoverage(unknown)).toContain("unknown-alias");
 });
 
-test("implemented U rows have complete per-alias evidence without promotion",()=>{
+test("reviewed U rows retain complete per-alias evidence",()=>{
  const proposed=coverageEntries.map(e=>e.id.startsWith("U")?{...e,status:"independently-verified" as const}:e);
  expect(validateCoverage(proposed)).toEqual([]);
- expect(coverageEntries.filter(e=>e.id.startsWith("U")).every(e=>e.status==="implemented")).toBe(true);
+ expect(coverageEntries.filter(e=>e.id.startsWith("U")).every(e=>e.status==="independently-verified")).toBe(true);
 });

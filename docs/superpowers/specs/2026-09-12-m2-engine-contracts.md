@@ -191,7 +191,11 @@ interface TechniqueDescriptor {
   estimate(view: ReadView): Estimate;
   discover(view: ReadView, context: DiscoveryContext): Discovery;
 }
-interface DiscoveryContext { workspace: IndexWorkspace; limits: Limits } // D073; one operation
+interface DiscoveryContext {
+  workspace: IndexWorkspace; limits: Limits;
+  templates?: TemplateOperationContext;
+  uniqueAuthority?: UniqueAuthority;
+} // D073/D091/D092; one operation owns resources and capabilities
 interface Estimate { hit: number; gain: number; cost: number } // bounded integers
 type DiscoveryInterruption = "time-limit" | "work-limit" | "proof-step-limit" |
   "cancelled" | "workspace-entry-limit" | "workspace-byte-limit";
@@ -245,6 +249,7 @@ interface DeductionProposal {
 interface CheckContext {
   view: ReadView; retained: ReadonlyMap<NodeId, ProofNode>;
   policy: AssumptionPolicy; uniqueEvidenceId: string | null;
+  uniqueAuthority?: UniqueAuthority; // explicit ready capability for unique-only proofs
   limits: Limits;
 }
 interface CheckedInference {
@@ -290,7 +295,7 @@ Primitive registry and checker rules:
 | `subset-count@1` (D085; T13 reviewed) | Exact domains of 1…12 counted cells and the target, a scoped positive target assumption, and 1…4 explicit all-different incidences. Reconstruct target restrictions; for each symbol in the original union, cooperatively enumerate every occupancy subset (<=4,096), checking conflicts and the asserted exact maximum including zero. Sum maxima and derive false only below cell count; discharge before applying a removal. Authenticated singleton counted cells are permitted; the target is unresolved. |
 | `table-filter@1`, `table-union@1`, `table-join@1`, `table-project@1` | Complete Cartesian enumeration or a referenced proved relation; each rejected tuple has a checked conflict. Bounded filter leaves and disjoint/exhaustive partition unions retain exact source-domain/constraint identities. Joins match shared cells and cite both complete table definitions. Incomplete tables cannot authorize joining or projection. |
 | `template-cover@1` (D091; implemented and reviewed) | Complete per-symbol packed template lists, exact authenticated classic source facts and independent 9! enumeration; fully recompute single/pair/triple or synchronous incompatibility support. Conclude the complete unsupported-negative conjunction and require direct indexed effect projections. Preserve existing node/premise/table caps; incomplete enumeration or proof overflow interrupts. |
-| `unique-transform@1` | Prior independent unique evidence, a nontrivial alternate assignment transformation, preservation of original givens and every declared rule, and a closed proof that the rejected condition would enable it. Marks all descendants conditional. |
+| `unique-transform@1` | Active opaque conditional capability derived from actual accepted independent uniqueness (D092), a nontrivial alternate assignment transformation, preservation of original givens and every declared rule, and a closed proof that the rejected condition would enable it. Marks all descendants conditional. |
 
 Implementation refinement D068: a large finite table is a checked definition DAG, represented by a table proposition containing cells, exact count and its defining NodeId. The producing node owns the immutable definition; metadata is authenticated by actual node identity. Equal cells/count do not make two table propositions interchangeable. This primitive version bounds table scopes to 16 cells and definition depth to 64; explicit projected relations contain at most 256 distinct rows and must fit the node-byte cap. Filter leaves enumerate at most 256 Cartesian input tuples from explicit proved domain facts and rule/relation premises. A leaf box may be only a partial partition; binary table-union validates matching source identities and disjoint masks differing on exactly one axis before forming their union. Joining or projecting requires complete coverage of the source domains, with inherited assumptions and rule provenance intact. Small explicit relation tuples remain supported: projection independently enumerates and deduplicates the exact requested columns/rows within the per-node byte cap. General table-to-table projection is not part of this primitive version; keep the complete definition and project a bounded relation or proved effect. Heavy tuple/join checking uses a resumable primitive path and charges every tuple/pair; no large row list, compressed payload or lazy uncharged iteration can evade node/work/byte caps. This representation supports bounded local technique certificates; it does not authorize whole-grid completion enumeration as logic.
 
@@ -313,9 +318,17 @@ The C33 representation follows D091: base-9 column-per-row integer codes, sorted
 
 `DiscoveryContext.templates?: TemplateOperationContext` is optional for other families and required before C33 work. The operation owns actual view/assembly/problem/branch identity and monotone candidate-revision advancement. `advance(view, charge)` cannot reset a same-revision proof-prefix restart; `consumeTuple(view)` shares 100,000 discovery tuple tests across every mode/restart at that revision. Independent certificate recomputation has the same per-certificate semantic bound, charges verifier work separately and cannot replenish exploration. Incomplete source enumeration, crossproducts, fixed points or overlarge certificates report interruption, never absence or exhaustion. The complete 46,656-template empty-grid index does not establish that it fits a wire certificate or any proposed time default.
 
+D092 requires an authenticated parent handle and active operation-local capability; evidence-ID strings, cloned counts and branch labels cannot authorize a proof. Checking and commit/retention reject revoked conditional steps, including inherited ordinary-family consequences. Separate conditional replay rebinds only proposal branch fields and rechecks every prefix bundle; it never reuses a primary checked-step token. D093 requires universal preservation of original clues and every affected declared rule; a necessary relation alone is insufficient. Unknown affected-rule preservation is explicitly unsupported.
+
+The actual parent API is `acceptedUniqueParent(count, context: EvidenceContext, quarantined)`: the context already contains the original snapshot and accepted primary path. `ConditionalOperation.begin(parent, run, limits, workspace)` creates a fresh owner; `rebuildPrefix()` rechecks the accepted unconditional primary prefix before uniqueness becomes ready. Saved conditional bundles replay only under their exact bound request and branch. Ordinary conditional Cancel disposes the operation while preserving primary evidence; input/primary replacement or quarantine revokes the parent.
+
+Lifetime binding follows the actual private candidate-origin identity, even when a caller omits `CheckContext.uniqueAuthority` for an unconditional proof. The read-only `acceptedOriginIdentity(view)` and `conditionalViewAuthority(view)` queries expose no registration or mutation path. The private origin association remains after revocation while its view survives. Checking rejects revoked origins and explicitly supplied foreign capabilities; commit/retention require the checked step's private binding to match the target origin. Automatic lifetime lookup never supplies the explicit ready capability required by `unique-only` or `unique-transform@1`. Hypothetical and independently initialized same-label views acquire no conditional authority through these queries.
+
 ## 6. Scheduling, determinism and bounded lookahead
 
 Recommended profile IDs: `classic-expanded@1` and `classic-conditional@1`; coverage rows define tiers and finite bounds. One registry is shared by both modes. Default Explain uses `explain-fair@1`; Analyze uses `analyze-fair@1`. Keep `fixed-scan@1` and `event-fixed@1` as benchmark policies. No family toggle UI in M2; display the full profile and any runtime incomplete rows. Both modes remain human-first.
+
+D094 distinguishes implementation and policy identity. `RunKey.scheduler` is the shared implementation version `scheduler@1`; the selected versioned policy ID is a mandatory part of canonical `optionsKey`, together with mode and all other behavior-affecting options. A conditional operation may select a different mode/policy from its primary parent while using the same scheduler implementation. Its own full RunKey and the parent's original full RunKey remain distinct. Benchmark output records both versions; changing a policy table or algorithm requires the appropriate version change.
 
 At each revision, order jobs canonically by tier, technique ID, scope cells, symbols and relation IDs. Fixed work accounting charges a unit for a pattern extension, edge visit, tuple test, proof-node check or exact-node transition, with inner loops split before 256 operations. A quantum is 256 units, independent of wall-clock slice boundaries. In Explain, process the lowest not-exhausted tier; once a checked step is found, finish the current deterministic quantum and choose among checked steps found there. All lower tiers must already be exhausted/soundly excluded at this revision. No need to enumerate all same-tier proofs or promise the globally simplest proof. If a tier is interrupted, do not claim a simpler-tier exhaustion.
 
@@ -406,14 +419,21 @@ interface ProofHeader {
   imports: readonly NodeId[]; pattern: Json;
   nodeCount: number; byteCount: number; chunkCount: number;
 }
+type ConditionalPrefixHeader = {
+  bundles: number; nodes: number; bytes: number; digest: string;
+};
 type ToWorker = { type: "start"; protocol: 2; key: RunKey;
   snapshot: SolverSnapshot; limits: Limits; remainingMs: number;
-  conditionalPrefix: readonly DeductionProposal[] | null;
-  uniqueEvidence: CountEvidence | null } |
+  conditional: { prefix: ConditionalPrefixHeader; authorizationPort: MessagePort } | null } |
+  { type: "prefix-chunk"; protocol: 2; key: RunKey;
+    batchSeq: number; chunk: number; bytes: Uint8Array } |
+  { type: "prefix-end"; protocol: 2; key: RunKey } |
   { type: "ack"; protocol: 2; key: RunKey; batchSeq: number } |
   { type: "accepted"; protocol: 2; key: RunKey; stepId: number; revision: number } |
   { type: "stop-human"; protocol: 2; key: RunKey; acceptedRevision: number };
 type WorkerBody =
+  | { type: "prefix-ack"; batchSeq: number }
+  | { type: "conditional-ready" }
   | { type: "stats"; phase: "validating" | "human" | "exact"; stats: Stats }
   | { type: "proof-begin"; header: ProofHeader }
   | { type: "proof-chunk"; batchSeq: number; stepId: number; chunk: number; bytes: Uint8Array }
@@ -431,7 +451,13 @@ type FromWorker = { protocol: 2; key: RunKey; seq: number } & WorkerBody;
 
 One dedicated module worker per active operation; at most one active worker per application, so conditional analysis begins only after the primary run terminalizes. Create with Vite's static `new Worker(new URL('../workers/solver.worker.ts', import.meta.url), { type: 'module' })` in the app adapter. No synchronous UI-thread solver fallback on startup error. See [Vite worker documentation](https://vite.dev/guide/features.html#web-workers).
 
-Primary request carries no conditional prefix/evidence. Conditional request carries only the already accepted, budget-bounded prefix and matching unique evidence; worker rechecks them. Their validation and transport count against its new limit. Runtime checks compare every RunKey field. `optionsKey` includes all limits, phase share, mode, rollout flag and profile parameters. Wrong-key/post-terminal messages are ignored. Active malformed messages cause protocol error and preserve prior accepted evidence.
+Primary Start has `conditional: null`. A conditional Start transfers one explicitly installed authorization port and the bounded prefix header, with no CountEvidence or solution witness. D092's one-use grant on that port binds the expected full run/snapshot/problem/parent/prefix digest, nonce and active generation. It is at most 32 KiB and contains no prefix body; main-side acceptance continues to require the actual accepted parent authority. The trusted bootstrap adapter is separate from untrusted proof/data dispatch. Explicit port transfer/closure follows the [HTML channel-messaging contract](https://html.spec.whatwg.org/multipage/web-messaging.html#message-ports).
+
+The grant adapter claims its endpoint before the first await. A failed claimed attempt closes it permanently; retry requires a fresh channel. A duplicate attempt rejects without closing the first caller's endpoint, while receiver-side duplicate validation remains independent.
+
+The main thread streams only its actual accepted unconditional prefix as canonical UTF-8 proposal records, in at most 64 KiB `prefix-chunk` frames and at most two unacknowledged batches. Worker `prefix-ack` releases staging credit only. Check contiguous chunk/batch numbers, header bounds, actual node/bundle/byte counts and digest before complete conditional replay; declared counts never authorize unbounded allocation. `prefix-end` closes exactly one input stream; duplicates, missing chunks and primary-run prefix frames are protocol errors. The worker emits `conditional-ready` only after active grant validation and complete original-clue prefix recheck, before any conditional discovery or proof publication. Prefix decoding, hashing, copying and replay count against the new operation's deadline, work, proof and workspace limits. Cancellation or replacement revokes local authority, closes ports and terminates the worker; main rejection does not wait for a revocation message. T20-T23 implement the actual bootstrap, streaming and controller integration. SHA-256 supplies prefix identity integrity, not uniqueness authority.
+
+Runtime checks compare every RunKey field. `optionsKey` includes all limits, phase share, mode, rollout flag and profile parameters. Wrong-key/post-terminal messages are ignored. Active malformed messages cause protocol error and preserve prior accepted evidence.
 
 Wire encoding is deterministic UTF-8 JSON for proof bytes (bounded integer IDs, no cycles or arbitrary objects), split into <=64 KiB chunks transferable as ArrayBuffers. Decode incrementally, maintaining only the incomplete code point/token tail; a single node/header is <=16 KiB. Header counts include pattern data and all newly transmitted nodes. Header/dependency arrays must fit the control-packet cap of 32 KiB; otherwise resource interruption before sending. The 1 MiB step limit includes header plus encoded nodes. Large tables must use bounded tree nodes; no giant synchronous JSON parse/stringify. Worker and controller both charge bytes before allocation. Counts are checked, not trusted preallocation sizes.
 

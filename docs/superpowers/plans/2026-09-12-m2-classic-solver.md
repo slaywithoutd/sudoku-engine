@@ -406,7 +406,7 @@ expect(checkFixtureMutation("C32-parity", "retain-valid-core-permutation").kind)
 
 ## T17 — Templates and pattern overlay C33
 
-**Completed:** `414b5f7`, independently reviewed through `2fec0e0`. The initial full suite passed 1,564 tests; 163 covering tests and typecheck passed after review fixes. The actual uniqueness-derived placement-to-C33 lifecycle remains a required T18/T25 integration gate; no synthetic authority was added. Detailed evidence is in [implementation progress](../../m2-implementation-progress.md).
+**Completed:** `414b5f7`, independently reviewed through `2fec0e0`. The initial full suite passed 1,564 tests; 163 covering tests and typecheck passed after review fixes. Reviewed T18 now covers the actual uniqueness-derived placement-to-C33 engine lifecycle; T25 retains browser integration acceptance. No synthetic authority was added. Detailed evidence is in [implementation progress](../../m2-implementation-progress.md).
 
 **Files:** create `src/solver/indexes/templates.ts`, `src/solver/techniques/templates.ts`; fixture `C33.json`; test `tests/unit/solver/templates.test.ts`; `docs/solver/techniques/templates.md`; update registry/manifest/provenance.
 
@@ -432,25 +432,33 @@ expect(stopTemplateEnumerationBeforeEnd().canEliminate).toBe(false);
 
 ## T18 — Uniqueness-dependent families U01–U05
 
+**Completed:** `a2f7a53`, independently reviewed through bootstrap race fix `5a19be1`. All 129 covering tests, 19 final resource checks, 21 fix checks, typecheck and build passed. The earlier full run retained 33 test timeouts; final integration acceptance remains T25-T27. See [implementation progress](../../m2-implementation-progress.md).
+
 **Files:** create `src/solver/proof/unique.ts`, `src/solver/techniques/unique-rectangles.ts`, `unique-loops.ts`, `bug.ts`; fixtures `U01.json`–`U05.json`; tests `tests/unit/solver/unique-techniques.test.ts`, `unique-provenance.test.ts`; `docs/solver/techniques/uniqueness.md`; update registry/manifest/provenance.
 
-**Interfaces:** `unique-transform@1` checks a rule-preserving nonidentity trade under matching independent CountEvidence; descriptors have policy `unique-only`. Conditional flag is inherited through all primitive consequences. `classic-conditional@1` includes the primary profile plus U rows.
+**Interfaces:** D092 binds `unique-transform@1` to an opaque active conditional-operation capability issued from actual accepted independent uniqueness; count/evidence-ID shapes alone are not authority. Descriptors have policy `unique-only`. Conditional flag is inherited through all primitive consequences. `classic-conditional@1` includes the primary profile plus U rows.
 
-- [ ] Assert gating, swap preservation and permanent taint:
+**Concrete integration (D092/D093):** add `src/solver/conditional.ts`, `techniques/unique-grammar.ts`, `unique-compiler.ts` and `unique-runtime.ts` for authority/lifecycle, independent named admission, untrusted construction and fair discovery. Update `evidence.ts`, proof types/checker/primitives/replay, candidate commit/retention and technique types/grammar/registry/manifest through their actual interfaces. Add opaque parent/capability queries, revoked checked-step rejection, a trusted MessagePort bootstrap adapter, separate conditional replay and explicit disabled discovery status. The port grant is bounded metadata; prefix chunks and actual worker/controller orchestration remain T20-T23. Define per-row uniqueness bounds instead of copying placeholder loop/guardian dimensions. A necessary relation cannot certify preservation of its whole declared rule.
+
+Keep bounded proof-record capture, canonical prefix hashing and storage leases in `src/solver/conditional-prefix.ts`. Its read-only copying helpers issue no proof authority; reserve before allocation, preserve record/bundle framing and check lifetime after asynchronous hashing. Proof header/node records remain at most 16 KiB; the control/grant envelope limit is 32 KiB. Add `tests/solver/unique-worker.mjs` for actual fresh Node worker adapter tests, explicitly distinct from later Vite/browser integration. Test interrupted hashing, partial-prefix cleanup and revocation as well as the successful handshake.
+
+**Integration acceptance:** test actual U03 source-to-C28 reuse and uniqueness-derived placement-to-C33 compilation/discovery/check/commit/original replay, preserving taint and refusing primary/Perfect. Include cloned/forged authority, mismatched run/snapshot/problem/parent/prefix/version, independent same-label owners and revocation between checking and publication. Keep complete roof occurrence proofs for UR virtual pair/triple/quad and genuine BUG+4; admit a general valid fourteen-cell trade while rejecting its U03 named form. No synthetic checked-source issuer.
+
+- [x] Assert gating, swap preservation and permanent taint:
 
 ```ts
 expect(checkConditionalFixture("U01-type1", unknownEvidence).kind).toBe("rejected");
 expect(checkConditionalFixture("U02-avoidable-given", uniqueEvidence).kind).toBe("rejected");
 expect(checkConditionalFixture("U03-extra-order-rule", uniqueEvidence).kind).toBe("rejected");
 expect(afterDischarge.conditional).toBe(true);
-expect(deriveQuality(snapshot, "solved", conditionalSteps, uniqueEvidence, false))
+expect(deriveQuality(snapshot, "solved", conditionalSteps, uniqueEvidence, false, conditionalContext))
   .toBe("not-established");
 ```
 
-- [ ] Run `npm test -- tests/unit/solver/unique-techniques.test.ts tests/unit/solver/unique-provenance.test.ts`.
-- [ ] Implement UR1…6 and hidden/avoidable/extended finite geometry, even unique loops <=12 cells, BUG core plus <=4 extras. Reconstruct affected house/clue preservation and nontrivial alternate assignment mapping; root uniqueness is never discharged. BUG core requires an actual alternate-cycle trade certificate; pure incompatible unique/core inputs become diagnostics. Apply only the conditional profile; no exact solution digits become a premise.
-- [ ] Run independent original-clue uniqueness first, every U alias/bound and nonunique trade counterexample, mixed-rule swap rejection, chain-inherited taint, replay and typecheck.
-- [ ] Commit listed files: `feat: add isolated uniqueness-dependent deduction families`.
+- [x] Run `npm test -- tests/unit/solver/unique-techniques.test.ts tests/unit/solver/unique-provenance.test.ts`.
+- [x] Implement UR1…6 and hidden/avoidable/extended finite geometry, even unique loops <=12 cells, BUG core plus <=4 extras. Reconstruct affected house/clue preservation and nontrivial alternate assignment mapping; root uniqueness is never discharged. BUG core requires an actual alternate-cycle trade certificate; pure incompatible unique/core inputs become diagnostics. Apply only the conditional profile; no exact solution digits become a premise.
+- [x] Run independent original-clue uniqueness first, every U alias/bound and nonunique trade counterexample, mixed-rule swap rejection, chain-inherited taint, replay and typecheck.
+- [x] Commit listed files: `feat: add isolated uniqueness-dependent deduction families`.
 
 ## T19 — Fair scheduling and Explain/Analyze selection
 

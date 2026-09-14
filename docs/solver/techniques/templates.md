@@ -99,9 +99,9 @@ open assumptions. Primitive-level tests demonstrate inherited conditional taint,
 rule provenance and open-scope metadata through the source packs, certificate and
 projections; these inputs do not issue checked authority. The authentic lifecycle
 from a uniqueness-derived placement through C33 compilation/discovery, checking,
-conditional commit and original-clue replay remains an explicit T18/T25 gate,
-including refusal by the primary/Perfect path. No uniqueness issuer exists in T17,
-so that end-to-end conditional gate is not claimed here.
+conditional commit and original-clue replay is now covered by reviewed T18,
+including refusal by the primary/Perfect path. T25 retains browser integration
+acceptance; see [conditional uniqueness](uniqueness.md).
 
 Parameters are exactly `mode`, `symbols`, `templates`, `supported`, `tupleTests`
 and `rounds`. Each source/supported list is strictly ordered, distinct base-nine

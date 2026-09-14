@@ -6550,7 +6550,7 @@ export const coverageEntries: readonly CoverageEntry[] = Object.freeze((
       "U01-type3-shared-links-24-independent",
       "U01-type3-shared-links-25-independent"
     ],
-    "status": "implemented",
+    "status": "independently-verified",
     "evidence": [
       {
         "kind": "positive",
@@ -6895,7 +6895,7 @@ export const coverageEntries: readonly CoverageEntry[] = Object.freeze((
       "U02-extended-3x2-independent",
       "U02-hidden-three-roofs-target-extra-independent"
     ],
-    "status": "implemented",
+    "status": "independently-verified",
     "evidence": [
       {
         "kind": "positive",
@@ -7105,7 +7105,7 @@ export const coverageEntries: readonly CoverageEntry[] = Object.freeze((
       "U03-length14-guardians1-out-of-profile-independent",
       "U03-case-shared-links-25-independent"
     ],
-    "status": "implemented",
+    "status": "independently-verified",
     "evidence": [
       {
         "kind": "positive",
@@ -7228,7 +7228,7 @@ export const coverageEntries: readonly CoverageEntry[] = Object.freeze((
     "fixtureIds": [
       "U04-BUG-plus1-independent"
     ],
-    "status": "implemented",
+    "status": "independently-verified",
     "evidence": [
       {
         "kind": "positive",
@@ -7318,7 +7318,7 @@ export const coverageEntries: readonly CoverageEntry[] = Object.freeze((
       "U05-BUG-plus4-C22-prefix-58",
       "U05-BUG-plus4-C22-prefix-67"
     ],
-    "status": "implemented",
+    "status": "independently-verified",
     "evidence": [
       {
         "kind": "positive",
