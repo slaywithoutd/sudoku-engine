@@ -5,8 +5,10 @@ They do not reinterpret an arbitrary AIC as a whip or braid. The implemented
 aliases are `Bivalue chains`, `z-chains`, `t-whips`, `Whips`, `Braids`,
 `g-whips`, `OR-k forcing`, and `OR-k whips`. The last alias names the finite
 inserted-OR specialization below. Implementation evidence is in
-`web/tests/unit/solver/generalized-chains.test.ts`; independent task review is
-separate from the manifest's `implemented` status.
+`web/tests/unit/solver/generalized-chains.test.ts`. The separate per-alias
+evidence closure passed independent review at `18c103c`; all four rows now have
+`independently-verified` catalogue status. Runtime and browser acceptance remain
+separate later gates.
 
 ## Variables, candidates, and the finite grammars
 

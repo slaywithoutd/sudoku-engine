@@ -5251,7 +5251,7 @@ export const coverageEntries: readonly CoverageEntry[] = Object.freeze((
       "C25-bivalue-12-no-premature-close",
       "C25-bivalue-13-no-premature-close"
     ],
-    "status": "implemented",
+    "status": "independently-verified",
     "evidence": [
       {
         "kind": "positive",
@@ -5341,7 +5341,7 @@ export const coverageEntries: readonly CoverageEntry[] = Object.freeze((
       "C25-bivalue-12-no-premature-close",
       "C25-bivalue-13-no-premature-close"
     ],
-    "status": "implemented",
+    "status": "independently-verified",
     "evidence": [
       {
         "kind": "positive",
@@ -5435,7 +5435,7 @@ export const coverageEntries: readonly CoverageEntry[] = Object.freeze((
       "C27-braid-causal-12",
       "C27-braid-causal-13"
     ],
-    "status": "implemented",
+    "status": "independently-verified",
     "evidence": [
       {
         "kind": "positive",
@@ -5605,7 +5605,7 @@ export const coverageEntries: readonly CoverageEntry[] = Object.freeze((
       "C28-inserted-or2-thirteen-sound",
       "C28-signed-or2-static24"
     ],
-    "status": "implemented",
+    "status": "independently-verified",
     "evidence": [
       {
         "kind": "positive",

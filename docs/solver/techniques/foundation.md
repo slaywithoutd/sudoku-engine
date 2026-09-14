@@ -2,7 +2,7 @@
 
 The manifest catalogues all 38 required M2 rows. This guide covers C01–C05
 and mandatory all-different maintenance. All rows now have implementations and
-independent code review; C25–C28 still await complete per-alias catalogue evidence.
+independent code review and complete per-alias catalogue evidence.
 Scheduling and application acceptance remain pending. Primary profile
 membership is C01–C33; conditional membership additionally includes U01–U05.
 The complete catalogue must not be described as a completed expanded solver.
