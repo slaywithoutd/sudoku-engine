@@ -5543,7 +5543,7 @@ export const coverageEntries: readonly CoverageEntry[] = Object.freeze((
       "R"
     ],
     "assumptionPolicy": "discharged",
-    "bounds": "Already-proved complete OR clause, k=2...4. Forcing: same effect under every alternative; per branch C25-C27 <=12 positions or static C22 <=24 links, no recursive case nesting. Inserted whip: scalar C26 prefix/one OR position/suffix, <=12 total positions including OR and terminal; one target assumption discharged. Complete OR alternatives and ordered conflicts required; OR supplies no exclusivity. See D087.",
+    "bounds": "Already-proved complete OR clause, k=2...4. Forcing accepts signed alternatives: same effect under every alternative; per branch C25-C27 <=12 positions or static C22 <=24 links, no recursive case nesting. Inserted whip requires positive candidate alternatives: scalar C26 prefix/one OR position/suffix, <=12 total positions including OR and terminal; one target assumption discharged. Complete OR alternatives and ordered conflicts required; OR supplies no exclusivity. See D087/D088 for distinct grammars and complete named source retention.",
     "grammarId": "c28-grammar@1",
     "detectorId": "c28@1",
     "checkerId": "c28-grammar@1",

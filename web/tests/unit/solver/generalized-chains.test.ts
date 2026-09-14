@@ -54,10 +54,26 @@ import { replay } from "../../../src/solver/proof/replay";
 import type { SolverSnapshot } from "../../../src/solver/snapshot";
 import { IndexWorkspace } from "../../../src/solver/indexes/workspace";
 import { oracle } from "../../solver/oracle";
+import { independentForcing } from "../../solver/forcing-acceptance";
+import type { Effect } from "../../../src/solver/proof/types";
 
-function orFixture(fixture: (typeof c28)[number]) {
+function orFixture(
+  fixture: (typeof c28)[number],
+  assembly: "production" | "independent" = "production",
+  sourceGrammar: "whip" | "bivalue" | "braid" = "whip",
+) {
   let view = fixtureView(fixture as unknown as TechniqueFixture);
   const p = structuredClone(fixture.expectedPattern) as any;
+  const forcingSource = (plan: ForcingPlan, effect: Effect) =>
+    assembly === "production"
+      ? compileForcing(view, plan, effect)
+      : independentForcing({
+          ...fixture,
+          id: `${fixture.id}:independent-source`,
+          rowId: "C22",
+          expectedPattern: plan,
+          expectedEffects: [effect],
+        } as unknown as TechniqueFixture);
   let sourceProposal;
   if ("sourceCertificateRecipe" in fixture) {
     const recipe = fixture.sourceCertificateRecipe!;
@@ -67,8 +83,7 @@ function orFixture(fixture: (typeof c28)[number]) {
         : "candidate" in recipe.expectedPattern.cover
           ? "digit"
           : "unit";
-    sourceProposal = compileForcing(
-      view,
+    sourceProposal = forcingSource(
       {
         ...recipe.expectedPattern,
         kind,
@@ -106,8 +121,7 @@ function orFixture(fixture: (typeof c28)[number]) {
       );
     }
   } else if (p.kind === "or-forcing")
-    sourceProposal = compileForcing(
-      view,
+    sourceProposal = forcingSource(
       {
         ...p,
         kind: "cell",
@@ -118,12 +132,15 @@ function orFixture(fixture: (typeof c28)[number]) {
     );
   else {
     const ordinary = structuredClone(p);
-    ordinary.grammar = "whip";
+    ordinary.grammar = sourceGrammar;
     ordinary.mode = "cache";
     ordinary.positions[ordinary.orPosition].variable =
       ordinary.clauseProof.variable;
     delete ordinary.positions[ordinary.orPosition].role;
-    sourceProposal = compileGeneralized(view, ordinary);
+    sourceProposal =
+      assembly === "production"
+        ? compileGeneralized(view, ordinary)
+        : independentGeneralized(view, ordinary);
   }
   const result = [
     ...checkProposal(sourceProposal, {
@@ -168,18 +185,105 @@ function orFixture(fixture: (typeof c28)[number]) {
   p.source = source.id;
   const proposal =
     p.kind === "or-forcing"
-      ? compileOrForcing(view, p as OrForcingPlan, {
-          ...fixture.expectedEffects[0],
-          kind: fixture.expectedEffects[0].kind as "remove" | "place",
-        })
-      : compileGeneralized(view, p as GeneralizedPlan);
+      ? (assembly === "production" ? compileOrForcing : independentOrForcing)(
+          view,
+          p as OrForcingPlan,
+          {
+            ...fixture.expectedEffects[0],
+            kind: fixture.expectedEffects[0].kind as "remove" | "place",
+          },
+        )
+      : (assembly === "production"
+          ? compileGeneralized
+          : independentGeneralized)(view, p as GeneralizedPlan);
   return { view, proposal, p, sourceProposal };
 }
 
-test.each(c28)(
-  "authentic complete retained OR $id",
+test.each([
+  ["production", compileOrForcing],
+  ["independent", independentOrForcing],
+] as const)(
+  "%s assembly cannot relabel an empty-right contradiction as a literal OR result",
+  (_name, compile) => {
+    const { view, p } = orFixture(
+      c28.find((f) => f.id === "C28-generalized-C25-z")!,
+    );
+    const branch = p.branches.find((b: any) => b.generalized);
+    branch.generalized.positions.at(-1).right = [];
+    branch.generalized.consequence = [67, 8];
+    branch.result = { cell: 67, symbol: 8, positive: false };
+    const proposal = compile(view, p, { kind: "remove", cell: 67, symbol: 8 });
+    const context = {
+      view,
+      retained: retainedProof(view),
+      policy: "discharged" as const,
+      uniqueEvidenceId: null,
+      limits: discoveryContext().limits,
+    };
+    expect([...verifyCertificate(proposal, context)].at(-1)).toMatchObject({
+      kind: "verified",
+    });
+    const certificate = (proposal.pattern as any).certificate;
+    const index = p.branches.indexOf(branch);
+    expect(
+      proposal.proof.nodes.find(
+        (n) => n.id === certificate.branches[index].result,
+      )?.conclusion,
+    ).toEqual({ kind: "false" });
+    expect([...checkProposal(proposal, context)].at(-1)).toMatchObject({
+      kind: "rejected",
+      code: "generalized-right-size",
+    });
+  },
+);
+
+test.each(["bivalue", "braid"] as const)(
+  "independent %s cache source is retained before its independent OR consumer",
+  (grammar) => {
+    const fixture = c28.find((f) => f.id === "C28-inserted-or2-12")!;
+    const { view, proposal, sourceProposal, p } = orFixture(
+      fixture,
+      "independent",
+      grammar,
+    );
+    expect(sourceProposal.technique).toBe(
+      grammar === "bivalue" ? "c25@1" : "c27@1",
+    );
+    expect(sourceProposal.effects).toEqual([]);
+    expect(sourceProposal.proof.roots).toHaveLength(1);
+    expect(view.facts.get(p.source)?.proposition.kind).toBe("clause");
+    expect(proposal.proof.imports).toContain(p.source);
+    assertSound(view, proposal);
+    expect(
+      [
+        ...replay(
+          { problem: view.assembly.problem } as SolverSnapshot,
+          [
+            ...originalCluePrefix(fixture as unknown as TechniqueFixture),
+            sourceProposal,
+            proposal,
+          ],
+          view.assembly,
+          discoveryContext().limits,
+        ),
+      ].at(-1)?.kind,
+    ).toBe("checked");
+  },
+  60000,
+);
+
+test.each(
+  c28.flatMap((fixture) => [
+    { ...fixture, assembly: "production" as const },
+    { ...fixture, assembly: "independent" as const },
+  ]),
+)(
+  "authentic complete retained OR $assembly $id",
   (fixture) => {
-    const { view, proposal, p, sourceProposal } = orFixture(fixture);
+    const { view, proposal, p, sourceProposal } = orFixture(
+      fixture,
+      fixture.assembly,
+    );
     if (
       "expectedAdmission" in fixture &&
       fixture.expectedAdmission === "out-of-profile"

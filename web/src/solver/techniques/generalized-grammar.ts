@@ -252,6 +252,7 @@ export class GeneralizedLineage {
             sameValue(p.closingConflict, plan.target),
           "t-terminal-closing-candidate",
         );
+      requireProof(terminal || right.length > 0, "generalized-right-size");
       requireProof(
         right.length <= 3 && (!terminal || cert.reductions.length === 0),
         "generalized-right-bound",

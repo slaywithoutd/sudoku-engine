@@ -88,7 +88,13 @@ export function checkOrPattern(
       );
       l.positions(branch.generalized, proof.generalized, scope);
       requireProof(
-        proof.result === proof.generalized.contradiction,
+        proof.result === proof.generalized.contradiction &&
+          sameValue(
+            l.node(proof.result).conclusion,
+            branch.result === "false"
+              ? { kind: "false" }
+              : clause([branch.result]),
+          ),
         "or-generalized-result",
       );
     } else {

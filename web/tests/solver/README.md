@@ -213,6 +213,14 @@ OR case. Source-prefix, all-member, alias, every-root, numeric-bound, cache and
 resource regressions are explicit. Mathematical source mapping and ownership
 contracts are documented in `docs/solver/techniques/generalized-chains.md`.
 
+Every C28 record also runs the full source-cache/retention/consumer path with
+independent source and consumer assemblers. The independent C22 assembler
+supports the exact D088 negative cache mode; C25-C27 independent cache sources
+are checked and retained too. Each consumer resolves its clause FactId from its
+own retained source, and replay includes both independently assembled proofs.
+An empty-right generalized branch that remains primitive valid but falsely
+declares a literal result is rejected through both assembler paths.
+
 ```text
 npm test -- tests/unit/solver/generalized-chains.test.ts
 ```

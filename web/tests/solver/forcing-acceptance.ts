@@ -67,6 +67,13 @@ export function independentForcing(f:TechniqueFixture):DeductionProposal {
     b.lexicalScope=[];const effect=f.expectedEffects[0],conclusion=b.clause([{cell:effect.cell,symbol:effect.symbol,positive:effect.kind==="place"}]);
     const ordered=p.branches.map((branch:any,i:number)=>({a:branch.assumption,c:branches[i]})).sort((x:any,y:any)=>x.a.cell-y.a.cell||x.a.symbol-y.a.symbol||Number(x.a.positive)-Number(y.a.positive));
     const root=p.kind==="nishio"?b.add("discharge@1",[branches[0].assumption,branches[0].result],conclusion):b.add("cases@1",[cover!,...ordered.flatMap((v:any)=>[v.c.assumption,v.c.result])],conclusion);
+    // D088 retains the independently assembled full negative theorem. Empty
+    // effects omit candidate/domain closure; its source clauses keep their own
+    // globally scoped primitive ancestry inside the complete named proof.
+    if(p.mode==="cache") {
+      if(effect.kind!=="remove")throw Error("independent-cache-negative-only");
+      return b.proposal("C22",{...p,cacheTarget:{cell:effect.cell,symbol:effect.symbol,positive:false},certificate:{cover,branches,root}} as Json,[],[root]);
+    }
     const effects=[effect],roots=[root];
     if(effect.kind==="place")for(const cell of view.assembly.problem.cells)if(!view.state.values[cell]&&cell!==effect.cell&&(view.state.domains[cell]&(1<<(effect.symbol-1)))&&view.assembly.peers[effect.cell].includes(cell)){
       const weak=b.weak({cell:effect.cell,symbol:effect.symbol,positive:true},{cell,symbol:effect.symbol,positive:true});

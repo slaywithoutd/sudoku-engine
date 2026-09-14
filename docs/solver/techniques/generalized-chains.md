@@ -61,6 +61,11 @@ scalar/group grammars. No recursive cases or inserted-OR branch are admitted.
 Positive static conclusions include every required peer removal and domain
 closure.
 
+A nonterminal right must contain at least one actual candidate. A generalized
+branch's result proposition must exactly match its declared negative literal
+or explicit contradiction role; a primitive-valid contradiction cannot be
+presented as a direct literal result.
+
 **Inserted OR-k whips** import a positive-candidate clause in exactly one
 position of a scalar continuous whip. Its left alternative conflicts with the
 preceding right or Z. Every other rejected OR alternative conflicts with Z or
@@ -123,6 +128,12 @@ admit positive placement caches. The C28 fixture sources use independent,
 globally scoped cover/weak nodes inside these complete checked DAGs, never the
 cached consumer theorem as an OR premise. Run-wide cache dedup remains a
 scheduler integration responsibility.
+
+Acceptance exercises separate production and independent source-to-consumer
+paths. The independent test assemblers build the complete cache theorem before
+named checking and actual retention, then resolve the consumer's clause FactId
+from that retained view. Original-clue replay includes the independent source
+and independent consumer, including C22 and C25-C27 cache modes.
 
 ## Discovery and limits
 
