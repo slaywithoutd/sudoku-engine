@@ -5898,7 +5898,7 @@ export const coverageEntries: readonly CoverageEntry[] = Object.freeze((
       "C29-quad",
       "C29-singleton-cover"
     ],
-    "status": "implemented",
+    "status": "independently-verified",
     "evidence": [
       {
         "kind": "positive",
@@ -6017,7 +6017,7 @@ export const coverageEntries: readonly CoverageEntry[] = Object.freeze((
       "C30-all-double",
       "C30-singleton"
     ],
-    "status": "implemented",
+    "status": "independently-verified",
     "evidence": [
       {
         "kind": "positive",
@@ -6080,7 +6080,7 @@ export const coverageEntries: readonly CoverageEntry[] = Object.freeze((
       "C31-double-shared-base",
       "C31-double-four-base-independent"
     ],
-    "status": "implemented",
+    "status": "independently-verified",
     "evidence": [
       {
         "kind": "positive",
@@ -6203,7 +6203,7 @@ export const coverageEntries: readonly CoverageEntry[] = Object.freeze((
       "C32-degenerate",
       "C32-surviving-core-negative"
     ],
-    "status": "implemented",
+    "status": "independently-verified",
     "evidence": [
       {
         "kind": "positive",

@@ -8,7 +8,7 @@
 
 **Tech Stack:** Existing TypeScript 7.0.2, Vite 8.3.0, Vitest 5.0.0, Playwright 1.63.0, native Worker/IndexedDB; retain lockfile and no new runtime dependency. These are inspected repository pins, not recommendations to upgrade.
 
-**Spec:** Read [screen/evidence design](../specs/2026-09-12-m2-classic-solver-design.md), [engine contracts](../specs/2026-09-12-m2-engine-contracts.md), [technique matrix](../specs/2026-09-12-m2-technique-coverage.md), [research rationale](../specs/2026-09-12-m2-engine-expansion-design.md) and [decisions](../../decisions.md). The contracts and matrix define signatures/grammars; this plan defines implementation sequence and evidence. Checked steps record completed implementation; unchecked steps remain pending.
+**Spec:** Read [screen/evidence design](../specs/2026-09-12-m2-classic-solver-design.md), [engine contracts](../specs/2026-09-12-m2-engine-contracts.md), [technique matrix](../specs/2026-09-12-m2-technique-coverage.md), [research rationale](../specs/2026-09-12-m2-engine-expansion-design.md) and [decisions](../../decisions.md). The contracts and matrix define signatures/grammars; this plan defines implementation sequence and evidence. The [implementation record](../../m2-implementation-progress.md) is authoritative for actual task completion, commits, review findings and verification; the task checklists retain the required work and acceptance criteria.
 
 **Status:** APPROVED at `0e98c2b`; implementation started 2026-09-12 under D065/D066. Replaces the obsolete ten-task/six-technique plan. See [implementation progress](../../m2-implementation-progress.md) for actual execution evidence. Review baseline `80471d2` on `docs/m2-solver-design`; preserve research `24e0d25` and D058 themes.
 
@@ -379,9 +379,15 @@ expect(checkFixtureMutation("C26-whip", "forward-right-dependency").kind).toBe("
 
 ## T16 — Specialized patterns C29–C32
 
+**Execution:** complete and independently reviewed through `1d9a36e` (implementation `f62a47d`, first fix `e8486a0`). Initial full 1,460 tests, post-fix 298 affected tests, six selected guardian checks and typecheck passed; see the implementation record for exact commands and history. D089/D090 record the concrete relational/count refinements.
+
 **Files:** create `src/solver/techniques/fireworks.ts`, `sk-loops.ts`, `exocet.ts`, `tridagon.ts`; fixtures `C29.json`–`C32.json`; tests `tests/unit/solver/fireworks.test.ts`, `sk-loops.test.ts`, `exocet.test.ts`, `tridagon.test.ts`; docs `docs/solver/techniques/fireworks.md`, `sk-loops.md`, `exocet.md`, `tridagon.md`; update registry/manifest/provenance.
 
 **Interfaces:** four descriptor arrays; named pattern records contain full geometry and finite cover/table certificate. No generic `special-pattern-is-valid` trusted primitive. C32 publishes genuine guardian clause facts for T15 OR discovery. T16/T25 must exercise actual same-revision C32 retention followed by C28 source invalidation, discovery, admission and original-clue replay; relation-only indexing is insufficient.
+
+The concrete implementation separates cooperative `compileFireworks`, `compileSkLoop`, `compileExocet` and `compileTridagon` from independent named grammars, sharing `SpecializedStrategy` lifecycle and `SpecializedProof` composition. A fixed `subfamilies()` list provides fair search/compiler service across at most four internal jobs without a job per combination. D089 adds authenticated `table-join-filter@1` with complete sources and bounded replay; D090 adds nonvacuous signed `cover-count-clause@1`. Both require independent algebra and old-primitive regressions. Existing local forcing import support remains unchanged; exclude these IDs until their definition metadata can be correctly remapped. Source/test/guide details and downstream accounting obligations are in the four family guides.
+
+**Concrete integration files:** `src/solver/techniques/{fireworks,sk,exocet,tridagon}-grammar.ts`, `specialized-runtime.ts`, `specialized-lineage.ts`; `src/solver/proof/count-clause.ts` with `counts.ts`, `tables.ts`, `primitives.ts`; named dispatcher/registry/manifest and `nets-runtime.ts` import exclusions. Independent support lives in `tests/solver/specialized-{state,algebra,acceptance,independent}.ts`; focused unit suites also cover primitive counts/tables, negative/resource cases, symmetry and Tridagon-to-OR integration. Additional fixtures preserve singleton Fireworks, genuine surviving-core Tridagon and guardian2/3/4 source-consumer records.
 
 - [ ] Write one positive and a decisive counterexample for each family:
 
