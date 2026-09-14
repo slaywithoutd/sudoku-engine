@@ -1,3 +1,4 @@
+import {preparedSources,sourceFacts} from "../state/source-index";
 import type { ReadView, Literal } from "../state/types";
 import type { DeductionProposal, Effect, ProofNode } from "../proof/types";
 import { clause, literals, requireProof, sameValue } from "../proof/primitives";
@@ -38,6 +39,7 @@ function current(view:ReadView,l:Literal) {return !!(view.state.domains[l.cell]&
 function requirement():PatternRequirements {return {clauses:[],vocabulary:[],paths:[]};}
 export function conflict(view:ReadView,a:Literal,b:Literal):boolean {
   if(a.cell===b.cell) return a.symbol!==b.symbol;
+  const prepared=preparedSources(view,"complete");if(prepared)return !!prepared.conflictSource(a,b);
   for(const fact of view.facts.values()) {
     if(fact.openAssumptions.length) continue;
     const p=fact.proposition;
@@ -159,7 +161,7 @@ export function validateBentPattern(view:ReadView,p:BentPattern,effects:readonly
     new Set(p.conflicts.map(pair=>pair.join())).size===p.conflicts.length,"invalid-bent-conflicts");
   const actual:number[][]=[];
   for(let i=0;i<p.cells.length;i++)for(let j=i+1;j<p.cells.length;j++)
-    if([...view.facts.values()].some(f=>!f.openAssumptions.length&&f.proposition.kind==="all-different"&&
+    if(sourceFacts(view,"all-different").some(f=>!f.openAssumptions.length&&f.proposition.kind==="all-different"&&
       f.proposition.cells.includes(p.cells[i])&&f.proposition.cells.includes(p.cells[j])))actual.push([p.cells[i],p.cells[j]]);
   requireProof(sameValue(p.conflicts,actual),"incomplete-bent-conflicts");
   const conflict=(a:number,b:number)=>p.conflicts.some(pair=>pair.includes(a)&&pair.includes(b));

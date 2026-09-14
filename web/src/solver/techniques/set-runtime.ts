@@ -1,3 +1,4 @@
+import {matchingFacts,sourceFacts} from "../state/source-index";
 import type { ReadView } from "../state/types";
 import type { Effect } from "../proof/types";
 import type { Discovery, DiscoveryContext, TechniqueDescriptor } from "./types";
@@ -15,12 +16,11 @@ export type SetCursor = Generator<ChainWork | SetCandidate>;
 export type SetStrategy = (view: ReadView, graph: PatternGraph, sets: readonly LocalSet[]) => SetCursor[];
 
 function eligibility(view: ReadView, id: "C20" | "C21"): ReturnType<TechniqueDescriptor["eligible"]> {
-  const scopes = view.assembly.allDifferent.filter(h => [...view.facts.values()].some(f => !f.openAssumptions.length &&
-    f.proposition.kind === "all-different" && f.proposition.cells.join() === h.cells.join()));
+  const scopes = view.assembly.allDifferent.filter(h => matchingFacts(view,{kind:"all-different",cells:h.cells}).some(f=>!f.openAssumptions.length));
   const lines = scopes.filter(h => h.cells.length === 9 && (new Set(h.cells.map(c => Math.floor(c / 9))).size === 1 || new Set(h.cells.map(c => c % 9)).size === 1));
   const boxes = scopes.filter(h => h.cells.length === 9 && new Set(h.cells.map(c => Math.floor(c / 27) * 3 + Math.floor(c % 9 / 3))).size === 1);
   const capable = id === "C20" ? lines.some(a => boxes.some(b => a.cells.filter(c => b.cells.includes(c)).length === 3)) :
-    scopes.length > 0 || [...view.facts.values()].some(f => !f.openAssumptions.length && f.proposition.kind === "relation");
+    scopes.length > 0 || sourceFacts(view,"relation").some(f=>!f.openAssumptions.length);
   return capable ? { kind: "yes" } : { kind: "excluded", reason: "missing-set-capability", dependencies: [{ kind: "all" }] };
 }
 
@@ -31,7 +31,7 @@ export function* localSets(view: ReadView, graph: PatternGraph, max: number): Ge
   const sets: LocalSet[] = [], seen = new Set<string>();
   for (const house of view.assembly.allDifferent) {
     yield { kind: "work", units: 1 };
-    if (![...view.facts.values()].some(f => !f.openAssumptions.length && f.proposition.kind === "all-different" && f.proposition.cells.join() === house.cells.join())) continue;
+    if (!matchingFacts(view,{kind:"all-different",cells:house.cells}).some(f=>!f.openAssumptions.length)) continue;
     const empty = house.cells.filter(c => !view.state.values[c]);
     for (let size = 1; size <= Math.min(max, empty.length); size++) for (const cells of combinations(empty, size)) {
       yield { kind: "work", units: 1 };

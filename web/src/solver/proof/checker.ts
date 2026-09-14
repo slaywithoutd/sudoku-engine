@@ -1,6 +1,6 @@
 import { canonicalProblem } from "../problem";
 import { conditionalViewAuthority, uniqueAuthorityMatches, uniqueAuthorityOwns, type UniqueAuthority } from "../conditional";
-import { checkTechniqueGrammar } from "../techniques/grammar";
+import { checkTechniqueGrammar,checkTechniqueGrammarSteps } from "../techniques/grammar";
 import { assertOwnedView, isHypotheticalView, branchScope, ownsBranchNode, retainedProof } from "../state/candidates";
 import type { Json } from "../problem";
 import type { StateKey } from "../snapshot";
@@ -14,12 +14,25 @@ import type { TableDefinition } from "./tables";
 const branchSources = new WeakMap<BranchCertificate, ReadView>();
 const branchNodes = new WeakMap<ProofNode, CheckedNodeAuthority>();
 const authenticSteps = new WeakSet<object>();
+// Tokens authenticate exact source publications without retaining historical views.
+const sourceTokens = new WeakMap<ReadView, object>();
+const stepSources = new WeakMap<CheckedStep, object>();
+interface Usage { workUnits:number }
+const checkMeters = new WeakMap<object, Usage>();
+/** Read-only exact-source predicate; a query never creates source authority. */
+export function checkedStepMatchesSource(step:CheckedStep,view:ReadView):boolean {
+  const token=sourceTokens.get(view);return !!token&&stepSources.get(step)===token;
+}
+/** Actual cumulative work, including rejection and explicit generator closure. */
+export function checkUsage(cursor:object):Readonly<Usage> {
+  const usage=checkMeters.get(cursor);requireProof(usage,"unknown-check-cursor");return Object.freeze({...usage});
+}
 const conditionalSteps = new WeakMap<CheckedStep, UniqueAuthority>();
 const authenticCertificates = new WeakSet<object>();
 const certificateAuthorities = new WeakMap<ProofNode, CheckedNodeAuthority>();
 const certificateImports = new WeakMap<CheckedCertificate, ReadonlyMap<number, ProofNode>>();
 const stepImports = new WeakMap<CheckedStep, ReadonlyMap<number, ProofNode>>();
-const stepUsage = new WeakMap<CheckedStep, { readonly headerBytes: number; readonly workUnits: number }>();
+const stepUsage = new WeakMap<CheckedStep, { readonly headerBytes: number; readonly workUnits: number; readonly stepBytes:number }>();
 interface CheckedNodeAuthority {
   readonly state: StateKey;
   readonly inference: CheckedInference;
@@ -66,6 +79,9 @@ export function checkedHeaderBytes(step: CheckedStep): number {
   requireProof(isCheckedStep(step), "inauthentic-checked-step");
   return stepUsage.get(step)!.headerBytes;
 }
+
+/** Exact successful codec size, including header and all node records. */
+export function checkedStepBytes(step:CheckedStep):number {requireProof(isCheckedStep(step),"inauthentic-checked-step");return stepUsage.get(step)!.stepBytes;}
 
 /** Includes bookkeeping/duplicate visits which need not emit a public work yield. */
 export function checkedWorkUnits(step: CheckedStep): number {
@@ -247,16 +263,43 @@ function ids(values: readonly number[], cap: number): void {
  * validate its active run/deadline/revision before passing it to the reducer.
  */
 export class ProofChecker {
-  *checkProposal(input: DeductionProposal, source: CheckContext): Generator<CheckEvent, void, void> {
-    for (const event of verifyGraph(input, source, "named")) {
-      if (event.kind === "verified" || event.kind === "branch-checked") throw Error("internal-admission-error");
-      yield event;
-    }
+  checkProposal(input: DeductionProposal, source: CheckContext): Generator<CheckEvent, void, void> {
+    const meter:Usage={workUnits:0};
+    const cursor=(function*():Generator<CheckEvent,void,void>{
+      for(const event of verifyGraph(input,source,"named",meter)) {
+        if(event.kind==="verified"||event.kind==="branch-checked")throw Error("internal-admission-error");
+        yield event;
+      }
+    })();
+    checkMeters.set(cursor,meter);return cursor;
   }
 }
 
+/** Captures a monotone checker stage without copying its entire prefix per node. */
+class ProofStage implements ReadonlyMap<number,ProofNode> {
+  readonly #map:ReadonlyMap<number,ProofNode>;readonly #cutoff:number;
+  constructor(map:ReadonlyMap<number,ProofNode>,cutoff:number){this.#map=map;this.#cutoff=cutoff;Object.freeze(this);}
+  get size():number {let n=0;for(const _ of this.keys())n++;return n;}
+  get(id:number):ProofNode|undefined{return id<this.#cutoff?this.#map.get(id):undefined;}
+  has(id:number):boolean{return id<this.#cutoff&&this.#map.has(id);}
+  *entries():MapIterator<[number,ProofNode]>{for(const [id,node] of this.#map)if(id<this.#cutoff)yield [id,node];}
+  *keys():MapIterator<number>{for(const [id] of this.entries())yield id;}
+  *values():MapIterator<ProofNode>{for(const [,node] of this.entries())yield node;}
+  [Symbol.iterator]():MapIterator<[number,ProofNode]>{return this.entries();}
+  forEach(callback:(value:ProofNode,key:number,map:ReadonlyMap<number,ProofNode>)=>void,thisArg?:unknown):void{for(const [id,node] of this.entries())callback.call(thisArg,node,id,this);}
+}
+
+/** Grammar reads consume live credit, including repeated imported ancestry walks. */
+class MeteredProofStage extends ProofStage {
+  readonly #charge:(units?:number)=>void;
+  constructor(map:ReadonlyMap<number,ProofNode>,cutoff:number,charge:(units?:number)=>void){super(map,cutoff);this.#charge=charge;}
+  override get(id:number):ProofNode|undefined{this.#charge();return super.get(id);}
+  override has(id:number):boolean{this.#charge();return super.has(id);}
+  override *entries():MapIterator<[number,ProofNode]>{for(const entry of super.entries()){this.#charge();yield entry;}}
+}
+
 /** Admission mode is private, never a caller parameter or injectable strategy. */
-function* verifyGraph(input: DeductionProposal, source: CheckContext, admission: "named" | "certificate" | "branch"): Generator<CheckEvent | CertificateEvent | BranchEvent, void, void> {
+function* verifyGraph(input: DeductionProposal, source: CheckContext, admission: "named" | "certificate" | "branch", meter?:Usage): Generator<CheckEvent | CertificateEvent | BranchEvent, void, void> {
     try {
       // Capture once before authentication: context accessors cannot swap a
       // forged view between the owner gate and later grammar reconstruction.
@@ -280,13 +323,16 @@ function* verifyGraph(input: DeductionProposal, source: CheckContext, admission:
       requireProof(limits.stepNodes <= 16384, "invalid-proof-limit");
       const deadline = performance.now() + limits.timeMs;
       let work = 0;
-      const tick = () => {
+      const remainingWork=source.remainingWork;
+      const tick = (units=1) => {
         requireProof(performance.now() < deadline, "proof-time-limit");
-        requireProof(++work <= limits.workUnits, "proof-work-limit");
+        requireProof(work+units <= limits.workUnits && (!remainingWork || units<=remainingWork()), "proof-work-limit");
+        work+=units;if(meter)meter.workUnits=work;
       };
       const suppliedRetained = source.retained;
       requireProof(suppliedRetained.size <= limits.runNodes, "proof-run-node-limit");
-      const retained = new Map(suppliedRetained);
+      const retained = new Map<number,ProofNode>();
+      for(const [id,node] of suppliedRetained){tick();retained.set(id,node);yield {kind:"work",units:1};}
       const branchPrefix = admission === "branch" ? retainedProof(sourceView) : undefined;
       if (branchPrefix) {
         // Every source node must participate in the allocation boundary, not
@@ -297,11 +343,14 @@ function* verifyGraph(input: DeductionProposal, source: CheckContext, admission:
       const rootCount = firstRoot && originalRootCount(firstRoot);
       requireProof(rootCount !== undefined && rootCount <= retained.size, "missing-original-roots");
       for (let id = 0; id < rootCount; id++) {
+        tick();yield {kind:"work",units:1};
         const root = retained.get(id);
         requireProof(root && originalRootCount(root) === rootCount, "missing-original-roots");
       }
-      assertM2RootAssemblyBounds(sourceView.assembly);
-      const problem = canonicalProblem(sourceView.assembly.problem);
+      // Owned publications already contain the immutable canonical problem.
+      // Standalone certificates still authenticate/capture their external input.
+      if(admission==="certificate")assertM2RootAssemblyBounds(sourceView.assembly);
+      const problem = admission==="certificate"?canonicalProblem(sourceView.assembly.problem):sourceView.assembly.problem;
       const state = copyBounded(sourceView.state.key, NODE_BYTES).value;
       requireProof(state.problemKey === problem.key && typeof state.branch === "string" &&
         state.branch.length > 0 && Number.isSafeInteger(state.revision) && state.revision >= 0, "invalid-proof-state");
@@ -319,7 +368,7 @@ function* verifyGraph(input: DeductionProposal, source: CheckContext, admission:
       let runBytes = 0;
       let maximumId = -1;
       const inferences = new Map<number, CheckedInference>();
-      const tables: [ProofNode, TableDefinition][] = [];
+      const registry = new PrimitiveRegistry();
       for (const [id, node] of retained) {
         tick();
         if (branchPrefix) {
@@ -349,7 +398,7 @@ function* verifyGraph(input: DeductionProposal, source: CheckContext, admission:
         }
         for (const [index, ancestor] of node.scope.entries())
           requireProof(retained.get(ancestor) === authority.scopes?.[index], "substituted-retained-scope");
-        if (authority.table) tables.push([node, authority.table]);
+        if (authority.table) {tick();registry.seedRetainedTable(node,authority.table);yield {kind:"work",units:1};}
         const encoded = copyBounded(node, NODE_BYTES);
         runBytes += encoded.bytes;
         requireProof(runBytes <= limits.proofBytes && runBytes <= limits.workspaceBytes, "proof-byte-limit");
@@ -358,7 +407,6 @@ function* verifyGraph(input: DeductionProposal, source: CheckContext, admission:
         yield { kind: "work", units: 1 };
       }
       tick();
-      const registry = new PrimitiveRegistry(tables);
       const header = captured.header.value;
       let stepBytes = captured.header.bytes;
       const chargeStep = () => requireProof(stepBytes <= limits.stepBytes &&
@@ -394,7 +442,7 @@ function* verifyGraph(input: DeductionProposal, source: CheckContext, admission:
         ids(node.scope, MAX_ARITY);
         for (const premise of node.premises)
           requireProof(premise < node.id && available.has(premise), "missing-or-forward-premise");
-        const nodeContext = { ...context, retained: new ImmutableMap(available), premiseInferences: inferences, currentNode: node,
+        const nodeContext = { ...context, retained: new ProofStage(available,node.id), premiseInferences: inferences, currentNode: node,
           workspaceRemaining: limits.workspaceBytes - runBytes - stepBytes };
         checkScope(node, nodeContext);
         const checking = registry.checkSteps(node, nodeContext);
@@ -434,14 +482,25 @@ function* verifyGraph(input: DeductionProposal, source: CheckContext, admission:
       requireProof(consequences.every(item => (admission === "branch" ? item.openAssumptions.every(id => resultScope.includes(id)) : item.openAssumptions.length === 0) &&
         (!item.conditional || context.policy === "unique-only")), "open-proof-root");
       if (effectful) checkedEffectState(context.view, proposal, consequences);
+      if(admission==="named"||admission==="branch"&&!assumption&&proposal.technique!=="branch-graph@1"){
+        const scopeSlots=sourceView.assembly.allDifferent.reduce((n,h)=>n+h.cells.length,0);
+        const preparation=sourceView.assembly.problem.cells.length+4*scopeSlots+
+          stagedNodes.length*(proposal.effects.length+4)+Math.ceil(captured.header.bytes/256);
+        tick(preparation);yield {kind:"work",units:preparation};
+      }
       if (admission === "branch" && !assumption) {
         requireProof(stagedNodes.every(n => sameValue(n.scope, lexical)), "foreign-branch-scope");
         requireProof(["c01@1", "c02@1", "c03@1", "c04@1", "c05@1", "branch-graph@1"].includes(proposal.technique), "branch-technique-out-of-profile");
         if (proposal.technique === "branch-graph@1") requireProof(stagedNodes.every(n =>
           ["support@1", "weak-link@1", "cover-clause@1", "resolution@1", "domain-restrict@1", "contradiction@1"].includes(n.rule)), "branch-graph-rule");
-        else checkTechniqueGrammar({ ...proposal, proof: { ...proof, nodes: stagedNodes.map(n => ({...n, scope: []})) } }, context.view, available);
+        else checkTechniqueGrammar({ ...proposal, proof: { ...proof, nodes: stagedNodes.map(n => ({...n, scope: []})) } }, sourceView, available);
       }
-      if (admission === "named") checkTechniqueGrammar({ ...proposal, proof: { ...proof, nodes: stagedNodes } }, context.view, available);
+      if (admission === "named") {
+        const grammarSources=new MeteredProofStage(available,maximumId+1,tick);
+        for(const units of checkTechniqueGrammarSteps({ ...proposal, proof: { ...proof, nodes: stagedNodes } }, sourceView, grammarSources,tick)){
+          for(let i=0;i<units;i++)tick();yield {kind:"work",units};
+        }
+      }
       // This sole private construction path follows all checks. The WeakSet,
       // not this internal type assertion, rejects casts/deserialized lookalikes.
       const checkedProposal = Object.freeze({ ...proposal,
@@ -449,8 +508,8 @@ function* verifyGraph(input: DeductionProposal, source: CheckContext, admission:
       if (admission === "branch") {
         const certificate = Object.freeze({ proposal: checkedProposal, consequences, scope: Object.freeze([...resultScope]) }) as BranchCertificate;
         branchSources.set(certificate, sourceView);
-        for (const node of stagedNodes) branchNodes.set(node, { state, inference: inferences.get(node.id)!,
-          premises: Object.freeze(node.premises.map(id => available.get(id)!)), scopes: Object.freeze(node.scope.map(id => available.get(id)!)), table: registry.tableDefinition(node) });
+        for (const node of stagedNodes) {tick();yield {kind:"work",units:1};branchNodes.set(node, { state, inference: inferences.get(node.id)!,
+          premises: Object.freeze(node.premises.map(id => available.get(id)!)), scopes: Object.freeze(node.scope.map(id => available.get(id)!)), table: registry.tableDefinition(node) });}
         yield { kind: "branch-checked", certificate }; return;
       }
       if (admission === "certificate") {
@@ -468,19 +527,23 @@ function* verifyGraph(input: DeductionProposal, source: CheckContext, admission:
       const step = Object.freeze({ proposal: checkedProposal, consequences,
         afterRevision: state.revision + (effectful ? 1 : 0) }) as CheckedStep;
       authenticSteps.add(step);
+      let sourceToken=sourceTokens.get(sourceView);
+      if(!sourceToken){sourceToken=Object.freeze({});sourceTokens.set(sourceView,sourceToken);}
+      stepSources.set(step,sourceToken);
       if (lifetimeAuthority) {
         requireProof(uniqueAuthorityOwns(lifetimeAuthority, sourceView), "revoked-unique-authority");
         conditionalSteps.set(step, lifetimeAuthority);
       }
-      stepUsage.set(step, Object.freeze({ headerBytes: captured.header.bytes + Math.max(0, stagedNodes.length - 1), workUnits: work }));
+      tick(proof.imports.length);yield {kind:"work",units:proof.imports.length};
       stepImports.set(step, new ImmutableMap(proof.imports.map(id => [id, retained.get(id)!] as const)));
-      for (const node of stagedNodes) acceptedNodes.set(node, {
+      for (const node of stagedNodes) {tick();yield {kind:"work",units:1};acceptedNodes.set(node, {
         state,
         inference: inferences.get(node.id)!,
         premises: Object.freeze(node.premises.map(id => available.get(id)!)),
         scopes: Object.freeze(node.scope.map(id => available.get(id)!)),
         table: registry.tableDefinition(node),
-      });
+      });}
+      stepUsage.set(step, Object.freeze({ headerBytes: captured.header.bytes + Math.max(0, stagedNodes.length - 1), workUnits: work,stepBytes }));
       yield { kind: "checked", step };
     } catch (error) {
       yield { kind: "rejected", code: error instanceof ProofError ? error.code : "malformed-proof" };
@@ -510,9 +573,9 @@ export function checkProposal(proposal: DeductionProposal, context: CheckContext
 export function branchCertificateSource(certificate: BranchCertificate): ReadView | undefined { return branchSources.get(certificate); }
 export function branchNodeInference(node: ProofNode): CheckedInference | undefined { return branchNodes.get(node)?.inference; }
 /** No caller-selected admission mode; this entry always requires an authentic fork. */
-export function* verifyBranch(proposal: DeductionProposal, context: CheckContext): Generator<BranchEvent> {
-  for (const event of verifyGraph(proposal, context, "branch")) {
-    if (event.kind === "checked" || event.kind === "verified") throw Error("internal-admission-error");
-    yield event;
-  }
+export function verifyBranch(proposal: DeductionProposal, context: CheckContext): Generator<BranchEvent> {
+  const meter:Usage={workUnits:0};
+  const cursor=(function*():Generator<BranchEvent>{for(const event of verifyGraph(proposal,context,"branch",meter)){
+    if(event.kind==="checked"||event.kind==="verified")throw Error("internal-admission-error");yield event;
+  }})();checkMeters.set(cursor,meter);return cursor;
 }

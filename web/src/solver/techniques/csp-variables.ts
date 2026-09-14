@@ -1,3 +1,4 @@
+import {matchingFacts} from "../state/source-index";
 import type { ReadView, Literal } from "../state/types";
 import { assertOwnedView } from "../state/candidates";
 import { sameValue } from "../proof/primitives";
@@ -59,13 +60,7 @@ export function buildCspVariables(view: ReadView): readonly CspVariable[] {
   }
   for (const house of view.assembly.allDifferent)
     for (const symbol of view.assembly.problem.symbols) {
-      const source = [...view.facts.values()].find(
-        (f) =>
-          !f.openAssumptions.length &&
-          f.proposition.kind === "cover" &&
-          f.proposition.symbol === symbol &&
-          sameValue(f.proposition.cells, house.cells),
-      );
+      const source = matchingFacts(view,{kind:"cover",symbol,cells:house.cells}).find(f=>!f.openAssumptions.length);
       if (!source) continue;
       const alternatives = house.cells
         .filter((c) => view.state.domains[c] & (1 << (symbol - 1)))

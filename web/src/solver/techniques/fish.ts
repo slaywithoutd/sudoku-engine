@@ -1,3 +1,4 @@
+import {matchingFacts} from "../state/source-index";
 import type { Json } from "../problem";
 import type { ReadView } from "../state/types";
 import type { DeductionProposal,Effect,ProofNode,Proposition } from "../proof/types";
@@ -245,12 +246,10 @@ class FishTechnique implements TechniqueDescriptor {
  }
  watches() {return [{kind:"all" as const}];}
  eligible(view:ReadView) {
-  const facts=new Set<string>();
-  for(const f of view.facts.values())if(!f.openAssumptions.length&&(f.proposition.kind==="cover"||f.proposition.kind==="all-different"))
-   facts.add(sourceKey(f.proposition.cells,f.proposition.kind==="cover"?f.proposition.symbol:0));
-  const houses=classicScopes(view).filter(h=>facts.has(sourceKey(h.cells,0))),simple=["C06","C07"].includes(this.family);
+  const has=(cells:readonly number[],symbol:number)=>matchingFacts(view,symbol?{kind:"cover",cells,symbol}:{kind:"all-different",cells}).some(f=>!f.openAssumptions.length);
+  const houses=classicScopes(view).filter(h=>has(h.cells,0)),simple=["C06","C07"].includes(this.family);
   const possible=view.assembly.problem.symbols.some(symbol=>{
-   const bases=houses.filter(h=>facts.has(sourceKey(h.cells,symbol)));
+   const bases=houses.filter(h=>has(h.cells,symbol));
    return simple?["row","column"].some(orientation=>bases.filter(h=>h.id.startsWith(orientation+":" )).length>=2&&
     houses.filter(h=>h.id.startsWith((orientation==="row"?"column":"row")+":" )).length>=2):bases.length>=2&&houses.length>=2;
   });

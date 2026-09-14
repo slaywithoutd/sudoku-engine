@@ -1,3 +1,4 @@
+import { sourceMaximumId, matchingFacts } from "../state/source-index";
 import type { Json } from "../problem";
 import type { ReadView, Proposition, Literal } from "../state/types";
 import type { DeductionProposal, Effect, ProofNode } from "./types";
@@ -25,9 +26,7 @@ export class CertificateBuilder {
   readonly #additionalRoots: number[] = [];
   #next: number;
   constructor(readonly view: ReadView) {
-    let maximum = -1;
-    for (const id of view.facts.keys()) maximum = Math.max(maximum, id);
-    this.#next = maximum + 1;
+    this.#next = sourceMaximumId(view) + 1;
   }
   add(rule: string, premises: readonly number[], conclusion: Proposition, parameters: Json = {}): number {
     for (const id of premises) if (this.view.facts.has(id)) this.#imports.add(id);
@@ -36,8 +35,7 @@ export class CertificateBuilder {
     return id;
   }
   fact(proposition: Proposition): number {
-    const encoded = JSON.stringify(proposition);
-    const fact = [...this.view.facts.values()].find(f => JSON.stringify(f.proposition) === encoded &&
+    const fact = matchingFacts(this.view,proposition).find(f =>
       f.openAssumptions.length === 0 && !f.conditional);
     if (!fact) throw Error("missing-proposed-premise");
     return fact.root;

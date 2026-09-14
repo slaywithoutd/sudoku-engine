@@ -1,3 +1,4 @@
+import {matchingFacts} from "../state/source-index";
 import type { ReadView } from "../state/types";
 import type { Effect } from "../proof/types";
 import { requireProof,sameValue } from "../proof/primitives";
@@ -39,7 +40,7 @@ export function validateFishGeometry(view:ReadView,p:FishComponent):FishRequirem
  requireProof(Number.isSafeInteger(p.size)&&p.size>=2&&p.size<=max&&view.assembly.problem.symbols.includes(p.symbol),"fish-size-symbol");
  houseSet(p.bases,p.size);houseSet(p.covers,p.size);
  const bases=p.bases.map(id=>fishHouse(view,id)),covers=p.covers.map(id=>fishHouse(view,id));
- requireProof(bases.every(cells=>[...view.facts.values()].some(f=>!f.openAssumptions.length&&f.proposition.kind==="cover"&&f.proposition.symbol===p.symbol&&sameValue(f.proposition.cells,cells))),"fish-missing-base-cover");
+ requireProof(bases.every(cells=>matchingFacts(view,{kind:"cover",symbol:p.symbol,cells}).some(f=>!f.openAssumptions.length)),"fish-missing-base-cover");
  const baseCounts=Array(81).fill(0) as number[],coverCounts=Array(81).fill(0) as number[];
  for(const cells of bases)for(const c of cells)baseCounts[c]++;
  for(const cells of covers)for(const c of cells)coverCounts[c]++;

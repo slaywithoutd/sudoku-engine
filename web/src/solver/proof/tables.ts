@@ -31,9 +31,12 @@ export class TableChecker {
   constructor(retained: Iterable<readonly [ProofNode, TableDefinition]> = []) {
     this.#definitions = new WeakMap();
     for (const [node, definition] of retained) {
-      this.#definitions.set(node, definition);
-      this.#definitionNodes.set(node.id, node);
+      this.seedRetained(node,definition);
     }
+  }
+  /** Equivalent to constructor input; this records no CheckedStep authority. */
+  seedRetained(node:ProofNode,definition:TableDefinition):void {
+    this.#definitions.set(node,definition);this.#definitionNodes.set(node.id,node);
   }
   /** Read-only definition export; only the outer checker can retain authority. */
   get(node: ProofNode): TableDefinition | undefined { return this.#definitions.get(node); }

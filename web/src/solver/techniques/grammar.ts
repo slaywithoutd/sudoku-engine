@@ -1,10 +1,11 @@
+import {matchingFacts} from "../state/source-index";
 import type { DeductionProposal, Effect, ProofNode } from "../proof/types";
 import type { ReadView } from "../state/types";
 import { domainAssertion, requireProof, sameValue } from "../proof/primitives";
 import { checkPatternProof } from "./pattern-contracts";
 import { checkFishPattern } from "./fish-certificate";
 import { checkChainPattern } from "./chains-grammar";
-import { checkColoringPattern } from "./coloring-grammar";
+import { checkColoringPattern,checkColoringPatternSteps } from "./coloring-grammar";
 import { checkAlsPattern } from "./als-grammar";
 import { checkSetPattern } from "./set-grammar";
 import { checkForcingPattern } from "./forcing-grammar";
@@ -45,7 +46,7 @@ function geometry(cells: readonly number[]): "box" | "line" | null {
 
 /** Closed grammar, with no detector/registry/builder imports or caller extensions. */
 export function checkTechniqueGrammar(proposal: DeductionProposal, view: ReadView,
-  available: ReadonlyMap<number, ProofNode>): void {
+  available: ReadonlyMap<number, ProofNode>,charge?:(units:number)=>void): void {
   requireProof(proposal.pattern && typeof proposal.pattern === "object" && !Array.isArray(proposal.pattern), "invalid-technique-pattern");
   const p = proposal.pattern as Record<string, unknown>, nodes = proposal.proof.nodes, domains = view.state.domains;
   if (["u01@1","u02@1","u03@1","u04@1","u05@1"].includes(proposal.technique)) { checkUniquePattern(proposal,view,available); return; }
@@ -64,7 +65,7 @@ export function checkTechniqueGrammar(proposal: DeductionProposal, view: ReadVie
   if (proposal.technique === "c24@1") { checkKrakenPattern(proposal,view,available); return; }
   if (proposal.technique === "c23@1") { checkNetPattern(proposal,view,available); return; }
   if (["c20@1", "c21@1"].includes(proposal.technique)) {
-    checkSetPattern(proposal, view, available); return;
+    checkSetPattern(proposal, view, available,charge); return;
   }
   if (["c18@1", "c19@1"].includes(proposal.technique)) {
     checkAlsPattern(proposal, view, available); return;
@@ -114,7 +115,7 @@ export function checkTechniqueGrammar(proposal: DeductionProposal, view: ReadVie
     else {
       requireProof(nodes.length > 0 && nodes.length <= 2 && proposal.proof.roots.length === 1 &&
         sameValue(available.get(proposal.proof.roots[0])?.conclusion, { kind: "literal", value: { cell, symbol, positive: true } }) &&
-        ![...view.facts.values()].some(f => sameValue(f.proposition, { kind: "literal", value: { cell, symbol, positive: true } })), "invalid-single-cache");
+        matchingFacts(view,{ kind: "literal", value: { cell, symbol, positive: true } }).length===0, "invalid-single-cache");
     }
   } else if (proposal.technique === "c03@1") {
     fields(p, ["kind", "alias", "cover", "group", "symbol", "cells"]);
@@ -217,4 +218,14 @@ export function checkTechniqueGrammar(proposal: DeductionProposal, view: ReadVie
     }
   }
   requireProof(nodes.length <= proposal.effects.length * 8 + 4, "technique-work-bound");
+}
+
+/** Scheduled checker uses cooperative complete-source coloring reconstruction. */
+export function* checkTechniqueGrammarSteps(proposal:DeductionProposal,view:ReadView,available:ReadonlyMap<number,ProofNode>,charge?:(units:number)=>void):Generator<number,void,void>{
+  if(proposal.technique==="c14@1"||proposal.technique==="c15@1"){
+    for(const cell of view.assembly.problem.cells){yield 1;const fact=view.facts.get(view.state.domainFacts[cell]);
+      requireProof(fact&&sameValue(domainAssertion(fact.proposition),{cell,mask:view.state.domains[cell]}),"unproved-current-domain");}
+    yield* checkColoringPatternSteps(proposal,view,available);return;
+  }
+  checkTechniqueGrammar(proposal,view,available,charge);
 }

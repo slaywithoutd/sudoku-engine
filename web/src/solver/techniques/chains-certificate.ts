@@ -1,3 +1,4 @@
+import {matchingFacts} from "../state/source-index";
 import type { Json } from "../problem";
 import type { Literal, Proposition, ReadView } from "../state/types";
 import type { DeductionProposal, Effect, Limits } from "../proof/types";
@@ -61,8 +62,7 @@ export class ChainCertificate extends PatternBuilder {
       return this.add("cover-clause@1", [support], clause(cells.map(c => candidate(c, source.symbol))));
     }
     const house = this.view.assembly.allDifferent.find(h => h.id === source.house)!;
-    const fact = [...this.view.facts.values()].find(f => !f.openAssumptions.length && f.proposition.kind === "all-different" &&
-      f.proposition.cells.join() === house.cells.join())!;
+    const fact = matchingFacts(this.view,{kind:"all-different",cells:house.cells}).find(f=>!f.openAssumptions.length)!;
     const subset = this.add("all-different-subset@1", [fact.id], { kind: "all-different", cells: source.cells });
     const premises = [...source.cells.map(c => this.view.state.domainFacts[c]), subset];
     const recurse = function*(this: ChainCertificate, box: number[]): Generator<ChainWork, { id: number; count: number }> {

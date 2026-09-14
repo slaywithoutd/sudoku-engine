@@ -18,14 +18,16 @@ export interface ChangeSet {
   readonly relationIds: readonly string[];
   readonly constraintIds: readonly ConstraintId[];
   readonly graphChanged: boolean;
+  /** Accepted proof-prefix changes may add sources without a candidate revision. */
+  readonly sourceChanged?: boolean;
 }
 function affected(watch: Watch, changes: ChangeSet): boolean {
   switch (watch.kind) {
     case "all": return true;
     case "graph": return changes.graphChanged;
     case "cell": return changes.cells.includes(watch.cell);
-    case "cover": return changes.coverIds.includes(watch.id);
-    case "relation": return changes.relationIds.includes(watch.id);
+    case "cover": return !!changes.sourceChanged || changes.coverIds.includes(watch.id);
+    case "relation": return !!changes.sourceChanged || changes.relationIds.includes(watch.id);
     case "constraint": return changes.constraintIds.includes(watch.id);
     default: return true;
   }

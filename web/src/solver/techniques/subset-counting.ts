@@ -1,3 +1,4 @@
+import {matchingFacts,sourceFacts} from "../state/source-index";
 import type { ReadView } from "../state/types";
 import type { PatternGraph } from "./pattern-runtime";
 import type { CountPattern, CountScope } from "./set-contracts";
@@ -29,8 +30,7 @@ export class SubsetCountingSearch {
   constructor(readonly view: ReadView, readonly graph: PatternGraph) {}
   *patterns(cellCount: number, scopeCount: number, withSingletons = false): SetCursor {
     const view = this.view, empty = view.assembly.problem.cells.filter(c => !view.state.values[c]);
-    const houses = view.assembly.allDifferent.filter(h => [...view.facts.values()].some(f => !f.openAssumptions.length &&
-      f.proposition.kind === "all-different" && f.proposition.cells.join() === h.cells.join()));
+    const houses = view.assembly.allDifferent.filter(h => matchingFacts(view,{kind:"all-different",cells:h.cells}).some(f=>!f.openAssumptions.length));
     const pool = withSingletons ? view.assembly.problem.cells : empty;
     if (cellCount > pool.length) return;
     // A consistent singleton assignment witnesses every occupancy simultaneously;

@@ -14,7 +14,7 @@ const sorted = (xs: number[]) => [...xs].sort((a, b) => a - b);
  * Primitive table replay owns the cooperative matching enumeration. */
 class SetAdmission {
   readonly sources: ChainSources;
-  constructor(readonly proposal: DeductionProposal, readonly view: ReadView, readonly available: ReadonlyMap<number, ProofNode>) {
+  constructor(readonly proposal: DeductionProposal, readonly view: ReadView, readonly available: ReadonlyMap<number, ProofNode>,readonly charge:(units:number)=>void=()=>{}) {
     this.sources = new ChainSources(view, available);
   }
   symbols(cells: number[]): number[] {
@@ -121,6 +121,9 @@ class SetAdmission {
     const alternatives = p.domains.map(mask => this.view.assembly.problem.symbols.filter(s => mask & (1 << (s - 1)))), volume = alternatives.reduce((n, xs) => n * xs.length, 1);
     requireProof(volume <= 6561 && p.reasons.length === volume && p.rejections.length === volume && p.roots.length === this.proposal.effects.length,
       "incomplete-aligned-enumeration");
+    // At most four selected coordinates: 9^4 = 6561, independent of table
+    // representation caps. Prepay tuple decoding/capture, even on rejection.
+    this.charge(volume*8);
     const pairs = p.selected.flatMap((a, i) => p.selected.slice(i + 1).map(b => [a, b])), admitted: number[] = [], survivors: number[][] = [];
     for (let index = 0; index < volume; index++) {
       let n = index; const tuple = alternatives.map(() => 0);
@@ -152,8 +155,8 @@ class SetAdmission {
         const sources = [projection.id];
         blocked.forEach(l => {
           const candidates = p.selected.map((c, j) => positive(c, tuple[j]));
-          const weak = leaves.find(x => ["weak-link@1", "table-project@1"].includes(x.rule) && candidates.some(c =>
-            sameValue(x.conclusion, clause([{ ...l, positive: false }, { ...c, positive: false }]))));
+          const weak = leaves.find(x => {this.charge(1);return ["weak-link@1", "table-project@1"].includes(x.rule) && candidates.some(c =>
+            sameValue(x.conclusion, clause([{ ...l, positive: false }, { ...c, positive: false }])));});
           requireProof(weak, "incomplete-aligned-visibility"); sources.push(weak.id);
         });
         this.lineage(root, sources);
@@ -204,9 +207,9 @@ class SetAdmission {
   }
 }
 
-export function checkSetPattern(proposal: DeductionProposal, view: ReadView, available: ReadonlyMap<number, ProofNode>): void {
+export function checkSetPattern(proposal: DeductionProposal, view: ReadView, available: ReadonlyMap<number, ProofNode>,charge?:(units:number)=>void): void {
   requireProof(proposal.effects.length > 0 && proposal.effects.every(e => e.kind === "remove"), "unproductive-set-pattern");
-  const p = proposal.pattern as unknown as SetPattern, admission = new SetAdmission(proposal, view, available);
+  const p = proposal.pattern as unknown as SetPattern, admission = new SetAdmission(proposal, view, available,charge);
   if (p.kind === "sdc") admission.sdc(p);
   else if (p.kind === "aligned") admission.aligned(p);
   else if (p.kind === "count") admission.count(p);

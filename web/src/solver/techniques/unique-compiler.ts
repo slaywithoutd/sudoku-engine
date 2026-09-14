@@ -1,3 +1,4 @@
+import {uniqueSourceFacts} from "../state/source-index";
 import type { ReadView, Literal } from "../state/types";
 import type { DeductionProposal, Effect } from "../proof/types";
 import type { WorkspaceReservation } from "../indexes/workspace";
@@ -63,8 +64,9 @@ export function compileUnique(view: ReadView, plan: UniquePlan, effect: Effect, 
   if (!uniqueAuthorityMatches(authority, view)) throw Error("missing-unique-authority");
   const b = new ForcingProof(view, lease), g = plan.geometry;
   const selected = new Set(view.state.domainFacts);
-  for (const fact of view.facts.values()) if (fact.proposition.kind === "rule" || fact.proposition.kind === "literal" &&
-    fact.proposition.value.positive && view.assembly.problem.givens[fact.proposition.value.cell] === fact.proposition.value.symbol) selected.add(fact.id);
+  const originals=uniqueSourceFacts(view);
+  if(originals.length>1105)throw Error("proof-import-limit");
+  for(const fact of originals) selected.add(fact.id);
   const ids = [...selected], groups: number[] = [];
   for (let n = 0; n < ids.length; n += 32) {
     const group = ids.slice(n, n + 32);

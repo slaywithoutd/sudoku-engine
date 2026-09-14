@@ -1,3 +1,4 @@
+import {uniqueSourceFacts} from "../state/source-index";
 import type { ReadView, Literal } from "../state/types";
 import type { DeductionProposal, ProofNode } from "../proof/types";
 import { clause, requireProof, sameValue } from "../proof/primitives";
@@ -144,8 +145,9 @@ function checkUniqueOne(proposal: DeductionProposal, view: ReadView, available: 
     sameValue((trade.parameters as any).cells, g.cells) && sameValue((trade.parameters as any).coreMasks, g.coreMasks) &&
     sameValue((trade.parameters as any).permutation, g.permutation), "unique-trade-lineage");
   const expected = new Set(view.state.domainFacts);
-  for (const fact of view.facts.values()) if (fact.proposition.kind === "rule" || fact.proposition.kind === "literal" && fact.proposition.value.positive &&
-    view.assembly.problem.givens[fact.proposition.value.cell] === fact.proposition.value.symbol) expected.add(fact.id);
+  const originals=uniqueSourceFacts(view);
+  requireProof(originals.length<=1105,"proof-import-limit");
+  for(const fact of originals) expected.add(fact.id);
   const leaves = new Set<number>();
   const source = (id: number, depth = 0): void => {
     requireProof(depth <= 3, "unique-source-depth");

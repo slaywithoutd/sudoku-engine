@@ -48,6 +48,8 @@ export interface CheckContext {
   /** Checker-populated exact owned view, before bounded presentation copies. */
   readonly authorityView?: ReadView;
   readonly limits: Limits;
+  /** Optional live narrowing gate; it cannot increase the frozen checker limits. */
+  readonly remainingWork?: () => number;
   /** Checker-populated metadata for the exact admitted premise objects. */
   readonly premiseInferences?: ReadonlyMap<NodeId, CheckedInference>;
   /** Checker-owned lexical position, never taken from detector metadata. */

@@ -1,3 +1,4 @@
+import {sourceMaximumId,matchingFacts} from "../state/source-index";
 import type { WorkspaceReservation } from "../indexes/workspace";
 import type { Json } from "../problem";
 import type { DeductionProposal, Effect, ProofNode } from "../proof/types";
@@ -30,8 +31,7 @@ export class ForcingProof {
     // One finite, constant-scratch prefix scan avoids argument-count limits.
     // This synchronous constructor scan is not a scheduler work quantum;
     // T19/T20 must account initialization latency in the invoking operation.
-    let maximum=0;for(const id of view.facts.keys())if(id>maximum)maximum=id;
-    this.#next=maximum+1;
+    this.#next=sourceMaximumId(view)+1;
   }
   /** Read-only next allocation, for self-referencing table conclusions. */
   get nextId():number {return this.#next;}
@@ -40,7 +40,7 @@ export class ForcingProof {
     const id = this.#next++; this.nodes.push({ id, rule, premises: [...premises], conclusion, parameters, scope: [...this.scope] }); return id;
   }
   fact(p: Proposition): number {
-    const fact = [...this.view.facts.values()].find(f => !f.openAssumptions.length && sameValue(f.proposition, p));
+    const fact = matchingFacts(this.view,p).find(f => !f.openAssumptions.length);
     if (!fact) throw Error("missing-forcing-premise"); return fact.id;
   }
   house(id: string): readonly number[] {

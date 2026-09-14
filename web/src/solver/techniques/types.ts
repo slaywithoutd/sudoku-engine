@@ -52,7 +52,7 @@ export interface TechniqueDescriptor {
   discover(view: ReadView, context: DiscoveryContext): Discovery;
 }
 
-export type DetectorStatus = "pending" | "in-progress" | "found" | "exhausted" | "excluded" | "interrupted";
+export type DetectorStatus = "pending" | "in-progress" | "found" | "exhausted" | "excluded" | "disabled" | "interrupted";
 /** Type-only scheduler handoff; resumable detector cursors are owned elsewhere. */
 export interface LedgerEntry {
   readonly technique: VersionId;

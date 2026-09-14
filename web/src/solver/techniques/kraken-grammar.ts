@@ -1,3 +1,4 @@
+import {matchingFacts} from "../state/source-index";
 import type { ReadView } from "../state/types";
 import type { DeductionProposal,ProofNode } from "../proof/types";
 import { requireProof,sameValue } from "../proof/primitives";
@@ -25,7 +26,7 @@ export function checkKrakenPattern(proposal:DeductionProposal,view:ReadView,node
   }
   const source=(h:string,symbol?:number)=>{
     const cells=view.assembly.allDifferent.find(s=>s.id===h)!.cells;
-    const f=[...view.facts.values()].find(f=>!f.openAssumptions.length&&sameValue(f.proposition,symbol===undefined?{kind:"all-different",cells}:{kind:"cover",cells,symbol}));requireProof(f,"kraken-source");return f.id;
+    const f=matchingFacts(view,symbol===undefined?{kind:"all-different",cells}:{kind:"cover",cells,symbol}).find(f=>!f.openAssumptions.length);requireProof(f,"kraken-source");return f.id;
   };
   const covers=p.fish.bases.map(h=>({premise:source(h,z),coefficient:1})),capacities=p.fish.covers.map(h=>({premise:source(h),coefficient:1}));
   const count=l.node(c.count),expected=[...covers.map(v=>v.premise),...capacities.map(v=>v.premise),...geometry.coefficients.flatMap((w,cell)=>w<0&&!p.fish.fins.includes(cell)?[view.state.domainFacts[cell]]:[]),...c.fins.map(f=>f.domain)];

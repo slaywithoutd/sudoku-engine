@@ -1,3 +1,4 @@
+import {matchingFacts} from "../state/source-index";
 import type { DeductionProposal,ProofNode,Proposition } from "../proof/types";
 import type { ReadView } from "../state/types";
 import { clause,requireProof,sameValue } from "../proof/primitives";
@@ -12,9 +13,7 @@ const literal=(cell:number,symbol:number,positive:boolean):Proposition=>({kind:"
 class FishComponentLineage {
  constructor(readonly view:ReadView,readonly nodes:ReadonlyMap<number,ProofNode>,readonly requirement:FishRequirement) {}
  source(id:string,symbol?:number):number {
-  const cells=fishHouse(this.view,id),fact=[...this.view.facts.values()].find(f=>!f.openAssumptions.length&&
-   (symbol===undefined?f.proposition.kind==="all-different":f.proposition.kind==="cover"&&f.proposition.symbol===symbol)&&
-   "cells" in f.proposition&&sameValue(f.proposition.cells,cells));
+  const cells=fishHouse(this.view,id),fact=matchingFacts(this.view,symbol===undefined?{kind:"all-different",cells}:{kind:"cover",cells,symbol}).find(f=>!f.openAssumptions.length);
   requireProof(fact,"fish-unproved-house");return fact.id;
  }
  matches(rootId:number,target:number):boolean {

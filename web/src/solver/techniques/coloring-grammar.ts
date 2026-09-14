@@ -1,3 +1,4 @@
+import {preparedSources,sourceFacts} from "../state/source-index";
 import type { ReadView, Literal } from "../state/types";
 import type { DeductionProposal, ProofNode } from "../proof/types";
 import { clause, requireProof, sameValue } from "../proof/primitives";
@@ -10,6 +11,9 @@ const fields = (p: object, names: string[]) => requireProof(sameValue(Object.key
 
 /** Independent complete-component reconstruction; at-least-one alone never supplies XOR. */
 export function checkColoringPattern(proposal: DeductionProposal, view: ReadView, available: ReadonlyMap<number, ProofNode>): void {
+  for(const _ of checkColoringPatternSteps(proposal,view,available)){/* Compatibility caller owns synchronous work. */}
+}
+export function* checkColoringPatternSteps(proposal: DeductionProposal, view: ReadView, available: ReadonlyMap<number, ProofNode>): Generator<number,void,void> {
   const p = proposal.pattern as unknown as ColoringPattern, medusa = proposal.technique === "c15@1";
   requireProof(proposal.effects.length > 0, "unproductive-coloring-pattern");
   fields(p, ["kind", "alias", "form", "components", "branches"]);
@@ -59,7 +63,8 @@ export function checkColoringPattern(proposal: DeductionProposal, view: ReadView
       const symbols = view.assembly.problem.symbols.filter(s => view.state.domains[cell] & (1 << (s - 1)));
       if (symbols.length === 2) include({ ends: symbols.map(symbol => ({ cell, symbol, positive: true })) as [Literal, Literal], source: { kind: "cell", cell }, roots: [] });
     }
-    for (const fact of view.facts.values()) {
+    for (const fact of sourceFacts(view,"cover")) {
+      yield 1;
       if (fact.openAssumptions.length || fact.proposition.kind !== "cover") continue;
       const cover = fact.proposition;
       const house = view.assembly.allDifferent.find(h => h.cells.length === 9 && sameValue(h.cells, cover.cells)) ??
@@ -67,7 +72,8 @@ export function checkColoringPattern(proposal: DeductionProposal, view: ReadView
       const cells = cover.cells.filter(c => view.state.domains[c] & (1 << (cover.symbol - 1)));
       if (cells.length !== 2 || cells.some(c => view.state.values[c])) continue;
       // The house's checked all-different source supplies the at-most-one side.
-      if (![...view.facts.values()].some(f => !f.openAssumptions.length && f.proposition.kind === "all-different" && cells.every(c => f.proposition.kind === "all-different" && f.proposition.cells.includes(c)))) continue;
+      const prepared=preparedSources(view,"complete");
+      if(prepared?!prepared.scopePair(cells[0],cells[1]):!sourceFacts(view,"all-different").some(f=>!f.openAssumptions.length&&f.proposition.kind==="all-different"&&cells.every(c=>f.proposition.kind==="all-different"&&f.proposition.cells.includes(c))))continue;
       include({ ends: cells.map(cell => ({ cell, symbol: cover.symbol, positive: true })) as [Literal, Literal],
         source: sameValue(house.cells, cover.cells) ? { kind: "house", house: house.id, symbol: cover.symbol } :
           { kind: "proved-cover", source: fact.id, house: house.id, symbol: cover.symbol }, roots: [] });

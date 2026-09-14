@@ -1,8 +1,9 @@
+import { conditionalViewAuthority } from "../conditional";
 import { canonicalProblem } from "../problem";
 import type { BranchId } from "../problem";
 import type { Assembly, FactId, NodeId } from "../rules/types";
 import type { CheckedStep, ProofNode } from "../proof/types";
-import { checkedEffectState, checkedImportsMatch, checkedNodeInference, isCheckedStep, assertCheckedStepActive } from "../proof/checker";
+import { checkedEffectState, checkedImportsMatch, checkedNodeInference, isCheckedStep, assertCheckedStepActive, checkedStepMatchesSource } from "../proof/checker";
 import { requireProof, sameValue } from "../proof/primitives";
 import { createRoots, ImmutableMap, rootNode } from "./facts";
 import { CandidateIndexes } from "./indexes";
@@ -10,7 +11,7 @@ import type { CandidateState, Fact, Literal, ReadView } from "./types";
 import type { ChangeSet } from "./events";
 import type { IndexWorkspace, WorkspaceReservation } from "../indexes/workspace";
 import type { BranchCertificate, BranchEvent, DeductionProposal, Limits } from "../proof/types";
-import { branchCertificateSource, branchNodeInference, verifyBranch } from "../proof/checker";
+import { branchCertificateSource, branchNodeInference, verifyBranch, checkUsage } from "../proof/checker";
 
 // Authority belongs to the exact frozen publication, never a state-shaped
 // wrapper whose property accessors or Proxy traps can change after admission.
@@ -26,6 +27,23 @@ class BranchResource {
   dispose(): void { for (const view of this.views) owners.delete(view); this.views.clear(); this.lease.dispose(); }
 }
 let branchSequence = 0;
+
+/** Branch-local immutable append layer; accepted prefix objects are shared read-only. */
+class BranchAppendMap<K,V> implements ReadonlyMap<K,V> {
+  readonly #base:ReadonlyMap<K,V>;readonly #added:ImmutableMap<K,V>;
+  constructor(base:ReadonlyMap<K,V>,added:ReadonlyMap<K,V>){
+    for(const key of added.keys())requireProof(!base.has(key),"reused-proof-node");
+    this.#base=base;this.#added=new ImmutableMap(added);Object.freeze(this);
+  }
+  get size():number{return this.#base.size+this.#added.size;}
+  get(key:K):V|undefined{return this.#added.get(key)??this.#base.get(key);}
+  has(key:K):boolean{return this.#added.has(key)||this.#base.has(key);}
+  *entries():MapIterator<[K,V]>{yield* this.#base;yield* this.#added;}
+  *keys():MapIterator<K>{for(const [key] of this.entries())yield key;}
+  *values():MapIterator<V>{for(const [,value] of this.entries())yield value;}
+  [Symbol.iterator]():MapIterator<[K,V]>{return this.entries();}
+  forEach(callback:(value:V,key:K,map:ReadonlyMap<K,V>)=>void,thisArg?:unknown):void{for(const [key,value] of this.entries())callback.call(thisArg,value,key,this);}
+}
 
 interface AcceptedLineage {
   readonly anchor: object;
@@ -52,9 +70,9 @@ class CandidateOwner {
     this.lineage = Object.freeze(previous && step
       ? { anchor: previous.lineage.anchor, parent: previous.lineage, step, length: previous.lineage.length + 1 }
       : { anchor: Object.freeze({}), parent: null, step: null, length: 0 });
-    this.nodes = new ImmutableMap(nodes);
-    this.indexes = new CandidateIndexes(assembly, state, previous?.indexes, cells);
-    this.view = Object.freeze({ assembly, state, facts: new ImmutableMap(facts),
+    this.nodes = nodes instanceof ImmutableMap || nodes instanceof BranchAppendMap ? nodes : new ImmutableMap(nodes);
+    this.indexes = previous && cells?.length===0 ? previous.indexes : new CandidateIndexes(assembly, state, previous?.indexes, cells);
+    this.view = Object.freeze({ assembly, state, facts: facts instanceof ImmutableMap || facts instanceof BranchAppendMap ? facts : new ImmutableMap(facts),
       supports: (id: string) => this.indexes.supports(id) });
     owners.set(this.view, this);
     branch?.resource.views.add(this.view);
@@ -177,7 +195,7 @@ export function forkView(parent: ReadView, label: BranchId, workspace: IndexWork
   try {
     const state = Object.freeze({ ...parent.state, key: Object.freeze({ ...parent.state.key, branch: `hypothetical:${++branchSequence}:${label}` }),
       values: Object.freeze([...parent.state.values]), domains: Object.freeze([...parent.state.domains]), domainFacts: Object.freeze([...parent.state.domainFacts]) });
-    return new CandidateOwner(parent.assembly, state, parent.facts, previous.nodes, undefined, undefined, undefined,
+    return new CandidateOwner(parent.assembly, state, parent.facts, previous.nodes, previous, [], undefined,
       { parent: previous, scope: previous.branch?.scope ?? Object.freeze([]), resource }).view;
   } catch (error) { resource.dispose(); throw error; }
 }
@@ -189,10 +207,43 @@ export function disposeFork(view: ReadView): void { const branch = owner(view).b
  * inconsistent view. Public primary reducers cannot accept its result brand.
  */
 export class HypotheticalSession {
-  #view?: ReadView;
+  #view?: ReadView;#rollout=false;#rolloutSteps=0;
   constructor(parent: ReadView, label: BranchId, workspace: IndexWorkspace) { this.#view = forkView(parent, label, workspace); }
+  /** Adopt one already named-checked deduction into a fresh, isolated computation. */
+  static fromChecked(parent:ReadView,step:CheckedStep,label:BranchId,workspace:IndexWorkspace,charge:(units:number)=>void):HypotheticalSession {
+    const previous=owner(parent);
+    requireProof(!previous.branch&&!conditionalViewAuthority(parent),"rollout-primary-source-required");
+    requireProof(isCheckedStep(step)&&checkedStepMatchesSource(step,parent),"rollout-source-mismatch");
+    assertCheckedStepActive(step,parent);
+    requireProof(checkedImportsMatch(step,previous.nodes),"substituted-step-import");
+    requireProof(step.consequences.every(c=>!c.conditional&&!c.openAssumptions.length),"rollout-open-or-conditional-root");
+    // Charge source validation, bounded changed-cell indexes and cleanup first.
+    // Lexically scoped intermediate nodes remain scoped, never promoted to roots.
+    charge(parent.facts.size+step.proposal.proof.nodes.length*8+parent.state.domains.length*16+2);
+    for(const fact of parent.facts.values())requireProof(!fact.conditional,"rollout-conditional-source");
+    for(const node of step.proposal.proof.nodes)requireProof(!checkedNodeInference(node)?.conditional,"rollout-conditional-source");
+    const edited=checkedEffectState(parent,step.proposal,step.consequences);
+    const session=new HypotheticalSession(parent,label,workspace);session.#rollout=true;
+    try {
+      const branch=owner(session.view).branch!;
+      branch.resource.lease.grow(step.proposal.proof.nodes.length,65536+step.proposal.proof.nodes.length*2048+parent.facts.size*128);
+      const nodes=new Map<NodeId,ProofNode>(),facts=new Map<FactId,Fact>(),domainFacts=[...parent.state.domainFacts];
+      const key=Object.freeze({...session.view.state.key,revision:step.afterRevision});
+      for(const node of step.proposal.proof.nodes){
+        const inference=checkedNodeInference(node);requireProof(inference&&!nodes.has(node.id),"inauthentic-proof-node");
+        nodes.set(node.id,node);facts.set(node.id,Object.freeze({id:node.id,root:node.id,state:key,
+          proposition:inference.conclusion,openAssumptions:inference.openAssumptions,conditional:inference.conditional,rules:inference.rules}));
+      }
+      for(const cell of edited.cells){const root=step.proposal.proof.roots.find(id=>{const p=(facts.get(id)??parent.facts.get(id))?.proposition;return p?.kind==="domain"&&p.cell===cell&&p.mask===edited.domains[cell];});
+        requireProof(root!==undefined,"missing-domain-fact");domainFacts[cell]=root;}
+      const state=Object.freeze({key,values:Object.freeze(edited.values),domains:Object.freeze(edited.domains),domainFacts:Object.freeze(domainFacts)});
+      session.#view=new CandidateOwner(parent.assembly,state,new BranchAppendMap(parent.facts,facts),new BranchAppendMap(previous.nodes,nodes),owner(session.view),edited.cells,undefined,branch).view;
+      return session;
+    }catch(error){session.dispose();throw error;}
+  }
   get view(): ReadView { requireProof(this.#view, "disposed-hypothetical-session"); assertOwnedView(this.#view); return this.#view; }
   *assume(value: Literal, limits: Limits): Generator<BranchEvent> {
+    requireProof(!this.#rollout,"rollout-assumptions-forbidden");
     const view = this.view, scope = branchScope(view), id = Math.max(...view.facts.keys()) + 1;
     requireProof(scope.length < 2, "branch-depth-limit");
     requireProof(view.assembly.problem.cells.includes(value.cell) && view.assembly.problem.symbols.includes(value.symbol) && !view.state.values[value.cell] && (view.state.domains[value.cell] & (1 << (value.symbol - 1))), "nonlive-branch-assumption");
@@ -207,14 +258,21 @@ export class HypotheticalSession {
     }
   }
   *check(proposal: DeductionProposal, limits: Limits): Generator<BranchEvent> {
+    if(this.#rollout)requireProof(["c01@1","c02@1","c03@1","c04@1","c05@1"].includes(proposal.technique),"rollout-technique-out-of-profile");
     const view = this.view, scope = branchScope(view);
     const scoped = { ...proposal, proof: { ...proposal.proof, imports: [...new Set([...proposal.proof.imports, ...scope])], nodes: proposal.proof.nodes.map(node => ({ ...node, scope })) } };
-    yield* verifyBranch(scoped, { view, retained: retainedProof(view), limits, policy: "discharged", uniqueEvidenceId: null });
+    const cursor=verifyBranch(scoped, { view, retained: retainedProof(view), limits, policy: "discharged", uniqueEvidenceId: null });
+    let emitted=0;
+    try {for(const event of cursor){
+      if(event.kind==="work"){emitted+=event.units;yield event;}
+      else{const hidden=Math.max(0,checkUsage(cursor).workUnits-emitted);if(hidden){emitted+=hidden;yield {kind:"work",units:hidden};}yield event;}
+    }}finally{cursor.return(undefined);}
   }
   publish(certificate: BranchCertificate): void {
     const view = this.view;
     const previous = owner(view);
     const branch = previous.branch!;
+    if(this.#rollout)requireProof(this.#rolloutSteps<16&&certificate.proposal.effects.length>0&&["c01@1","c02@1","c03@1","c04@1","c05@1"].includes(certificate.proposal.technique),"rollout-step-limit");
     requireProof(branchCertificateSource(certificate) === view, "foreign-branch-certificate");
     requireProof(!certificate.consequences.some(c => c.conclusion.kind === "false" || c.conclusion.kind === "domain" && c.conclusion.mask === 0), "contradictory-branch-publication");
 
@@ -226,8 +284,8 @@ export class HypotheticalSession {
     }
 
     branch.resource.lease.grow(1, 65536 + certificate.proposal.proof.nodes.length * 2048 + view.facts.size * 128);
-    const nodes = new Map(previous.nodes);
-    const facts = new Map(view.facts);
+    const nodes = new Map<NodeId,ProofNode>();
+    const facts = new Map<FactId,Fact>();
     const domains = [...view.state.domains];
     const domainFacts = [...view.state.domainFacts];
     const values = [...view.state.values];
@@ -241,7 +299,7 @@ export class HypotheticalSession {
       }));
     }
     for (const id of certificate.proposal.proof.roots) {
-      const p = nodes.get(id)!.conclusion;
+      const p = (nodes.get(id)??previous.nodes.get(id))!.conclusion;
       if (p.kind === "domain") {
         requireProof((p.mask & view.state.domains[p.cell]) === p.mask, "branch-domain-widening");
         domains[p.cell] = p.mask;
@@ -254,8 +312,9 @@ export class HypotheticalSession {
       }
     }
     const state = Object.freeze({ key, domains: Object.freeze(domains), domainFacts: Object.freeze(domainFacts), values: Object.freeze(values) });
-    this.#view = new CandidateOwner(view.assembly, state, facts, nodes, undefined, undefined, undefined,
+    this.#view = new CandidateOwner(view.assembly, state, this.#rollout?new BranchAppendMap(view.facts,facts):new Map([...view.facts,...facts]), this.#rollout?new BranchAppendMap(previous.nodes,nodes):new Map([...previous.nodes,...nodes]), previous, view.assembly.problem.cells.filter(c=>state.values[c]!==view.state.values[c]||state.domains[c]!==view.state.domains[c]), undefined,
       { parent: branch.parent, scope: certificate.scope, resource: branch.resource }).view;
+    if(this.#rollout)this.#rolloutSteps++;
   }
   dispose(): void { if (this.#view) { disposeFork(this.#view); this.#view = undefined; } }
 }
@@ -345,6 +404,20 @@ export function isAcceptedDescendant(before:ReadView,after:ReadView,charge:(unit
     if(!current.parent)return false;current=current.parent;
   }
   return current===prior;
+}
+
+/** Exact immediate accepted bundle, including effect-free same-revision publications. */
+export function acceptedStepChanges(before:ReadView,after:ReadView,step:CheckedStep):ChangeSet {
+  const prior=owner(before),next=owner(after);
+  requireProof(!prior.branch&&!next.branch&&next.lineage.parent===prior.lineage&&next.lineage.step===step,"unaccepted-scheduler-successor");
+  assertCheckedStepActive(step,after);
+  const cells=before.assembly.problem.cells.filter(c=>before.state.values[c]!==after.state.values[c]||before.state.domains[c]!==after.state.domains[c]);
+  const removed:Literal[]=[],placed:Literal[]=[];
+  for(const cell of cells){for(const symbol of before.assembly.problem.symbols)if(before.state.domains[cell]&~after.state.domains[cell]&(1<<(symbol-1)))removed.push({cell,symbol,positive:false});
+    if(before.state.values[cell]!==after.state.values[cell])placed.push({cell,symbol:after.state.values[cell],positive:true});}
+  const incidence=prior.indexes.affected(cells);
+  return Object.freeze({before:before.state.key,after:after.state.key,cells:Object.freeze(cells),removed:Object.freeze(removed),placed:Object.freeze(placed),
+    coverIds:incidence.covers,relationIds:incidence.relations,constraintIds:incidence.constraints,graphChanged:true,sourceChanged:true});
 }
 
 /** Retain exact checked definitions for subsequent proofs, without a state edit. */

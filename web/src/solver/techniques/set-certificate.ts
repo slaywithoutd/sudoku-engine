@@ -1,3 +1,4 @@
+import {matchingFacts,sourceFacts} from "../state/source-index";
 import type { Json } from "../problem";
 import type { ReadView, Literal } from "../state/types";
 import type { DeductionProposal, Effect } from "../proof/types";
@@ -37,7 +38,7 @@ export class SetCertificate {
     for (const scope of scopes) {
       yield { kind: "work", units: 1 };
       const house = this.view.assembly.allDifferent.find(h => h.id === scope.house)!;
-      const source = [...this.view.facts.values()].find(f => !f.openAssumptions.length && f.proposition.kind === "all-different" && f.proposition.cells.join() === house.cells.join());
+      const source = matchingFacts(this.view,{kind:"all-different",cells:house.cells}).find(f=>!f.openAssumptions.length);
       if (!source) throw Error("missing-set-source");
       constraints.push(b.add("all-different-subset@1", [source.id], { kind: "all-different", cells: scope.cells }));
     }
@@ -130,7 +131,7 @@ export class SetCertificate {
     for (const scope of p.scopes) {
       yield { kind: "work", units: 1 };
       const house = this.view.assembly.allDifferent.find(h => h.id === scope.house)!;
-      const fact = [...this.view.facts.values()].find(f => !f.openAssumptions.length && f.proposition.kind === "all-different" && f.proposition.cells.join() === house.cells.join());
+      const fact = matchingFacts(this.view,{kind:"all-different",cells:house.cells}).find(f=>!f.openAssumptions.length);
       if (!fact) throw Error("missing-set-source");
       scope.root = b.add("all-different-subset@1", [fact.id], { kind: "all-different", cells: scope.cells });
     }

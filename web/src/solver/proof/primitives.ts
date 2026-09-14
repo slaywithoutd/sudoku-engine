@@ -285,6 +285,9 @@ export class PrimitiveRegistry {
     Object.freeze(this);
   }
 
+  /** Cooperatively seed already authenticated retained definitions, one per caller tick. */
+  seedRetainedTable(node:ProofNode,definition:TableDefinition):void {this.#tables.seedRetained(node,definition);}
+
   tableDefinition(node: ProofNode): TableDefinition | undefined { return this.#tables.get(node); }
 
   has(id: string): boolean {
