@@ -172,3 +172,47 @@ the exact semantic-versus-expanded proof budget contract.
 ```text
 npm test -- tests/unit/solver/forcing.test.ts tests/unit/solver/nets.test.ts tests/unit/solver/candidates.test.ts
 ```
+
+## Generalized-chain and OR fixture provenance
+
+`C25.json`–`C28.json` preserve separately authored complete original-given CSP
+variables and explicit conflicts. The constructor solutions were used only to
+choose clue subsets; they are never candidate axioms. The durable oracle
+command is the focused test below. These JSON files contain repository-owned
+recipes, not imported CSP-Rules puzzle collections or implementation text.
+
+The scalar seeds distinguish z-only interior extras, t-only interior extras,
+combined whips, and actual nonpredecessor braids. The former four-position
+braid had an unused intermediate and was replaced by a separately authored
+seven-position causal braid. A redundant earlier twelve-pair conversion whose
+second right already conflicted with Z was discarded. The replacement twelve
+full pairs have no premature closure. Separate twelve-position braid and
+four-group g-whip examples end in a counted no-right terminal. Otherwise-sound
+thirteen-position scalar/braid/group certificates and a five-group certificate
+are primitive-checked and rejected by the named finite profile.
+
+C28 includes independent forcing OR2/3/4, inserted OR2/3/4, a twelve-position
+insertion and an otherwise-sound thirteen-position insertion. Five scalar and
+three grouped OR composites embed separately checked complete C22 negative
+source-cache recipes. Their consumer branches preserve the actual z/t/whip/
+braid/g-whip structure, including twelve positions/four groups. The signed
+OR2 static fixture preserves the earlier independently authored 24/7-link
+placement paths, with a different 3/13-link negative source theorem proving
+the same excluded-middle clause. An explicit 25-link extension is primitive
+valid and rejected by C28. Shorter proofs exist in some maximum-boundary
+puzzles; these certificates establish the admitted bound, not essential
+difficulty.
+
+The independent compiler in `generalized-acceptance.ts` uses test-only algebra,
+not production generalized builders, indexes, or discovery. Tests check both
+certificate implementations, prestate satisfiability, every opposite effect,
+and original-clue replay including genuine retained source clauses. Discovery
+tests separately require actual z/t interior exclusions, grouped rights,
+nonpredecessor braid structure, both OR forms, signed forcing, and a generalized
+OR case. Source-prefix, all-member, alias, every-root, numeric-bound, cache and
+resource regressions are explicit. Mathematical source mapping and ownership
+contracts are documented in `docs/solver/techniques/generalized-chains.md`.
+
+```text
+npm test -- tests/unit/solver/generalized-chains.test.ts
+```

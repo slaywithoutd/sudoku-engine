@@ -5,6 +5,9 @@ import { ForcingProof, opposite, symbols, type ForcingLink, type PathCertificate
 import { forcingDescriptor, discoverForcing } from "./forcing-runtime";
 
 export interface ForcingPlan {
+  /** D088: retain the complete negative theorem without candidate progress. */
+  readonly mode?: "cache";
+  readonly cacheTarget?: Literal;
   readonly kind: "digit" | "cell" | "unit" | "nishio";
   readonly alias: string;
   readonly cover: { readonly cell?: number; readonly house?: string; readonly symbol?: number; readonly candidate?: Literal };
@@ -41,6 +44,10 @@ export function compileForcing(view: ReadView, plan: ForcingPlan, effect: Effect
     // CasesStrategy consumes the canonical signed-clause order (negative first).
     const ordered = cases.map((c,i) => ({ c, a: plan.branches[i].assumption })).sort((a,b) => a.a.cell-b.a.cell || a.a.symbol-b.a.symbol || Number(a.a.positive)-Number(b.a.positive));
     root = b.add("cases@1", [cover!, ...ordered.flatMap(({c}) => [c.assumption,c.result])], proposedClause([{cell:effect.cell,symbol:effect.symbol,positive:effect.kind==="place"}]));
+  }
+  if(plan.mode==="cache") {
+    if(effect.kind!=="remove")throw Error("forcing-cache-negative-only");
+    return b.bundle("c22@1",{...plan,cacheTarget:{cell:effect.cell,symbol:effect.symbol,positive:false},certificate:{cover,branches:cases,root} satisfies ForcingCertificate},[],[root]);
   }
   return b.finish("c22@1", { ...plan, certificate: { cover, branches: cases, root } satisfies ForcingCertificate }, effect, root);
 }

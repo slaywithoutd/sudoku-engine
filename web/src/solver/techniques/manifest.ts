@@ -5245,13 +5245,63 @@ export const coverageEntries: readonly CoverageEntry[] = Object.freeze((
     "grammarId": "c25-grammar@1",
     "detectorId": "c25@1",
     "checkerId": "c25-grammar@1",
-    "descriptionPath": "docs/superpowers/specs/2026-09-12-m2-technique-coverage.md",
+    "descriptionPath": "docs/solver/techniques/generalized-chains.md",
     "fixtureIds": [
-      "C25-bivalue",
-      "C25-z"
+      "C25-z",
+      "C25-bivalue-12-no-premature-close",
+      "C25-bivalue-13-no-premature-close"
     ],
-    "status": "specified",
-    "evidence": []
+    "status": "implemented",
+    "evidence": [
+      {
+        "kind": "positive",
+        "fixtureId": "C25-z",
+        "alias": "z-chains",
+        "record": "web/tests/unit/solver/generalized-chains.test.ts#C25-z"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C25-z",
+        "alias": "z-chains",
+        "record": "web/tests/unit/solver/generalized-chains.test.ts#C25-z"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C25-z",
+        "alias": "z-chains",
+        "record": "web/tests/unit/solver/generalized-chains.test.ts#C25-z"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "C25-bivalue-12-no-premature-close",
+        "alias": "Bivalue chains",
+        "record": "web/tests/unit/solver/generalized-chains.test.ts#C25-bivalue-12-no-premature-close"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C25-bivalue-12-no-premature-close",
+        "alias": "Bivalue chains",
+        "record": "web/tests/unit/solver/generalized-chains.test.ts#C25-bivalue-12-no-premature-close"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C25-bivalue-12-no-premature-close",
+        "alias": "Bivalue chains",
+        "record": "web/tests/unit/solver/generalized-chains.test.ts#C25-bivalue-12-no-premature-close"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "C25-bivalue-13-no-premature-close",
+        "alias": "Bivalue chains",
+        "record": "web/tests/unit/solver/generalized-chains.test.ts#C25-bivalue-13-no-premature-close"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "C25-bivalue-13-no-premature-close",
+        "alias": "Bivalue chains",
+        "record": "web/tests/unit/solver/generalized-chains.test.ts#C25-bivalue-13-no-premature-close"
+      }
+    ]
   },
   {
     "id": "C26",
@@ -5272,13 +5322,50 @@ export const coverageEntries: readonly CoverageEntry[] = Object.freeze((
     "grammarId": "c26-grammar@1",
     "detectorId": "c26@1",
     "checkerId": "c26-grammar@1",
-    "descriptionPath": "docs/superpowers/specs/2026-09-12-m2-technique-coverage.md",
+    "descriptionPath": "docs/solver/techniques/generalized-chains.md",
     "fixtureIds": [
       "C26-t",
       "C26-whip"
     ],
-    "status": "specified",
-    "evidence": []
+    "status": "implemented",
+    "evidence": [
+      {
+        "kind": "positive",
+        "fixtureId": "C26-t",
+        "alias": "t-whips",
+        "record": "web/tests/unit/solver/generalized-chains.test.ts#C26-t"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C26-t",
+        "alias": "t-whips",
+        "record": "web/tests/unit/solver/generalized-chains.test.ts#C26-t"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C26-t",
+        "alias": "t-whips",
+        "record": "web/tests/unit/solver/generalized-chains.test.ts#C26-t"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "C26-whip",
+        "alias": "Whips",
+        "record": "web/tests/unit/solver/generalized-chains.test.ts#C26-whip"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C26-whip",
+        "alias": "Whips",
+        "record": "web/tests/unit/solver/generalized-chains.test.ts#C26-whip"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C26-whip",
+        "alias": "Whips",
+        "record": "web/tests/unit/solver/generalized-chains.test.ts#C26-whip"
+      }
+    ]
   },
   {
     "id": "C27",
@@ -5299,13 +5386,146 @@ export const coverageEntries: readonly CoverageEntry[] = Object.freeze((
     "grammarId": "c27-grammar@1",
     "detectorId": "c27@1",
     "checkerId": "c27-grammar@1",
-    "descriptionPath": "docs/superpowers/specs/2026-09-12-m2-technique-coverage.md",
+    "descriptionPath": "docs/solver/techniques/generalized-chains.md",
     "fixtureIds": [
-      "C27-braid",
-      "C27-gwhip"
+      "C27-braid-causal",
+      "C27-gwhip-group2",
+      "C27-gwhip-members3",
+      "C27-gwhip-groups4",
+      "C27-gwhip-positions13",
+      "C27-gwhip-groups5",
+      "C27-braid-causal-12",
+      "C27-braid-causal-13"
     ],
-    "status": "specified",
-    "evidence": []
+    "status": "implemented",
+    "evidence": [
+      {
+        "kind": "positive",
+        "fixtureId": "C27-braid-causal",
+        "alias": "Braids",
+        "record": "web/tests/unit/solver/generalized-chains.test.ts#C27-braid-causal"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C27-braid-causal",
+        "alias": "Braids",
+        "record": "web/tests/unit/solver/generalized-chains.test.ts#C27-braid-causal"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C27-braid-causal",
+        "alias": "Braids",
+        "record": "web/tests/unit/solver/generalized-chains.test.ts#C27-braid-causal"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "C27-gwhip-group2",
+        "alias": "g-whips",
+        "record": "web/tests/unit/solver/generalized-chains.test.ts#C27-gwhip-group2"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C27-gwhip-group2",
+        "alias": "g-whips",
+        "record": "web/tests/unit/solver/generalized-chains.test.ts#C27-gwhip-group2"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C27-gwhip-group2",
+        "alias": "g-whips",
+        "record": "web/tests/unit/solver/generalized-chains.test.ts#C27-gwhip-group2"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "C27-gwhip-members3",
+        "alias": "g-whips",
+        "record": "web/tests/unit/solver/generalized-chains.test.ts#C27-gwhip-members3"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C27-gwhip-members3",
+        "alias": "g-whips",
+        "record": "web/tests/unit/solver/generalized-chains.test.ts#C27-gwhip-members3"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C27-gwhip-members3",
+        "alias": "g-whips",
+        "record": "web/tests/unit/solver/generalized-chains.test.ts#C27-gwhip-members3"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "C27-gwhip-groups4",
+        "alias": "g-whips",
+        "record": "web/tests/unit/solver/generalized-chains.test.ts#C27-gwhip-groups4"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C27-gwhip-groups4",
+        "alias": "g-whips",
+        "record": "web/tests/unit/solver/generalized-chains.test.ts#C27-gwhip-groups4"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C27-gwhip-groups4",
+        "alias": "g-whips",
+        "record": "web/tests/unit/solver/generalized-chains.test.ts#C27-gwhip-groups4"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "C27-gwhip-positions13",
+        "alias": "g-whips",
+        "record": "web/tests/unit/solver/generalized-chains.test.ts#C27-gwhip-positions13"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "C27-gwhip-positions13",
+        "alias": "g-whips",
+        "record": "web/tests/unit/solver/generalized-chains.test.ts#C27-gwhip-positions13"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "C27-gwhip-groups5",
+        "alias": "g-whips",
+        "record": "web/tests/unit/solver/generalized-chains.test.ts#C27-gwhip-groups5"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "C27-gwhip-groups5",
+        "alias": "g-whips",
+        "record": "web/tests/unit/solver/generalized-chains.test.ts#C27-gwhip-groups5"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "C27-braid-causal-12",
+        "alias": "Braids",
+        "record": "web/tests/unit/solver/generalized-chains.test.ts#C27-braid-causal-12"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C27-braid-causal-12",
+        "alias": "Braids",
+        "record": "web/tests/unit/solver/generalized-chains.test.ts#C27-braid-causal-12"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C27-braid-causal-12",
+        "alias": "Braids",
+        "record": "web/tests/unit/solver/generalized-chains.test.ts#C27-braid-causal-12"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "C27-braid-causal-13",
+        "alias": "Braids",
+        "record": "web/tests/unit/solver/generalized-chains.test.ts#C27-braid-causal-13"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "C27-braid-causal-13",
+        "alias": "Braids",
+        "record": "web/tests/unit/solver/generalized-chains.test.ts#C27-braid-causal-13"
+      }
+    ]
   },
   {
     "id": "C28",
@@ -5327,12 +5547,329 @@ export const coverageEntries: readonly CoverageEntry[] = Object.freeze((
     "grammarId": "c28-grammar@1",
     "detectorId": "c28@1",
     "checkerId": "c28-grammar@1",
-    "descriptionPath": "docs/superpowers/specs/2026-09-12-m2-technique-coverage.md",
+    "descriptionPath": "docs/solver/techniques/generalized-chains.md",
     "fixtureIds": [
-      "C28-or2/3/4"
+      "C28-inserted-or2",
+      "C28-inserted-or3",
+      "C28-inserted-or4",
+      "C28-inserted-or2-12",
+      "C28-or2",
+      "C28-or4",
+      "C28-or3",
+      "C28-generalized-C25-z",
+      "C28-generalized-C26-t",
+      "C28-generalized-C26-whip",
+      "C28-generalized-C27-braid-causal",
+      "C28-generalized-C27-braid-causal-12",
+      "C28-generalized-C27-gwhip-group2",
+      "C28-generalized-C27-gwhip-members3",
+      "C28-generalized-C27-gwhip-groups4",
+      "C28-inserted-or2-thirteen-sound",
+      "C28-signed-or2-static24"
     ],
-    "status": "specified",
-    "evidence": []
+    "status": "implemented",
+    "evidence": [
+      {
+        "kind": "positive",
+        "fixtureId": "C28-inserted-or2",
+        "alias": "OR-k whips",
+        "record": "web/tests/unit/solver/generalized-chains.test.ts#C28-inserted-or2"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C28-inserted-or2",
+        "alias": "OR-k whips",
+        "record": "web/tests/unit/solver/generalized-chains.test.ts#C28-inserted-or2"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C28-inserted-or2",
+        "alias": "OR-k whips",
+        "record": "web/tests/unit/solver/generalized-chains.test.ts#C28-inserted-or2"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "C28-inserted-or3",
+        "alias": "OR-k whips",
+        "record": "web/tests/unit/solver/generalized-chains.test.ts#C28-inserted-or3"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C28-inserted-or3",
+        "alias": "OR-k whips",
+        "record": "web/tests/unit/solver/generalized-chains.test.ts#C28-inserted-or3"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C28-inserted-or3",
+        "alias": "OR-k whips",
+        "record": "web/tests/unit/solver/generalized-chains.test.ts#C28-inserted-or3"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "C28-inserted-or4",
+        "alias": "OR-k whips",
+        "record": "web/tests/unit/solver/generalized-chains.test.ts#C28-inserted-or4"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C28-inserted-or4",
+        "alias": "OR-k whips",
+        "record": "web/tests/unit/solver/generalized-chains.test.ts#C28-inserted-or4"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C28-inserted-or4",
+        "alias": "OR-k whips",
+        "record": "web/tests/unit/solver/generalized-chains.test.ts#C28-inserted-or4"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "C28-inserted-or2-12",
+        "alias": "OR-k whips",
+        "record": "web/tests/unit/solver/generalized-chains.test.ts#C28-inserted-or2-12"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C28-inserted-or2-12",
+        "alias": "OR-k whips",
+        "record": "web/tests/unit/solver/generalized-chains.test.ts#C28-inserted-or2-12"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C28-inserted-or2-12",
+        "alias": "OR-k whips",
+        "record": "web/tests/unit/solver/generalized-chains.test.ts#C28-inserted-or2-12"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "C28-or2",
+        "alias": "OR-k forcing",
+        "record": "web/tests/unit/solver/generalized-chains.test.ts#C28-or2"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C28-or2",
+        "alias": "OR-k forcing",
+        "record": "web/tests/unit/solver/generalized-chains.test.ts#C28-or2"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C28-or2",
+        "alias": "OR-k forcing",
+        "record": "web/tests/unit/solver/generalized-chains.test.ts#C28-or2"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "C28-or4",
+        "alias": "OR-k forcing",
+        "record": "web/tests/unit/solver/generalized-chains.test.ts#C28-or4"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C28-or4",
+        "alias": "OR-k forcing",
+        "record": "web/tests/unit/solver/generalized-chains.test.ts#C28-or4"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C28-or4",
+        "alias": "OR-k forcing",
+        "record": "web/tests/unit/solver/generalized-chains.test.ts#C28-or4"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "C28-or3",
+        "alias": "OR-k forcing",
+        "record": "web/tests/unit/solver/generalized-chains.test.ts#C28-or3"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C28-or3",
+        "alias": "OR-k forcing",
+        "record": "web/tests/unit/solver/generalized-chains.test.ts#C28-or3"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C28-or3",
+        "alias": "OR-k forcing",
+        "record": "web/tests/unit/solver/generalized-chains.test.ts#C28-or3"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "C28-generalized-C25-z",
+        "alias": "OR-k forcing",
+        "record": "web/tests/unit/solver/generalized-chains.test.ts#C28-generalized-C25-z"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C28-generalized-C25-z",
+        "alias": "OR-k forcing",
+        "record": "web/tests/unit/solver/generalized-chains.test.ts#C28-generalized-C25-z"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C28-generalized-C25-z",
+        "alias": "OR-k forcing",
+        "record": "web/tests/unit/solver/generalized-chains.test.ts#C28-generalized-C25-z"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "C28-generalized-C26-t",
+        "alias": "OR-k forcing",
+        "record": "web/tests/unit/solver/generalized-chains.test.ts#C28-generalized-C26-t"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C28-generalized-C26-t",
+        "alias": "OR-k forcing",
+        "record": "web/tests/unit/solver/generalized-chains.test.ts#C28-generalized-C26-t"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C28-generalized-C26-t",
+        "alias": "OR-k forcing",
+        "record": "web/tests/unit/solver/generalized-chains.test.ts#C28-generalized-C26-t"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "C28-generalized-C26-whip",
+        "alias": "OR-k forcing",
+        "record": "web/tests/unit/solver/generalized-chains.test.ts#C28-generalized-C26-whip"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C28-generalized-C26-whip",
+        "alias": "OR-k forcing",
+        "record": "web/tests/unit/solver/generalized-chains.test.ts#C28-generalized-C26-whip"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C28-generalized-C26-whip",
+        "alias": "OR-k forcing",
+        "record": "web/tests/unit/solver/generalized-chains.test.ts#C28-generalized-C26-whip"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "C28-generalized-C27-braid-causal",
+        "alias": "OR-k forcing",
+        "record": "web/tests/unit/solver/generalized-chains.test.ts#C28-generalized-C27-braid-causal"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C28-generalized-C27-braid-causal",
+        "alias": "OR-k forcing",
+        "record": "web/tests/unit/solver/generalized-chains.test.ts#C28-generalized-C27-braid-causal"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C28-generalized-C27-braid-causal",
+        "alias": "OR-k forcing",
+        "record": "web/tests/unit/solver/generalized-chains.test.ts#C28-generalized-C27-braid-causal"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "C28-generalized-C27-braid-causal-12",
+        "alias": "OR-k forcing",
+        "record": "web/tests/unit/solver/generalized-chains.test.ts#C28-generalized-C27-braid-causal-12"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C28-generalized-C27-braid-causal-12",
+        "alias": "OR-k forcing",
+        "record": "web/tests/unit/solver/generalized-chains.test.ts#C28-generalized-C27-braid-causal-12"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C28-generalized-C27-braid-causal-12",
+        "alias": "OR-k forcing",
+        "record": "web/tests/unit/solver/generalized-chains.test.ts#C28-generalized-C27-braid-causal-12"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "C28-generalized-C27-gwhip-group2",
+        "alias": "OR-k forcing",
+        "record": "web/tests/unit/solver/generalized-chains.test.ts#C28-generalized-C27-gwhip-group2"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C28-generalized-C27-gwhip-group2",
+        "alias": "OR-k forcing",
+        "record": "web/tests/unit/solver/generalized-chains.test.ts#C28-generalized-C27-gwhip-group2"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C28-generalized-C27-gwhip-group2",
+        "alias": "OR-k forcing",
+        "record": "web/tests/unit/solver/generalized-chains.test.ts#C28-generalized-C27-gwhip-group2"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "C28-generalized-C27-gwhip-members3",
+        "alias": "OR-k forcing",
+        "record": "web/tests/unit/solver/generalized-chains.test.ts#C28-generalized-C27-gwhip-members3"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C28-generalized-C27-gwhip-members3",
+        "alias": "OR-k forcing",
+        "record": "web/tests/unit/solver/generalized-chains.test.ts#C28-generalized-C27-gwhip-members3"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C28-generalized-C27-gwhip-members3",
+        "alias": "OR-k forcing",
+        "record": "web/tests/unit/solver/generalized-chains.test.ts#C28-generalized-C27-gwhip-members3"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "C28-generalized-C27-gwhip-groups4",
+        "alias": "OR-k forcing",
+        "record": "web/tests/unit/solver/generalized-chains.test.ts#C28-generalized-C27-gwhip-groups4"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C28-generalized-C27-gwhip-groups4",
+        "alias": "OR-k forcing",
+        "record": "web/tests/unit/solver/generalized-chains.test.ts#C28-generalized-C27-gwhip-groups4"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C28-generalized-C27-gwhip-groups4",
+        "alias": "OR-k forcing",
+        "record": "web/tests/unit/solver/generalized-chains.test.ts#C28-generalized-C27-gwhip-groups4"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "C28-inserted-or2-thirteen-sound",
+        "alias": "OR-k whips",
+        "record": "web/tests/unit/solver/generalized-chains.test.ts#C28-inserted-or2-thirteen-sound"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "C28-inserted-or2-thirteen-sound",
+        "alias": "OR-k whips",
+        "record": "web/tests/unit/solver/generalized-chains.test.ts#C28-inserted-or2-thirteen-sound"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "C28-signed-or2-static24",
+        "alias": "OR-k forcing",
+        "record": "web/tests/unit/solver/generalized-chains.test.ts#C28-signed-or2-static24"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C28-signed-or2-static24",
+        "alias": "OR-k forcing",
+        "record": "web/tests/unit/solver/generalized-chains.test.ts#C28-signed-or2-static24"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C28-signed-or2-static24",
+        "alias": "OR-k forcing",
+        "record": "web/tests/unit/solver/generalized-chains.test.ts#C28-signed-or2-static24"
+      }
+    ]
   },
   {
     "id": "C29",

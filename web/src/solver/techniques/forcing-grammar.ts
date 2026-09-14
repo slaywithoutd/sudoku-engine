@@ -62,7 +62,8 @@ export class ForcingLineage {
 export function checkForcingPattern(proposal:DeductionProposal,view:ReadView,nodes:ReadonlyMap<number,ProofNode>):void {
   const p=proposal.pattern as unknown as ForcingPlan & {certificate:ForcingCertificate}, c=p.certificate, l=new ForcingLineage(view,nodes);
   requireProof(c && ["digit","cell","unit","nishio"].includes(p.kind) && p.alias===({digit:"Digit forcing chains",cell:"Cell forcing chains",unit:"Unit forcing chains",nishio:"Nishio"})[p.kind],"forcing-alias");
-  requireProof(proposal.effects.length>=1 && (proposal.effects[0].kind==="place" || proposal.effects.length===1),"forcing-effects");
+  if(p.mode==="cache")requireProof(p.cacheTarget&&!p.cacheTarget.positive&&proposal.effects.length===0&&sameValue(proposal.proof.roots,[c.root]),"forcing-cache-roots");
+  else requireProof(p.mode===undefined&&p.cacheTarget===undefined&&proposal.effects.length>=1 && (proposal.effects[0].kind==="place" || proposal.effects.length===1),"forcing-effects");
   let alternatives:Literal[];
   if(p.kind==="cell") { alternatives=candidates(view,p.cover.cell!); l.cell(c.cover!,p.cover.cell!); }
   else if(p.kind==="unit") {
@@ -95,7 +96,7 @@ export function checkForcingPattern(proposal:DeductionProposal,view:ReadView,nod
     if(b.result==="false") requireProof(result.rule==="contradiction@1"&&sameValue(result.scope,scope)&&sameValue(result.premises,certificate.paths.map(p=>p.end)),"forcing-contradiction-lineage");
     else requireProof(result.id===certificate.paths[0].end&&sameValue(result.conclusion,literal(b.result)),"forcing-result-lineage");
   }
-  const root=l.node(c.root),effect=proposal.effects[0];
+  const root=l.node(c.root),effect=p.mode==="cache"?{kind:"remove",cell:p.cacheTarget!.cell,symbol:p.cacheTarget!.symbol}:proposal.effects[0];
   requireProof(root.scope.length===0&&sameValue(root.conclusion,literal({cell:effect.cell,symbol:effect.symbol,positive:effect.kind==="place"})),"forcing-root");
   if(p.kind==="nishio") requireProof(root.rule==="discharge@1"&&sameValue(root.premises,[c.branches[0].assumption,c.branches[0].result])&&p.branches[0].result==="false","nishio-discharge");
   else {

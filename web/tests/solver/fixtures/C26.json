@@ -1,0 +1,958 @@
+[
+  {
+    "id": "C26-t",
+    "rowId": "C26",
+    "givens": "534000900602190040100342500859061020000003001700904050900037000007009035005000170",
+    "preState": {
+      "values": [
+        5,
+        3,
+        4,
+        0,
+        0,
+        0,
+        9,
+        0,
+        0,
+        6,
+        0,
+        2,
+        1,
+        9,
+        0,
+        0,
+        4,
+        0,
+        1,
+        0,
+        0,
+        3,
+        4,
+        2,
+        5,
+        0,
+        0,
+        8,
+        5,
+        9,
+        0,
+        6,
+        1,
+        0,
+        2,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        3,
+        0,
+        0,
+        1,
+        7,
+        0,
+        0,
+        9,
+        0,
+        4,
+        0,
+        5,
+        0,
+        9,
+        0,
+        0,
+        0,
+        3,
+        7,
+        0,
+        0,
+        0,
+        0,
+        0,
+        7,
+        0,
+        0,
+        9,
+        0,
+        3,
+        5,
+        0,
+        0,
+        5,
+        0,
+        0,
+        0,
+        1,
+        7,
+        0
+      ],
+      "domains": [
+        16,
+        4,
+        8,
+        224,
+        192,
+        160,
+        256,
+        161,
+        226,
+        32,
+        192,
+        2,
+        1,
+        256,
+        144,
+        196,
+        8,
+        196,
+        1,
+        448,
+        128,
+        4,
+        8,
+        2,
+        16,
+        160,
+        224,
+        128,
+        16,
+        256,
+        64,
+        32,
+        1,
+        76,
+        2,
+        76,
+        10,
+        42,
+        32,
+        210,
+        210,
+        4,
+        232,
+        416,
+        1,
+        64,
+        35,
+        37,
+        256,
+        130,
+        8,
+        164,
+        16,
+        164,
+        256,
+        171,
+        161,
+        186,
+        4,
+        64,
+        170,
+        160,
+        170,
+        10,
+        171,
+        64,
+        170,
+        131,
+        256,
+        170,
+        4,
+        16,
+        14,
+        170,
+        16,
+        170,
+        130,
+        160,
+        1,
+        64,
+        426
+      ]
+    },
+    "expectedPattern": {
+      "grammar": "t",
+      "target": [
+        67,
+        8
+      ],
+      "positions": [
+        {
+          "variable": "cell:76",
+          "alternatives": [
+            [
+              76,
+              2
+            ],
+            [
+              76,
+              8
+            ]
+          ],
+          "left": [
+            76,
+            8
+          ],
+          "leftConflict": [
+            67,
+            8
+          ],
+          "excluded": [],
+          "right": [
+            76,
+            2
+          ]
+        },
+        {
+          "variable": "row:5:symbol:2",
+          "alternatives": [
+            [
+              46,
+              2
+            ],
+            [
+              49,
+              2
+            ]
+          ],
+          "left": [
+            49,
+            2
+          ],
+          "leftConflict": [
+            76,
+            2
+          ],
+          "excluded": [],
+          "right": [
+            46,
+            2
+          ]
+        },
+        {
+          "variable": "cell:36",
+          "alternatives": [
+            [
+              36,
+              2
+            ],
+            [
+              36,
+              4
+            ]
+          ],
+          "left": [
+            36,
+            2
+          ],
+          "leftConflict": [
+            46,
+            2
+          ],
+          "excluded": [],
+          "right": [
+            36,
+            4
+          ]
+        },
+        {
+          "variable": "cell:37",
+          "alternatives": [
+            [
+              37,
+              2
+            ],
+            [
+              37,
+              4
+            ],
+            [
+              37,
+              6
+            ]
+          ],
+          "left": [
+            37,
+            4
+          ],
+          "leftConflict": [
+            36,
+            4
+          ],
+          "excluded": [
+            {
+              "literal": [
+                37,
+                2
+              ],
+              "conflictWith": [
+                46,
+                2
+              ]
+            }
+          ],
+          "right": [
+            37,
+            6
+          ]
+        },
+        {
+          "variable": "row:4:symbol:2",
+          "alternatives": [
+            [
+              36,
+              2
+            ],
+            [
+              37,
+              2
+            ],
+            [
+              39,
+              2
+            ],
+            [
+              40,
+              2
+            ]
+          ],
+          "left": [
+            37,
+            2
+          ],
+          "leftConflict": [
+            37,
+            6
+          ],
+          "excluded": [
+            {
+              "literal": [
+                36,
+                2
+              ],
+              "conflictWith": [
+                46,
+                2
+              ]
+            },
+            {
+              "literal": [
+                40,
+                2
+              ],
+              "conflictWith": [
+                76,
+                2
+              ]
+            }
+          ],
+          "right": [
+            39,
+            2
+          ]
+        },
+        {
+          "variable": "row:4:symbol:5",
+          "alternatives": [
+            [
+              39,
+              5
+            ],
+            [
+              40,
+              5
+            ]
+          ],
+          "left": [
+            39,
+            5
+          ],
+          "leftConflict": [
+            39,
+            2
+          ],
+          "excluded": [],
+          "right": [
+            40,
+            5
+          ]
+        },
+        {
+          "variable": "box:4:symbol:8",
+          "alternatives": [
+            [
+              39,
+              8
+            ],
+            [
+              40,
+              8
+            ],
+            [
+              49,
+              8
+            ]
+          ],
+          "left": [
+            40,
+            8
+          ],
+          "leftConflict": [
+            40,
+            5
+          ],
+          "excluded": [
+            {
+              "literal": [
+                39,
+                8
+              ],
+              "conflictWith": [
+                39,
+                2
+              ]
+            }
+          ],
+          "closingCandidate": [
+            49,
+            8
+          ],
+          "closingConflict": [
+            67,
+            8
+          ],
+          "right": null
+        }
+      ],
+      "positionCount": 7,
+      "fullPairCount": 6,
+      "terminalForm": "no-right",
+      "features": [
+        "t-only-extra"
+      ]
+    },
+    "expectedEffects": [
+      {
+        "kind": "remove",
+        "cell": 67,
+        "symbol": 8
+      }
+    ],
+    "prefix": "Only original-given peer exclusions; no solution-derived candidate axioms.",
+    "origin": {
+      "author": "Independent repository fixture author",
+      "license": "Repository-owned; no external puzzle copied",
+      "sourceRevision": "independent-generalized-seeds@1",
+      "construction": "Complete cell/house-symbol alternatives and explicit pairwise peer conflicts, recomputed from original given-peer domains. No production index, builder, detector or exact search imported."
+    },
+    "oracleRecord": {
+      "method": "independent-algorithm-x@1",
+      "inputHash": "cef98a770fcc1dbd5f88ed6d307336a660eb9ff268af3f98a2e42fe46576a102",
+      "command": "npm test -- tests/unit/solver/generalized-chains.test.ts",
+      "satisfiable": true,
+      "forceForbidExhausted": true
+    }
+  },
+  {
+    "id": "C26-whip",
+    "rowId": "C26",
+    "givens": "534000900602190040100342500859061020000003001700904050900037000007009035005000170",
+    "preState": {
+      "values": [
+        5,
+        3,
+        4,
+        0,
+        0,
+        0,
+        9,
+        0,
+        0,
+        6,
+        0,
+        2,
+        1,
+        9,
+        0,
+        0,
+        4,
+        0,
+        1,
+        0,
+        0,
+        3,
+        4,
+        2,
+        5,
+        0,
+        0,
+        8,
+        5,
+        9,
+        0,
+        6,
+        1,
+        0,
+        2,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        3,
+        0,
+        0,
+        1,
+        7,
+        0,
+        0,
+        9,
+        0,
+        4,
+        0,
+        5,
+        0,
+        9,
+        0,
+        0,
+        0,
+        3,
+        7,
+        0,
+        0,
+        0,
+        0,
+        0,
+        7,
+        0,
+        0,
+        9,
+        0,
+        3,
+        5,
+        0,
+        0,
+        5,
+        0,
+        0,
+        0,
+        1,
+        7,
+        0
+      ],
+      "domains": [
+        16,
+        4,
+        8,
+        224,
+        192,
+        160,
+        256,
+        161,
+        226,
+        32,
+        192,
+        2,
+        1,
+        256,
+        144,
+        196,
+        8,
+        196,
+        1,
+        448,
+        128,
+        4,
+        8,
+        2,
+        16,
+        160,
+        224,
+        128,
+        16,
+        256,
+        64,
+        32,
+        1,
+        76,
+        2,
+        76,
+        10,
+        42,
+        32,
+        210,
+        210,
+        4,
+        232,
+        416,
+        1,
+        64,
+        35,
+        37,
+        256,
+        130,
+        8,
+        164,
+        16,
+        164,
+        256,
+        171,
+        161,
+        186,
+        4,
+        64,
+        170,
+        160,
+        170,
+        10,
+        171,
+        64,
+        170,
+        131,
+        256,
+        170,
+        4,
+        16,
+        14,
+        170,
+        16,
+        170,
+        130,
+        160,
+        1,
+        64,
+        426
+      ]
+    },
+    "expectedPattern": {
+      "grammar": "whip",
+      "target": [
+        67,
+        8
+      ],
+      "positions": [
+        {
+          "variable": "cell:76",
+          "alternatives": [
+            [
+              76,
+              2
+            ],
+            [
+              76,
+              8
+            ]
+          ],
+          "left": [
+            76,
+            8
+          ],
+          "leftConflict": [
+            67,
+            8
+          ],
+          "excluded": [],
+          "right": [
+            76,
+            2
+          ]
+        },
+        {
+          "variable": "row:5:symbol:2",
+          "alternatives": [
+            [
+              46,
+              2
+            ],
+            [
+              49,
+              2
+            ]
+          ],
+          "left": [
+            49,
+            2
+          ],
+          "leftConflict": [
+            76,
+            2
+          ],
+          "excluded": [],
+          "right": [
+            46,
+            2
+          ]
+        },
+        {
+          "variable": "cell:36",
+          "alternatives": [
+            [
+              36,
+              2
+            ],
+            [
+              36,
+              4
+            ]
+          ],
+          "left": [
+            36,
+            2
+          ],
+          "leftConflict": [
+            46,
+            2
+          ],
+          "excluded": [],
+          "right": [
+            36,
+            4
+          ]
+        },
+        {
+          "variable": "cell:37",
+          "alternatives": [
+            [
+              37,
+              2
+            ],
+            [
+              37,
+              4
+            ],
+            [
+              37,
+              6
+            ]
+          ],
+          "left": [
+            37,
+            4
+          ],
+          "leftConflict": [
+            36,
+            4
+          ],
+          "excluded": [
+            {
+              "literal": [
+                37,
+                2
+              ],
+              "conflictWith": [
+                46,
+                2
+              ]
+            }
+          ],
+          "right": [
+            37,
+            6
+          ]
+        },
+        {
+          "variable": "row:4:symbol:2",
+          "alternatives": [
+            [
+              36,
+              2
+            ],
+            [
+              37,
+              2
+            ],
+            [
+              39,
+              2
+            ],
+            [
+              40,
+              2
+            ]
+          ],
+          "left": [
+            37,
+            2
+          ],
+          "leftConflict": [
+            37,
+            6
+          ],
+          "excluded": [
+            {
+              "literal": [
+                36,
+                2
+              ],
+              "conflictWith": [
+                46,
+                2
+              ]
+            },
+            {
+              "literal": [
+                40,
+                2
+              ],
+              "conflictWith": [
+                76,
+                2
+              ]
+            }
+          ],
+          "right": [
+            39,
+            2
+          ]
+        },
+        {
+          "variable": "column:3:symbol:8",
+          "alternatives": [
+            [
+              3,
+              8
+            ],
+            [
+              39,
+              8
+            ],
+            [
+              57,
+              8
+            ],
+            [
+              66,
+              8
+            ],
+            [
+              75,
+              8
+            ]
+          ],
+          "left": [
+            39,
+            8
+          ],
+          "leftConflict": [
+            39,
+            2
+          ],
+          "excluded": [
+            {
+              "literal": [
+                57,
+                8
+              ],
+              "conflictWith": [
+                67,
+                8
+              ]
+            },
+            {
+              "literal": [
+                66,
+                8
+              ],
+              "conflictWith": [
+                67,
+                8
+              ]
+            },
+            {
+              "literal": [
+                75,
+                8
+              ],
+              "conflictWith": [
+                67,
+                8
+              ]
+            }
+          ],
+          "right": [
+            3,
+            8
+          ]
+        },
+        {
+          "variable": "column:5:symbol:8",
+          "alternatives": [
+            [
+              5,
+              8
+            ],
+            [
+              14,
+              8
+            ],
+            [
+              77,
+              8
+            ]
+          ],
+          "left": [
+            5,
+            8
+          ],
+          "leftConflict": [
+            3,
+            8
+          ],
+          "excluded": [
+            {
+              "literal": [
+                14,
+                8
+              ],
+              "conflictWith": [
+                3,
+                8
+              ]
+            },
+            {
+              "literal": [
+                77,
+                8
+              ],
+              "conflictWith": [
+                67,
+                8
+              ]
+            }
+          ],
+          "right": null
+        }
+      ],
+      "positionCount": 7,
+      "fullPairCount": 6,
+      "terminalForm": "no-right",
+      "features": [
+        "t-only-extra",
+        "z-only-extra"
+      ]
+    },
+    "expectedEffects": [
+      {
+        "kind": "remove",
+        "cell": 67,
+        "symbol": 8
+      }
+    ],
+    "prefix": "Only original-given peer exclusions; no solution-derived candidate axioms.",
+    "origin": {
+      "author": "Independent repository fixture author",
+      "license": "Repository-owned; no external puzzle copied",
+      "sourceRevision": "independent-generalized-seeds@1",
+      "construction": "Complete cell/house-symbol alternatives and explicit pairwise peer conflicts, recomputed from original given-peer domains. No production index, builder, detector or exact search imported."
+    },
+    "oracleRecord": {
+      "method": "independent-algorithm-x@1",
+      "inputHash": "cef98a770fcc1dbd5f88ed6d307336a660eb9ff268af3f98a2e42fe46576a102",
+      "command": "npm test -- tests/unit/solver/generalized-chains.test.ts",
+      "satisfiable": true,
+      "forceForbidExhausted": true
+    }
+  }
+]
