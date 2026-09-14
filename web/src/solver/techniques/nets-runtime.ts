@@ -37,6 +37,7 @@ class BranchDAG {
     const source=new Map(retainedProof(view)),mapped=new Map<number,number>();
     const id=(n:number)=>{const node=source.get(n),value=node&&this.ids.get(node);if(value===undefined)throw Error("unmapped-branch-node");return value;};
     for(const node of certificate.proposal.proof.nodes) {
+      if(node.rule==="table-join-filter@1"||node.rule==="cover-count-clause@1")throw Error("branch-primitive-out-of-profile");
       if(Object.keys(node.parameters as object).length)throw Error("branch-parameter-out-of-profile");
       this.proof.scope=node.scope.map(id);
       const fresh=this.proof.add(node.rule,node.premises.map(id),node.conclusion,node.parameters);

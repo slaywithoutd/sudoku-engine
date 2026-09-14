@@ -1,0 +1,1372 @@
+[
+  {
+    "id": "C30-mixed-1-3",
+    "rowId": "C30",
+    "givens": "500678010000000008008302000800761020000803000000020800961537080287419630300286170",
+    "preState": {
+      "values": [
+        5,
+        0,
+        0,
+        6,
+        7,
+        8,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        8,
+        0,
+        0,
+        8,
+        3,
+        0,
+        2,
+        0,
+        0,
+        0,
+        8,
+        0,
+        0,
+        7,
+        6,
+        1,
+        0,
+        2,
+        0,
+        0,
+        0,
+        0,
+        8,
+        0,
+        3,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        2,
+        0,
+        8,
+        0,
+        0,
+        9,
+        6,
+        1,
+        5,
+        3,
+        7,
+        0,
+        8,
+        0,
+        2,
+        8,
+        7,
+        4,
+        1,
+        9,
+        6,
+        3,
+        0,
+        3,
+        0,
+        0,
+        2,
+        8,
+        6,
+        1,
+        7,
+        0
+      ],
+      "domains": [
+        16,
+        270,
+        270,
+        32,
+        64,
+        128,
+        270,
+        1,
+        270,
+        105,
+        335,
+        302,
+        257,
+        280,
+        24,
+        350,
+        312,
+        128,
+        105,
+        329,
+        128,
+        4,
+        280,
+        2,
+        344,
+        312,
+        376,
+        128,
+        284,
+        284,
+        64,
+        32,
+        1,
+        284,
+        2,
+        284,
+        105,
+        347,
+        314,
+        128,
+        280,
+        4,
+        344,
+        312,
+        377,
+        105,
+        349,
+        316,
+        256,
+        2,
+        24,
+        128,
+        312,
+        381,
+        256,
+        32,
+        1,
+        16,
+        4,
+        64,
+        10,
+        128,
+        10,
+        2,
+        128,
+        64,
+        8,
+        1,
+        256,
+        32,
+        4,
+        16,
+        4,
+        24,
+        24,
+        2,
+        128,
+        32,
+        1,
+        64,
+        280
+      ]
+    },
+    "expectedPattern": {
+      "corners": [
+        0,
+        7,
+        34,
+        27
+      ],
+      "groups": [
+        [
+          1,
+          2
+        ],
+        [
+          6,
+          8
+        ],
+        [
+          16,
+          25
+        ],
+        [
+          43,
+          52
+        ],
+        [
+          33,
+          35
+        ],
+        [
+          28,
+          29
+        ],
+        [
+          36,
+          45
+        ],
+        [
+          9,
+          18
+        ]
+      ],
+      "links": [
+        {
+          "house": "row:0",
+          "symbols": [
+            2,
+            3,
+            9
+          ]
+        },
+        {
+          "house": "box:2",
+          "symbols": [
+            4
+          ]
+        },
+        {
+          "house": "column:7",
+          "symbols": [
+            5,
+            6,
+            9
+          ]
+        },
+        {
+          "house": "box:5",
+          "symbols": [
+            4
+          ]
+        },
+        {
+          "house": "row:3",
+          "symbols": [
+            3,
+            5,
+            9
+          ]
+        },
+        {
+          "house": "box:3",
+          "symbols": [
+            4
+          ]
+        },
+        {
+          "house": "column:0",
+          "symbols": [
+            1,
+            6,
+            7
+          ]
+        },
+        {
+          "house": "box:0",
+          "symbols": [
+            4
+          ]
+        }
+      ],
+      "linkMultiplicity": 16,
+      "alias": "SK Loops"
+    },
+    "expectedEffects": [
+      {
+        "kind": "remove",
+        "cell": 15,
+        "symbol": 4
+      },
+      {
+        "kind": "remove",
+        "cell": 24,
+        "symbol": 4
+      },
+      {
+        "kind": "remove",
+        "cell": 26,
+        "symbol": 4
+      },
+      {
+        "kind": "remove",
+        "cell": 42,
+        "symbol": 4
+      },
+      {
+        "kind": "remove",
+        "cell": 44,
+        "symbol": 4
+      },
+      {
+        "kind": "remove",
+        "cell": 53,
+        "symbol": 4
+      },
+      {
+        "kind": "remove",
+        "cell": 37,
+        "symbol": 4
+      },
+      {
+        "kind": "remove",
+        "cell": 38,
+        "symbol": 4
+      },
+      {
+        "kind": "remove",
+        "cell": 46,
+        "symbol": 4
+      },
+      {
+        "kind": "remove",
+        "cell": 47,
+        "symbol": 4
+      },
+      {
+        "kind": "remove",
+        "cell": 10,
+        "symbol": 4
+      },
+      {
+        "kind": "remove",
+        "cell": 11,
+        "symbol": 4
+      },
+      {
+        "kind": "remove",
+        "cell": 19,
+        "symbol": 4
+      }
+    ],
+    "prefix": "Only original-given peer exclusions; no solution-derived candidate axioms.",
+    "origin": {
+      "author": "Independent repository fixture author",
+      "license": "Repository-owned; no external puzzle copied",
+      "sourceRevision": "independent-sk-seeds@1",
+      "construction": "Independent rectangle and edge-capacity assignment with direct original-given domains; no production imports."
+    },
+    "independentLocalEnumeration": {
+      "groupTupleCounts": [
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12
+      ],
+      "joinTests": 118428,
+      "ringSurvivors": 8096,
+      "supportedSymbols": [
+        [
+          2,
+          3,
+          4,
+          9
+        ],
+        [
+          2,
+          3,
+          4,
+          9
+        ],
+        [
+          2,
+          3,
+          4,
+          9
+        ],
+        [
+          2,
+          3,
+          4,
+          9
+        ],
+        [
+          4,
+          5,
+          6,
+          9
+        ],
+        [
+          4,
+          5,
+          6,
+          9
+        ],
+        [
+          4,
+          5,
+          6,
+          9
+        ],
+        [
+          4,
+          5,
+          6,
+          9
+        ],
+        [
+          3,
+          4,
+          5,
+          9
+        ],
+        [
+          3,
+          4,
+          5,
+          9
+        ],
+        [
+          3,
+          4,
+          5,
+          9
+        ],
+        [
+          3,
+          4,
+          5,
+          9
+        ],
+        [
+          1,
+          4,
+          6,
+          7
+        ],
+        [
+          1,
+          4,
+          6,
+          7
+        ],
+        [
+          1,
+          4,
+          6,
+          7
+        ],
+        [
+          1,
+          4,
+          6,
+          7
+        ]
+      ],
+      "everySurvivorFillsAllLinkCapacities": true
+    },
+    "oracleRecord": {
+      "method": "independent-algorithm-x@1",
+      "inputHash": "423089c8034c819a481adaee4dd6962102183bbd02fae2d9db832b0e6c7a3177",
+      "command": "npm test -- tests/unit/solver/sk-loops.test.ts",
+      "satisfiable": true,
+      "forceForbidExhausted": true
+    },
+    "alias": "SK Loops",
+    "grammar": "c30-grammar@1",
+    "expectation": "productive",
+    "reachability": "original-clue-path"
+  },
+  {
+    "id": "C30-all-double",
+    "rowId": "C30",
+    "givens": "534070010070100300108300007800701003000003701713020050961537080287010035345080170",
+    "preState": {
+      "values": [
+        5,
+        3,
+        4,
+        0,
+        7,
+        0,
+        0,
+        1,
+        0,
+        0,
+        7,
+        0,
+        1,
+        0,
+        0,
+        3,
+        0,
+        0,
+        1,
+        0,
+        8,
+        3,
+        0,
+        0,
+        0,
+        0,
+        7,
+        8,
+        0,
+        0,
+        7,
+        0,
+        1,
+        0,
+        0,
+        3,
+        0,
+        0,
+        0,
+        0,
+        0,
+        3,
+        7,
+        0,
+        1,
+        7,
+        1,
+        3,
+        0,
+        2,
+        0,
+        0,
+        5,
+        0,
+        9,
+        6,
+        1,
+        5,
+        3,
+        7,
+        0,
+        8,
+        0,
+        2,
+        8,
+        7,
+        0,
+        1,
+        0,
+        0,
+        3,
+        5,
+        3,
+        4,
+        5,
+        0,
+        8,
+        0,
+        1,
+        7,
+        0
+      ],
+      "domains": [
+        16,
+        4,
+        8,
+        418,
+        64,
+        418,
+        418,
+        1,
+        418,
+        32,
+        64,
+        290,
+        1,
+        312,
+        442,
+        4,
+        298,
+        426,
+        1,
+        258,
+        128,
+        4,
+        312,
+        314,
+        314,
+        298,
+        64,
+        128,
+        274,
+        290,
+        64,
+        312,
+        1,
+        298,
+        298,
+        4,
+        40,
+        274,
+        290,
+        424,
+        312,
+        4,
+        64,
+        298,
+        1,
+        64,
+        1,
+        4,
+        424,
+        2,
+        424,
+        424,
+        16,
+        424,
+        256,
+        32,
+        1,
+        16,
+        4,
+        64,
+        10,
+        128,
+        10,
+        2,
+        128,
+        64,
+        296,
+        1,
+        296,
+        296,
+        4,
+        16,
+        4,
+        8,
+        16,
+        290,
+        128,
+        290,
+        1,
+        64,
+        290
+      ]
+    },
+    "expectedPattern": {
+      "corners": [
+        4,
+        7,
+        52,
+        49
+      ],
+      "groups": [
+        [
+          3,
+          5
+        ],
+        [
+          6,
+          8
+        ],
+        [
+          16,
+          25
+        ],
+        [
+          34,
+          43
+        ],
+        [
+          51,
+          53
+        ],
+        [
+          48,
+          50
+        ],
+        [
+          31,
+          40
+        ],
+        [
+          13,
+          22
+        ]
+      ],
+      "links": [
+        {
+          "house": "row:0",
+          "symbols": [
+            2,
+            8
+          ]
+        },
+        {
+          "house": "box:2",
+          "symbols": [
+            6,
+            9
+          ]
+        },
+        {
+          "house": "column:7",
+          "symbols": [
+            2,
+            4
+          ]
+        },
+        {
+          "house": "box:5",
+          "symbols": [
+            6,
+            9
+          ]
+        },
+        {
+          "house": "row:5",
+          "symbols": [
+            4,
+            8
+          ]
+        },
+        {
+          "house": "box:4",
+          "symbols": [
+            6,
+            9
+          ]
+        },
+        {
+          "house": "column:4",
+          "symbols": [
+            4,
+            5
+          ]
+        },
+        {
+          "house": "box:1",
+          "symbols": [
+            6,
+            9
+          ]
+        }
+      ],
+      "linkMultiplicity": 16,
+      "alias": "SK Loops"
+    },
+    "expectedEffects": [
+      {
+        "kind": "remove",
+        "cell": 17,
+        "symbol": 6
+      },
+      {
+        "kind": "remove",
+        "cell": 17,
+        "symbol": 9
+      },
+      {
+        "kind": "remove",
+        "cell": 24,
+        "symbol": 6
+      },
+      {
+        "kind": "remove",
+        "cell": 24,
+        "symbol": 9
+      },
+      {
+        "kind": "remove",
+        "cell": 33,
+        "symbol": 6
+      },
+      {
+        "kind": "remove",
+        "cell": 33,
+        "symbol": 9
+      },
+      {
+        "kind": "remove",
+        "cell": 39,
+        "symbol": 6
+      },
+      {
+        "kind": "remove",
+        "cell": 39,
+        "symbol": 9
+      },
+      {
+        "kind": "remove",
+        "cell": 14,
+        "symbol": 6
+      },
+      {
+        "kind": "remove",
+        "cell": 14,
+        "symbol": 9
+      },
+      {
+        "kind": "remove",
+        "cell": 23,
+        "symbol": 6
+      },
+      {
+        "kind": "remove",
+        "cell": 23,
+        "symbol": 9
+      }
+    ],
+    "prefix": "Only original-given peer exclusions; no solution-derived candidate axioms.",
+    "origin": {
+      "author": "Independent repository fixture author",
+      "license": "Repository-owned; no external puzzle copied",
+      "sourceRevision": "independent-sk-seeds@1",
+      "construction": "Independent rectangle and edge-capacity assignment with direct original-given domains; no production imports."
+    },
+    "independentLocalEnumeration": {
+      "groupTupleCounts": [
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12
+      ],
+      "joinTests": 57660,
+      "ringSurvivors": 2304,
+      "supportedSymbols": [
+        [
+          2,
+          6,
+          8,
+          9
+        ],
+        [
+          2,
+          6,
+          8,
+          9
+        ],
+        [
+          2,
+          6,
+          8,
+          9
+        ],
+        [
+          2,
+          6,
+          8,
+          9
+        ],
+        [
+          2,
+          4,
+          6,
+          9
+        ],
+        [
+          2,
+          4,
+          6,
+          9
+        ],
+        [
+          2,
+          4,
+          6,
+          9
+        ],
+        [
+          2,
+          4,
+          6,
+          9
+        ],
+        [
+          4,
+          6,
+          8,
+          9
+        ],
+        [
+          4,
+          6,
+          8,
+          9
+        ],
+        [
+          4,
+          6,
+          8,
+          9
+        ],
+        [
+          4,
+          6,
+          8,
+          9
+        ],
+        [
+          4,
+          5,
+          6,
+          9
+        ],
+        [
+          4,
+          5,
+          6,
+          9
+        ],
+        [
+          4,
+          5,
+          6,
+          9
+        ],
+        [
+          4,
+          5,
+          6,
+          9
+        ]
+      ],
+      "everySurvivorFillsAllLinkCapacities": true
+    },
+    "oracleRecord": {
+      "method": "independent-algorithm-x@1",
+      "inputHash": "fc38a70a15e2454f05c4c78cd76a65011c9571b538ddbf570637c961a2f6c937",
+      "command": "npm test -- tests/unit/solver/sk-loops.test.ts",
+      "satisfiable": true,
+      "forceForbidExhausted": true
+    },
+    "alias": "SK Loops",
+    "grammar": "c30-grammar@1",
+    "expectation": "productive",
+    "reachability": "original-clue-path"
+  },
+  {
+    "id": "C30-singleton",
+    "rowId": "C30",
+    "givens": "500678010002000008098302000800761020000803000000020800961537080287419630340286170",
+    "preState": {
+      "values": [
+        5,
+        3,
+        0,
+        6,
+        7,
+        8,
+        0,
+        1,
+        0,
+        0,
+        0,
+        2,
+        0,
+        0,
+        0,
+        0,
+        0,
+        8,
+        0,
+        9,
+        8,
+        3,
+        0,
+        2,
+        0,
+        0,
+        0,
+        8,
+        0,
+        0,
+        7,
+        6,
+        1,
+        0,
+        2,
+        0,
+        0,
+        0,
+        0,
+        8,
+        0,
+        3,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        2,
+        0,
+        8,
+        0,
+        0,
+        9,
+        6,
+        1,
+        5,
+        3,
+        7,
+        0,
+        8,
+        0,
+        2,
+        8,
+        7,
+        4,
+        1,
+        9,
+        6,
+        3,
+        0,
+        3,
+        4,
+        0,
+        2,
+        8,
+        6,
+        1,
+        7,
+        0
+      ],
+      "domains": [
+        16,
+        4,
+        8,
+        32,
+        64,
+        128,
+        266,
+        1,
+        266,
+        105,
+        65,
+        2,
+        257,
+        280,
+        24,
+        348,
+        312,
+        128,
+        105,
+        256,
+        128,
+        4,
+        24,
+        2,
+        88,
+        56,
+        120,
+        128,
+        16,
+        284,
+        64,
+        32,
+        1,
+        284,
+        2,
+        284,
+        105,
+        83,
+        312,
+        128,
+        280,
+        4,
+        344,
+        312,
+        377,
+        105,
+        81,
+        316,
+        256,
+        2,
+        24,
+        128,
+        312,
+        381,
+        256,
+        32,
+        1,
+        16,
+        4,
+        64,
+        10,
+        128,
+        10,
+        2,
+        128,
+        64,
+        8,
+        1,
+        256,
+        32,
+        4,
+        16,
+        4,
+        8,
+        16,
+        2,
+        128,
+        32,
+        1,
+        64,
+        272
+      ]
+    },
+    "expectedPattern": {
+      "corners": [
+        0,
+        7,
+        34,
+        27
+      ],
+      "groups": [
+        [
+          1,
+          2
+        ],
+        [
+          6,
+          8
+        ],
+        [
+          16,
+          25
+        ],
+        [
+          43,
+          52
+        ],
+        [
+          33,
+          35
+        ],
+        [
+          28,
+          29
+        ],
+        [
+          36,
+          45
+        ],
+        [
+          9,
+          18
+        ]
+      ],
+      "links": [
+        {
+          "house": "row:0",
+          "symbols": [
+            2,
+            3,
+            9
+          ]
+        },
+        {
+          "house": "box:2",
+          "symbols": [
+            4
+          ]
+        },
+        {
+          "house": "column:7",
+          "symbols": [
+            5,
+            6,
+            9
+          ]
+        },
+        {
+          "house": "box:5",
+          "symbols": [
+            4
+          ]
+        },
+        {
+          "house": "row:3",
+          "symbols": [
+            3,
+            5,
+            9
+          ]
+        },
+        {
+          "house": "box:3",
+          "symbols": [
+            4
+          ]
+        },
+        {
+          "house": "column:0",
+          "symbols": [
+            1,
+            6,
+            7
+          ]
+        },
+        {
+          "house": "box:0",
+          "symbols": [
+            4
+          ]
+        }
+      ],
+      "linkMultiplicity": 16,
+      "alias": "SK Loops"
+    },
+    "expectedEffects": [
+      {
+        "kind": "remove",
+        "cell": 15,
+        "symbol": 4
+      },
+      {
+        "kind": "remove",
+        "cell": 24,
+        "symbol": 4
+      },
+      {
+        "kind": "remove",
+        "cell": 26,
+        "symbol": 4
+      },
+      {
+        "kind": "remove",
+        "cell": 42,
+        "symbol": 4
+      },
+      {
+        "kind": "remove",
+        "cell": 44,
+        "symbol": 4
+      },
+      {
+        "kind": "remove",
+        "cell": 53,
+        "symbol": 4
+      },
+      {
+        "kind": "remove",
+        "cell": 38,
+        "symbol": 4
+      },
+      {
+        "kind": "remove",
+        "cell": 47,
+        "symbol": 4
+      }
+    ],
+    "prefix": "Original-given peer exclusions, then checked C01 naked single and its explicit peer exclusions.",
+    "origin": {
+      "author": "Independent repository fixture author",
+      "license": "Repository-owned; no external puzzle copied",
+      "sourceRevision": "independent-sk-seeds@1",
+      "construction": "Independent rectangle and edge-capacity assignment with direct original-given domains; no production imports."
+    },
+    "requiredPrefixSteps": [
+      {
+        "technique": "C01",
+        "cell": 1,
+        "symbol": 3
+      }
+    ],
+    "independentLocalEnumeration": {
+      "groupTupleCounts": [
+        1,
+        6,
+        9,
+        12,
+        12,
+        3,
+        12,
+        12
+      ],
+      "joinTests": 5113,
+      "ringSurvivors": 288,
+      "supportedSymbols": [
+        [
+          3
+        ],
+        [
+          4
+        ],
+        [
+          2,
+          9
+        ],
+        [
+          2,
+          9
+        ],
+        [
+          4,
+          5,
+          6
+        ],
+        [
+          4,
+          5,
+          6
+        ],
+        [
+          5,
+          6,
+          9
+        ],
+        [
+          5,
+          6,
+          9
+        ],
+        [
+          3,
+          4
+        ],
+        [
+          3,
+          4
+        ],
+        [
+          5
+        ],
+        [
+          9
+        ],
+        [
+          1,
+          4,
+          6,
+          7
+        ],
+        [
+          1,
+          4,
+          6,
+          7
+        ],
+        [
+          1,
+          6,
+          7
+        ],
+        [
+          1,
+          6,
+          7
+        ]
+      ],
+      "everySurvivorFillsAllLinkCapacities": true
+    },
+    "oracleRecord": {
+      "method": "independent-algorithm-x@1",
+      "inputHash": "46bbf45f723ca3b6b185f0541fb6ef33a67da7b8edc961d5dc7f21006e63b724",
+      "command": "npm test -- tests/unit/solver/sk-loops.test.ts",
+      "satisfiable": true,
+      "forceForbidExhausted": true
+    },
+    "alias": "SK Loops",
+    "grammar": "c30-grammar@1",
+    "expectation": "productive",
+    "reachability": "original-clue-path"
+  }
+]

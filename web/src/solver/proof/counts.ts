@@ -55,7 +55,7 @@ export class HallStrategy {
   }
 }
 
-interface WeightedPremise { readonly premise: number; readonly coefficient: number }
+export interface WeightedPremise { readonly premise: number; readonly coefficient: number }
 /** Count-only evidence: negative coefficients require x=0. All other x are
  * nonnegative already, so their domains add no necessary inequality premise.
  * Validate optional evidence too; silently ignoring an extra would hide taint.
@@ -83,6 +83,21 @@ export class CoverCountStrategy {
       symbol: number; covers: WeightedPremise[]; capacities: WeightedPremise[] };
     requireProof(context.view.assembly.problem.symbols.includes(symbol) && Array.isArray(covers) && Array.isArray(capacities) &&
       covers.length > 0 && capacities.length > 0 && sameValue(input.parameters, { symbol, covers, capacities }), "invalid-count-parameters");
+    const cursor=weightedIncidences(input,context,symbol,covers,capacities);let computed:{coefficients:Map<number,number>;bound:number;domainIds:Set<number>};
+    while(true){const next=cursor.next();if(next.done){computed=next.value;break;}}
+    const {coefficients,bound,domainIds}=computed as {coefficients:Map<number,number>;bound:number;domainIds:Set<number>};
+    countDomains([...domainIds].map(id => context.retained.get(id)!.conclusion), coefficients, symbol);
+    const claim = input.conclusion;
+    requireProof(bound < 0 ? sameValue(claim, { kind: "false" }) : claim.kind === "literal" && validLiteral(claim.value, context) &&
+      sameValue(claim, { kind: "literal", value: claim.value }) && !claim.value.positive &&
+      claim.value.symbol === symbol && (coefficients.get(claim.value.cell) ?? 0) > bound, "invalid-count-conclusion");
+    return derived(input, context);
+  }
+}
+
+/** Shared arithmetic only: callers retain their distinct conclusion semantics. */
+export function* weightedIncidences(input:PrimitiveInput,context:CheckContext,symbol:number,
+  covers:readonly WeightedPremise[],capacities:readonly WeightedPremise[]):Generator<number,{coefficients:Map<number,number>;bound:number;domainIds:Set<number>}> {
     const coefficients = new Map<number, number>(), domainIds = new Set(input.premises);
     let bound = 0;
     for (const [entries, direction] of [[covers, -1], [capacities, 1]] as const) {
@@ -94,14 +109,12 @@ export class CoverCountStrategy {
         requireProof(scope && (direction === -1 ? scope.kind === "cover" && scope.symbol === symbol : scope.kind === "all-different"), "invalid-count-scope");
         requireProof(scope.kind === "cover" || scope.kind === "all-different", "invalid-count-scope");
         bound += direction * entry.coefficient; domainIds.delete(entry.premise);
-        for (const cell of scope.cells) coefficients.set(cell, (coefficients.get(cell) ?? 0) + direction * entry.coefficient);
+        requireProof(Number.isSafeInteger(bound), "count-integer-overflow");
+        for (const cell of scope.cells) {
+          coefficients.set(cell, (coefficients.get(cell) ?? 0) + direction * entry.coefficient);
+          requireProof(Number.isSafeInteger(coefficients.get(cell)), "count-integer-overflow"); yield 1;
+        }
       }
     }
-    countDomains([...domainIds].map(id => context.retained.get(id)!.conclusion), coefficients, symbol);
-    const claim = input.conclusion;
-    requireProof(bound < 0 ? sameValue(claim, { kind: "false" }) : claim.kind === "literal" && validLiteral(claim.value, context) &&
-      sameValue(claim, { kind: "literal", value: claim.value }) && !claim.value.positive &&
-      claim.value.symbol === symbol && (coefficients.get(claim.value.cell) ?? 0) > bound, "invalid-count-conclusion");
-    return derived(input, context);
-  }
+    return {coefficients,bound,domainIds};
 }

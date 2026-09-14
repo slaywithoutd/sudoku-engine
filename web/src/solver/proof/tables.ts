@@ -6,7 +6,9 @@ export interface TableDefinition {
   readonly count: number;
   readonly complete: boolean;
   readonly depth: number;
-  readonly operation: "filter" | "union" | "join";
+  /** Conservative transient allowance, propagated through every later join. */
+  readonly scratchBytes?: number;
+  readonly operation: "filter" | "union" | "join" | "join-filter";
   readonly sources: readonly ProofNode[];
   readonly domains: readonly number[];
   readonly box: readonly number[];
@@ -16,7 +18,7 @@ export interface TableDefinition {
 
 // A copied wire summary cannot retrieve this authority. Only the checker passes
 // its private immutable staged/retained objects to this cooperative strategy.
-const ids = ["table-filter@1", "table-union@1", "table-join@1", "table-project@1"];
+const ids = ["table-filter@1", "table-union@1", "table-join@1", "table-join-filter@1", "table-project@1"];
 
 /**
  * A lazy relational DAG. Rows are recomputed from checked local definitions;
@@ -64,16 +66,38 @@ export class TableChecker {
       for (const child of table.children) yield* this.rows(child);
       return;
     }
-    if (table.operation === "join") {
+    if (table.operation === "join" || table.operation === "join-filter") {
       const [left, right] = table.children, a = this.cells(left), b = this.cells(right);
       const shared = a.filter(cell => b.includes(cell));
       for (const l of this.rows(left)) {
         if (l === null) { yield null; continue; }
         for (const r of this.rows(right)) {
           if (r === null) { yield null; continue; }
-          if (shared.every(cell => l[a.indexOf(cell)] === r[b.indexOf(cell)]))
-            yield table.cells.map(cell => a.includes(cell) ? l[a.indexOf(cell)] : r[b.indexOf(cell)]);
-          else yield null;
+          yield null; // Every attempted pair, including an incompatible overlap.
+          if (!shared.every(cell => l[a.indexOf(cell)] === r[b.indexOf(cell)])) continue;
+          const row = table.cells.map(cell => a.includes(cell) ? l[a.indexOf(cell)] : r[b.indexOf(cell)]);
+          let valid = true;
+          for (const constraint of table.constraints) {
+            const p = constraint.conclusion;
+            if (p.kind === "all-different") {
+              const seen = new Set<number>();
+              for (const cell of p.cells) {
+                const value = row[table.cells.indexOf(cell)];
+                valid &&= !seen.has(value); seen.add(value); yield null;
+              }
+            } else {
+              requireProof(p.kind === "clause", "invalid-join-filter-constraint");
+              let satisfied = false;
+              for (const term of p.alternatives) {
+                satisfied ||= (row[table.cells.indexOf(term.cell)] === term.symbol) === term.positive;
+                yield null;
+              }
+              valid &&= satisfied;
+            }
+            yield null;
+            if (!valid) break;
+          }
+          yield valid ? row : null;
         }
       }
       return;
@@ -110,6 +134,22 @@ export class TableChecker {
   *check(input: PrimitiveInput, context: CheckContext): Generator<number, CheckedInference, void> {
     const node = context.currentNode;
     requireProof(node, "missing-table-node");
+    // Check before allocating source indexes or opening nested row iterators.
+    // Retained filtered definitions require the same allowance on replay and
+    // projection; a tiny projection cannot evade the source's frame budget.
+    let sourceScratch = 0, sourceDepth = 0;
+    for (const id of input.premises) {
+      const source = context.retained.get(id)!;
+      if (source.conclusion.kind === "table") {
+        const definition = this.definition(source);
+        sourceScratch = Math.max(sourceScratch, definition.scratchBytes ?? 0);
+        sourceDepth = Math.max(sourceDepth, definition.depth);
+      }
+      yield 1;
+    }
+    const scratch = input.rule === "table-join-filter@1" || sourceScratch > 0
+      ? Math.max(sourceScratch, (sourceDepth + 2) * 4096 + input.premises.length * 256) : 0;
+    requireProof((context.workspaceRemaining ?? 0) >= scratch, "table-workspace-limit");
     const sources = input.premises.map(id => context.retained.get(id)!);
     if (input.rule === "table-project@1") {
       requireProof(sources.length === 1 && sameValue(input.parameters, {}), "invalid-table-projection");
@@ -140,7 +180,7 @@ export class TableChecker {
         requireProof(claim.cells.length > 0 && claim.cells.every((cell,index) => originalCells.includes(cell) &&
           (index === 0 || cell > claim.cells[index-1])) && claim.tuples.length <= 256 &&
           sameValue(claim, { kind: "relation", cells: claim.cells, tuples: claim.tuples }), "invalid-table-projection");
-        const workspace = claim.tuples.length * (claim.cells.length * 2 + 1);
+        const workspace = scratch + claim.tuples.length * (claim.cells.length * 2 + 1);
         requireProof((context.workspaceRemaining ?? 0) >= workspace, "table-workspace-limit");
         const keys = claim.tuples.map(tuple => tuple.join(","));
         requireProof(new Set(keys).size === keys.length && claim.tuples.every(tuple => tuple.length === claim.cells.length &&
@@ -192,7 +232,7 @@ export class TableChecker {
     } else if (input.rule === "table-union@1") {
       requireProof(sources.length === 2 && sameValue(input.parameters, {}), "invalid-table-union");
       const [a,b] = sources.map(source => this.definition(source));
-      requireProof(a.operation !== "join" && b.operation !== "join" && sameValue(a.cells, b.cells) &&
+      requireProof(!["join", "join-filter"].includes(a.operation) && !["join", "join-filter"].includes(b.operation) && sameValue(a.cells, b.cells) &&
         a.sources.length === b.sources.length && a.sources.every((source,index) => source === b.sources[index]), "mismatched-table-sources");
       const changed = a.box.map((mask,index) => mask !== b.box[index] ? index : -1).filter(index => index !== -1);
       requireProof(changed.length === 1 && (a.box[changed[0]] & b.box[changed[0]]) === 0, "invalid-table-partition");
@@ -200,12 +240,31 @@ export class TableChecker {
       definition = { ...a, box, count: a.count + b.count, complete: sameValue(box, a.domains),
         operation: "union", children: sources, depth: Math.max(a.depth,b.depth) + 1 };
     } else {
-      requireProof(input.rule === "table-join@1" && sources.length === 2 && sameValue(input.parameters, {}), "invalid-table-join");
-      sources.forEach(source => this.complete(source));
-      const cells = [...new Set(sources.flatMap(source => [...this.cells(source)]))].sort((a,b) => a-b);
+      const filtered = input.rule === "table-join-filter@1";
+      requireProof((filtered ? sources.length >= 2 : input.rule === "table-join@1" && sources.length === 2) &&
+        sameValue(input.parameters, {}), "invalid-table-join");
+      const children = sources.slice(0, 2), constraints = sources.slice(2);
+      children.forEach(source => this.complete(source));
+      const cells = [...new Set(children.flatMap(source => [...this.cells(source)]))].sort((a,b) => a-b);
       requireProof(cells.length <= 16, "table-cell-limit");
-      definition = { cells, count: 0, complete: true, operation: "join", sources, domains: [], box: [], constraints: [],
-        children: sources, depth: Math.max(...sources.map(source => source.conclusion.kind === "relation" ? 0 : this.definition(source).depth)) + 1 };
+      for (const source of constraints) {
+        const p = source.conclusion;
+        requireProof(p.kind === "all-different" ? p.cells.length > 0 && p.cells.every((cell, i) =>
+          cells.includes(cell) && (!i || cell > p.cells[i-1])) && sameValue(p, {kind:"all-different", cells:p.cells}) :
+          p.kind === "clause" && p.alternatives.length >= 2 && p.alternatives.length <= 64 &&
+          p.alternatives.every(term => validLiteral(term, context) && cells.includes(term.cell)) &&
+          sameValue(p, clause(p.alternatives)), "invalid-join-filter-constraint");
+        if (p.kind === "clause") for (const _ of p.alternatives) yield 1;
+        if (p.kind === "all-different") for (const _ of p.cells) yield 1;
+        yield 1;
+      }
+      const depth = Math.max(...children.map(source => source.conclusion.kind === "relation" ? 0 : this.definition(source).depth)) + 1;
+      // No expanded tuple cache: this conservative allowance owns all nested
+      // iterator frames, union-coordinate arrays and per-filter sets together.
+      if (filtered) requireProof((context.workspaceRemaining ?? 0) >= (depth + 1) * 4096 + sources.length * 256,
+        "table-workspace-limit");
+      definition = { cells, count: 0, complete: true, operation: filtered ? "join-filter" : "join", sources,
+        domains: [], box: [], constraints, children, depth, scratchBytes: scratch };
     }
     requireProof(definition.depth <= 64, "table-depth-limit");
     // Register only this exact staged object, not an externally chosen definition ID.

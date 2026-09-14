@@ -224,3 +224,72 @@ declares a literal result is rejected through both assembler paths.
 ```text
 npm test -- tests/unit/solver/generalized-chains.test.ts
 ```
+
+## C29–C32 specialized relations and native guardian publication
+
+All specialized JSON records are repository-owned, independently authored
+original-given constructions. No external puzzle, screenshot, solution-derived
+candidate axiom, or source code is copied. The primary mathematical references
+and exact alias interpretations are linked in the four technique guides:
+[Fireworks](../../../docs/solver/techniques/fireworks.md),
+[SK Loops](../../../docs/solver/techniques/sk-loops.md),
+[Exocet](../../../docs/solver/techniques/exocet.md), and
+[Tridagon](../../../docs/solver/techniques/tridagon.md).
+
+`C29.json` preserves the independent triple/quad selected geometry and original
+cover enumeration (6/8 survivors). The production proof retains both
+directional cover consequences and can yield stronger, separately oracle-checked
+removals. `C29-singleton.json` adds one original clue to the triple construction;
+one complete cover becomes singleton and its checked restriction remains in
+the full component lineage. It is not an assumed candidate reduction.
+
+`C30.json` preserves all-double, mixed 3/1, and solved-singleton rings with
+2,304/8,096/288 complete survivors. Independent algebra enumerates every local
+tuple and cross-group compatibility, including the closing edge, then checks
+all link capacities. The singleton record's required C01 prefix is independently
+discovered, admitted, and replayed with explicit peer effects before C30.
+
+`C31.json` preserves Junior three/four-symbol and one-cover examples, plus both
+shared-base and exact-four-base Double examples. Complete S occurrences include
+assigned values. Independent Double checks verify that the recorded joint
+effects are not available from either component relation alone. All five
+examples also run as row/column transposes, through independent and production
+proofs, original-clue replay, and exact-oracle counterfactuals.
+
+`C32.json` preserves guardian1/2/4 and sparse degenerate examples with complete
+core permutation rejection. `C32-negative.json` is an independently written
+original-given counterexample: its recorded core assignment survives every
+actual peer exclusion, and the unchanged oracle also finds a witness after
+guardian denial. The detector and named checker reject the claimed obstruction.
+`C32-guardian-or.json` preserves independently authored guardian2/3/4 source
+geometries and C28 inserted-OR recipes. The test compiles real C32 proofs,
+admits and retains their native clauses, rebuilds the leased clause index at the
+same candidate revision, resolves exact alternative identities, admits C28,
+and replays the original source-plus-consumer prefix. Actual C28 discovery
+consumes one of these retained sources. Simultaneously true guardian pairs have
+SAT witnesses; the theorem is OR, not XOR or a uniqueness assertion.
+
+`specialized-algebra.ts` imports no production detector, builder, grammar,
+weighted-incidence helper, or table enumerator. `specialized-independent.ts`
+assembles every original certificate independently using the older test wire
+algebra. `specialized-state.ts` reconstructs exact original-clue prestates and
+the one authorized logical prefix. Acceptance separately checks independent
+assembly, production assembly, complete local enumeration, every returned
+effect against the unchanged T01 oracle, and original-clue replay. Actual
+discovery reaches triple/quad, an eight-group sixteen-link ring, Junior/Double,
+and a multi-guardian Tridagon; maximum seeded proofs do not claim that every
+presentation is found within default limits or that the technique is essential.
+
+Negative tests include complete-component reuse, mixed valid/substituted effect
+roots that first pass primitive verification, bounds, aliases, assigned-S
+omission, incomplete ring/core/guardian data, and all discovery lease exits.
+Primitive tests independently check signed count arithmetic, source and filter
+completeness, authentication, provenance/taint, incompatible fixings, exact
+counts, join/union separation, scratch limits, and interrupted recomputation.
+Both new primitives remain outside T14's local net grammar/importer.
+
+```text
+npm test -- tests/unit/solver/fireworks.test.ts tests/unit/solver/sk-loops.test.ts tests/unit/solver/exocet.test.ts tests/unit/solver/tridagon.test.ts
+npm test -- tests/unit/solver/specialized-acceptance.test.ts tests/unit/solver/specialized-negatives.test.ts tests/unit/solver/specialized-symmetry.test.ts tests/unit/solver/tridagon-or.test.ts
+npm test -- tests/unit/solver/specialized-tables.test.ts tests/unit/solver/specialized-counts.test.ts tests/unit/solver/proof-graph.test.ts
+```

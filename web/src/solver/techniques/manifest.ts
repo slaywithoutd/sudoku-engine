@@ -5892,13 +5892,105 @@ export const coverageEntries: readonly CoverageEntry[] = Object.freeze((
     "grammarId": "c29-grammar@1",
     "detectorId": "c29@1",
     "checkerId": "c29-grammar@1",
-    "descriptionPath": "docs/superpowers/specs/2026-09-12-m2-technique-coverage.md",
+    "descriptionPath": "docs/solver/techniques/fireworks.md",
     "fixtureIds": [
       "C29-triple",
-      "C29-quad"
+      "C29-quad",
+      "C29-singleton-cover"
     ],
-    "status": "specified",
-    "evidence": []
+    "status": "implemented",
+    "evidence": [
+      {
+        "kind": "positive",
+        "fixtureId": "C29-triple",
+        "alias": "Fireworks",
+        "record": "web/tests/unit/solver/specialized-acceptance.test.ts"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "C29-triple",
+        "alias": "Fireworks",
+        "record": "web/tests/unit/solver/specialized-negatives.test.ts"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "C29-triple",
+        "alias": "Fireworks",
+        "record": "web/tests/unit/solver/specialized-negatives.test.ts"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C29-triple",
+        "alias": "Fireworks",
+        "record": "web/tests/unit/solver/specialized-acceptance.test.ts"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C29-triple",
+        "alias": "Fireworks",
+        "record": "web/tests/unit/solver/specialized-acceptance.test.ts"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "C29-triple",
+        "alias": "Triple Fireworks",
+        "record": "web/tests/unit/solver/specialized-acceptance.test.ts"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "C29-triple",
+        "alias": "Triple Fireworks",
+        "record": "web/tests/unit/solver/specialized-negatives.test.ts"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "C29-triple",
+        "alias": "Triple Fireworks",
+        "record": "web/tests/unit/solver/specialized-negatives.test.ts"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C29-triple",
+        "alias": "Triple Fireworks",
+        "record": "web/tests/unit/solver/specialized-acceptance.test.ts"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C29-triple",
+        "alias": "Triple Fireworks",
+        "record": "web/tests/unit/solver/specialized-acceptance.test.ts"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "C29-quad",
+        "alias": "Quadruple Fireworks",
+        "record": "web/tests/unit/solver/specialized-acceptance.test.ts"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "C29-quad",
+        "alias": "Quadruple Fireworks",
+        "record": "web/tests/unit/solver/specialized-negatives.test.ts"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "C29-quad",
+        "alias": "Quadruple Fireworks",
+        "record": "web/tests/unit/solver/specialized-negatives.test.ts"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C29-quad",
+        "alias": "Quadruple Fireworks",
+        "record": "web/tests/unit/solver/specialized-acceptance.test.ts"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C29-quad",
+        "alias": "Quadruple Fireworks",
+        "record": "web/tests/unit/solver/specialized-acceptance.test.ts"
+      }
+    ]
   },
   {
     "id": "C30",
@@ -5919,14 +6011,45 @@ export const coverageEntries: readonly CoverageEntry[] = Object.freeze((
     "grammarId": "c30-grammar@1",
     "detectorId": "c30@1",
     "checkerId": "c30-grammar@1",
-    "descriptionPath": "docs/superpowers/specs/2026-09-12-m2-technique-coverage.md",
+    "descriptionPath": "docs/solver/techniques/sk-loops.md",
     "fixtureIds": [
-      "C30-all-double",
       "C30-mixed-1-3",
+      "C30-all-double",
       "C30-singleton"
     ],
-    "status": "specified",
-    "evidence": []
+    "status": "implemented",
+    "evidence": [
+      {
+        "kind": "positive",
+        "fixtureId": "C30-mixed-1-3",
+        "alias": "SK Loops",
+        "record": "web/tests/unit/solver/specialized-acceptance.test.ts"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "C30-mixed-1-3",
+        "alias": "SK Loops",
+        "record": "web/tests/unit/solver/specialized-negatives.test.ts"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "C30-mixed-1-3",
+        "alias": "SK Loops",
+        "record": "web/tests/unit/solver/specialized-negatives.test.ts"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C30-mixed-1-3",
+        "alias": "SK Loops",
+        "record": "web/tests/unit/solver/specialized-acceptance.test.ts"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C30-mixed-1-3",
+        "alias": "SK Loops",
+        "record": "web/tests/unit/solver/specialized-acceptance.test.ts"
+      }
+    ]
   },
   {
     "id": "C31",
@@ -5949,14 +6072,107 @@ export const coverageEntries: readonly CoverageEntry[] = Object.freeze((
     "grammarId": "c31-grammar@1",
     "detectorId": "c31@1",
     "checkerId": "c31-grammar@1",
-    "descriptionPath": "docs/superpowers/specs/2026-09-12-m2-technique-coverage.md",
+    "descriptionPath": "docs/solver/techniques/exocet.md",
     "fixtureIds": [
-      "C31-junior-3/4",
+      "C31-junior-3",
+      "C31-junior-4",
       "C31-cover-one",
-      "C31-double"
+      "C31-double-shared-base",
+      "C31-double-four-base-independent"
     ],
-    "status": "specified",
-    "evidence": []
+    "status": "implemented",
+    "evidence": [
+      {
+        "kind": "positive",
+        "fixtureId": "C31-junior-3",
+        "alias": "Exocet",
+        "record": "web/tests/unit/solver/specialized-acceptance.test.ts"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "C31-junior-3",
+        "alias": "Exocet",
+        "record": "web/tests/unit/solver/specialized-negatives.test.ts"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "C31-junior-3",
+        "alias": "Exocet",
+        "record": "web/tests/unit/solver/specialized-negatives.test.ts"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C31-junior-3",
+        "alias": "Exocet",
+        "record": "web/tests/unit/solver/specialized-acceptance.test.ts"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C31-junior-3",
+        "alias": "Exocet",
+        "record": "web/tests/unit/solver/specialized-acceptance.test.ts"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "C31-junior-3",
+        "alias": "Junior Exocet",
+        "record": "web/tests/unit/solver/specialized-acceptance.test.ts"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "C31-junior-3",
+        "alias": "Junior Exocet",
+        "record": "web/tests/unit/solver/specialized-negatives.test.ts"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "C31-junior-3",
+        "alias": "Junior Exocet",
+        "record": "web/tests/unit/solver/specialized-negatives.test.ts"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C31-junior-3",
+        "alias": "Junior Exocet",
+        "record": "web/tests/unit/solver/specialized-acceptance.test.ts"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C31-junior-3",
+        "alias": "Junior Exocet",
+        "record": "web/tests/unit/solver/specialized-acceptance.test.ts"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "C31-double-shared-base",
+        "alias": "Double Exocet",
+        "record": "web/tests/unit/solver/specialized-acceptance.test.ts"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "C31-double-shared-base",
+        "alias": "Double Exocet",
+        "record": "web/tests/unit/solver/specialized-negatives.test.ts"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "C31-double-shared-base",
+        "alias": "Double Exocet",
+        "record": "web/tests/unit/solver/specialized-negatives.test.ts"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C31-double-shared-base",
+        "alias": "Double Exocet",
+        "record": "web/tests/unit/solver/specialized-acceptance.test.ts"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C31-double-shared-base",
+        "alias": "Double Exocet",
+        "record": "web/tests/unit/solver/specialized-acceptance.test.ts"
+      }
+    ]
   },
   {
     "id": "C32",
@@ -5979,14 +6195,137 @@ export const coverageEntries: readonly CoverageEntry[] = Object.freeze((
     "grammarId": "c32-grammar@1",
     "detectorId": "c32@1",
     "checkerId": "c32-grammar@1",
-    "descriptionPath": "docs/superpowers/specs/2026-09-12-m2-technique-coverage.md",
+    "descriptionPath": "docs/solver/techniques/tridagon.md",
     "fixtureIds": [
-      "C32-parity",
+      "C32-guardian-4",
+      "C32-guardian-2",
+      "C32-guardian-1",
       "C32-degenerate",
-      "C32-guardian-1/2/4"
+      "C32-surviving-core-negative"
     ],
-    "status": "specified",
-    "evidence": []
+    "status": "implemented",
+    "evidence": [
+      {
+        "kind": "positive",
+        "fixtureId": "C32-guardian-1",
+        "alias": "Tridagon",
+        "record": "web/tests/unit/solver/specialized-acceptance.test.ts"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "C32-guardian-1",
+        "alias": "Tridagon",
+        "record": "web/tests/unit/solver/specialized-negatives.test.ts"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "C32-guardian-1",
+        "alias": "Tridagon",
+        "record": "web/tests/unit/solver/specialized-negatives.test.ts"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C32-guardian-1",
+        "alias": "Tridagon",
+        "record": "web/tests/unit/solver/specialized-acceptance.test.ts"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C32-guardian-1",
+        "alias": "Tridagon",
+        "record": "web/tests/unit/solver/specialized-acceptance.test.ts"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "C32-guardian-4",
+        "alias": "Thor's Hammer",
+        "record": "web/tests/unit/solver/specialized-acceptance.test.ts"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "C32-guardian-4",
+        "alias": "Thor's Hammer",
+        "record": "web/tests/unit/solver/specialized-negatives.test.ts"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "C32-guardian-4",
+        "alias": "Thor's Hammer",
+        "record": "web/tests/unit/solver/specialized-negatives.test.ts"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C32-guardian-4",
+        "alias": "Thor's Hammer",
+        "record": "web/tests/unit/solver/specialized-acceptance.test.ts"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C32-guardian-4",
+        "alias": "Thor's Hammer",
+        "record": "web/tests/unit/solver/specialized-acceptance.test.ts"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "C32-degenerate",
+        "alias": "Degenerate Tridagon",
+        "record": "web/tests/unit/solver/specialized-acceptance.test.ts"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "C32-degenerate",
+        "alias": "Degenerate Tridagon",
+        "record": "web/tests/unit/solver/specialized-negatives.test.ts"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "C32-degenerate",
+        "alias": "Degenerate Tridagon",
+        "record": "web/tests/unit/solver/specialized-negatives.test.ts"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C32-degenerate",
+        "alias": "Degenerate Tridagon",
+        "record": "web/tests/unit/solver/specialized-acceptance.test.ts"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C32-degenerate",
+        "alias": "Degenerate Tridagon",
+        "record": "web/tests/unit/solver/specialized-acceptance.test.ts"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "C32-guardian-4",
+        "alias": "Tridagon guardians",
+        "record": "web/tests/unit/solver/specialized-acceptance.test.ts"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "C32-guardian-4",
+        "alias": "Tridagon guardians",
+        "record": "web/tests/unit/solver/specialized-negatives.test.ts"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "C32-guardian-4",
+        "alias": "Tridagon guardians",
+        "record": "web/tests/unit/solver/specialized-negatives.test.ts"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C32-guardian-4",
+        "alias": "Tridagon guardians",
+        "record": "web/tests/unit/solver/specialized-acceptance.test.ts"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C32-guardian-4",
+        "alias": "Tridagon guardians",
+        "record": "web/tests/unit/solver/specialized-acceptance.test.ts"
+      }
+    ]
   },
   {
     "id": "C33",
