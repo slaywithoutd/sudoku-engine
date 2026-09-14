@@ -15,7 +15,10 @@ import {
   retainCheckedFacts,
 } from "../../../src/solver/state/candidates";
 import { assemble } from "../../../src/solver/rules/assemble";
-import { normalizeClassic } from "../../../src/solver/problem";
+import {
+  canonicalProblem,
+  normalizeClassic,
+} from "../../../src/solver/problem";
 import { AllDifferentRule } from "../../../src/solver/rules/all-different";
 import {
   compileTemplates,
@@ -24,7 +27,14 @@ import {
 import { discoveryContext } from "../../solver/discovery-context";
 import { checkProposal } from "../../../src/solver/proof/checker";
 import { retainedProof } from "../../../src/solver/state/candidates";
-import type { DeductionProposal } from "../../../src/solver/proof/types";
+import type {
+  CheckedInference,
+  DeductionProposal,
+  ProofNode,
+} from "../../../src/solver/proof/types";
+import { PrimitiveRegistry } from "../../../src/solver/proof/primitives";
+import { checkScope } from "../../../src/solver/proof/assumptions";
+import { mockRuleRegistry } from "../../solver/mock-rules";
 import { oracle } from "../../solver/oracle";
 import { originalCluePrefix } from "../../solver/acceptance";
 import { replay } from "../../../src/solver/proof/replay";
@@ -136,17 +146,18 @@ const limits = {
   workUnits: 20000000,
 };
 function compile(f: (typeof fixtures)[number]): DeductionProposal {
-  const view = fixtureView(f as unknown as TechniqueFixture),
-    context = {
-      ...discoveryContext(),
-      limits,
-      templates: new TemplateOperationContext(view),
-    };
-  const cursor = compileTemplates(
-    view,
+  return compileOwned(
+    fixtureView(f as unknown as TechniqueFixture),
     f.expectedPattern as TemplatePlan,
-    context,
   );
+}
+function compileOwned(view: ReadView, plan: TemplatePlan): DeductionProposal {
+  const context = {
+    ...discoveryContext(),
+    limits,
+    templates: new TemplateOperationContext(view),
+  };
+  const cursor = compileTemplates(view, plan, context);
   let result: DeductionProposal | null = null;
   for (;;) {
     const e = cursor.next();
@@ -324,10 +335,33 @@ test.each(fixtures)(
 test("triple projection contains all four exclusions beyond complete pair fixed point", () => {
   const f = fixtures.find((f) => f.id === "C33-triple")!,
     proposal = compile(f);
-  const beyond = (f.independentEnumeration as any).newBeyondPairClosure;
+  const triple = independentTemplates(f as unknown as TechniqueFixture);
+  const pairClosure = independentTemplates({
+    ...f,
+    expectedPattern: { ...f.expectedPattern, mode: "incompatibility" },
+  } as unknown as TechniqueFixture);
+  expect(proposal.effects).toEqual(triple.effects);
+  expect(triple.effects).toEqual(expect.arrayContaining(pairClosure.effects));
+  const beyond = triple.effects.filter(
+    (effect) =>
+      !pairClosure.effects.some(
+        (other) => other.cell === effect.cell && other.symbol === effect.symbol,
+      ),
+  );
+  expect(beyond).toEqual(
+    (f.independentEnumeration as any).newBeyondPairClosure
+      .map((effect: { cell: number; symbol: number }) => ({
+        kind: "remove",
+        ...effect,
+      }))
+      .sort(
+        (
+          a: { cell: number; symbol: number },
+          b: { cell: number; symbol: number },
+        ) => a.cell - b.cell || a.symbol - b.symbol,
+      ),
+  );
   expect(beyond).toHaveLength(4);
-  for (const e of beyond)
-    expect(proposal.effects).toContainEqual({ kind: "remove", ...e });
 });
 test.each(fixtures)(
   "$id rejects omitted lists, unsupported mode substitutions and mixed effect roots",
@@ -810,3 +844,521 @@ test("complete 7776-template relation honestly interrupts its overlarge 16KiB wi
     { interrupted: false, witnesses: [expect.any(Array)] },
   );
 });
+
+// These are primitive-level metadata inputs, not checked retained-node authority.
+// A real uniqueness-derived placement lifecycle is a T18/T25 acceptance gate.
+test.each([
+  { name: "closed", open: [] },
+  { name: "open", open: [987654] },
+])(
+  "template anchor packs preserve conditional metadata and $name scopes",
+  ({ open }) => {
+    const f = fixtures[0] as unknown as TechniqueFixture;
+    const view = fixtureView(f),
+      proposal = independentTemplateCertificate(f);
+    const retained = new Map(retainedProof(view));
+    const inferences = new Map<number, CheckedInference>();
+    for (const fact of view.facts.values())
+      inferences.set(fact.root, {
+        conclusion: fact.proposition,
+        conditional: false,
+        openAssumptions: [],
+        rules: fact.rules,
+      });
+    const anchor = [...view.facts.values()].find(
+      (fact) =>
+        fact.proposition.kind === "literal" && fact.proposition.value.positive,
+    )!;
+    inferences.set(anchor.root, {
+      conclusion: anchor.proposition,
+      conditional: true,
+      openAssumptions: open,
+      rules: ["test:conditional-anchor"],
+    });
+    const registry = new PrimitiveRegistry();
+    let template: ProofNode | undefined;
+    for (const node of proposal.proof.nodes) {
+      const context = {
+        view,
+        retained,
+        premiseInferences: inferences,
+        limits,
+        policy: "unique-only" as const,
+        uniqueEvidenceId: "primitive-metadata-only",
+        workspaceRemaining: limits.workspaceBytes,
+        currentNode: node,
+      };
+      const cursor = registry.checkSteps(node, context);
+      let inferred: CheckedInference;
+      for (;;) {
+        const event = cursor.next();
+        if (event.done) {
+          inferred = event.value;
+          break;
+        }
+      }
+      retained.set(node.id, node);
+      inferences.set(node.id, inferred);
+      if (node.premises.includes(anchor.root)) {
+        expect(inferred).toMatchObject({
+          conditional: true,
+          openAssumptions: open,
+        });
+        expect(inferred.rules).toContain("test:conditional-anchor");
+      }
+      if (node.rule === "template-cover@1") {
+        template = node;
+        expect(inferred).toMatchObject({
+          conditional: true,
+          openAssumptions: open,
+        });
+        expect(inferred.rules).toContain("test:conditional-anchor");
+      }
+      if (template && node.premises.includes(template.id)) {
+        expect(inferred).toMatchObject({
+          conditional: true,
+          openAssumptions: open,
+        });
+        expect(inferred.rules).toContain("test:conditional-anchor");
+        if (open.length)
+          expect(() => checkScope(node, context)).toThrow("escaped-assumption");
+      }
+    }
+    expect(template).toBeDefined();
+  },
+  20000,
+);
+
+test("authentic additional compatible rule assembly compiles and replays C33", () => {
+  const f = fixtures[0];
+  const { key: _key, ...classic } = normalizeClassic({
+    kind: "classic",
+    version: 1,
+    width: 9,
+    height: 9,
+    givens: [...f.givens].map(Number),
+  });
+  const cells = classic.givens
+    .flatMap((symbol, cell) => (symbol ? [cell] : []))
+    .slice(0, 2);
+  const result = assemble(
+    canonicalProblem({
+      ...classic,
+      constraints: [
+        ...classic.constraints,
+        {
+          id: "extra:given-sum",
+          type: "sum@1",
+          cells,
+          parameters: {
+            total: cells.reduce((sum, cell) => sum + classic.givens[cell], 0),
+          },
+        },
+      ],
+    }),
+    mockRuleRegistry,
+  );
+  if (!result.ok) throw Error(JSON.stringify(result.issues));
+  let view = initialize(result.value, "primary");
+  const prefix: DeductionProposal[] = [];
+  for (const rule of view.assembly.problem.constraints) {
+    for (const event of view.assembly.modules
+      .get(rule.id)!
+      .propagate(view, rule)) {
+      if (event.kind !== "proposal") continue;
+      const step = admitted(view, event.proposal);
+      prefix.push(step.proposal);
+      view = commitChecked(view, step).view;
+    }
+  }
+  expect(
+    view.assembly.relations.some((relation) =>
+      relation.id.startsWith("extra:given-sum"),
+    ),
+  ).toBe(true);
+  expect(view.state.domains).toEqual(f.preState.domains);
+  expect(
+    getTechniques("classic-expanded@1")
+      .find((d) => d.id === "c33@1")!
+      .eligible(view),
+  ).toEqual({ kind: "yes" });
+  const proposal = compileOwned(view, f.expectedPattern as TemplatePlan);
+  expect(proposal.effects).toEqual(compile(f).effects);
+  admitted(view, proposal);
+  let checkedCount = 0;
+  for (const event of replay(
+    { problem: result.value.problem } as SolverSnapshot,
+    [...prefix, proposal],
+    result.value,
+    limits,
+  )) {
+    expect(event.kind === "rejected" ? event.code : undefined).toBeUndefined();
+    if (event.kind === "checked") checkedCount++;
+  }
+  expect(checkedCount).toBe(prefix.length + 1);
+}, 30000);
+
+test.each(["missing", "familiar-id-wrong-cells"])(
+  "actual %s classic geometry is excluded before enumeration",
+  (mode) => {
+    const { key: _key, ...classic } = normalizeClassic({
+      kind: "classic",
+      version: 1,
+      width: 9,
+      height: 9,
+      givens: Array(81).fill(0),
+    });
+    const constraints =
+      mode === "missing"
+        ? classic.constraints.filter((rule) => rule.id !== "row:0")
+        : classic.constraints.map((rule) =>
+            rule.id === "row:0"
+              ? { ...rule, cells: [0, 1, 2, 3, 4, 5, 6, 7, 9] }
+              : rule,
+          );
+    const result = assemble(canonicalProblem({ ...classic, constraints }), [
+      new AllDifferentRule(),
+    ]);
+    if (!result.ok) throw Error(JSON.stringify(result.issues));
+    const view = initialize(result.value, "primary");
+    if (mode !== "missing")
+      expect(
+        view.assembly.problem.constraints.some((rule) => rule.id === "row:0"),
+      ).toBe(true);
+    expect(
+      getTechniques("classic-expanded@1")
+        .find((d) => d.id === "c33@1")!
+        .eligible(view),
+    ).toMatchObject({ kind: "excluded", reason: "missing-template-geometry" });
+    const context = {
+      ...discoveryContext(),
+      limits,
+      templates: new TemplateOperationContext(view),
+    };
+    expect(() => [
+      ...compileTemplates(view, { mode: "single", symbols: [1] }, context),
+    ]).toThrow("missing-template-geometry");
+    expect(context.workspace.usage).toEqual({ entries: 0, bytes: 0 });
+  },
+);
+
+const wireMutations: { name: string; code: string; mutate(data: any): void }[] =
+  [
+    {
+      name: "empty chunk",
+      code: "invalid-template-chunks",
+      mutate: (d) => {
+        d.templates[0] = [[]];
+      },
+    },
+    {
+      name: "short nonfinal chunk",
+      code: "invalid-template-chunks",
+      mutate: (d) => {
+        const list = d.templates[0][0];
+        d.templates[0] = [list.slice(0, 1), list.slice(1)];
+      },
+    },
+    {
+      name: "too many chunks",
+      code: "invalid-template-chunks",
+      mutate: (d) => {
+        d.templates[0] = Array.from({ length: 47 }, () => [0]);
+      },
+    },
+    {
+      name: "1025-code chunk",
+      code: "invalid-template-chunks",
+      mutate: (d) => {
+        d.templates[0] = [Array.from({ length: 1025 }, (_, i) => i)];
+      },
+    },
+    {
+      name: "duplicate across chunk boundary",
+      code: "invalid-template-code-order",
+      mutate: (d) => {
+        d.templates[0] = [Array.from({ length: 1024 }, (_, i) => i), [1023]];
+      },
+    },
+    {
+      name: "missing symbol list",
+      code: "invalid-template-lists",
+      mutate: (d) => {
+        d.templates.pop();
+      },
+    },
+    {
+      name: "extra supported symbol list",
+      code: "invalid-template-lists",
+      mutate: (d) => {
+        d.supported.push([]);
+      },
+    },
+    {
+      name: "negative code",
+      code: "invalid-template-code-order",
+      mutate: (d) => {
+        d.templates[0][0][0] = -1;
+      },
+    },
+    {
+      name: "duplicate supported code",
+      code: "invalid-template-code-order",
+      mutate: (d) => {
+        d.supported[0][0][1] = d.supported[0][0][0];
+      },
+    },
+    {
+      name: "decode overflow",
+      code: "invalid-template-code-order",
+      mutate: (d) => {
+        d.templates[0][0][0] = 9 ** 9;
+      },
+    },
+    {
+      name: "duplicate code",
+      code: "invalid-template-code-order",
+      mutate: (d) => {
+        d.templates[0][0][1] = d.templates[0][0][0];
+      },
+    },
+    {
+      name: "reverse order",
+      code: "invalid-template-code-order",
+      mutate: (d) => {
+        d.templates[0][0].reverse();
+      },
+    },
+    {
+      name: "decoded repeated column",
+      code: "incomplete-template-list",
+      mutate: (d) => {
+        d.templates[0][0][0] = 0;
+      },
+    },
+    {
+      name: "missing legal template",
+      code: "incomplete-template-list",
+      mutate: (d) => {
+        d.templates[0][0].pop();
+      },
+    },
+    {
+      name: "extra in-range template",
+      code: "incomplete-template-list",
+      mutate: (d) => {
+        d.templates[0][0].push(9 ** 9 - 1);
+      },
+    },
+    {
+      name: "unsupported list count",
+      code: "incomplete-template-overlay",
+      mutate: (d) => {
+        d.supported[0][0].pop();
+      },
+    },
+    {
+      name: "negative tuple count",
+      code: "invalid-template-lists",
+      mutate: (d) => {
+        d.tupleTests = -1;
+      },
+    },
+  ];
+test.each(wireMutations)(
+  "canonical wire rejects $name at $code below ordinary caps",
+  ({ mutate, code }) => {
+    const bad = structuredClone(
+      independentTemplateCertificate(
+        fixtures[0] as unknown as TechniqueFixture,
+      ),
+    );
+    mutate(certificateData(bad));
+    expect(
+      Math.max(
+        ...bad.proof.nodes.map(
+          (node) => new TextEncoder().encode(JSON.stringify(node)).length,
+        ),
+      ),
+    ).toBeLessThan(16384);
+    expect(checked(fixtures[0], bad)).toEqual({ kind: "rejected", code });
+  },
+);
+
+// Insert authentic conjunction aliases without duplicate ordinary premises;
+// renumber only the new bundle so ordinary DAG admission reaches C33 sources.
+function renumberTemplateBundle(proposal: any): void {
+  const start = Math.min(
+    ...proposal.proof.nodes.map((node: ProofNode) => node.id),
+  );
+  const ids = new Map<number, number>(
+    proposal.proof.nodes.map((node: ProofNode, i: number) => [
+      node.id,
+      start + i,
+    ]),
+  );
+  for (const node of proposal.proof.nodes) {
+    node.id = ids.get(node.id)!;
+    node.premises = node.premises.map((id: number) => ids.get(id) ?? id);
+  }
+  proposal.proof.roots = proposal.proof.roots.map(
+    (id: number) => ids.get(id) ?? id,
+  );
+}
+const sourceMutations = [
+  {
+    name: "missing domain",
+    pack: 0,
+    action: "missing",
+    code: "invalid-template-source-pack",
+  },
+  {
+    name: "extra domain",
+    pack: 0,
+    action: "extra",
+    code: "invalid-template-source-pack",
+  },
+  {
+    name: "missing house",
+    pack: 3,
+    action: "missing",
+    code: "invalid-template-source-pack",
+  },
+  {
+    name: "extra house",
+    pack: 3,
+    action: "extra",
+    code: "invalid-template-source-pack",
+  },
+  {
+    name: "missing row cover",
+    pack: 4,
+    action: "missing",
+    code: "invalid-template-source-pack",
+  },
+  {
+    name: "extra row cover",
+    pack: 4,
+    action: "extra",
+    code: "invalid-template-source-pack",
+  },
+  {
+    name: "missing anchor",
+    pack: 5,
+    action: "missing",
+    code: "invalid-template-source-pack",
+  },
+  {
+    name: "extra anchor",
+    pack: 5,
+    action: "extra",
+    code: "invalid-template-source-pack",
+  },
+  {
+    name: "duplicate domain",
+    pack: 0,
+    action: "duplicate",
+    code: "invalid-template-domain",
+  },
+  {
+    name: "duplicate house",
+    pack: 3,
+    action: "duplicate",
+    code: "invalid-template-house",
+  },
+  {
+    name: "duplicate row cover",
+    pack: 4,
+    action: "duplicate",
+    code: "invalid-template-cover",
+  },
+  {
+    name: "duplicate anchor",
+    pack: 5,
+    action: "duplicate",
+    code: "invalid-template-anchor",
+  },
+  {
+    name: "nested domain",
+    pack: 0,
+    action: "nested",
+    code: "nested-template-source-pack",
+  },
+  {
+    name: "nested house",
+    pack: 3,
+    action: "nested",
+    code: "nested-template-source-pack",
+  },
+  {
+    name: "nested cover",
+    pack: 4,
+    action: "nested",
+    code: "nested-template-source-pack",
+  },
+  {
+    name: "nested anchor",
+    pack: 5,
+    action: "nested",
+    code: "nested-template-source-pack",
+  },
+];
+test.each(sourceMutations)(
+  "ordinary-valid $name substitution reaches $code",
+  ({ pack: packIndex, action, code }) => {
+    const f = fixtures[0] as unknown as TechniqueFixture;
+    const bad = structuredClone(independentTemplateCertificate(f)) as any;
+    const certificate = bad.proof.nodes.find(
+      (node: ProofNode) => node.rule === "template-cover@1",
+    );
+    const pack = bad.proof.nodes.find(
+      (node: ProofNode) => node.id === certificate.premises[packIndex],
+    );
+    if (action === "missing") {
+      pack.premises.pop();
+      pack.conclusion.terms.pop();
+    } else if (action === "extra") {
+      const otherPacks = bad.proof.nodes.filter((node: ProofNode) =>
+        certificate.premises.includes(node.id),
+      );
+      const extra = otherPacks
+        .flatMap((other: any) =>
+          other.premises.map((id: number, i: number) => ({
+            id,
+            claim: other.conclusion.terms[i],
+          })),
+        )
+        .find((source: { id: number }) => !pack.premises.includes(source.id));
+      expect(extra).toBeDefined();
+      pack.premises.push(extra.id);
+      pack.conclusion.terms.push(extra.claim);
+    } else {
+      const selected = action === "duplicate" ? 1 : 0;
+      const next =
+        Math.max(...bad.proof.nodes.map((node: ProofNode) => node.id)) + 1;
+      const inner: ProofNode = {
+        id: next,
+        rule: "conjunction@1",
+        premises: [pack.premises[selected]],
+        parameters: {},
+        scope: [],
+        conclusion: { kind: "and", terms: [pack.conclusion.terms[selected]] },
+      };
+      const inserted = [inner];
+      if (action === "duplicate")
+        inserted.push({
+          id: next + 1,
+          rule: "conjunction@1",
+          premises: [next],
+          parameters: { index: 0 },
+          scope: [],
+          conclusion: pack.conclusion.terms[selected],
+        });
+      bad.proof.nodes.splice(bad.proof.nodes.indexOf(pack), 0, ...inserted);
+      pack.premises[0] = inserted.at(-1)!.id;
+      pack.conclusion.terms[0] = inserted.at(-1)!.conclusion;
+      renumberTemplateBundle(bad);
+    }
+    expect(checked(fixtures[0], bad)).toEqual({ kind: "rejected", code });
+  },
+);

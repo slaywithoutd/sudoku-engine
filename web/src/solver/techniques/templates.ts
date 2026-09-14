@@ -248,7 +248,9 @@ function* compile(
       anchorFacts = new Map<number, number>();
     for (const fact of view.facts.values()) {
       yield* work(context.workspace);
-      if (fact.openAssumptions.length || fact.conditional) continue;
+      // Closed conditional sources remain available in the conditional profile.
+      // Their actual roots carry taint through packs and every checked projection.
+      if (fact.openAssumptions.length) continue;
       const claim = fact.proposition;
       if (
         claim.kind === "literal" &&
