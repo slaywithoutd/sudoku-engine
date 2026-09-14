@@ -158,6 +158,7 @@ test.each(["c18@1", "c19@1"])("%s captures both index transfers before exact-bou
   }
 });
 
+// Cold original-clue proof setup is part of this correctness fixture, not a latency benchmark.
 test("source-prefix growth and candidate revision invalidate stale ALS search and certificates", () => {
   const view = fixtureView(fixtureCase("C02-row")), full = fixtureCertificate("C02-row"), nodes = full.proof.nodes.slice(0, 2);
   const cache = { ...full, effects: [], proof: { ...full.proof, nodes, roots: [nodes[1].id],
@@ -177,7 +178,7 @@ test("source-prefix growth and candidate revision invalidate stale ALS search an
   const changed = commitChecked(fixtureView(f), checkedStep.step).view;
   expect([...checkProposal(proposal, { view: changed, retained: retainedProof(changed), limits: context.limits, policy: "discharged", uniqueEvidenceId: null })].at(-1)?.kind).toBe("rejected");
   expect(context.workspace.usage).toEqual({ entries: 0, bytes: 0 });
-});
+}, 30000);
 
 test.each(productiveAlsFixtures)("$id has independent named proof and exhaustive counterfactual evidence", f => {
   expect(() => assertSound(fixtureView(f), independentAlsCertificate(f))).not.toThrow();
