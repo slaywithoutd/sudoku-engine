@@ -311,6 +311,23 @@ export function isAcceptedPath(initial: ReadView, accepted: ReadView, steps: rea
   } catch { return false; }
 }
 
+/**
+ * Read-only operation transition gate. Walk only the accepted-prefix delta;
+ * the caller charges each parent traversal and interruption propagates.
+ * Cold rebuilds preserve lineage identity; same-assembly siblings do not.
+ */
+export function isAcceptedDescendant(before:ReadView,after:ReadView,charge:(units:number)=>void):boolean {
+  if(typeof charge!=="function")throw Error("missing-lineage-work-charge");
+  let prior:AcceptedLineage,current:AcceptedLineage;
+  try{prior=owner(before).lineage;current=owner(after).lineage;}catch{return false;}
+  if(prior.anchor!==current.anchor||current.length<prior.length)return false;
+  while(current.length>prior.length) {
+    charge(1);
+    if(!current.parent)return false;current=current.parent;
+  }
+  return current===prior;
+}
+
 /** Retain exact checked definitions for subsequent proofs, without a state edit. */
 export function retainCheckedFacts(view: ReadView, step: CheckedStep): ReadView { return owner(view).retain(step); }
 

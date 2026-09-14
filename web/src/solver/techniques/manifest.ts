@@ -6345,20 +6345,173 @@ export const coverageEntries: readonly CoverageEntry[] = Object.freeze((
       "R"
     ],
     "assumptionPolicy": "unconditional",
-    "bounds": "A template chooses exactly one cell in each row/column/box for one symbol, matching givens/current domains. Enumerate all geometrically legal templates (<=46,656 per symbol on empty classic grid; verify independently), filter with complete reasons. Single-symbol projection; pairwise incompatibility across symbols for intersecting cells; repeatedly remove templates with no compatible partner until fixed point. Two/three-symbol overlay may enumerate compatible tuples, capped at 100,000 tuple tests per revision; incomplete enumeration gives no absence conclusion. No nine-symbol completion enumeration inside logical POM.",
+    "bounds": "A template chooses exactly one cell in each row/column/box for one symbol, matching givens/current domains. Enumerate all geometrically legal templates (<=46,656 per symbol on empty classic grid; verify independently), filter with complete reasons. Single-symbol projection; pairwise incompatibility across selected sets of 2 through 9 symbols for intersecting cells, including full-nine-symbol discovery; repeatedly remove templates with no compatible partner until fixed point. Two/three-symbol overlay may enumerate compatible tuples, capped at 100,000 tuple tests per revision; incomplete enumeration gives no absence conclusion. No nine-symbol completion enumeration inside logical POM.",
     "grammarId": "c33-grammar@1",
     "detectorId": "c33@1",
     "checkerId": "c33-grammar@1",
-    "descriptionPath": "docs/superpowers/specs/2026-09-12-m2-technique-coverage.md",
+    "descriptionPath": "docs/solver/techniques/templates.md",
     "fixtureIds": [
       "C33-single",
       "C33-pair",
       "C33-triple",
-      "C33-incompatibility"
+      "C33-incompatibility",
+      "C33-incompatibility-nine"
     ],
-    "status": "specified",
-    "evidence": []
+    "status": "implemented",
+    "evidence": [
+      {
+        "kind": "positive",
+        "fixtureId": "C33-single",
+        "alias": "Per-digit templates",
+        "record": "web/tests/unit/solver/templates.test.ts"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "C33-single",
+        "alias": "Per-digit templates",
+        "record": "web/tests/unit/solver/templates.test.ts"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "C33-single",
+        "alias": "Per-digit templates",
+        "record": "web/tests/unit/solver/templates.test.ts"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C33-single",
+        "alias": "Per-digit templates",
+        "record": "web/tests/unit/solver/templates.test.ts"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C33-single",
+        "alias": "Per-digit templates",
+        "record": "web/tests/unit/solver/templates.test.ts"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "C33-pair",
+        "alias": "Pattern overlay",
+        "record": "web/tests/unit/solver/templates.test.ts"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "C33-pair",
+        "alias": "Pattern overlay",
+        "record": "web/tests/unit/solver/templates.test.ts"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "C33-pair",
+        "alias": "Pattern overlay",
+        "record": "web/tests/unit/solver/templates.test.ts"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C33-pair",
+        "alias": "Pattern overlay",
+        "record": "web/tests/unit/solver/templates.test.ts"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C33-pair",
+        "alias": "Pattern overlay",
+        "record": "web/tests/unit/solver/templates.test.ts"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "C33-triple",
+        "alias": "POM",
+        "record": "web/tests/unit/solver/templates.test.ts"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "C33-triple",
+        "alias": "POM",
+        "record": "web/tests/unit/solver/templates.test.ts"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "C33-triple",
+        "alias": "POM",
+        "record": "web/tests/unit/solver/templates.test.ts"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C33-triple",
+        "alias": "POM",
+        "record": "web/tests/unit/solver/templates.test.ts"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C33-triple",
+        "alias": "POM",
+        "record": "web/tests/unit/solver/templates.test.ts"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "C33-incompatibility",
+        "alias": "Template incompatibility",
+        "record": "web/tests/unit/solver/templates.test.ts"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "C33-incompatibility",
+        "alias": "Template incompatibility",
+        "record": "web/tests/unit/solver/templates.test.ts"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "C33-incompatibility",
+        "alias": "Template incompatibility",
+        "record": "web/tests/unit/solver/templates.test.ts"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C33-incompatibility",
+        "alias": "Template incompatibility",
+        "record": "web/tests/unit/solver/templates.test.ts"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C33-incompatibility",
+        "alias": "Template incompatibility",
+        "record": "web/tests/unit/solver/templates.test.ts"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "C33-incompatibility-nine",
+        "alias": "Template incompatibility",
+        "record": "web/tests/unit/solver/templates.test.ts"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "C33-incompatibility-nine",
+        "alias": "Template incompatibility",
+        "record": "web/tests/unit/solver/templates.test.ts"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "C33-incompatibility-nine",
+        "alias": "Template incompatibility",
+        "record": "web/tests/unit/solver/templates.test.ts"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "C33-incompatibility-nine",
+        "alias": "Template incompatibility",
+        "record": "web/tests/unit/solver/templates.test.ts"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "C33-incompatibility-nine",
+        "alias": "Template incompatibility",
+        "record": "web/tests/unit/solver/templates.test.ts"
+      }
+    ]
   },
+
   {
     "id": "U01",
     "version": "u01@1",

@@ -1,4 +1,5 @@
 import { CoverCountClauseChecker } from "./count-clause";
+import { TemplateCoverChecker } from "./template-cover";
 import { canonicalJson } from "../problem";
 import type { EngineProblem, Json } from "../problem";
 import type { Assembly } from "../rules/types";
@@ -265,6 +266,7 @@ export class PrimitiveRegistry {
   readonly #tables: TableChecker;
   readonly #subsetCount = new SubsetCountChecker();
   readonly #countClause = new CoverCountClauseChecker();
+  readonly #templates = new TemplateCoverChecker();
   readonly #strategies: ReadonlyMap<string, Strategy> = new Map([
     ["domain-axiom@1", domain], ["given@1", given],
     ["rule-instance@1", declaredRule], ["all-different@1", declaredRule], ["cover@1", declaredRule],
@@ -284,11 +286,11 @@ export class PrimitiveRegistry {
   tableDefinition(node: ProofNode): TableDefinition | undefined { return this.#tables.get(node); }
 
   has(id: string): boolean {
-    return this.#strategies.has(id) || this.#tables.has(id) || id === this.#subsetCount.id || id === this.#countClause.id;
+    return this.#strategies.has(id) || this.#tables.has(id) || id === this.#subsetCount.id || id === this.#countClause.id || id === this.#templates.id;
   }
 
   get ids(): readonly string[] {
-    return Object.freeze([...this.#strategies.keys(), ...this.#tables.ids, this.#subsetCount.id, this.#countClause.id].sort());
+    return Object.freeze([...this.#strategies.keys(), ...this.#tables.ids, this.#subsetCount.id, this.#countClause.id, this.#templates.id].sort());
   }
 
   check(input: PrimitiveInput, context: CheckContext): CheckedInference {
@@ -300,6 +302,7 @@ export class PrimitiveRegistry {
 
   /** Expensive finite-table semantics yield at tuple/pair/rejection boundaries. */
   *checkSteps(input: PrimitiveInput, context: CheckContext): Generator<number, CheckedInference, void> {
+    if (input.rule === this.#templates.id) return yield* this.#templates.check(input, context);
     if (input.rule === this.#subsetCount.id) return yield* this.#subsetCount.check(input, context);
     if (input.rule === this.#countClause.id) return yield* this.#countClause.check(input, context);
     if (this.#tables.has(input.rule)) return yield* this.#tables.check(input, context);

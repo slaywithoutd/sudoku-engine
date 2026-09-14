@@ -16,6 +16,7 @@ import { checkTridagonPattern } from "./tridagon-grammar";
 import { checkSkPattern } from "./sk-grammar";
 import { checkFireworksPattern } from "./fireworks-grammar";
 import { checkOrPattern } from "./or-grammar";
+import { checkTemplatePattern } from "../proof/template-cover";
 
 function fields(p: Record<string, unknown>, names: string[]): void {
   requireProof(sameValue(Object.keys(p).sort(), names.sort()), "invalid-technique-pattern");
@@ -50,6 +51,7 @@ export function checkTechniqueGrammar(proposal: DeductionProposal, view: ReadVie
     const fact = view.facts.get(view.state.domainFacts[cell]);
     requireProof(fact && sameValue(domainAssertion(fact.proposition), { cell, mask: domains[cell] }), "unproved-current-domain");
   }
+  if (proposal.technique === "c33@1") {checkTemplatePattern(proposal,view,available);return;}
   if (proposal.technique === "c31@1") {checkExocetPattern(proposal,view,available);return;}
   if (proposal.technique === "c32@1") {checkTridagonPattern(proposal,view,available);return;}
   if (proposal.technique === "c30@1") {checkSkPattern(proposal,view,available);return;}

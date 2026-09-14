@@ -5,9 +5,14 @@ import type { AssumptionPolicy, DeductionProposal } from "../proof/types";
 import type { ReadView } from "../state/types";
 import type { Limits } from "../limits";
 import type { IndexWorkspace, IndexInterruption } from "../indexes/workspace";
+import type { TemplateOperationContext } from "../indexes/templates";
 
 /** Operation-owned resources; detectors neither create run budgets nor retain globals. */
-export interface DiscoveryContext { readonly workspace: IndexWorkspace; readonly limits: Limits }
+export interface DiscoveryContext {
+  readonly workspace: IndexWorkspace; readonly limits: Limits;
+  /** Explicit operation-owned per-candidate-revision C33 exploration allowance. */
+  readonly templates?: TemplateOperationContext;
+}
 
 export type DiscoveryEvent = { readonly kind: "work"; readonly units: number }
   | { readonly kind: "proposal"; readonly proposal: DeductionProposal }
@@ -18,6 +23,12 @@ export type Discovery = Generator<DiscoveryEvent, void, void>;
 export interface TechniqueBounds {
   readonly maxLength: number; readonly maxBranchDepth: number; readonly maxAlternatives: number;
   readonly maxPatternCells: number; readonly maxSetSize: number;
+  readonly templates?: {
+    readonly maxTemplatesPerSymbol:number;
+    readonly maxOverlaySymbols:number;
+    readonly maxIncompatibilitySymbols:number;
+    readonly maxTupleTestsPerRevision:number;
+  };
 }
 export interface Estimate { readonly hit: number; readonly gain: number; readonly cost: number }
 export interface TechniqueDescriptor {
