@@ -1,8 +1,8 @@
 # M2 engine contracts
 
-**Approval update:** The user approved this design at `0e98c2b` and authorized implementation under D065/D066. Earlier review-only wording below records the drafting state; benchmarks and runtime acceptance remain required.
+**Approval update:** The user approved this design at `0e98c2b` and authorized implementation under D065/D066. The detailed contracts are approved; benchmarks and runtime acceptance remain required.
 
-Date: 2026-09-12. Status: **complete technical proposal for review; no implementation authorization**. Companion to the [expanded design](2026-09-12-m2-engine-expansion-design.md), [coverage matrix](2026-09-12-m2-technique-coverage.md), [screen/evidence specification](2026-09-12-m2-classic-solver-design.md) and [implementation plan](../plans/2026-09-12-m2-classic-solver.md). Contracts here replace earlier sketches. Numerical choices are proposed, unmeasured profile parameters.
+Date: 2026-09-12. Status: **approved technical contracts; implementation in progress**. Companion to the [expanded design](2026-09-12-m2-engine-expansion-design.md), [coverage matrix](2026-09-12-m2-technique-coverage.md), [screen/evidence specification](2026-09-12-m2-classic-solver-design.md) and [implementation plan](../plans/2026-09-12-m2-classic-solver.md). Contracts here replace earlier sketches. Numerical choices are proposed, unmeasured profile parameters.
 
 ## 1. Boundaries and identity
 
@@ -10,7 +10,7 @@ Inspection baseline is `80471d2` on `docs/m2-solver-design`, with research `24e0
 
 Pure engine modules depend only on domain value types and each other. Rule modules declare semantics, capabilities and proof primitives; detectors read capabilities and propose proofs; the checker alone issues checked steps; the reducer alone changes candidates; the scheduler controls effort. The exact verifier accepts only the normalized original problem and supported rule modules. No detector, conditional analysis, rollout or UI can supply its starting candidates.
 
-All TypeScript below is interface design to implement after approval. Runtime decoders validate numbers, lengths, IDs, versions, field sets and references before construction. `CellId`/`SymbolId` are dense integers; the initial adapter supports 81 cells and symbols 1–9. Nine-bit `Mask` is an M2 representation limit, not a public promise of custom-size support. Filled cells retain a singleton domain (unlike the old mask-zero sketch); values distinguish assigned cells from unresolved singleton domains. This makes domain facts uniform across rules and preserves monotone elimination.
+The TypeScript below specifies approved interface contracts. Reviewed implementation refinements are recorded in subsequent decisions and the module documentation. Runtime decoders validate numbers, lengths, IDs, versions, field sets and references before construction. `CellId`/`SymbolId` are dense integers; the initial adapter supports 81 cells and symbols 1–9. Nine-bit `Mask` is an M2 representation limit, not a public promise of custom-size support. Filled cells retain a singleton domain (unlike the old mask-zero sketch); values distinguish assigned cells from unresolved singleton domains. This makes domain facts uniform across rules and preserves monotone elimination.
 
 ```ts
 type CellId = number;
@@ -202,10 +202,11 @@ type DiscoveryInterruption = "time-limit" | "work-limit" | "proof-step-limit" |
 type DiscoveryEvent = { kind: "work"; units: number } |
   { kind: "proposal"; proposal: DeductionProposal } |
   { kind: "excluded"; reason: string; dependencies: readonly Watch[] } |
+  { kind: "disabled"; reason: "missing-unique-authority" } |
   { kind: "exhausted" } | { kind: "interrupted"; reason: DiscoveryInterruption };
 type Discovery = Generator<DiscoveryEvent, void, void>;
 type DetectorStatus = "pending" | "in-progress" | "found" |
-  "exhausted" | "excluded" | "interrupted";
+  "exhausted" | "excluded" | "disabled" | "interrupted";
 interface LedgerEntry {
   technique: VersionId; scopeKey: string; state: StateKey;
   status: DetectorStatus; dependencies: readonly Watch[];
@@ -341,6 +342,8 @@ Fairness is independent of scores: every fourth quantum runs the oldest pending/
 Explain step tie key is `(tier, assumptionDepth, branchCount, linkCount, nodeCount, techniqueId, sortedEffects, canonicalProof)`. Analyze uses proposed utility `16*placements + removals + 8*newSingles`, then lower proof complexity and the same canonical tie key. Count distinct removals; newly enabled singles are counted without being silently placed. Domain-log sums are diagnostic only; no probability/entropy assertion. These weights are explicit hypotheses, not established difficulty ratings.
 
 Analyze rollout is an opt-in benchmark flag initially **off in the proposed release default**. Compare at most four already checked candidates in independent copies. After each candidate use only tiers 0–1, at most 16 subsequent checked productive steps, and a total rollout allowance `min(8192, floor(0.10 * remainingWorkUnits))`. Divide that allowance equally among candidates in canonical order; include copying, discovery, checking and scoring. Never use elapsed speed to allocate branch work. No value guesses, exact calls or conditional techniques in rollout. Recheck only the chosen first step on the real revision; discard every rollout board and proof. Cache no speculative facts into the primary run. Benchmark rollout before enabling it by default; deeper beam search is outside this implementation plan.
+
+T19 integration direction D095 requires accounted incremental source preparation and failure-aware proof-check usage. Any owned lookup index preserves exact fact identity, source ordering, open scopes and conditional policy and is complete for the actual retained prefix. Prepare the exact source index through an operation-owned charged generator/lease before discovery or checking, including after accepted prefix changes; do not hide eager indexing in reducer construction. Independent leases on one view cannot invalidate each other. A confined rollout adoption may compare private per-publication tokens without retaining a full historical ReadView through every CheckedStep; it cannot mint primary authority or weaken the named branch gate. Remaining bounded synchronous sections carry full conservative charges and explicit browser measurement obligations; their work is not collapsed into a single logical quantum.
 
 Reproducibility promise: same problem, options (including work/proof caps), versions and completed deterministic work gives the same path independent of machine timing and task slicing. Wall deadlines may produce different valid prefixes and prevent a later finding. Performance learning is offline/versioned; no online timing/history or persistent model changes Explain ordering.
 

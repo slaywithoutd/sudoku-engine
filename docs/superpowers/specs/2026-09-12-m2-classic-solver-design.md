@@ -1,8 +1,8 @@
 # M2 classic Sudoku solver: screen and evidence design
 
-**Approval update:** The user approved this design at `0e98c2b` and authorized implementation under D065/D066. Earlier review-only wording below records the drafting state; benchmarks and runtime acceptance remain required.
+**Approval update:** The user approved this design at `0e98c2b` and authorized implementation under D065/D066. The detailed behavior is approved; benchmarks and runtime acceptance remain required.
 
-Date: 2026-09-12. Status: **revised detailed proposal ready for review; implementation is not authorized**.
+Date: 2026-09-12. Status: **approved design; implementation in progress**.
 
 This replaces the initial six-technique specification. The complete design comprises this screen/evidence contract, the [expanded research and rationale](2026-09-12-m2-engine-expansion-design.md), the [concrete engine contracts](2026-09-12-m2-engine-contracts.md), the [bounded technique matrix](2026-09-12-m2-technique-coverage.md) and the [revised implementation plan](../plans/2026-09-12-m2-classic-solver.md). Contract annexes supersede earlier sketches; the research inventory supplies sources, not conflicting executable interfaces. Decisions [D046–D064](../../decisions.md#d046--m2-design-authorization-and-preserved-requirements) distinguish confirmed requirements from recommendations.
 
@@ -10,7 +10,7 @@ This replaces the initial six-technique specification. The complete design compr
 
 Confirmed: browser-first TypeScript/Vite/plain views, existing IndexedDB library, worker execution, broad classic logical coverage, Explain/Analyze with Explain default, checkable applied deductions, Perfect derived only from clues/rules plus separate independent uniqueness evidence, identified search fallback, count/path separation, configurable limits, Cancel and honest incomplete outcomes, isolated solver snapshots, English D053 and preserved appearance D058. Gameplay hints wait until completion of M5 (delivered in M6); variants, construction assistance, community and AI are outside M2. Shared multi-constraint contracts and synthetic architecture tests are part of M2 design now.
 
-All interface details, finite profile bounds, scoring weights, volatile persistence, screen interactions and numerical defaults are recommendations. They are concrete enough to implement after approval, but neither this planning authorization nor local documentation commits approve solver implementation.
+D065/D066 approve implementation of the detailed interfaces, finite profile bounds, volatile persistence and screen interactions. Numerical defaults, score weights, phase allocation and rollout value remain provisional until the specified benchmarks establish their practical behavior.
 
 Inspected clean branch `docs/m2-solver-design` at `80471d2`, newer than research `24e0d25`. No applicable AGENTS.md. Read current domain/model, classic/editor/library, aggregate persistence controller, router/application, board/home/library/player views, Vite/TypeScript/test configuration and M1/recent appearance verification. Preserve newer sidebar, English copy, repeat-value input, fixed notes, inset squircles and all ten theme combinations. Historical [M1 evidence](../../release-verification.md) and [appearance evidence](../../appearance-verification.md) do not certify a solver.
 
@@ -68,7 +68,7 @@ Primary board shows an accepted valid witness if available; otherwise the last a
 
 **Solution verification** is separate: original-problem method/version, witnesses, root exhaustion status, nodes/backtracks and elapsed time. Finding one alone is explicitly not uniqueness. Counting after a complete logical path does not add a search boundary. Otherwise show **Search-assisted completion** at the actual fallback boundary with reason, successful branch guesses and failed-branch totals. No full failed-search tree or exact propagation relabeled as human deduction.
 
-**Technique coverage** displays bounded support and run statuses: pending, found, exhausted-within-profile, soundly excluded or interrupted with reason. Conditional families are inapplicable to the primary run. Do not claim all techniques or that guessing is necessary. Scores are optional computation diagnostics, never confidence in digits.
+**Technique coverage** displays bounded support and run statuses: pending, in progress, found, exhausted-within-profile, soundly excluded, disabled or interrupted with reason. Conditional families are inapplicable to the primary run. Missing uniqueness authority is a disabled reason, not proof of exhaustion or sound exclusion; show it explicitly if a conditional operation lacks its required authority. Do not claim all techniques or that guessing is necessary. Scores are optional computation diagnostics, never confidence in digits.
 
 Use native details/summary, lazy children and pagination of large proof lists while retaining the complete bounded graph. English text via safe DOM helpers; grid/row/gridcell semantics, focus, keyboard selection and polite phase/evidence announcements. No keypad on result board. At 1280×800 Start/Cancel/status remain reachable without scrolling through proofs. Use existing semantic CSS variables and test Light/Dark × all five themes; preserve M1 layout.
 
@@ -86,6 +86,6 @@ Detailed types/algorithms are authoritative in [engine contracts](2026-09-12-m2-
 
 ## 6. Acceptance and review gate
 
-The [revised plan](../plans/2026-09-12-m2-classic-solver.md) maps all requirements to exact files, tests and dependencies. Release gates include independent named-family fixtures/force-forbid checks, mutated proof rejection, mock composition, deterministic/invalidation comparisons, zero/one/two evidence races, production worker backpressure/cancellation, workspace/backup isolation, English/accessibility/themes and measured time/work/proof/heap budgets. Do not claim solver tests or benchmarks during this documentation session.
+The [revised plan](../plans/2026-09-12-m2-classic-solver.md) maps all requirements to exact files, tests and dependencies. Release gates include independent named-family fixtures/force-forbid checks, mutated proof rejection, mock composition, deterministic/invalidation comparisons, zero/one/two evidence races, production worker backpressure/cancellation, workspace/backup isolation, English/accessibility/themes and measured time/work/proof/heap budgets. Completed task tests are recorded in [implementation evidence](../../m2-implementation-progress.md); they do not substitute for the outstanding integrated runtime and benchmark gates.
 
-No new product answer is required to finish this plan. Review finite technique bounds, memory-only workspace, phase reserve, optional conditional action and resource recommendations. Performance calibration and rollout value remain measured implementation gates. The completed interview remains closed. **Wait for explicit design approval before executing any solver implementation task.**
+No new product answer blocks the approved implementation plan. Finite technique bounds, the memory-only workspace and the separate conditional action are implementation requirements. Performance calibration, phase allocation, resource defaults and rollout value remain measured implementation gates. The completed interview remains closed.

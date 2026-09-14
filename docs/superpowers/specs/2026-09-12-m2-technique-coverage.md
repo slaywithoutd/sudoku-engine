@@ -1,8 +1,8 @@
 # M2 technique coverage and acceptance matrix
 
-**Approval update:** The user approved this design at `0e98c2b` and authorized implementation under D065/D066. Earlier review-only wording below records the drafting state; benchmarks and runtime acceptance remain required.
+**Approval update:** The user approved this design at `0e98c2b` and authorized implementation under D065/D066. The bounded catalogue is approved; benchmarks and runtime acceptance remain required.
 
-Date: 2026-09-12. Status: **approved bounded target profile; implementation and review are in progress**. This supplements the [researched inventory](2026-09-12-m2-engine-expansion-design.md) with finite contracts. Read the [proof/discovery contracts](2026-09-12-m2-engine-contracts.md) and [implementation batches](../plans/2026-09-12-m2-classic-solver.md). Every row remains in M2's planned delivery. Bounds are recommendations, not claims that a detector can exhaust them within ten seconds.
+Date: 2026-09-12. Status: **all bounded rows implemented with independently verified catalogue evidence; runtime acceptance remains in progress**. This supplements the [researched inventory](2026-09-12-m2-engine-expansion-design.md) with finite contracts. Read the [proof/discovery contracts](2026-09-12-m2-engine-contracts.md) and [implementation batches](../plans/2026-09-12-m2-classic-solver.md). Every row remains in M2's planned delivery. Bounds define the approved finite profile; they do not claim that a detector can exhaust them within ten seconds.
 
 ## 1. Coverage meaning and manifest
 

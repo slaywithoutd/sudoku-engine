@@ -68,3 +68,8 @@ All 38 rows have complete independently verified catalogue evidence after the re
 Remaining empirical gates are cost tables, proposed 70% human-phase share, configurable time/work/proof limits and Analyze rollout benefit. Proposed default is 10 seconds with 1–120 control; all caps and measurement criteria are in the contracts. Temporary input/results/options remain memory-only; optional Save Clues creates a normal draft. No unresolved product question blocks this design, and no solver default is yet validated.
 
 At each later checkpoint: read the decision log, inspect the implemented state, research any changing tool/format behavior, settle that stage's deferred choices, write its specification and implementation plan, and record results in this folder. Preserve earlier user decisions unless the user changes them.
+
+
+## M2 pause checkpoint (2026-09-14)
+
+Implementation is paused at the user's request. T01-T18 and all 38 catalogue rows are independently reviewed. T19 is committed at `bcf4812` with 182 focused passing cases, but independent review is incomplete: exclusion-watch preservation, the Analyze window and cache-only rollout have reproduced unfixed issues. A fourth accounting concern is unresolved. T20-T27 remain unstarted, and M2 is not available in the application. See the [complete handoff](m2-resume-handoff.md) for exact remaining work and verification limits. Resume only on a new user request; do not mark M2 complete.

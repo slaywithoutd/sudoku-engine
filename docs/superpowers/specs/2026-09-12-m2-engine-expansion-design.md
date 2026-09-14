@@ -1,6 +1,6 @@
 # Sudoku Engine: expanded deductions and adaptive reasoning
 
-**Approval update:** The user approved this design at `0e98c2b` and authorized implementation under D065/D066. T01-T16 have passed independent review, including specialized-pattern corrections through `1d9a36e`. See [implementation evidence](../../m2-implementation-progress.md). Benchmarks and runtime acceptance remain required.
+**Approval update:** The user approved this design at `0e98c2b` and authorized implementation under D065/D066. T01-T18 have passed independent review through `5a19be1`; all 38 catalogue rows have independently verified evidence after the separate closure at `18c103c`. See [implementation evidence](../../m2-implementation-progress.md). Benchmarks and runtime acceptance remain required.
 
 Design date: 2026-09-12. Status: **Approved design; implementation in progress.** Resource defaults and performance hypotheses remain subject to measurement.
 

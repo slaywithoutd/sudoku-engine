@@ -1,6 +1,6 @@
 # M2 implementation progress
 
-Approved design/plan: `0e98c2b`, 2026-09-12. Authorization and coding conventions: D065/D066. Implementation branch: `feat/m2-engine`, isolated worktree `.worktrees/m2-engine`; initial base `f3eb4ac`. The complete expanded M2 release is not implemented yet.
+Approved design/plan: `0e98c2b`, 2026-09-12. Authorization and coding conventions: D065/D066. Implementation branch: `feat/m2-engine`, isolated worktree `.worktrees/m2-engine`; initial base `f3eb4ac`. The complete expanded M2 release is not implemented yet. **Paused by user request on 2026-09-14.** See the [complete pause/resume handoff](m2-resume-handoff.md) for current code, review findings and remaining work.
 
 ## Baseline
 
@@ -30,7 +30,8 @@ Approved design/plan: `0e98c2b`, 2026-09-12. Authorization and coding convention
 | T16 Specialized patterns | Complete | `f62a47d`, fixes `e8486a0` / `1d9a36e`: C29-C32 and authentic C32-to-C28 reuse independently reviewed. Initial full 1,460 tests; post-fix 298 affected tests, six selected guardian checks and typecheck passed. |
 | T17 Templates and pattern overlay | Complete | `414b5f7`, fix `2fec0e0`: independent implementation/fix reviews passed. Initial full 1,564 tests; final 163 covering tests and typecheck passed. Separate baseline C12 harness repair `59ee9ea` preserves all assertions. |
 | T18 Conditional uniqueness families | Complete | `a2f7a53`, fix `5a19be1`: independent task and fix reviews passed. All 129 covering tests, 19 final resource checks, 21 fix checks, typecheck and build passed; broad-run timeouts remain recorded below. |
-| T19-T27 | Pending | Approved requirements remain in the implementation plan; no family dropped. |
+| T19 Scheduling and bounded rollout | Implemented; review incomplete; paused | `bcf4812`; 182 focused passing cases and typecheck. Three reproduced review issues remain unfixed; a fourth concern is unresolved. [Handoff](m2-resume-handoff.md). |
+| T20-T27 | Pending; not started | Runtime, transport, worker/controller/UI, integrated acceptance, benchmarks and final review remain required; no family dropped. |
 
 ## Coding conventions
 
@@ -117,3 +118,10 @@ Independent task review approved the mathematical and authority implementation a
 Commit `18c103c` adds the eight remaining per-alias negative/boundary references for z-chains, t-whips, Whips and OR-k forcing, and declares the two cross-row C26 fixture sources explicitly. Both independent and production certificate assembly now exercise genuine twelve-position acceptance and thirteen-position primitive-valid named rejection. Existing authentic OR3 and static24/static25 source/consumer gates supply the OR-k evidence. No algorithm, validator, fixture source or family bound changed.
 
 The projected status gate failed first with missing independent evidence, then passed after the references were added. All 18 focused generalized/OR tests and six coverage tests passed, and typecheck passed. The expanded twelve-position controls now perform both compilation/oracle paths and use the file's existing 60-second acceptance-test allowance after exceeding the prior five-second allowance; production limits did not change. Independent review found no defects and confirmed all eight cells against their exact durable aliases and original-clue checks. Root then promoted C25-C28, making all 38 catalogue rows independently verified. This permits production job assembly for T19; it does not complete scheduling, browser integration, the final full suite or benchmarks.
+
+
+## T19 and user-requested pause
+
+T19 is committed at `bcf48129e16eedde290bf3b250d9f0af966f6936` across 34 files. The [scheduler guide](solver/scheduling.md) documents APIs and ownership; the [complete implementation evidence](solver/scheduling-verification.md) preserves tests, accounting formulas and limitations. The 182 focused passing cases and typecheck do not constitute task approval: interrupted independent review reproduced lost exclusion watches, an Analyze window overrun, and a proof-only cache incorrectly passed to productive rollout. Early-closure accounting remains under investigation because existing precharge may cover the observed gap. No fix batch has started.
+
+The user requested documentation and a stop during that review. The reviewer was interrupted; T20 was not dispatched. The [pause/resume handoff](m2-resume-handoff.md) records all outstanding tasks, exact review range, verification failures, downstream contracts and deferred fixture/benchmark work. Preserve the worktree and resume only when asked. Numerical defaults and browser response-time targets remain unvalidated.
