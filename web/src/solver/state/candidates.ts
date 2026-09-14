@@ -2,7 +2,7 @@ import { canonicalProblem } from "../problem";
 import type { BranchId } from "../problem";
 import type { Assembly, FactId, NodeId } from "../rules/types";
 import type { CheckedStep, ProofNode } from "../proof/types";
-import { checkedEffectState, checkedImportsMatch, checkedNodeInference, isCheckedStep } from "../proof/checker";
+import { checkedEffectState, checkedImportsMatch, checkedNodeInference, isCheckedStep, assertCheckedStepActive } from "../proof/checker";
 import { requireProof, sameValue } from "../proof/primitives";
 import { createRoots, ImmutableMap, rootNode } from "./facts";
 import { CandidateIndexes } from "./indexes";
@@ -64,6 +64,7 @@ class CandidateOwner {
   commit(step: CheckedStep): { view: ReadView; changes: ChangeSet } {
     requireProof(!this.branch, "hypothetical-primary-admission");
     requireProof(isCheckedStep(step), "inauthentic-checked-step");
+    assertCheckedStepActive(step, this.view);
     const before = this.view.state;
     requireProof(sameValue(before.key, step.proposal.state), "stale-step-state");
     requireProof(step.proposal.effects.length > 0, "unproductive-step");
@@ -110,6 +111,7 @@ class CandidateOwner {
   retain(step: CheckedStep): ReadView {
     requireProof(!this.branch, "hypothetical-primary-admission");
     requireProof(isCheckedStep(step), "inauthentic-checked-step");
+    assertCheckedStepActive(step, this.view);
     requireProof(sameValue(this.view.state.key, step.proposal.state) && step.afterRevision === this.view.state.key.revision, "stale-step-state");
     requireProof(step.proposal.effects.length === 0, "effectful-fact-retention");
     requireProof(checkedImportsMatch(step, this.nodes), "substituted-step-import");
@@ -135,6 +137,23 @@ function owner(view: ReadView): CandidateOwner {
 
 /** Read-only authenticity gate; it cannot register a view or create authority. */
 export function assertOwnedView(view: ReadView): void { owner(view); }
+
+/**
+ * Read-only identity of an authentic accepted origin. The frozen token exposes
+ * no owner registration or mutation, and hypothetical publications are excluded.
+ */
+export function acceptedOriginIdentity(view: ReadView): object | undefined {
+  const owned = owners.get(view);
+  return owned && !owned.branch ? owned.lineage.anchor : undefined;
+}
+
+/** Constant-work origin test for an operation's fresh accepted lineage. */
+export function hasAcceptedOrigin(initial: ReadView, view: ReadView): boolean {
+  try {
+    const start = owner(initial), current = owner(view);
+    return !start.branch && !current.branch && start.lineage.length === 0 && start.lineage.anchor === current.lineage.anchor;
+  } catch { return false; }
+}
 
 /** Exact publication gates; these queries confer no registration authority. */
 export function isHypotheticalView(view: ReadView): boolean { return !!owner(view).branch; }

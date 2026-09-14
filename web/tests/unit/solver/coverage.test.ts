@@ -19,7 +19,7 @@ test("preserves exact UTF8 matrix bounds for every catalogue row", () => {
 test("catalogues all 38 exact matrix rows and only independently accepted implementations", () => {
   expect(coverageEntries).toHaveLength(38);
   expect(new Set(coverageEntries.map(e => e.id)).size).toBe(38);
-  expect(coverageEntries.filter(e => e.id > "C33").every(e => e.status === "specified")).toBe(true);
+  expect(coverageEntries.filter(e => e.id > "C33").every(e => e.status === "implemented")).toBe(true);
   expect(coverageEntries.find(e=>e.id==="C33")?.status).toBe("independently-verified");
   expect(coverageEntries.filter(e=>e.id>="C25"&&e.id<="C28").every(e=>e.status==="implemented")).toBe(true);
   expect(validateCoverage(coverageEntries)).toEqual([]);
@@ -35,8 +35,8 @@ test("partial catalogue cannot start an expanded run or silently stall as exhaus
   const fake={...view.assembly,problem:{...view.assembly.problem,constraints:Array(230).fill(view.assembly.problem.constraints[0])}};
   expect(()=>assembleTechniqueJobs(fake,"classic-expanded@1")).toThrow("profile-job-limit");
   const future=getTechniques("classic-conditional@1").find(t=>t.id==="u01@1")!;
-  expect(future.eligible(view)).toMatchObject({kind:"excluded",reason:"specified-not-implemented"});
-  expect(()=>[...future.discover(view, discoveryContext())]).toThrow("specified-not-implemented");
+  expect(future.eligible(view)).toEqual({kind:"yes"});
+  expect([...future.discover(view, discoveryContext())]).toEqual([{kind:"disabled",reason:"missing-unique-authority"}]);
 });
 test("refuses unsupported profile versions and verified rows lacking independent evidence", () => {
   expect(() => getTechniques("classic-expanded@2")).toThrow("unknown-profile");
@@ -45,4 +45,10 @@ test("refuses unsupported profile versions and verified rows lacking independent
   expect(validateCoverage(fake)).toContain("missing-independent-evidence");
   const unknown = coverageEntries.map((e,i)=>i?e:{...e,aliases:[...e.aliases,"invented technique alias"]});
   expect(validateCoverage(unknown)).toContain("unknown-alias");
+});
+
+test("implemented U rows have complete per-alias evidence without promotion",()=>{
+ const proposed=coverageEntries.map(e=>e.id.startsWith("U")?{...e,status:"independently-verified" as const}:e);
+ expect(validateCoverage(proposed)).toEqual([]);
+ expect(coverageEntries.filter(e=>e.id.startsWith("U")).every(e=>e.status==="implemented")).toBe(true);
 });

@@ -1,3 +1,4 @@
+import { isConditionalOperation } from "../conditional";
 import type { SolverSnapshot } from "../snapshot";
 import type { Assembly } from "../rules/types";
 import type { CheckEvent, DeductionProposal, Limits, Proposition } from "./types";
@@ -112,4 +113,23 @@ export function* replay(snapshot: SolverSnapshot, bundles: readonly DeductionPro
   } catch (error) {
     yield { kind: "rejected", code: error instanceof ProofError ? error.code : "malformed-replay" };
   }
+}
+
+/**
+ * Fresh conditional replay takes an authenticated, prefix-ready operation. The
+ * owner independently rechecks saved bundles; ordinary replay remains primary.
+ * The caller retains/disposes this owner and binds transport identity before use.
+ */
+export function* replayConditional(operation: import("../conditional").ConditionalOperation,
+  bundles: readonly DeductionProposal[]): Generator<CheckEvent, void, void> {
+  try {
+    requireProof(isConditionalOperation(operation),"inauthentic-conditional-operation");
+    requireProof(operation.active,"revoked-unique-authority");
+    for(const proposal of bundles) {
+      for(const event of operation.checkAndCommit(proposal)) {
+        yield event;
+        if(event.kind==="rejected")return;
+      }
+    }
+  }catch(error){yield {kind:"rejected",code:error instanceof ProofError?error.code:"malformed-conditional-replay"};}
 }

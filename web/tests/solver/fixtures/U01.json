@@ -1,0 +1,5456 @@
+{
+  "fixtures": [
+    {
+      "id": "U01-type1-row",
+      "rowId": "U01",
+      "kind": "productive",
+      "givens": "034078902072095348098342567859761423426853791713924856961537284287419635345286179",
+      "preState": {
+        "values": [
+          0,
+          3,
+          4,
+          0,
+          7,
+          8,
+          9,
+          0,
+          2,
+          0,
+          7,
+          2,
+          0,
+          9,
+          5,
+          3,
+          4,
+          8,
+          0,
+          9,
+          8,
+          3,
+          4,
+          2,
+          5,
+          6,
+          7,
+          8,
+          5,
+          9,
+          7,
+          6,
+          1,
+          4,
+          2,
+          3,
+          4,
+          2,
+          6,
+          8,
+          5,
+          3,
+          7,
+          9,
+          1,
+          7,
+          1,
+          3,
+          9,
+          2,
+          4,
+          8,
+          5,
+          6,
+          9,
+          6,
+          1,
+          5,
+          3,
+          7,
+          2,
+          8,
+          4,
+          2,
+          8,
+          7,
+          4,
+          1,
+          9,
+          6,
+          3,
+          5,
+          3,
+          4,
+          5,
+          2,
+          8,
+          6,
+          1,
+          7,
+          9
+        ],
+        "domains": [
+          49,
+          4,
+          8,
+          33,
+          64,
+          128,
+          256,
+          1,
+          2,
+          33,
+          64,
+          2,
+          33,
+          256,
+          16,
+          4,
+          8,
+          128,
+          1,
+          256,
+          128,
+          4,
+          8,
+          2,
+          16,
+          32,
+          64,
+          128,
+          16,
+          256,
+          64,
+          32,
+          1,
+          8,
+          2,
+          4,
+          8,
+          2,
+          32,
+          128,
+          16,
+          4,
+          64,
+          256,
+          1,
+          64,
+          1,
+          4,
+          256,
+          2,
+          8,
+          128,
+          16,
+          32,
+          256,
+          32,
+          1,
+          16,
+          4,
+          64,
+          2,
+          128,
+          8,
+          2,
+          128,
+          64,
+          8,
+          1,
+          256,
+          32,
+          4,
+          16,
+          4,
+          8,
+          16,
+          2,
+          128,
+          32,
+          1,
+          64,
+          256
+        ]
+      },
+      "expectedPattern": {
+        "alias": "Unique Rectangle Type 1",
+        "cells": [
+          0,
+          3,
+          9,
+          12
+        ],
+        "core": [
+          1,
+          6
+        ],
+        "roof": 0,
+        "orientation": "row"
+      },
+      "expectedEffects": [
+        {
+          "kind": "remove",
+          "cell": 0,
+          "symbol": 1
+        },
+        {
+          "kind": "remove",
+          "cell": 0,
+          "symbol": 6
+        }
+      ],
+      "origin": {
+        "author": "Independent repository fixture author",
+        "license": "Repository-owned; no external puzzle copied",
+        "sourceRevision": "independent-unique-seeds@1",
+        "construction": "Independent rectangle geometry, original clue subsets, complete given-peer domains; known grid construction-only, no solution-derived axiom."
+      },
+      "prefix": "Only original-given peer exclusions; no solution-derived candidate axioms.",
+      "oracleRecord": {
+        "method": "independent-algorithm-x@1",
+        "originalInputHash": "0e2e79f5cbbb01510d860a4f5511bb7c5f16ee7ae3812c785a39ef720a1a57ec",
+        "command": "node .superpowers/sdd/2026-09-12-m2-classic-solver/verify-unique-seeds.cjs",
+        "originalCount": "unique",
+        "exhausted": true,
+        "forceForbidExhausted": true
+      },
+      "preparationSource": "task18-unique-seeds.json",
+      "verificationCommand": "npm test -- tests/unit/solver/unique-techniques.test.ts tests/unit/solver/unique-provenance.test.ts"
+    },
+    {
+      "id": "U01-type1-column",
+      "rowId": "U01",
+      "kind": "productive",
+      "givens": "004670912672195348190342567009761423426853791713924856961537284207419635345286179",
+      "preState": {
+        "values": [
+          0,
+          0,
+          4,
+          6,
+          7,
+          0,
+          9,
+          1,
+          2,
+          6,
+          7,
+          2,
+          1,
+          9,
+          5,
+          3,
+          4,
+          8,
+          1,
+          9,
+          0,
+          3,
+          4,
+          2,
+          5,
+          6,
+          7,
+          0,
+          0,
+          9,
+          7,
+          6,
+          1,
+          4,
+          2,
+          3,
+          4,
+          2,
+          6,
+          8,
+          5,
+          3,
+          7,
+          9,
+          1,
+          7,
+          1,
+          3,
+          9,
+          2,
+          4,
+          8,
+          5,
+          6,
+          9,
+          6,
+          1,
+          5,
+          3,
+          7,
+          2,
+          8,
+          4,
+          2,
+          0,
+          7,
+          4,
+          1,
+          9,
+          6,
+          3,
+          5,
+          3,
+          4,
+          5,
+          2,
+          8,
+          6,
+          1,
+          7,
+          9
+        ],
+        "domains": [
+          144,
+          148,
+          8,
+          32,
+          64,
+          128,
+          256,
+          1,
+          2,
+          32,
+          64,
+          2,
+          1,
+          256,
+          16,
+          4,
+          8,
+          128,
+          1,
+          256,
+          128,
+          4,
+          8,
+          2,
+          16,
+          32,
+          64,
+          144,
+          144,
+          256,
+          64,
+          32,
+          1,
+          8,
+          2,
+          4,
+          8,
+          2,
+          32,
+          128,
+          16,
+          4,
+          64,
+          256,
+          1,
+          64,
+          1,
+          4,
+          256,
+          2,
+          8,
+          128,
+          16,
+          32,
+          256,
+          32,
+          1,
+          16,
+          4,
+          64,
+          2,
+          128,
+          8,
+          2,
+          128,
+          64,
+          8,
+          1,
+          256,
+          32,
+          4,
+          16,
+          4,
+          8,
+          16,
+          2,
+          128,
+          32,
+          1,
+          64,
+          256
+        ]
+      },
+      "expectedPattern": {
+        "alias": "Unique Rectangle Type 1",
+        "cells": [
+          0,
+          1,
+          27,
+          28
+        ],
+        "core": [
+          5,
+          8
+        ],
+        "roof": 1,
+        "orientation": "column"
+      },
+      "expectedEffects": [
+        {
+          "kind": "remove",
+          "cell": 1,
+          "symbol": 5
+        },
+        {
+          "kind": "remove",
+          "cell": 1,
+          "symbol": 8
+        }
+      ],
+      "origin": {
+        "author": "Independent repository fixture author",
+        "license": "Repository-owned; no external puzzle copied",
+        "sourceRevision": "independent-unique-seeds@1",
+        "construction": "Independent rectangle geometry, original clue subsets, complete given-peer domains; known grid construction-only, no solution-derived axiom."
+      },
+      "prefix": "Only original-given peer exclusions; no solution-derived candidate axioms.",
+      "oracleRecord": {
+        "method": "independent-algorithm-x@1",
+        "originalInputHash": "592800ebe56c9798696703cdaa7c68f6d94d2f45c4ab7d2919c44e2f7683a622",
+        "command": "node .superpowers/sdd/2026-09-12-m2-classic-solver/verify-unique-seeds.cjs",
+        "originalCount": "unique",
+        "exhausted": true,
+        "forceForbidExhausted": true
+      },
+      "preparationSource": "task18-unique-seeds.json",
+      "verificationCommand": "npm test -- tests/unit/solver/unique-techniques.test.ts tests/unit/solver/unique-provenance.test.ts"
+    },
+    {
+      "id": "U01-nonunique-trade",
+      "rowId": "U01",
+      "kind": "rejected",
+      "givens": "534008912672195348198342567859001423426853791713924856961537284287419635345286179",
+      "preState": {
+        "values": [
+          5,
+          3,
+          4,
+          0,
+          0,
+          8,
+          9,
+          1,
+          2,
+          6,
+          7,
+          2,
+          1,
+          9,
+          5,
+          3,
+          4,
+          8,
+          1,
+          9,
+          8,
+          3,
+          4,
+          2,
+          5,
+          6,
+          7,
+          8,
+          5,
+          9,
+          0,
+          0,
+          1,
+          4,
+          2,
+          3,
+          4,
+          2,
+          6,
+          8,
+          5,
+          3,
+          7,
+          9,
+          1,
+          7,
+          1,
+          3,
+          9,
+          2,
+          4,
+          8,
+          5,
+          6,
+          9,
+          6,
+          1,
+          5,
+          3,
+          7,
+          2,
+          8,
+          4,
+          2,
+          8,
+          7,
+          4,
+          1,
+          9,
+          6,
+          3,
+          5,
+          3,
+          4,
+          5,
+          2,
+          8,
+          6,
+          1,
+          7,
+          9
+        ],
+        "domains": [
+          16,
+          4,
+          8,
+          96,
+          96,
+          128,
+          256,
+          1,
+          2,
+          32,
+          64,
+          2,
+          1,
+          256,
+          16,
+          4,
+          8,
+          128,
+          1,
+          256,
+          128,
+          4,
+          8,
+          2,
+          16,
+          32,
+          64,
+          128,
+          16,
+          256,
+          96,
+          96,
+          1,
+          8,
+          2,
+          4,
+          8,
+          2,
+          32,
+          128,
+          16,
+          4,
+          64,
+          256,
+          1,
+          64,
+          1,
+          4,
+          256,
+          2,
+          8,
+          128,
+          16,
+          32,
+          256,
+          32,
+          1,
+          16,
+          4,
+          64,
+          2,
+          128,
+          8,
+          2,
+          128,
+          64,
+          8,
+          1,
+          256,
+          32,
+          4,
+          16,
+          4,
+          8,
+          16,
+          2,
+          128,
+          32,
+          1,
+          64,
+          256
+        ]
+      },
+      "expectedPattern": {
+        "cells": [
+          3,
+          4,
+          30,
+          31
+        ],
+        "core": [
+          6,
+          7
+        ]
+      },
+      "expectedEffects": [],
+      "expectedRejection": "missing-independent-uniqueness",
+      "independentTrade": {
+        "first": [
+          6,
+          7,
+          7,
+          6
+        ],
+        "second": [
+          7,
+          6,
+          6,
+          7
+        ]
+      },
+      "origin": {
+        "author": "Independent repository fixture author",
+        "license": "Repository-owned; no external puzzle copied",
+        "sourceRevision": "independent-unique-seeds@1",
+        "construction": "Independent rectangle geometry, original clue subsets, complete given-peer domains; known grid construction-only, no solution-derived axiom."
+      },
+      "prefix": "Only original-given peer exclusions; no solution-derived candidate axioms.",
+      "oracleRecord": {
+        "method": "independent-algorithm-x@1",
+        "originalInputHash": "a34495dc60207d9d0a4b2b4b5702bcd2b11f6f6001a8cc5dcd2fb18920c0f50f",
+        "command": "node .superpowers/sdd/2026-09-12-m2-classic-solver/verify-unique-seeds.cjs",
+        "originalCount": "multiple",
+        "witnesses": [
+          [
+            5,
+            3,
+            4,
+            6,
+            7,
+            8,
+            9,
+            1,
+            2,
+            6,
+            7,
+            2,
+            1,
+            9,
+            5,
+            3,
+            4,
+            8,
+            1,
+            9,
+            8,
+            3,
+            4,
+            2,
+            5,
+            6,
+            7,
+            8,
+            5,
+            9,
+            7,
+            6,
+            1,
+            4,
+            2,
+            3,
+            4,
+            2,
+            6,
+            8,
+            5,
+            3,
+            7,
+            9,
+            1,
+            7,
+            1,
+            3,
+            9,
+            2,
+            4,
+            8,
+            5,
+            6,
+            9,
+            6,
+            1,
+            5,
+            3,
+            7,
+            2,
+            8,
+            4,
+            2,
+            8,
+            7,
+            4,
+            1,
+            9,
+            6,
+            3,
+            5,
+            3,
+            4,
+            5,
+            2,
+            8,
+            6,
+            1,
+            7,
+            9
+          ],
+          [
+            5,
+            3,
+            4,
+            7,
+            6,
+            8,
+            9,
+            1,
+            2,
+            6,
+            7,
+            2,
+            1,
+            9,
+            5,
+            3,
+            4,
+            8,
+            1,
+            9,
+            8,
+            3,
+            4,
+            2,
+            5,
+            6,
+            7,
+            8,
+            5,
+            9,
+            6,
+            7,
+            1,
+            4,
+            2,
+            3,
+            4,
+            2,
+            6,
+            8,
+            5,
+            3,
+            7,
+            9,
+            1,
+            7,
+            1,
+            3,
+            9,
+            2,
+            4,
+            8,
+            5,
+            6,
+            9,
+            6,
+            1,
+            5,
+            3,
+            7,
+            2,
+            8,
+            4,
+            2,
+            8,
+            7,
+            4,
+            1,
+            9,
+            6,
+            3,
+            5,
+            3,
+            4,
+            5,
+            2,
+            8,
+            6,
+            1,
+            7,
+            9
+          ]
+        ],
+        "exhausted": false
+      },
+      "preparationSource": "task18-unique-seeds.json",
+      "verificationCommand": "npm test -- tests/unit/solver/unique-techniques.test.ts tests/unit/solver/unique-provenance.test.ts"
+    },
+    {
+      "id": "U01-type2-independent",
+      "rowId": "U01",
+      "givens": "004078902072090348098342567809761423426853791713924856961537284287419635345286179",
+      "preState": {
+        "values": [
+          0,
+          0,
+          4,
+          0,
+          7,
+          8,
+          9,
+          0,
+          2,
+          0,
+          7,
+          2,
+          0,
+          9,
+          0,
+          3,
+          4,
+          8,
+          0,
+          9,
+          8,
+          3,
+          4,
+          2,
+          5,
+          6,
+          7,
+          8,
+          0,
+          9,
+          7,
+          6,
+          1,
+          4,
+          2,
+          3,
+          4,
+          2,
+          6,
+          8,
+          5,
+          3,
+          7,
+          9,
+          1,
+          7,
+          1,
+          3,
+          9,
+          2,
+          4,
+          8,
+          5,
+          6,
+          9,
+          6,
+          1,
+          5,
+          3,
+          7,
+          2,
+          8,
+          4,
+          2,
+          8,
+          7,
+          4,
+          1,
+          9,
+          6,
+          3,
+          5,
+          3,
+          4,
+          5,
+          2,
+          8,
+          6,
+          1,
+          7,
+          9
+        ],
+        "domains": [
+          49,
+          20,
+          8,
+          33,
+          64,
+          128,
+          256,
+          1,
+          2,
+          49,
+          64,
+          2,
+          33,
+          256,
+          16,
+          4,
+          8,
+          128,
+          1,
+          256,
+          128,
+          4,
+          8,
+          2,
+          16,
+          32,
+          64,
+          128,
+          16,
+          256,
+          64,
+          32,
+          1,
+          8,
+          2,
+          4,
+          8,
+          2,
+          32,
+          128,
+          16,
+          4,
+          64,
+          256,
+          1,
+          64,
+          1,
+          4,
+          256,
+          2,
+          8,
+          128,
+          16,
+          32,
+          256,
+          32,
+          1,
+          16,
+          4,
+          64,
+          2,
+          128,
+          8,
+          2,
+          128,
+          64,
+          8,
+          1,
+          256,
+          32,
+          4,
+          16,
+          4,
+          8,
+          16,
+          2,
+          128,
+          32,
+          1,
+          64,
+          256
+        ]
+      },
+      "expectedPattern": {
+        "kind": "type2",
+        "cells": [
+          0,
+          3,
+          9,
+          12
+        ],
+        "core": [
+          1,
+          6
+        ],
+        "roofs": [
+          0,
+          9
+        ],
+        "extra": 5,
+        "independentTrade": {
+          "cells": [
+            0,
+            3,
+            9,
+            12
+          ],
+          "coreAssignments": [
+            [
+              1,
+              6,
+              6,
+              1
+            ],
+            [
+              6,
+              1,
+              1,
+              6
+            ]
+          ],
+          "affectedHouses": 6,
+          "changesNoOriginalClue": true
+        }
+      },
+      "expectedEffects": [
+        {
+          "kind": "remove",
+          "cell": 1,
+          "symbol": 5
+        }
+      ],
+      "prefix": "Only original-given peer exclusions; no solution-derived candidate axioms.",
+      "origin": {
+        "author": "Independent repository fixture author",
+        "license": "Repository-owned; no external puzzle copied",
+        "sourceRevision": "independent-ur-forms@1",
+        "construction": "Coordinate rectangle, core swap and exact extra/strong-link conditions reconstructed from original clue subsets. Construction grid chooses clues only; uniqueness still requires independent exhaustive evidence."
+      },
+      "oracleRecord": {
+        "method": "independent-algorithm-x@1",
+        "originalInputHash": "832f1efad544f4c0316b4ac436b4283f96b29749787c9f34412019bab3cdcb8a",
+        "originalCount": "unique",
+        "exhausted": true,
+        "witnesses": [
+          [
+            5,
+            3,
+            4,
+            6,
+            7,
+            8,
+            9,
+            1,
+            2,
+            6,
+            7,
+            2,
+            1,
+            9,
+            5,
+            3,
+            4,
+            8,
+            1,
+            9,
+            8,
+            3,
+            4,
+            2,
+            5,
+            6,
+            7,
+            8,
+            5,
+            9,
+            7,
+            6,
+            1,
+            4,
+            2,
+            3,
+            4,
+            2,
+            6,
+            8,
+            5,
+            3,
+            7,
+            9,
+            1,
+            7,
+            1,
+            3,
+            9,
+            2,
+            4,
+            8,
+            5,
+            6,
+            9,
+            6,
+            1,
+            5,
+            3,
+            7,
+            2,
+            8,
+            4,
+            2,
+            8,
+            7,
+            4,
+            1,
+            9,
+            6,
+            3,
+            5,
+            3,
+            4,
+            5,
+            2,
+            8,
+            6,
+            1,
+            7,
+            9
+          ]
+        ],
+        "forceForbidExhausted": true,
+        "command": "node .superpowers/sdd/2026-09-12-m2-classic-solver/root-select-ur-forms.cjs"
+      },
+      "independentConditionalEnumeration": {
+        "enumerated": 36,
+        "survivingTuples": [
+          [
+            1,
+            6,
+            5,
+            1
+          ],
+          [
+            5,
+            1,
+            1,
+            6
+          ],
+          [
+            5,
+            6,
+            6,
+            1
+          ],
+          [
+            6,
+            1,
+            5,
+            6
+          ]
+        ],
+        "allEffectsChecked": true
+      },
+      "preparationSource": "root-task18-ur-forms-seeds.json",
+      "verificationCommand": "npm test -- tests/unit/solver/unique-techniques.test.ts tests/unit/solver/unique-provenance.test.ts"
+    },
+    {
+      "id": "U01-type4-independent",
+      "rowId": "U01",
+      "givens": "034078900072095348098340567859761423426853791713924856961537284287419635345086179",
+      "preState": {
+        "values": [
+          0,
+          3,
+          4,
+          0,
+          7,
+          8,
+          9,
+          0,
+          0,
+          0,
+          7,
+          2,
+          0,
+          9,
+          5,
+          3,
+          4,
+          8,
+          0,
+          9,
+          8,
+          3,
+          4,
+          0,
+          5,
+          6,
+          7,
+          8,
+          5,
+          9,
+          7,
+          6,
+          1,
+          4,
+          2,
+          3,
+          4,
+          2,
+          6,
+          8,
+          5,
+          3,
+          7,
+          9,
+          1,
+          7,
+          1,
+          3,
+          9,
+          2,
+          4,
+          8,
+          5,
+          6,
+          9,
+          6,
+          1,
+          5,
+          3,
+          7,
+          2,
+          8,
+          4,
+          2,
+          8,
+          7,
+          4,
+          1,
+          9,
+          6,
+          3,
+          5,
+          3,
+          4,
+          5,
+          0,
+          8,
+          6,
+          1,
+          7,
+          9
+        ],
+        "domains": [
+          49,
+          4,
+          8,
+          35,
+          64,
+          128,
+          256,
+          1,
+          2,
+          33,
+          64,
+          2,
+          33,
+          256,
+          16,
+          4,
+          8,
+          128,
+          1,
+          256,
+          128,
+          4,
+          8,
+          2,
+          16,
+          32,
+          64,
+          128,
+          16,
+          256,
+          64,
+          32,
+          1,
+          8,
+          2,
+          4,
+          8,
+          2,
+          32,
+          128,
+          16,
+          4,
+          64,
+          256,
+          1,
+          64,
+          1,
+          4,
+          256,
+          2,
+          8,
+          128,
+          16,
+          32,
+          256,
+          32,
+          1,
+          16,
+          4,
+          64,
+          2,
+          128,
+          8,
+          2,
+          128,
+          64,
+          8,
+          1,
+          256,
+          32,
+          4,
+          16,
+          4,
+          8,
+          16,
+          2,
+          128,
+          32,
+          1,
+          64,
+          256
+        ]
+      },
+      "expectedPattern": {
+        "kind": "type4",
+        "cells": [
+          0,
+          3,
+          9,
+          12
+        ],
+        "core": [
+          1,
+          6
+        ],
+        "roofs": [
+          0,
+          3
+        ],
+        "strongSymbol": 6,
+        "strongHouses": [
+          "row:0"
+        ],
+        "independentTrade": {
+          "cells": [
+            0,
+            3,
+            9,
+            12
+          ],
+          "coreAssignments": [
+            [
+              1,
+              6,
+              6,
+              1
+            ],
+            [
+              6,
+              1,
+              1,
+              6
+            ]
+          ],
+          "affectedHouses": 6,
+          "changesNoOriginalClue": true
+        }
+      },
+      "expectedEffects": [
+        {
+          "kind": "remove",
+          "cell": 0,
+          "symbol": 1
+        },
+        {
+          "kind": "remove",
+          "cell": 3,
+          "symbol": 1
+        }
+      ],
+      "prefix": "Only original-given peer exclusions; no solution-derived candidate axioms.",
+      "origin": {
+        "author": "Independent repository fixture author",
+        "license": "Repository-owned; no external puzzle copied",
+        "sourceRevision": "independent-ur-forms@1",
+        "construction": "Coordinate rectangle, core swap and exact extra/strong-link conditions reconstructed from original clue subsets. Construction grid chooses clues only; uniqueness still requires independent exhaustive evidence."
+      },
+      "oracleRecord": {
+        "method": "independent-algorithm-x@1",
+        "originalInputHash": "4fa35ae3868cf5b94561a0f232eb66bb6a655940d531cbb4cf9211273c250395",
+        "originalCount": "unique",
+        "exhausted": true,
+        "witnesses": [
+          [
+            5,
+            3,
+            4,
+            6,
+            7,
+            8,
+            9,
+            1,
+            2,
+            6,
+            7,
+            2,
+            1,
+            9,
+            5,
+            3,
+            4,
+            8,
+            1,
+            9,
+            8,
+            3,
+            4,
+            2,
+            5,
+            6,
+            7,
+            8,
+            5,
+            9,
+            7,
+            6,
+            1,
+            4,
+            2,
+            3,
+            4,
+            2,
+            6,
+            8,
+            5,
+            3,
+            7,
+            9,
+            1,
+            7,
+            1,
+            3,
+            9,
+            2,
+            4,
+            8,
+            5,
+            6,
+            9,
+            6,
+            1,
+            5,
+            3,
+            7,
+            2,
+            8,
+            4,
+            2,
+            8,
+            7,
+            4,
+            1,
+            9,
+            6,
+            3,
+            5,
+            3,
+            4,
+            5,
+            2,
+            8,
+            6,
+            1,
+            7,
+            9
+          ]
+        ],
+        "forceForbidExhausted": true,
+        "command": "node .superpowers/sdd/2026-09-12-m2-classic-solver/root-select-ur-forms.cjs"
+      },
+      "independentConditionalEnumeration": {
+        "enumerated": 36,
+        "survivingTuples": [
+          [
+            5,
+            6,
+            6,
+            1
+          ],
+          [
+            6,
+            2,
+            1,
+            6
+          ]
+        ],
+        "allEffectsChecked": true
+      },
+      "preparationSource": "root-task18-ur-forms-seeds.json",
+      "verificationCommand": "npm test -- tests/unit/solver/unique-techniques.test.ts tests/unit/solver/unique-provenance.test.ts"
+    },
+    {
+      "id": "U01-type6-independent",
+      "rowId": "U01",
+      "givens": "034078902070095348098340567859761423426853791713924856961537284287419635345086179",
+      "preState": {
+        "values": [
+          0,
+          3,
+          4,
+          0,
+          7,
+          8,
+          9,
+          0,
+          2,
+          0,
+          7,
+          0,
+          0,
+          9,
+          5,
+          3,
+          4,
+          8,
+          0,
+          9,
+          8,
+          3,
+          4,
+          0,
+          5,
+          6,
+          7,
+          8,
+          5,
+          9,
+          7,
+          6,
+          1,
+          4,
+          2,
+          3,
+          4,
+          2,
+          6,
+          8,
+          5,
+          3,
+          7,
+          9,
+          1,
+          7,
+          1,
+          3,
+          9,
+          2,
+          4,
+          8,
+          5,
+          6,
+          9,
+          6,
+          1,
+          5,
+          3,
+          7,
+          2,
+          8,
+          4,
+          2,
+          8,
+          7,
+          4,
+          1,
+          9,
+          6,
+          3,
+          5,
+          3,
+          4,
+          5,
+          0,
+          8,
+          6,
+          1,
+          7,
+          9
+        ],
+        "domains": [
+          49,
+          4,
+          8,
+          33,
+          64,
+          128,
+          256,
+          1,
+          2,
+          33,
+          64,
+          2,
+          35,
+          256,
+          16,
+          4,
+          8,
+          128,
+          1,
+          256,
+          128,
+          4,
+          8,
+          2,
+          16,
+          32,
+          64,
+          128,
+          16,
+          256,
+          64,
+          32,
+          1,
+          8,
+          2,
+          4,
+          8,
+          2,
+          32,
+          128,
+          16,
+          4,
+          64,
+          256,
+          1,
+          64,
+          1,
+          4,
+          256,
+          2,
+          8,
+          128,
+          16,
+          32,
+          256,
+          32,
+          1,
+          16,
+          4,
+          64,
+          2,
+          128,
+          8,
+          2,
+          128,
+          64,
+          8,
+          1,
+          256,
+          32,
+          4,
+          16,
+          4,
+          8,
+          16,
+          2,
+          128,
+          32,
+          1,
+          64,
+          256
+        ]
+      },
+      "expectedPattern": {
+        "kind": "type6",
+        "cells": [
+          0,
+          3,
+          9,
+          12
+        ],
+        "core": [
+          1,
+          6
+        ],
+        "roofs": [
+          0,
+          12
+        ],
+        "strongSymbol": 6,
+        "strongHouses": [
+          "row:0",
+          "row:1",
+          "column:0",
+          "column:3"
+        ],
+        "independentTrade": {
+          "cells": [
+            0,
+            3,
+            9,
+            12
+          ],
+          "coreAssignments": [
+            [
+              1,
+              6,
+              6,
+              1
+            ],
+            [
+              6,
+              1,
+              1,
+              6
+            ]
+          ],
+          "affectedHouses": 6,
+          "changesNoOriginalClue": true
+        }
+      },
+      "expectedEffects": [
+        {
+          "kind": "remove",
+          "cell": 0,
+          "symbol": 6
+        },
+        {
+          "kind": "remove",
+          "cell": 12,
+          "symbol": 6
+        }
+      ],
+      "prefix": "Only original-given peer exclusions; no solution-derived candidate axioms.",
+      "origin": {
+        "author": "Independent repository fixture author",
+        "license": "Repository-owned; no external puzzle copied",
+        "sourceRevision": "independent-ur-forms@1",
+        "construction": "Coordinate rectangle, core swap and exact extra/strong-link conditions reconstructed from original clue subsets. Construction grid chooses clues only; uniqueness still requires independent exhaustive evidence."
+      },
+      "oracleRecord": {
+        "method": "independent-algorithm-x@1",
+        "originalInputHash": "99fbdc25ceff19fa774dc3e64293fd72a55b1b5f5698492864fdd9b3fd36ea33",
+        "originalCount": "unique",
+        "exhausted": true,
+        "witnesses": [
+          [
+            5,
+            3,
+            4,
+            6,
+            7,
+            8,
+            9,
+            1,
+            2,
+            6,
+            7,
+            2,
+            1,
+            9,
+            5,
+            3,
+            4,
+            8,
+            1,
+            9,
+            8,
+            3,
+            4,
+            2,
+            5,
+            6,
+            7,
+            8,
+            5,
+            9,
+            7,
+            6,
+            1,
+            4,
+            2,
+            3,
+            4,
+            2,
+            6,
+            8,
+            5,
+            3,
+            7,
+            9,
+            1,
+            7,
+            1,
+            3,
+            9,
+            2,
+            4,
+            8,
+            5,
+            6,
+            9,
+            6,
+            1,
+            5,
+            3,
+            7,
+            2,
+            8,
+            4,
+            2,
+            8,
+            7,
+            4,
+            1,
+            9,
+            6,
+            3,
+            5,
+            3,
+            4,
+            5,
+            2,
+            8,
+            6,
+            1,
+            7,
+            9
+          ]
+        ],
+        "forceForbidExhausted": true,
+        "command": "node .superpowers/sdd/2026-09-12-m2-classic-solver/root-select-ur-forms.cjs"
+      },
+      "independentConditionalEnumeration": {
+        "enumerated": 36,
+        "survivingTuples": [
+          [
+            1,
+            6,
+            6,
+            2
+          ],
+          [
+            5,
+            6,
+            6,
+            1
+          ],
+          [
+            5,
+            6,
+            6,
+            2
+          ]
+        ],
+        "allEffectsChecked": true
+      },
+      "preparationSource": "root-task18-ur-forms-seeds.json",
+      "verificationCommand": "npm test -- tests/unit/solver/unique-techniques.test.ts tests/unit/solver/unique-provenance.test.ts"
+    },
+    {
+      "id": "U01-type3-independent",
+      "rowId": "U01",
+      "givens": "034078900070090348098340567859761423426853791713924856961537284087419630340286179",
+      "preState": {
+        "values": [
+          0,
+          3,
+          4,
+          0,
+          7,
+          8,
+          9,
+          0,
+          0,
+          0,
+          7,
+          0,
+          0,
+          9,
+          0,
+          3,
+          4,
+          8,
+          0,
+          9,
+          8,
+          3,
+          4,
+          0,
+          5,
+          6,
+          7,
+          8,
+          5,
+          9,
+          7,
+          6,
+          1,
+          4,
+          2,
+          3,
+          4,
+          2,
+          6,
+          8,
+          5,
+          3,
+          7,
+          9,
+          1,
+          7,
+          1,
+          3,
+          9,
+          2,
+          4,
+          8,
+          5,
+          6,
+          9,
+          6,
+          1,
+          5,
+          3,
+          7,
+          2,
+          8,
+          4,
+          0,
+          8,
+          7,
+          4,
+          1,
+          9,
+          6,
+          3,
+          0,
+          3,
+          4,
+          0,
+          2,
+          8,
+          6,
+          1,
+          7,
+          9
+        ],
+        "domains": [
+          51,
+          4,
+          8,
+          33,
+          64,
+          128,
+          256,
+          1,
+          2,
+          51,
+          64,
+          18,
+          33,
+          256,
+          18,
+          4,
+          8,
+          128,
+          3,
+          256,
+          128,
+          4,
+          8,
+          2,
+          16,
+          32,
+          64,
+          128,
+          16,
+          256,
+          64,
+          32,
+          1,
+          8,
+          2,
+          4,
+          8,
+          2,
+          32,
+          128,
+          16,
+          4,
+          64,
+          256,
+          1,
+          64,
+          1,
+          4,
+          256,
+          2,
+          8,
+          128,
+          16,
+          32,
+          256,
+          32,
+          1,
+          16,
+          4,
+          64,
+          2,
+          128,
+          8,
+          18,
+          128,
+          64,
+          8,
+          1,
+          256,
+          32,
+          4,
+          16,
+          4,
+          8,
+          16,
+          2,
+          128,
+          32,
+          1,
+          64,
+          256
+        ]
+      },
+      "expectedPattern": {
+        "kind": "type3",
+        "cells": [
+          0,
+          3,
+          9,
+          12
+        ],
+        "core": [
+          1,
+          6
+        ],
+        "roofs": [
+          0,
+          9
+        ],
+        "extras": [
+          2,
+          5
+        ],
+        "subsetHouse": "column:0",
+        "auxiliaryCells": [
+          63
+        ],
+        "independentTrade": {
+          "cells": [
+            0,
+            3,
+            9,
+            12
+          ],
+          "coreAssignments": [
+            [
+              1,
+              6,
+              6,
+              1
+            ],
+            [
+              6,
+              1,
+              1,
+              6
+            ]
+          ],
+          "affectedHouses": 6,
+          "changesNoOriginalClue": true
+        }
+      },
+      "expectedEffects": [
+        {
+          "kind": "remove",
+          "cell": 18,
+          "symbol": 2
+        }
+      ],
+      "prefix": "Only original-given peer exclusions; no solution-derived candidate axioms.",
+      "origin": {
+        "author": "Independent repository fixture author",
+        "license": "Repository-owned; no external puzzle copied",
+        "sourceRevision": "independent-ur3@1",
+        "construction": "Rectangle core trade plus virtual roof extra cell and independently reconstructed shared-house naked subset. Construction grid selects original clues only."
+      },
+      "oracleRecord": {
+        "method": "independent-algorithm-x@1",
+        "originalInputHash": "39e008cd07ef57ba984eead1ac906af10a3b2b40242250a68a54f4e6265e90cf",
+        "originalCount": "unique",
+        "exhausted": true,
+        "witnesses": [
+          [
+            5,
+            3,
+            4,
+            6,
+            7,
+            8,
+            9,
+            1,
+            2,
+            6,
+            7,
+            2,
+            1,
+            9,
+            5,
+            3,
+            4,
+            8,
+            1,
+            9,
+            8,
+            3,
+            4,
+            2,
+            5,
+            6,
+            7,
+            8,
+            5,
+            9,
+            7,
+            6,
+            1,
+            4,
+            2,
+            3,
+            4,
+            2,
+            6,
+            8,
+            5,
+            3,
+            7,
+            9,
+            1,
+            7,
+            1,
+            3,
+            9,
+            2,
+            4,
+            8,
+            5,
+            6,
+            9,
+            6,
+            1,
+            5,
+            3,
+            7,
+            2,
+            8,
+            4,
+            2,
+            8,
+            7,
+            4,
+            1,
+            9,
+            6,
+            3,
+            5,
+            3,
+            4,
+            5,
+            2,
+            8,
+            6,
+            1,
+            7,
+            9
+          ]
+        ],
+        "forceForbidExhausted": true,
+        "command": "node .superpowers/sdd/2026-09-12-m2-classic-solver/root-select-ur3.cjs"
+      },
+      "independentConditionalEnumeration": {
+        "cells": [
+          0,
+          3,
+          9,
+          12,
+          63
+        ],
+        "enumerated": 128,
+        "survivingTuples": [
+          [
+            1,
+            6,
+            2,
+            1,
+            5
+          ],
+          [
+            1,
+            6,
+            5,
+            1,
+            2
+          ],
+          [
+            2,
+            1,
+            1,
+            6,
+            5
+          ],
+          [
+            2,
+            6,
+            6,
+            1,
+            5
+          ],
+          [
+            5,
+            1,
+            1,
+            6,
+            2
+          ],
+          [
+            5,
+            6,
+            6,
+            1,
+            2
+          ],
+          [
+            6,
+            1,
+            2,
+            6,
+            5
+          ],
+          [
+            6,
+            1,
+            5,
+            6,
+            2
+          ]
+        ],
+        "allEffectsChecked": true
+      },
+      "preparationSource": "root-task18-ur3-seeds.json",
+      "verificationCommand": "npm test -- tests/unit/solver/unique-techniques.test.ts tests/unit/solver/unique-provenance.test.ts"
+    },
+    {
+      "id": "U01-type5-2-roofs-independent",
+      "rowId": "U01",
+      "givens": "034008902072090348098342567859761423426803791713924856961037284287419635345286179",
+      "preState": {
+        "values": [
+          0,
+          3,
+          4,
+          0,
+          0,
+          8,
+          9,
+          0,
+          2,
+          0,
+          7,
+          2,
+          0,
+          9,
+          0,
+          3,
+          4,
+          8,
+          0,
+          9,
+          8,
+          3,
+          4,
+          2,
+          5,
+          6,
+          7,
+          8,
+          5,
+          9,
+          7,
+          6,
+          1,
+          4,
+          2,
+          3,
+          4,
+          2,
+          6,
+          8,
+          0,
+          3,
+          7,
+          9,
+          1,
+          7,
+          1,
+          3,
+          9,
+          2,
+          4,
+          8,
+          5,
+          6,
+          9,
+          6,
+          1,
+          0,
+          3,
+          7,
+          2,
+          8,
+          4,
+          2,
+          8,
+          7,
+          4,
+          1,
+          9,
+          6,
+          3,
+          5,
+          3,
+          4,
+          5,
+          2,
+          8,
+          6,
+          1,
+          7,
+          9
+        ],
+        "domains": [
+          49,
+          4,
+          8,
+          33,
+          80,
+          128,
+          256,
+          1,
+          2,
+          33,
+          64,
+          2,
+          49,
+          256,
+          16,
+          4,
+          8,
+          128,
+          1,
+          256,
+          128,
+          4,
+          8,
+          2,
+          16,
+          32,
+          64,
+          128,
+          16,
+          256,
+          64,
+          32,
+          1,
+          8,
+          2,
+          4,
+          8,
+          2,
+          32,
+          128,
+          16,
+          4,
+          64,
+          256,
+          1,
+          64,
+          1,
+          4,
+          256,
+          2,
+          8,
+          128,
+          16,
+          32,
+          256,
+          32,
+          1,
+          16,
+          4,
+          64,
+          2,
+          128,
+          8,
+          2,
+          128,
+          64,
+          8,
+          1,
+          256,
+          32,
+          4,
+          16,
+          4,
+          8,
+          16,
+          2,
+          128,
+          32,
+          1,
+          64,
+          256
+        ]
+      },
+      "expectedPattern": {
+        "kind": "type5",
+        "cells": [
+          0,
+          3,
+          9,
+          12
+        ],
+        "core": [
+          1,
+          6
+        ],
+        "roofs": [
+          0,
+          12
+        ],
+        "extra": 5,
+        "independentTrade": {
+          "cells": [
+            0,
+            3,
+            9,
+            12
+          ],
+          "coreAssignments": [
+            [
+              1,
+              6,
+              6,
+              1
+            ],
+            [
+              6,
+              1,
+              1,
+              6
+            ]
+          ],
+          "affectedHouses": 6,
+          "changesNoOriginalClue": true
+        }
+      },
+      "expectedEffects": [
+        {
+          "kind": "remove",
+          "cell": 4,
+          "symbol": 5
+        }
+      ],
+      "prefix": [
+        {
+          "kind": "forcing",
+          "cell": 3,
+          "symbol": 5,
+          "sourceDomains": [
+            49,
+            4,
+            8,
+            49,
+            80,
+            128,
+            256,
+            1,
+            2,
+            49,
+            64,
+            2,
+            49,
+            256,
+            16,
+            4,
+            8,
+            128,
+            1,
+            256,
+            128,
+            4,
+            8,
+            2,
+            16,
+            32,
+            64,
+            128,
+            16,
+            256,
+            64,
+            32,
+            1,
+            8,
+            2,
+            4,
+            8,
+            2,
+            32,
+            128,
+            16,
+            4,
+            64,
+            256,
+            1,
+            64,
+            1,
+            4,
+            256,
+            2,
+            8,
+            128,
+            16,
+            32,
+            256,
+            32,
+            1,
+            16,
+            4,
+            64,
+            2,
+            128,
+            8,
+            2,
+            128,
+            64,
+            8,
+            1,
+            256,
+            32,
+            4,
+            16,
+            4,
+            8,
+            16,
+            2,
+            128,
+            32,
+            1,
+            64,
+            256
+          ],
+          "expectedPattern": {
+            "kind": "digit",
+            "cover": {
+              "candidate": {
+                "cell": 3,
+                "symbol": 5,
+                "positive": true
+              }
+            },
+            "alternatives": [
+              {
+                "cell": 3,
+                "symbol": 5,
+                "positive": true
+              },
+              {
+                "cell": 3,
+                "symbol": 5,
+                "positive": false
+              }
+            ],
+            "branches": [
+              {
+                "assumption": {
+                  "cell": 3,
+                  "symbol": 5,
+                  "positive": true
+                },
+                "result": "false",
+                "paths": [
+                  [],
+                  [
+                    {
+                      "from": {
+                        "cell": 3,
+                        "symbol": 5,
+                        "positive": true
+                      },
+                      "to": {
+                        "cell": 3,
+                        "symbol": 1,
+                        "positive": false
+                      },
+                      "reason": {
+                        "kind": "cell-conflict",
+                        "cell": 3
+                      }
+                    },
+                    {
+                      "from": {
+                        "cell": 3,
+                        "symbol": 1,
+                        "positive": false
+                      },
+                      "to": {
+                        "cell": 12,
+                        "symbol": 1,
+                        "positive": true
+                      },
+                      "reason": {
+                        "kind": "house-cover",
+                        "house": "column:3",
+                        "symbol": 1
+                      }
+                    },
+                    {
+                      "from": {
+                        "cell": 12,
+                        "symbol": 1,
+                        "positive": true
+                      },
+                      "to": {
+                        "cell": 12,
+                        "symbol": 6,
+                        "positive": false
+                      },
+                      "reason": {
+                        "kind": "cell-conflict",
+                        "cell": 12
+                      }
+                    },
+                    {
+                      "from": {
+                        "cell": 12,
+                        "symbol": 6,
+                        "positive": false
+                      },
+                      "to": {
+                        "cell": 3,
+                        "symbol": 6,
+                        "positive": true
+                      },
+                      "reason": {
+                        "kind": "house-cover",
+                        "house": "column:3",
+                        "symbol": 6
+                      }
+                    },
+                    {
+                      "from": {
+                        "cell": 3,
+                        "symbol": 6,
+                        "positive": true
+                      },
+                      "to": {
+                        "cell": 3,
+                        "symbol": 5,
+                        "positive": false
+                      },
+                      "reason": {
+                        "kind": "cell-conflict",
+                        "cell": 3
+                      }
+                    }
+                  ]
+                ]
+              },
+              {
+                "assumption": {
+                  "cell": 3,
+                  "symbol": 5,
+                  "positive": false
+                },
+                "result": {
+                  "cell": 3,
+                  "symbol": 5,
+                  "positive": false
+                },
+                "paths": [
+                  []
+                ]
+              }
+            ]
+          },
+          "expectedEffects": [
+            {
+              "kind": "remove",
+              "cell": 3,
+              "symbol": 5
+            }
+          ]
+        },
+        {
+          "kind": "forcing",
+          "cell": 9,
+          "symbol": 5,
+          "sourceDomains": [
+            49,
+            4,
+            8,
+            33,
+            80,
+            128,
+            256,
+            1,
+            2,
+            49,
+            64,
+            2,
+            49,
+            256,
+            16,
+            4,
+            8,
+            128,
+            1,
+            256,
+            128,
+            4,
+            8,
+            2,
+            16,
+            32,
+            64,
+            128,
+            16,
+            256,
+            64,
+            32,
+            1,
+            8,
+            2,
+            4,
+            8,
+            2,
+            32,
+            128,
+            16,
+            4,
+            64,
+            256,
+            1,
+            64,
+            1,
+            4,
+            256,
+            2,
+            8,
+            128,
+            16,
+            32,
+            256,
+            32,
+            1,
+            16,
+            4,
+            64,
+            2,
+            128,
+            8,
+            2,
+            128,
+            64,
+            8,
+            1,
+            256,
+            32,
+            4,
+            16,
+            4,
+            8,
+            16,
+            2,
+            128,
+            32,
+            1,
+            64,
+            256
+          ],
+          "expectedPattern": {
+            "kind": "digit",
+            "cover": {
+              "candidate": {
+                "cell": 9,
+                "symbol": 5,
+                "positive": true
+              }
+            },
+            "alternatives": [
+              {
+                "cell": 9,
+                "symbol": 5,
+                "positive": true
+              },
+              {
+                "cell": 9,
+                "symbol": 5,
+                "positive": false
+              }
+            ],
+            "branches": [
+              {
+                "assumption": {
+                  "cell": 9,
+                  "symbol": 5,
+                  "positive": true
+                },
+                "result": "false",
+                "paths": [
+                  [],
+                  [
+                    {
+                      "from": {
+                        "cell": 9,
+                        "symbol": 5,
+                        "positive": true
+                      },
+                      "to": {
+                        "cell": 9,
+                        "symbol": 1,
+                        "positive": false
+                      },
+                      "reason": {
+                        "kind": "cell-conflict",
+                        "cell": 9
+                      }
+                    },
+                    {
+                      "from": {
+                        "cell": 9,
+                        "symbol": 1,
+                        "positive": false
+                      },
+                      "to": {
+                        "cell": 12,
+                        "symbol": 1,
+                        "positive": true
+                      },
+                      "reason": {
+                        "kind": "house-cover",
+                        "house": "row:1",
+                        "symbol": 1
+                      }
+                    },
+                    {
+                      "from": {
+                        "cell": 12,
+                        "symbol": 1,
+                        "positive": true
+                      },
+                      "to": {
+                        "cell": 12,
+                        "symbol": 6,
+                        "positive": false
+                      },
+                      "reason": {
+                        "kind": "cell-conflict",
+                        "cell": 12
+                      }
+                    },
+                    {
+                      "from": {
+                        "cell": 12,
+                        "symbol": 6,
+                        "positive": false
+                      },
+                      "to": {
+                        "cell": 9,
+                        "symbol": 6,
+                        "positive": true
+                      },
+                      "reason": {
+                        "kind": "house-cover",
+                        "house": "row:1",
+                        "symbol": 6
+                      }
+                    },
+                    {
+                      "from": {
+                        "cell": 9,
+                        "symbol": 6,
+                        "positive": true
+                      },
+                      "to": {
+                        "cell": 9,
+                        "symbol": 5,
+                        "positive": false
+                      },
+                      "reason": {
+                        "kind": "cell-conflict",
+                        "cell": 9
+                      }
+                    }
+                  ]
+                ]
+              },
+              {
+                "assumption": {
+                  "cell": 9,
+                  "symbol": 5,
+                  "positive": false
+                },
+                "result": {
+                  "cell": 9,
+                  "symbol": 5,
+                  "positive": false
+                },
+                "paths": [
+                  []
+                ]
+              }
+            ]
+          },
+          "expectedEffects": [
+            {
+              "kind": "remove",
+              "cell": 9,
+              "symbol": 5
+            }
+          ]
+        }
+      ],
+      "origin": {
+        "author": "Independent repository fixture author",
+        "license": "Repository-owned; no external puzzle copied",
+        "sourceRevision": "independent-ur5-prefix@1",
+        "construction": "Original clue subset followed by complete signed forcing elimination of floor extras. Construction grid chooses original clues only; uniqueness is not a prefix premise."
+      },
+      "oracleRecord": {
+        "method": "independent-algorithm-x@1",
+        "originalInputHash": "eaf7407f72a8b9430cdd577bc2549c37401f6f9fa170f17c41f1abc544a73ba9",
+        "originalCount": "unique",
+        "exhausted": true,
+        "witnesses": [
+          [
+            5,
+            3,
+            4,
+            6,
+            7,
+            8,
+            9,
+            1,
+            2,
+            6,
+            7,
+            2,
+            1,
+            9,
+            5,
+            3,
+            4,
+            8,
+            1,
+            9,
+            8,
+            3,
+            4,
+            2,
+            5,
+            6,
+            7,
+            8,
+            5,
+            9,
+            7,
+            6,
+            1,
+            4,
+            2,
+            3,
+            4,
+            2,
+            6,
+            8,
+            5,
+            3,
+            7,
+            9,
+            1,
+            7,
+            1,
+            3,
+            9,
+            2,
+            4,
+            8,
+            5,
+            6,
+            9,
+            6,
+            1,
+            5,
+            3,
+            7,
+            2,
+            8,
+            4,
+            2,
+            8,
+            7,
+            4,
+            1,
+            9,
+            6,
+            3,
+            5,
+            3,
+            4,
+            5,
+            2,
+            8,
+            6,
+            1,
+            7,
+            9
+          ]
+        ],
+        "forceForbidExhausted": true,
+        "prefixOppositesExhausted": true,
+        "command": "node .superpowers/sdd/2026-09-12-m2-classic-solver/root-select-ur5-prefix.cjs"
+      },
+      "independentConditionalEnumeration": {
+        "enumerated": 36,
+        "survivingTuples": [
+          [
+            1,
+            6,
+            6,
+            5
+          ],
+          [
+            5,
+            1,
+            1,
+            5
+          ],
+          [
+            5,
+            1,
+            1,
+            6
+          ],
+          [
+            5,
+            1,
+            6,
+            5
+          ],
+          [
+            5,
+            6,
+            1,
+            5
+          ],
+          [
+            5,
+            6,
+            6,
+            1
+          ],
+          [
+            5,
+            6,
+            6,
+            5
+          ],
+          [
+            6,
+            1,
+            1,
+            5
+          ]
+        ],
+        "allEffectsChecked": true
+      },
+      "preparationSource": "root-task18-ur5-prefix-seeds.json",
+      "verificationCommand": "npm test -- tests/unit/solver/unique-techniques.test.ts tests/unit/solver/unique-provenance.test.ts"
+    },
+    {
+      "id": "U01-type5-3-roofs-independent",
+      "rowId": "U01",
+      "givens": "004078902072090348098342567859761423426853791713924856901037284287419635345286179",
+      "preState": {
+        "values": [
+          0,
+          0,
+          4,
+          0,
+          7,
+          8,
+          9,
+          0,
+          2,
+          0,
+          7,
+          2,
+          0,
+          9,
+          0,
+          3,
+          4,
+          8,
+          0,
+          9,
+          8,
+          3,
+          4,
+          2,
+          5,
+          6,
+          7,
+          8,
+          5,
+          9,
+          7,
+          6,
+          1,
+          4,
+          2,
+          3,
+          4,
+          2,
+          6,
+          8,
+          5,
+          3,
+          7,
+          9,
+          1,
+          7,
+          1,
+          3,
+          9,
+          2,
+          4,
+          8,
+          5,
+          6,
+          9,
+          0,
+          1,
+          0,
+          3,
+          7,
+          2,
+          8,
+          4,
+          2,
+          8,
+          7,
+          4,
+          1,
+          9,
+          6,
+          3,
+          5,
+          3,
+          4,
+          5,
+          2,
+          8,
+          6,
+          1,
+          7,
+          9
+        ],
+        "domains": [
+          49,
+          36,
+          8,
+          49,
+          64,
+          128,
+          256,
+          1,
+          2,
+          49,
+          64,
+          2,
+          17,
+          256,
+          16,
+          4,
+          8,
+          128,
+          1,
+          256,
+          128,
+          4,
+          8,
+          2,
+          16,
+          32,
+          64,
+          128,
+          16,
+          256,
+          64,
+          32,
+          1,
+          8,
+          2,
+          4,
+          8,
+          2,
+          32,
+          128,
+          16,
+          4,
+          64,
+          256,
+          1,
+          64,
+          1,
+          4,
+          256,
+          2,
+          8,
+          128,
+          16,
+          32,
+          256,
+          32,
+          1,
+          16,
+          4,
+          64,
+          2,
+          128,
+          8,
+          2,
+          128,
+          64,
+          8,
+          1,
+          256,
+          32,
+          4,
+          16,
+          4,
+          8,
+          16,
+          2,
+          128,
+          32,
+          1,
+          64,
+          256
+        ]
+      },
+      "expectedPattern": {
+        "kind": "type5",
+        "cells": [
+          0,
+          3,
+          9,
+          12
+        ],
+        "core": [
+          1,
+          5
+        ],
+        "roofs": [
+          0,
+          3,
+          9
+        ],
+        "extra": 6,
+        "independentTrade": {
+          "cells": [
+            0,
+            3,
+            9,
+            12
+          ],
+          "coreAssignments": [
+            [
+              1,
+              5,
+              5,
+              1
+            ],
+            [
+              5,
+              1,
+              1,
+              5
+            ]
+          ],
+          "affectedHouses": 6,
+          "changesNoOriginalClue": true
+        }
+      },
+      "expectedEffects": [
+        {
+          "kind": "remove",
+          "cell": 1,
+          "symbol": 6
+        }
+      ],
+      "prefix": [
+        {
+          "kind": "forcing",
+          "cell": 12,
+          "symbol": 6,
+          "sourceDomains": [
+            49,
+            36,
+            8,
+            49,
+            64,
+            128,
+            256,
+            1,
+            2,
+            49,
+            64,
+            2,
+            49,
+            256,
+            16,
+            4,
+            8,
+            128,
+            1,
+            256,
+            128,
+            4,
+            8,
+            2,
+            16,
+            32,
+            64,
+            128,
+            16,
+            256,
+            64,
+            32,
+            1,
+            8,
+            2,
+            4,
+            8,
+            2,
+            32,
+            128,
+            16,
+            4,
+            64,
+            256,
+            1,
+            64,
+            1,
+            4,
+            256,
+            2,
+            8,
+            128,
+            16,
+            32,
+            256,
+            32,
+            1,
+            16,
+            4,
+            64,
+            2,
+            128,
+            8,
+            2,
+            128,
+            64,
+            8,
+            1,
+            256,
+            32,
+            4,
+            16,
+            4,
+            8,
+            16,
+            2,
+            128,
+            32,
+            1,
+            64,
+            256
+          ],
+          "expectedPattern": {
+            "kind": "digit",
+            "cover": {
+              "candidate": {
+                "cell": 12,
+                "symbol": 6,
+                "positive": true
+              }
+            },
+            "alternatives": [
+              {
+                "cell": 12,
+                "symbol": 6,
+                "positive": true
+              },
+              {
+                "cell": 12,
+                "symbol": 6,
+                "positive": false
+              }
+            ],
+            "branches": [
+              {
+                "assumption": {
+                  "cell": 12,
+                  "symbol": 6,
+                  "positive": true
+                },
+                "result": "false",
+                "paths": [
+                  [],
+                  [
+                    {
+                      "from": {
+                        "cell": 12,
+                        "symbol": 6,
+                        "positive": true
+                      },
+                      "to": {
+                        "cell": 12,
+                        "symbol": 1,
+                        "positive": false
+                      },
+                      "reason": {
+                        "kind": "cell-conflict",
+                        "cell": 12
+                      }
+                    },
+                    {
+                      "from": {
+                        "cell": 12,
+                        "symbol": 1,
+                        "positive": false
+                      },
+                      "to": {
+                        "cell": 9,
+                        "symbol": 1,
+                        "positive": true
+                      },
+                      "reason": {
+                        "kind": "house-cover",
+                        "house": "row:1",
+                        "symbol": 1
+                      }
+                    },
+                    {
+                      "from": {
+                        "cell": 9,
+                        "symbol": 1,
+                        "positive": true
+                      },
+                      "to": {
+                        "cell": 9,
+                        "symbol": 5,
+                        "positive": false
+                      },
+                      "reason": {
+                        "kind": "cell-conflict",
+                        "cell": 9
+                      }
+                    },
+                    {
+                      "from": {
+                        "cell": 9,
+                        "symbol": 5,
+                        "positive": false
+                      },
+                      "to": {
+                        "cell": 0,
+                        "symbol": 5,
+                        "positive": true
+                      },
+                      "reason": {
+                        "kind": "house-cover",
+                        "house": "column:0",
+                        "symbol": 5
+                      }
+                    },
+                    {
+                      "from": {
+                        "cell": 0,
+                        "symbol": 5,
+                        "positive": true
+                      },
+                      "to": {
+                        "cell": 0,
+                        "symbol": 6,
+                        "positive": false
+                      },
+                      "reason": {
+                        "kind": "cell-conflict",
+                        "cell": 0
+                      }
+                    },
+                    {
+                      "from": {
+                        "cell": 0,
+                        "symbol": 6,
+                        "positive": false
+                      },
+                      "to": {
+                        "cell": 9,
+                        "symbol": 6,
+                        "positive": true
+                      },
+                      "reason": {
+                        "kind": "house-cover",
+                        "house": "column:0",
+                        "symbol": 6
+                      }
+                    },
+                    {
+                      "from": {
+                        "cell": 9,
+                        "symbol": 6,
+                        "positive": true
+                      },
+                      "to": {
+                        "cell": 12,
+                        "symbol": 6,
+                        "positive": false
+                      },
+                      "reason": {
+                        "kind": "scope-conflict",
+                        "house": "row:1",
+                        "symbol": 6
+                      }
+                    }
+                  ]
+                ]
+              },
+              {
+                "assumption": {
+                  "cell": 12,
+                  "symbol": 6,
+                  "positive": false
+                },
+                "result": {
+                  "cell": 12,
+                  "symbol": 6,
+                  "positive": false
+                },
+                "paths": [
+                  []
+                ]
+              }
+            ]
+          },
+          "expectedEffects": [
+            {
+              "kind": "remove",
+              "cell": 12,
+              "symbol": 6
+            }
+          ]
+        }
+      ],
+      "origin": {
+        "author": "Independent repository fixture author",
+        "license": "Repository-owned; no external puzzle copied",
+        "sourceRevision": "independent-ur5-prefix@1",
+        "construction": "Original clue subset followed by complete signed forcing elimination of floor extras. Construction grid chooses original clues only; uniqueness is not a prefix premise."
+      },
+      "oracleRecord": {
+        "method": "independent-algorithm-x@1",
+        "originalInputHash": "140a03380c5292cfd6cc434f74364e4f047a1f98c760a28dd5ebec0c3e2a6860",
+        "originalCount": "unique",
+        "exhausted": true,
+        "witnesses": [
+          [
+            5,
+            3,
+            4,
+            6,
+            7,
+            8,
+            9,
+            1,
+            2,
+            6,
+            7,
+            2,
+            1,
+            9,
+            5,
+            3,
+            4,
+            8,
+            1,
+            9,
+            8,
+            3,
+            4,
+            2,
+            5,
+            6,
+            7,
+            8,
+            5,
+            9,
+            7,
+            6,
+            1,
+            4,
+            2,
+            3,
+            4,
+            2,
+            6,
+            8,
+            5,
+            3,
+            7,
+            9,
+            1,
+            7,
+            1,
+            3,
+            9,
+            2,
+            4,
+            8,
+            5,
+            6,
+            9,
+            6,
+            1,
+            5,
+            3,
+            7,
+            2,
+            8,
+            4,
+            2,
+            8,
+            7,
+            4,
+            1,
+            9,
+            6,
+            3,
+            5,
+            3,
+            4,
+            5,
+            2,
+            8,
+            6,
+            1,
+            7,
+            9
+          ]
+        ],
+        "forceForbidExhausted": true,
+        "prefixOppositesExhausted": true,
+        "command": "node .superpowers/sdd/2026-09-12-m2-classic-solver/root-select-ur5-prefix.cjs"
+      },
+      "independentConditionalEnumeration": {
+        "enumerated": 54,
+        "survivingTuples": [
+          [
+            1,
+            5,
+            6,
+            1
+          ],
+          [
+            1,
+            6,
+            5,
+            1
+          ],
+          [
+            1,
+            6,
+            6,
+            1
+          ],
+          [
+            1,
+            6,
+            6,
+            5
+          ],
+          [
+            5,
+            1,
+            6,
+            5
+          ],
+          [
+            5,
+            6,
+            1,
+            5
+          ],
+          [
+            5,
+            6,
+            6,
+            1
+          ],
+          [
+            5,
+            6,
+            6,
+            5
+          ],
+          [
+            6,
+            1,
+            1,
+            5
+          ],
+          [
+            6,
+            5,
+            5,
+            1
+          ]
+        ],
+        "allEffectsChecked": true
+      },
+      "preparationSource": "root-task18-ur5-prefix-seeds.json",
+      "verificationCommand": "npm test -- tests/unit/solver/unique-techniques.test.ts tests/unit/solver/unique-provenance.test.ts"
+    },
+    {
+      "id": "U01-type3-subset3-bivalue-independent",
+      "rowId": "U01",
+      "givens": "004078900070090048098340567859761423426853791713924856961537284087419630040286179",
+      "preState": {
+        "values": [
+          0,
+          0,
+          4,
+          0,
+          7,
+          8,
+          9,
+          0,
+          0,
+          0,
+          7,
+          0,
+          0,
+          9,
+          0,
+          0,
+          4,
+          8,
+          0,
+          9,
+          8,
+          3,
+          4,
+          0,
+          5,
+          6,
+          7,
+          8,
+          5,
+          9,
+          7,
+          6,
+          1,
+          4,
+          2,
+          3,
+          4,
+          2,
+          6,
+          8,
+          5,
+          3,
+          7,
+          9,
+          1,
+          7,
+          1,
+          3,
+          9,
+          2,
+          4,
+          8,
+          5,
+          6,
+          9,
+          6,
+          1,
+          5,
+          3,
+          7,
+          2,
+          8,
+          4,
+          0,
+          8,
+          7,
+          4,
+          1,
+          9,
+          6,
+          3,
+          0,
+          0,
+          4,
+          0,
+          2,
+          8,
+          6,
+          1,
+          7,
+          9
+        ],
+        "domains": [
+          55,
+          4,
+          8,
+          33,
+          64,
+          128,
+          256,
+          1,
+          2,
+          55,
+          64,
+          18,
+          33,
+          256,
+          18,
+          4,
+          8,
+          128,
+          3,
+          256,
+          128,
+          4,
+          8,
+          2,
+          16,
+          32,
+          64,
+          128,
+          16,
+          256,
+          64,
+          32,
+          1,
+          8,
+          2,
+          4,
+          8,
+          2,
+          32,
+          128,
+          16,
+          4,
+          64,
+          256,
+          1,
+          64,
+          1,
+          4,
+          256,
+          2,
+          8,
+          128,
+          16,
+          32,
+          256,
+          32,
+          1,
+          16,
+          4,
+          64,
+          2,
+          128,
+          8,
+          18,
+          128,
+          64,
+          8,
+          1,
+          256,
+          32,
+          4,
+          16,
+          20,
+          8,
+          16,
+          2,
+          128,
+          32,
+          1,
+          64,
+          256
+        ]
+      },
+      "expectedPattern": {
+        "kind": "type3",
+        "cells": [
+          0,
+          3,
+          9,
+          12
+        ],
+        "core": [
+          1,
+          6
+        ],
+        "roofs": [
+          0,
+          9
+        ],
+        "extras": [
+          2,
+          3,
+          5
+        ],
+        "subsetHouse": "column:0",
+        "auxiliaryCells": [
+          63,
+          72
+        ],
+        "independentTrade": {
+          "cells": [
+            0,
+            3,
+            9,
+            12
+          ],
+          "coreAssignments": [
+            [
+              1,
+              6,
+              6,
+              1
+            ],
+            [
+              6,
+              1,
+              1,
+              6
+            ]
+          ],
+          "affectedHouses": 6,
+          "changesNoOriginalClue": true
+        }
+      },
+      "expectedEffects": [
+        {
+          "kind": "remove",
+          "cell": 18,
+          "symbol": 2
+        }
+      ],
+      "origin": {
+        "author": "Independent repository fixture author",
+        "license": "Repository-owned; no external puzzle copied",
+        "sourceRevision": "independent-ur3-larger@1",
+        "construction": "Original-clue peer domains, two-symbol rectangle trade plus virtual extra cell in shared-house subset. Full construction grid selects clues only."
+      },
+      "oracleRecord": {
+        "method": "independent-algorithm-x@1",
+        "originalInputHash": "333f91ff276df4f7e6370b1d153b522aad53c235c677ccb43d20f961327e2809",
+        "originalCount": "unique",
+        "exhausted": true,
+        "witnesses": [
+          [
+            5,
+            3,
+            4,
+            6,
+            7,
+            8,
+            9,
+            1,
+            2,
+            6,
+            7,
+            2,
+            1,
+            9,
+            5,
+            3,
+            4,
+            8,
+            1,
+            9,
+            8,
+            3,
+            4,
+            2,
+            5,
+            6,
+            7,
+            8,
+            5,
+            9,
+            7,
+            6,
+            1,
+            4,
+            2,
+            3,
+            4,
+            2,
+            6,
+            8,
+            5,
+            3,
+            7,
+            9,
+            1,
+            7,
+            1,
+            3,
+            9,
+            2,
+            4,
+            8,
+            5,
+            6,
+            9,
+            6,
+            1,
+            5,
+            3,
+            7,
+            2,
+            8,
+            4,
+            2,
+            8,
+            7,
+            4,
+            1,
+            9,
+            6,
+            3,
+            5,
+            3,
+            4,
+            5,
+            2,
+            8,
+            6,
+            1,
+            7,
+            9
+          ]
+        ],
+        "forceForbidExhausted": true,
+        "command": "node .superpowers/sdd/2026-09-12-m2-classic-solver/root-select-ur3-triple-bivalue.cjs"
+      },
+      "independentConditionalEnumeration": {
+        "cells": [
+          0,
+          3,
+          9,
+          12,
+          63,
+          72
+        ],
+        "enumerated": 400,
+        "survivingTuples": [
+          [
+            1,
+            6,
+            2,
+            1,
+            5,
+            3
+          ],
+          [
+            1,
+            6,
+            3,
+            1,
+            2,
+            5
+          ],
+          [
+            1,
+            6,
+            5,
+            1,
+            2,
+            3
+          ],
+          [
+            2,
+            1,
+            1,
+            6,
+            5,
+            3
+          ],
+          [
+            2,
+            6,
+            6,
+            1,
+            5,
+            3
+          ],
+          [
+            3,
+            1,
+            1,
+            6,
+            2,
+            5
+          ],
+          [
+            3,
+            6,
+            6,
+            1,
+            2,
+            5
+          ],
+          [
+            5,
+            1,
+            1,
+            6,
+            2,
+            3
+          ],
+          [
+            5,
+            6,
+            6,
+            1,
+            2,
+            3
+          ],
+          [
+            6,
+            1,
+            2,
+            6,
+            5,
+            3
+          ],
+          [
+            6,
+            1,
+            3,
+            6,
+            2,
+            5
+          ],
+          [
+            6,
+            1,
+            5,
+            6,
+            2,
+            3
+          ]
+        ],
+        "allEffectsChecked": true
+      },
+      "independentOppositeBranchRecipes": [
+        {
+          "effect": {
+            "kind": "remove",
+            "cell": 18,
+            "symbol": 2
+          },
+          "assumption": [
+            18,
+            2,
+            true
+          ],
+          "deniedConditionalAlternatives": [
+            [
+              0,
+              2,
+              false
+            ],
+            [
+              0,
+              3,
+              false
+            ],
+            [
+              0,
+              5,
+              false
+            ],
+            [
+              9,
+              2,
+              false
+            ],
+            [
+              9,
+              3,
+              false
+            ],
+            [
+              9,
+              5,
+              false
+            ]
+          ],
+          "paths": [
+            [
+              {
+                "from": [
+                  18,
+                  2,
+                  true
+                ],
+                "to": [
+                  0,
+                  2,
+                  false
+                ],
+                "kind": "weak-house"
+              }
+            ],
+            [
+              {
+                "from": [
+                  18,
+                  2,
+                  true
+                ],
+                "to": [
+                  63,
+                  2,
+                  false
+                ],
+                "kind": "weak-house"
+              },
+              {
+                "from": [
+                  63,
+                  2,
+                  false
+                ],
+                "to": [
+                  63,
+                  5,
+                  true
+                ],
+                "kind": "strong-cell"
+              },
+              {
+                "from": [
+                  63,
+                  5,
+                  true
+                ],
+                "to": [
+                  72,
+                  5,
+                  false
+                ],
+                "kind": "weak-house"
+              },
+              {
+                "from": [
+                  72,
+                  5,
+                  false
+                ],
+                "to": [
+                  72,
+                  3,
+                  true
+                ],
+                "kind": "strong-cell"
+              },
+              {
+                "from": [
+                  72,
+                  3,
+                  true
+                ],
+                "to": [
+                  0,
+                  3,
+                  false
+                ],
+                "kind": "weak-house"
+              }
+            ],
+            [
+              {
+                "from": [
+                  18,
+                  2,
+                  true
+                ],
+                "to": [
+                  63,
+                  2,
+                  false
+                ],
+                "kind": "weak-house"
+              },
+              {
+                "from": [
+                  63,
+                  2,
+                  false
+                ],
+                "to": [
+                  63,
+                  5,
+                  true
+                ],
+                "kind": "strong-cell"
+              },
+              {
+                "from": [
+                  63,
+                  5,
+                  true
+                ],
+                "to": [
+                  0,
+                  5,
+                  false
+                ],
+                "kind": "weak-house"
+              }
+            ],
+            [
+              {
+                "from": [
+                  18,
+                  2,
+                  true
+                ],
+                "to": [
+                  9,
+                  2,
+                  false
+                ],
+                "kind": "weak-house"
+              }
+            ],
+            [
+              {
+                "from": [
+                  18,
+                  2,
+                  true
+                ],
+                "to": [
+                  63,
+                  2,
+                  false
+                ],
+                "kind": "weak-house"
+              },
+              {
+                "from": [
+                  63,
+                  2,
+                  false
+                ],
+                "to": [
+                  63,
+                  5,
+                  true
+                ],
+                "kind": "strong-cell"
+              },
+              {
+                "from": [
+                  63,
+                  5,
+                  true
+                ],
+                "to": [
+                  72,
+                  5,
+                  false
+                ],
+                "kind": "weak-house"
+              },
+              {
+                "from": [
+                  72,
+                  5,
+                  false
+                ],
+                "to": [
+                  72,
+                  3,
+                  true
+                ],
+                "kind": "strong-cell"
+              },
+              {
+                "from": [
+                  72,
+                  3,
+                  true
+                ],
+                "to": [
+                  9,
+                  3,
+                  false
+                ],
+                "kind": "weak-house"
+              }
+            ],
+            [
+              {
+                "from": [
+                  18,
+                  2,
+                  true
+                ],
+                "to": [
+                  63,
+                  2,
+                  false
+                ],
+                "kind": "weak-house"
+              },
+              {
+                "from": [
+                  63,
+                  2,
+                  false
+                ],
+                "to": [
+                  63,
+                  5,
+                  true
+                ],
+                "kind": "strong-cell"
+              },
+              {
+                "from": [
+                  63,
+                  5,
+                  true
+                ],
+                "to": [
+                  9,
+                  5,
+                  false
+                ],
+                "kind": "weak-house"
+              }
+            ]
+          ],
+          "distinctLinks": 10,
+          "totalUnsharedPathLinks": 18,
+          "conditionalSource": "Non-core roof alternative OR from independently rule-preserving rectangle trade and independent original uniqueness; not an ordinary axiom."
+        }
+      ],
+      "preparationSource": "root-task18-ur3-triple-bivalue-seeds.json",
+      "verificationCommand": "npm test -- tests/unit/solver/unique-techniques.test.ts tests/unit/solver/unique-provenance.test.ts"
+    },
+    {
+      "id": "U01-type3-subset4-independent",
+      "rowId": "U01",
+      "givens": "000078900070090008098340567809761423026803791713924856961537284087419630040286179",
+      "preState": {
+        "values": [
+          0,
+          0,
+          0,
+          0,
+          7,
+          8,
+          9,
+          0,
+          0,
+          0,
+          7,
+          0,
+          0,
+          9,
+          0,
+          0,
+          0,
+          8,
+          0,
+          9,
+          8,
+          3,
+          4,
+          0,
+          5,
+          6,
+          7,
+          8,
+          0,
+          9,
+          7,
+          6,
+          1,
+          4,
+          2,
+          3,
+          0,
+          2,
+          6,
+          8,
+          0,
+          3,
+          7,
+          9,
+          1,
+          7,
+          1,
+          3,
+          9,
+          2,
+          4,
+          8,
+          5,
+          6,
+          9,
+          6,
+          1,
+          5,
+          3,
+          7,
+          2,
+          8,
+          4,
+          0,
+          8,
+          7,
+          4,
+          1,
+          9,
+          6,
+          3,
+          0,
+          0,
+          4,
+          0,
+          2,
+          8,
+          6,
+          1,
+          7,
+          9
+        ],
+        "domains": [
+          63,
+          20,
+          26,
+          33,
+          64,
+          128,
+          256,
+          9,
+          2,
+          63,
+          64,
+          26,
+          33,
+          256,
+          18,
+          4,
+          9,
+          128,
+          3,
+          256,
+          128,
+          4,
+          8,
+          2,
+          16,
+          32,
+          64,
+          128,
+          16,
+          256,
+          64,
+          32,
+          1,
+          8,
+          2,
+          4,
+          24,
+          2,
+          32,
+          128,
+          16,
+          4,
+          64,
+          256,
+          1,
+          64,
+          1,
+          4,
+          256,
+          2,
+          8,
+          128,
+          16,
+          32,
+          256,
+          32,
+          1,
+          16,
+          4,
+          64,
+          2,
+          128,
+          8,
+          18,
+          128,
+          64,
+          8,
+          1,
+          256,
+          32,
+          4,
+          16,
+          20,
+          8,
+          16,
+          2,
+          128,
+          32,
+          1,
+          64,
+          256
+        ]
+      },
+      "expectedPattern": {
+        "kind": "type3",
+        "cells": [
+          0,
+          3,
+          9,
+          12
+        ],
+        "core": [
+          1,
+          6
+        ],
+        "roofs": [
+          0,
+          9
+        ],
+        "extras": [
+          2,
+          3,
+          4,
+          5
+        ],
+        "subsetHouse": "column:0",
+        "auxiliaryCells": [
+          36,
+          63,
+          72
+        ],
+        "independentTrade": {
+          "cells": [
+            0,
+            3,
+            9,
+            12
+          ],
+          "coreAssignments": [
+            [
+              1,
+              6,
+              6,
+              1
+            ],
+            [
+              6,
+              1,
+              1,
+              6
+            ]
+          ],
+          "affectedHouses": 6,
+          "changesNoOriginalClue": true
+        }
+      },
+      "expectedEffects": [
+        {
+          "kind": "remove",
+          "cell": 18,
+          "symbol": 2
+        }
+      ],
+      "origin": {
+        "author": "Independent repository fixture author",
+        "license": "Repository-owned; no external puzzle copied",
+        "sourceRevision": "independent-ur3-larger@1",
+        "construction": "Original-clue peer domains, two-symbol rectangle trade plus virtual extra cell in shared-house subset. Full construction grid selects clues only."
+      },
+      "oracleRecord": {
+        "method": "independent-algorithm-x@1",
+        "originalInputHash": "57b806751c269cf4aef9993a5fcefbbc7e8e95ae52275db7be704dd777830873",
+        "originalCount": "unique",
+        "exhausted": true,
+        "witnesses": [
+          [
+            5,
+            3,
+            4,
+            6,
+            7,
+            8,
+            9,
+            1,
+            2,
+            6,
+            7,
+            2,
+            1,
+            9,
+            5,
+            3,
+            4,
+            8,
+            1,
+            9,
+            8,
+            3,
+            4,
+            2,
+            5,
+            6,
+            7,
+            8,
+            5,
+            9,
+            7,
+            6,
+            1,
+            4,
+            2,
+            3,
+            4,
+            2,
+            6,
+            8,
+            5,
+            3,
+            7,
+            9,
+            1,
+            7,
+            1,
+            3,
+            9,
+            2,
+            4,
+            8,
+            5,
+            6,
+            9,
+            6,
+            1,
+            5,
+            3,
+            7,
+            2,
+            8,
+            4,
+            2,
+            8,
+            7,
+            4,
+            1,
+            9,
+            6,
+            3,
+            5,
+            3,
+            4,
+            5,
+            2,
+            8,
+            6,
+            1,
+            7,
+            9
+          ]
+        ],
+        "forceForbidExhausted": true,
+        "command": "node .superpowers/sdd/2026-09-12-m2-classic-solver/root-select-ur3-quad.cjs"
+      },
+      "independentConditionalEnumeration": {
+        "cells": [
+          0,
+          3,
+          9,
+          12,
+          36,
+          63,
+          72
+        ],
+        "enumerated": 1152,
+        "survivingTuples": [
+          [
+            1,
+            6,
+            2,
+            1,
+            4,
+            5,
+            3
+          ],
+          [
+            1,
+            6,
+            3,
+            1,
+            4,
+            2,
+            5
+          ],
+          [
+            1,
+            6,
+            4,
+            1,
+            5,
+            2,
+            3
+          ],
+          [
+            1,
+            6,
+            5,
+            1,
+            4,
+            2,
+            3
+          ],
+          [
+            2,
+            1,
+            1,
+            6,
+            4,
+            5,
+            3
+          ],
+          [
+            2,
+            6,
+            6,
+            1,
+            4,
+            5,
+            3
+          ],
+          [
+            3,
+            1,
+            1,
+            6,
+            4,
+            2,
+            5
+          ],
+          [
+            3,
+            6,
+            6,
+            1,
+            4,
+            2,
+            5
+          ],
+          [
+            4,
+            1,
+            1,
+            6,
+            5,
+            2,
+            3
+          ],
+          [
+            4,
+            6,
+            6,
+            1,
+            5,
+            2,
+            3
+          ],
+          [
+            5,
+            1,
+            1,
+            6,
+            4,
+            2,
+            3
+          ],
+          [
+            5,
+            6,
+            6,
+            1,
+            4,
+            2,
+            3
+          ],
+          [
+            6,
+            1,
+            2,
+            6,
+            4,
+            5,
+            3
+          ],
+          [
+            6,
+            1,
+            3,
+            6,
+            4,
+            2,
+            5
+          ],
+          [
+            6,
+            1,
+            4,
+            6,
+            5,
+            2,
+            3
+          ],
+          [
+            6,
+            1,
+            5,
+            6,
+            4,
+            2,
+            3
+          ]
+        ],
+        "allEffectsChecked": true
+      },
+      "independentOppositeBranchRecipes": [
+        {
+          "effect": {
+            "kind": "remove",
+            "cell": 18,
+            "symbol": 2
+          },
+          "assumption": [
+            18,
+            2,
+            true
+          ],
+          "deniedConditionalAlternatives": [
+            [
+              0,
+              2,
+              false
+            ],
+            [
+              0,
+              3,
+              false
+            ],
+            [
+              0,
+              4,
+              false
+            ],
+            [
+              0,
+              5,
+              false
+            ],
+            [
+              9,
+              2,
+              false
+            ],
+            [
+              9,
+              3,
+              false
+            ],
+            [
+              9,
+              4,
+              false
+            ],
+            [
+              9,
+              5,
+              false
+            ]
+          ],
+          "paths": [
+            [
+              {
+                "from": [
+                  18,
+                  2,
+                  true
+                ],
+                "to": [
+                  0,
+                  2,
+                  false
+                ],
+                "kind": "weak-house"
+              }
+            ],
+            [
+              {
+                "from": [
+                  18,
+                  2,
+                  true
+                ],
+                "to": [
+                  63,
+                  2,
+                  false
+                ],
+                "kind": "weak-house"
+              },
+              {
+                "from": [
+                  63,
+                  2,
+                  false
+                ],
+                "to": [
+                  63,
+                  5,
+                  true
+                ],
+                "kind": "strong-cell"
+              },
+              {
+                "from": [
+                  63,
+                  5,
+                  true
+                ],
+                "to": [
+                  72,
+                  5,
+                  false
+                ],
+                "kind": "weak-house"
+              },
+              {
+                "from": [
+                  72,
+                  5,
+                  false
+                ],
+                "to": [
+                  72,
+                  3,
+                  true
+                ],
+                "kind": "strong-cell"
+              },
+              {
+                "from": [
+                  72,
+                  3,
+                  true
+                ],
+                "to": [
+                  0,
+                  3,
+                  false
+                ],
+                "kind": "weak-house"
+              }
+            ],
+            [
+              {
+                "from": [
+                  18,
+                  2,
+                  true
+                ],
+                "to": [
+                  63,
+                  2,
+                  false
+                ],
+                "kind": "weak-house"
+              },
+              {
+                "from": [
+                  63,
+                  2,
+                  false
+                ],
+                "to": [
+                  63,
+                  5,
+                  true
+                ],
+                "kind": "strong-cell"
+              },
+              {
+                "from": [
+                  63,
+                  5,
+                  true
+                ],
+                "to": [
+                  36,
+                  5,
+                  false
+                ],
+                "kind": "weak-house"
+              },
+              {
+                "from": [
+                  36,
+                  5,
+                  false
+                ],
+                "to": [
+                  36,
+                  4,
+                  true
+                ],
+                "kind": "strong-cell"
+              },
+              {
+                "from": [
+                  36,
+                  4,
+                  true
+                ],
+                "to": [
+                  0,
+                  4,
+                  false
+                ],
+                "kind": "weak-house"
+              }
+            ],
+            [
+              {
+                "from": [
+                  18,
+                  2,
+                  true
+                ],
+                "to": [
+                  63,
+                  2,
+                  false
+                ],
+                "kind": "weak-house"
+              },
+              {
+                "from": [
+                  63,
+                  2,
+                  false
+                ],
+                "to": [
+                  63,
+                  5,
+                  true
+                ],
+                "kind": "strong-cell"
+              },
+              {
+                "from": [
+                  63,
+                  5,
+                  true
+                ],
+                "to": [
+                  0,
+                  5,
+                  false
+                ],
+                "kind": "weak-house"
+              }
+            ],
+            [
+              {
+                "from": [
+                  18,
+                  2,
+                  true
+                ],
+                "to": [
+                  9,
+                  2,
+                  false
+                ],
+                "kind": "weak-house"
+              }
+            ],
+            [
+              {
+                "from": [
+                  18,
+                  2,
+                  true
+                ],
+                "to": [
+                  63,
+                  2,
+                  false
+                ],
+                "kind": "weak-house"
+              },
+              {
+                "from": [
+                  63,
+                  2,
+                  false
+                ],
+                "to": [
+                  63,
+                  5,
+                  true
+                ],
+                "kind": "strong-cell"
+              },
+              {
+                "from": [
+                  63,
+                  5,
+                  true
+                ],
+                "to": [
+                  72,
+                  5,
+                  false
+                ],
+                "kind": "weak-house"
+              },
+              {
+                "from": [
+                  72,
+                  5,
+                  false
+                ],
+                "to": [
+                  72,
+                  3,
+                  true
+                ],
+                "kind": "strong-cell"
+              },
+              {
+                "from": [
+                  72,
+                  3,
+                  true
+                ],
+                "to": [
+                  9,
+                  3,
+                  false
+                ],
+                "kind": "weak-house"
+              }
+            ],
+            [
+              {
+                "from": [
+                  18,
+                  2,
+                  true
+                ],
+                "to": [
+                  63,
+                  2,
+                  false
+                ],
+                "kind": "weak-house"
+              },
+              {
+                "from": [
+                  63,
+                  2,
+                  false
+                ],
+                "to": [
+                  63,
+                  5,
+                  true
+                ],
+                "kind": "strong-cell"
+              },
+              {
+                "from": [
+                  63,
+                  5,
+                  true
+                ],
+                "to": [
+                  36,
+                  5,
+                  false
+                ],
+                "kind": "weak-house"
+              },
+              {
+                "from": [
+                  36,
+                  5,
+                  false
+                ],
+                "to": [
+                  36,
+                  4,
+                  true
+                ],
+                "kind": "strong-cell"
+              },
+              {
+                "from": [
+                  36,
+                  4,
+                  true
+                ],
+                "to": [
+                  9,
+                  4,
+                  false
+                ],
+                "kind": "weak-house"
+              }
+            ],
+            [
+              {
+                "from": [
+                  18,
+                  2,
+                  true
+                ],
+                "to": [
+                  63,
+                  2,
+                  false
+                ],
+                "kind": "weak-house"
+              },
+              {
+                "from": [
+                  63,
+                  2,
+                  false
+                ],
+                "to": [
+                  63,
+                  5,
+                  true
+                ],
+                "kind": "strong-cell"
+              },
+              {
+                "from": [
+                  63,
+                  5,
+                  true
+                ],
+                "to": [
+                  9,
+                  5,
+                  false
+                ],
+                "kind": "weak-house"
+              }
+            ]
+          ],
+          "distinctLinks": 14,
+          "totalUnsharedPathLinks": 28,
+          "conditionalSource": "Non-core roof alternative OR from independently rule-preserving rectangle trade and independent original uniqueness; not an ordinary axiom."
+        }
+      ],
+      "preparationSource": "root-task18-ur3-quad-seeds.json",
+      "verificationCommand": "npm test -- tests/unit/solver/unique-techniques.test.ts tests/unit/solver/unique-provenance.test.ts"
+    }
+  ]
+}

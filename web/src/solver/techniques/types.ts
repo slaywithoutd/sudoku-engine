@@ -6,23 +6,33 @@ import type { ReadView } from "../state/types";
 import type { Limits } from "../limits";
 import type { IndexWorkspace, IndexInterruption } from "../indexes/workspace";
 import type { TemplateOperationContext } from "../indexes/templates";
+import type { UniqueAuthority } from "../conditional";
 
 /** Operation-owned resources; detectors neither create run budgets nor retain globals. */
 export interface DiscoveryContext {
   readonly workspace: IndexWorkspace; readonly limits: Limits;
   /** Explicit operation-owned per-candidate-revision C33 exploration allowance. */
   readonly templates?: TemplateOperationContext;
+  readonly uniqueAuthority?: UniqueAuthority;
 }
 
 export type DiscoveryEvent = { readonly kind: "work"; readonly units: number }
   | { readonly kind: "proposal"; readonly proposal: DeductionProposal }
   | { readonly kind: "exhausted" }
   | { readonly kind: "excluded"; readonly reason:string; readonly dependencies:readonly Watch[] }
+  | { readonly kind: "disabled"; readonly reason: "missing-unique-authority" }
   | { readonly kind: "interrupted"; readonly reason: IndexInterruption | "proof-step-limit" | "work-limit" | "time-limit" };
 export type Discovery = Generator<DiscoveryEvent, void, void>;
 export interface TechniqueBounds {
   readonly maxLength: number; readonly maxBranchDepth: number; readonly maxAlternatives: number;
   readonly maxPatternCells: number; readonly maxSetSize: number;
+  readonly uniqueness?: {
+    readonly maxTradeCells: number;
+    readonly maxLoopCells: number;
+    readonly maxGuardianOccurrences: number;
+    readonly maxConsequenceLinksPerBranch: number;
+    readonly maxVirtualSubset: number;
+  };
   readonly templates?: {
     readonly maxTemplatesPerSymbol:number;
     readonly maxOverlaySymbols:number;

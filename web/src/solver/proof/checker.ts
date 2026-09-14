@@ -1,4 +1,5 @@
 import { canonicalProblem } from "../problem";
+import { conditionalViewAuthority, uniqueAuthorityMatches, uniqueAuthorityOwns, type UniqueAuthority } from "../conditional";
 import { checkTechniqueGrammar } from "../techniques/grammar";
 import { assertOwnedView, isHypotheticalView, branchScope, ownsBranchNode, retainedProof } from "../state/candidates";
 import type { Json } from "../problem";
@@ -13,6 +14,7 @@ import type { TableDefinition } from "./tables";
 const branchSources = new WeakMap<BranchCertificate, ReadView>();
 const branchNodes = new WeakMap<ProofNode, CheckedNodeAuthority>();
 const authenticSteps = new WeakSet<object>();
+const conditionalSteps = new WeakMap<CheckedStep, UniqueAuthority>();
 const authenticCertificates = new WeakSet<object>();
 const certificateAuthorities = new WeakMap<ProofNode, CheckedNodeAuthority>();
 const certificateImports = new WeakMap<CheckedCertificate, ReadonlyMap<number, ProofNode>>();
@@ -34,6 +36,18 @@ const MAX_ARITY = 64;
 /** TypeScript brands do not survive a wire boundary; identity is the authority. */
 export function isCheckedStep(value: unknown): value is CheckedStep {
   return typeof value === "object" && value !== null && authenticSteps.has(value);
+}
+
+/** Publication rechecks lifetime: checking before Cancel does not authorize a later commit. */
+export function assertCheckedStepActive(step: CheckedStep, view: ReadView): void {
+  const authority = conditionalSteps.get(step);
+  const targetAuthority = conditionalViewAuthority(view);
+  if (targetAuthority) {
+    requireProof(uniqueAuthorityOwns(targetAuthority, view), "revoked-unique-authority");
+    requireProof(authority === targetAuthority, "missing-unique-authority");
+  }
+  if (authority) requireProof(uniqueAuthorityOwns(authority, view), "revoked-unique-authority");
+  else requireProof(!step.consequences.some(c => c.conditional), "missing-unique-authority");
 }
 
 /** Retention uses checker-issued objects, including exact imported dependencies. */
@@ -177,6 +191,12 @@ function copyBounded<T>(input: T, limit: number): { value: T; bytes: number } {
   return { value, bytes: limit - remaining };
 }
 
+/** Bounded data capture for lifecycle transport. No proof or candidate authority is issued. */
+export function captureProofRecord<T>(input: T, limit: number): { readonly value: T; readonly bytes: number } {
+  requireProof(Number.isSafeInteger(limit) && limit >= 0 && limit <= HEADER_BYTES, "invalid-capture-limit");
+  return copyBounded(input, limit);
+}
+
 function fields(value: object, names: readonly string[]): void {
   requireProof(sameValue(Object.keys(value).sort(), [...names].sort()), "invalid-proof-fields");
 }
@@ -242,6 +262,14 @@ function* verifyGraph(input: DeductionProposal, source: CheckContext, admission:
       // forged view between the owner gate and later grammar reconstruction.
       const sourceView = source.view;
       if (admission !== "certificate") assertOwnedView(sourceView);
+      const suppliedAuthority = source.uniqueAuthority;
+      const ownedAuthority = conditionalViewAuthority(sourceView);
+      requireProof(!ownedAuthority || !suppliedAuthority || suppliedAuthority === ownedAuthority, "foreign-unique-authority");
+      // Bind lifetime from private origin identity even when context omits the
+      // capability. Only the explicit capability below may enable uniqueness.
+      const lifetimeAuthority = ownedAuthority ?? suppliedAuthority;
+      if (lifetimeAuthority)
+        requireProof(uniqueAuthorityOwns(lifetimeAuthority, sourceView), "revoked-unique-authority");
       if (admission === "branch") requireProof(isHypotheticalView(sourceView), "not-hypothetical-view");
       else { try { requireProof(!isHypotheticalView(sourceView), "hypothetical-primary-admission"); }
         catch (error) { if (!(error instanceof ProofError) || error.code !== "inauthentic-candidate-view") throw error; } }
@@ -279,7 +307,9 @@ function* verifyGraph(input: DeductionProposal, source: CheckContext, admission:
         state.branch.length > 0 && Number.isSafeInteger(state.revision) && state.revision >= 0, "invalid-proof-state");
       requireProof(["unconditional", "discharged", "unique-only"].includes(source.policy) &&
         (source.uniqueEvidenceId === null || typeof source.uniqueEvidenceId === "string"), "invalid-proof-policy");
+      if (source.policy === "unique-only") requireProof(uniqueAuthorityMatches(suppliedAuthority, sourceView), "missing-unique-authority");
       const context: CheckContext = { limits, retained, policy: source.policy, uniqueEvidenceId: source.uniqueEvidenceId,
+        uniqueAuthority: suppliedAuthority, authorityView: sourceView,
         view: { ...sourceView, assembly: { ...sourceView.assembly, problem },
           state: { ...sourceView.state, key: state } } };
       // Freeze the bounded header first, then capture references in batches.
@@ -438,6 +468,10 @@ function* verifyGraph(input: DeductionProposal, source: CheckContext, admission:
       const step = Object.freeze({ proposal: checkedProposal, consequences,
         afterRevision: state.revision + (effectful ? 1 : 0) }) as CheckedStep;
       authenticSteps.add(step);
+      if (lifetimeAuthority) {
+        requireProof(uniqueAuthorityOwns(lifetimeAuthority, sourceView), "revoked-unique-authority");
+        conditionalSteps.set(step, lifetimeAuthority);
+      }
       stepUsage.set(step, Object.freeze({ headerBytes: captured.header.bytes + Math.max(0, stagedNodes.length - 1), workUnits: work }));
       stepImports.set(step, new ImmutableMap(proof.imports.map(id => [id, retained.get(id)!] as const)));
       for (const node of stagedNodes) acceptedNodes.set(node, {

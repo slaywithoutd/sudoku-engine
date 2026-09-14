@@ -6511,7 +6511,6 @@ export const coverageEntries: readonly CoverageEntry[] = Object.freeze((
       }
     ]
   },
-
   {
     "id": "U01",
     "version": "u01@1",
@@ -6535,13 +6534,337 @@ export const coverageEntries: readonly CoverageEntry[] = Object.freeze((
     "grammarId": "u01-grammar@1",
     "detectorId": "u01@1",
     "checkerId": "u01-grammar@1",
-    "descriptionPath": "docs/superpowers/specs/2026-09-12-m2-technique-coverage.md",
+    "descriptionPath": "docs/solver/techniques/uniqueness.md",
     "fixtureIds": [
-      "U01-type1",
-      "U01-type6"
+      "U01-type1-row",
+      "U01-type1-column",
+      "U01-nonunique-trade",
+      "U01-type2-independent",
+      "U01-type4-independent",
+      "U01-type6-independent",
+      "U01-type3-independent",
+      "U01-type5-2-roofs-independent",
+      "U01-type5-3-roofs-independent",
+      "U01-type3-subset3-bivalue-independent",
+      "U01-type3-subset4-independent",
+      "U01-type3-shared-links-24-independent",
+      "U01-type3-shared-links-25-independent"
     ],
-    "status": "specified",
-    "evidence": []
+    "status": "implemented",
+    "evidence": [
+      {
+        "kind": "positive",
+        "fixtureId": "U01-type1-row",
+        "alias": "Unique Rectangle type 1",
+        "record": "web/tests/unit/solver/unique-techniques.test.ts"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "U01-type1-row",
+        "alias": "Unique Rectangle type 1",
+        "record": "web/tests/unit/solver/unique-techniques.test.ts"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "U01-type1-row",
+        "alias": "Unique Rectangle type 1",
+        "record": "web/tests/unit/solver/unique-techniques.test.ts"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "U01-type1-row",
+        "alias": "Unique Rectangle type 1",
+        "record": "web/tests/unit/solver/unique-techniques.test.ts"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "U01-type1-row",
+        "alias": "Unique Rectangle type 1",
+        "record": "web/tests/unit/solver/unique-techniques.test.ts"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "U01-type1-column",
+        "alias": "Unique Rectangle type 1",
+        "record": "web/tests/unit/solver/unique-techniques.test.ts"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "U01-type1-column",
+        "alias": "Unique Rectangle type 1",
+        "record": "web/tests/unit/solver/unique-techniques.test.ts"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "U01-type1-column",
+        "alias": "Unique Rectangle type 1",
+        "record": "web/tests/unit/solver/unique-techniques.test.ts"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "U01-type1-column",
+        "alias": "Unique Rectangle type 1",
+        "record": "web/tests/unit/solver/unique-techniques.test.ts"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "U01-type1-column",
+        "alias": "Unique Rectangle type 1",
+        "record": "web/tests/unit/solver/unique-techniques.test.ts"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "U01-type2-independent",
+        "alias": "Unique Rectangle type 2",
+        "record": "web/tests/unit/solver/unique-techniques.test.ts"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "U01-type2-independent",
+        "alias": "Unique Rectangle type 2",
+        "record": "web/tests/unit/solver/unique-techniques.test.ts"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "U01-type2-independent",
+        "alias": "Unique Rectangle type 2",
+        "record": "web/tests/unit/solver/unique-techniques.test.ts"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "U01-type2-independent",
+        "alias": "Unique Rectangle type 2",
+        "record": "web/tests/unit/solver/unique-techniques.test.ts"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "U01-type2-independent",
+        "alias": "Unique Rectangle type 2",
+        "record": "web/tests/unit/solver/unique-techniques.test.ts"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "U01-type3-independent",
+        "alias": "Unique Rectangle type 3",
+        "record": "web/tests/unit/solver/unique-techniques.test.ts"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "U01-type3-independent",
+        "alias": "Unique Rectangle type 3",
+        "record": "web/tests/unit/solver/unique-techniques.test.ts"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "U01-type3-independent",
+        "alias": "Unique Rectangle type 3",
+        "record": "web/tests/unit/solver/unique-techniques.test.ts"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "U01-type3-independent",
+        "alias": "Unique Rectangle type 3",
+        "record": "web/tests/unit/solver/unique-techniques.test.ts"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "U01-type3-independent",
+        "alias": "Unique Rectangle type 3",
+        "record": "web/tests/unit/solver/unique-techniques.test.ts"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "U01-type3-subset3-bivalue-independent",
+        "alias": "Unique Rectangle type 3",
+        "record": "web/tests/unit/solver/unique-techniques.test.ts"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "U01-type3-subset3-bivalue-independent",
+        "alias": "Unique Rectangle type 3",
+        "record": "web/tests/unit/solver/unique-techniques.test.ts"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "U01-type3-subset3-bivalue-independent",
+        "alias": "Unique Rectangle type 3",
+        "record": "web/tests/unit/solver/unique-techniques.test.ts"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "U01-type3-subset3-bivalue-independent",
+        "alias": "Unique Rectangle type 3",
+        "record": "web/tests/unit/solver/unique-techniques.test.ts"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "U01-type3-subset3-bivalue-independent",
+        "alias": "Unique Rectangle type 3",
+        "record": "web/tests/unit/solver/unique-techniques.test.ts"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "U01-type3-subset4-independent",
+        "alias": "Unique Rectangle type 3",
+        "record": "web/tests/unit/solver/unique-techniques.test.ts"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "U01-type3-subset4-independent",
+        "alias": "Unique Rectangle type 3",
+        "record": "web/tests/unit/solver/unique-techniques.test.ts"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "U01-type3-subset4-independent",
+        "alias": "Unique Rectangle type 3",
+        "record": "web/tests/unit/solver/unique-techniques.test.ts"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "U01-type3-subset4-independent",
+        "alias": "Unique Rectangle type 3",
+        "record": "web/tests/unit/solver/unique-techniques.test.ts"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "U01-type3-subset4-independent",
+        "alias": "Unique Rectangle type 3",
+        "record": "web/tests/unit/solver/unique-techniques.test.ts"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "U01-type4-independent",
+        "alias": "Unique Rectangle type 4",
+        "record": "web/tests/unit/solver/unique-techniques.test.ts"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "U01-type4-independent",
+        "alias": "Unique Rectangle type 4",
+        "record": "web/tests/unit/solver/unique-techniques.test.ts"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "U01-type4-independent",
+        "alias": "Unique Rectangle type 4",
+        "record": "web/tests/unit/solver/unique-techniques.test.ts"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "U01-type4-independent",
+        "alias": "Unique Rectangle type 4",
+        "record": "web/tests/unit/solver/unique-techniques.test.ts"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "U01-type4-independent",
+        "alias": "Unique Rectangle type 4",
+        "record": "web/tests/unit/solver/unique-techniques.test.ts"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "U01-type5-2-roofs-independent",
+        "alias": "Unique Rectangle type 5",
+        "record": "web/tests/unit/solver/unique-techniques.test.ts"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "U01-type5-2-roofs-independent",
+        "alias": "Unique Rectangle type 5",
+        "record": "web/tests/unit/solver/unique-techniques.test.ts"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "U01-type5-2-roofs-independent",
+        "alias": "Unique Rectangle type 5",
+        "record": "web/tests/unit/solver/unique-techniques.test.ts"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "U01-type5-2-roofs-independent",
+        "alias": "Unique Rectangle type 5",
+        "record": "web/tests/unit/solver/unique-techniques.test.ts"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "U01-type5-2-roofs-independent",
+        "alias": "Unique Rectangle type 5",
+        "record": "web/tests/unit/solver/unique-techniques.test.ts"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "U01-type5-3-roofs-independent",
+        "alias": "Unique Rectangle type 5",
+        "record": "web/tests/unit/solver/unique-techniques.test.ts"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "U01-type5-3-roofs-independent",
+        "alias": "Unique Rectangle type 5",
+        "record": "web/tests/unit/solver/unique-techniques.test.ts"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "U01-type5-3-roofs-independent",
+        "alias": "Unique Rectangle type 5",
+        "record": "web/tests/unit/solver/unique-techniques.test.ts"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "U01-type5-3-roofs-independent",
+        "alias": "Unique Rectangle type 5",
+        "record": "web/tests/unit/solver/unique-techniques.test.ts"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "U01-type5-3-roofs-independent",
+        "alias": "Unique Rectangle type 5",
+        "record": "web/tests/unit/solver/unique-techniques.test.ts"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "U01-type6-independent",
+        "alias": "Unique Rectangle type 6",
+        "record": "web/tests/unit/solver/unique-techniques.test.ts"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "U01-type6-independent",
+        "alias": "Unique Rectangle type 6",
+        "record": "web/tests/unit/solver/unique-techniques.test.ts"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "U01-type6-independent",
+        "alias": "Unique Rectangle type 6",
+        "record": "web/tests/unit/solver/unique-techniques.test.ts"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "U01-type6-independent",
+        "alias": "Unique Rectangle type 6",
+        "record": "web/tests/unit/solver/unique-techniques.test.ts"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "U01-type6-independent",
+        "alias": "Unique Rectangle type 6",
+        "record": "web/tests/unit/solver/unique-techniques.test.ts"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "U01-type3-shared-links-24-independent",
+        "alias": "Unique Rectangle type 3",
+        "record": "web/tests/unit/solver/unique-boundaries.test.ts"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "U01-type3-shared-links-25-independent",
+        "alias": "Unique Rectangle type 3",
+        "record": "web/tests/unit/solver/unique-boundaries.test.ts"
+      }
+    ]
   },
   {
     "id": "U02",
@@ -6563,14 +6886,198 @@ export const coverageEntries: readonly CoverageEntry[] = Object.freeze((
     "grammarId": "u02-grammar@1",
     "detectorId": "u02@1",
     "checkerId": "u02-grammar@1",
-    "descriptionPath": "docs/superpowers/specs/2026-09-12-m2-technique-coverage.md",
+    "descriptionPath": "docs/solver/techniques/uniqueness.md",
     "fixtureIds": [
-      "U02-hidden",
-      "U02-avoidable",
-      "U02-extended-2x3/3x2"
+      "U02-hidden-independent",
+      "U02-avoidable2-independent",
+      "U02-avoidable1-independent",
+      "U02-extended-2x3-independent",
+      "U02-extended-3x2-independent",
+      "U02-hidden-three-roofs-target-extra-independent"
     ],
-    "status": "specified",
-    "evidence": []
+    "status": "implemented",
+    "evidence": [
+      {
+        "kind": "positive",
+        "fixtureId": "U02-hidden-independent",
+        "alias": "Hidden Rectangle",
+        "record": "web/tests/unit/solver/unique-techniques.test.ts"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "U02-hidden-independent",
+        "alias": "Hidden Rectangle",
+        "record": "web/tests/unit/solver/unique-techniques.test.ts"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "U02-hidden-independent",
+        "alias": "Hidden Rectangle",
+        "record": "web/tests/unit/solver/unique-techniques.test.ts"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "U02-hidden-independent",
+        "alias": "Hidden Rectangle",
+        "record": "web/tests/unit/solver/unique-techniques.test.ts"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "U02-hidden-independent",
+        "alias": "Hidden Rectangle",
+        "record": "web/tests/unit/solver/unique-techniques.test.ts"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "U02-hidden-three-roofs-target-extra-independent",
+        "alias": "Hidden Rectangle",
+        "record": "web/tests/unit/solver/unique-techniques.test.ts"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "U02-hidden-three-roofs-target-extra-independent",
+        "alias": "Hidden Rectangle",
+        "record": "web/tests/unit/solver/unique-techniques.test.ts"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "U02-hidden-three-roofs-target-extra-independent",
+        "alias": "Hidden Rectangle",
+        "record": "web/tests/unit/solver/unique-techniques.test.ts"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "U02-hidden-three-roofs-target-extra-independent",
+        "alias": "Hidden Rectangle",
+        "record": "web/tests/unit/solver/unique-techniques.test.ts"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "U02-hidden-three-roofs-target-extra-independent",
+        "alias": "Hidden Rectangle",
+        "record": "web/tests/unit/solver/unique-techniques.test.ts"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "U02-avoidable2-independent",
+        "alias": "Avoidable Rectangle",
+        "record": "web/tests/unit/solver/unique-techniques.test.ts"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "U02-avoidable2-independent",
+        "alias": "Avoidable Rectangle",
+        "record": "web/tests/unit/solver/unique-techniques.test.ts"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "U02-avoidable2-independent",
+        "alias": "Avoidable Rectangle",
+        "record": "web/tests/unit/solver/unique-techniques.test.ts"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "U02-avoidable2-independent",
+        "alias": "Avoidable Rectangle",
+        "record": "web/tests/unit/solver/unique-techniques.test.ts"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "U02-avoidable2-independent",
+        "alias": "Avoidable Rectangle",
+        "record": "web/tests/unit/solver/unique-techniques.test.ts"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "U02-avoidable1-independent",
+        "alias": "Avoidable Rectangle",
+        "record": "web/tests/unit/solver/unique-techniques.test.ts"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "U02-avoidable1-independent",
+        "alias": "Avoidable Rectangle",
+        "record": "web/tests/unit/solver/unique-techniques.test.ts"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "U02-avoidable1-independent",
+        "alias": "Avoidable Rectangle",
+        "record": "web/tests/unit/solver/unique-techniques.test.ts"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "U02-avoidable1-independent",
+        "alias": "Avoidable Rectangle",
+        "record": "web/tests/unit/solver/unique-techniques.test.ts"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "U02-avoidable1-independent",
+        "alias": "Avoidable Rectangle",
+        "record": "web/tests/unit/solver/unique-techniques.test.ts"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "U02-extended-2x3-independent",
+        "alias": "Extended Rectangle",
+        "record": "web/tests/unit/solver/unique-techniques.test.ts"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "U02-extended-2x3-independent",
+        "alias": "Extended Rectangle",
+        "record": "web/tests/unit/solver/unique-techniques.test.ts"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "U02-extended-2x3-independent",
+        "alias": "Extended Rectangle",
+        "record": "web/tests/unit/solver/unique-techniques.test.ts"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "U02-extended-2x3-independent",
+        "alias": "Extended Rectangle",
+        "record": "web/tests/unit/solver/unique-techniques.test.ts"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "U02-extended-2x3-independent",
+        "alias": "Extended Rectangle",
+        "record": "web/tests/unit/solver/unique-techniques.test.ts"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "U02-extended-3x2-independent",
+        "alias": "Extended Rectangle",
+        "record": "web/tests/unit/solver/unique-techniques.test.ts"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "U02-extended-3x2-independent",
+        "alias": "Extended Rectangle",
+        "record": "web/tests/unit/solver/unique-techniques.test.ts"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "U02-extended-3x2-independent",
+        "alias": "Extended Rectangle",
+        "record": "web/tests/unit/solver/unique-techniques.test.ts"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "U02-extended-3x2-independent",
+        "alias": "Extended Rectangle",
+        "record": "web/tests/unit/solver/unique-techniques.test.ts"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "U02-extended-3x2-independent",
+        "alias": "Extended Rectangle",
+        "record": "web/tests/unit/solver/unique-techniques.test.ts"
+      }
+    ]
   },
   {
     "id": "U03",
@@ -6590,12 +7097,113 @@ export const coverageEntries: readonly CoverageEntry[] = Object.freeze((
     "grammarId": "u03-grammar@1",
     "detectorId": "u03@1",
     "checkerId": "u03-grammar@1",
-    "descriptionPath": "docs/superpowers/specs/2026-09-12-m2-technique-coverage.md",
+    "descriptionPath": "docs/solver/techniques/uniqueness.md",
     "fixtureIds": [
-      "U03-length4/12"
+      "U03-length12-guardians1",
+      "U03-length4-guardians1",
+      "U03-length12-guardians4-independent",
+      "U03-length14-guardians1-out-of-profile-independent",
+      "U03-case-shared-links-25-independent"
     ],
-    "status": "specified",
-    "evidence": []
+    "status": "implemented",
+    "evidence": [
+      {
+        "kind": "positive",
+        "fixtureId": "U03-length12-guardians1",
+        "alias": "Unique Loops",
+        "record": "web/tests/unit/solver/unique-techniques.test.ts"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "U03-length12-guardians1",
+        "alias": "Unique Loops",
+        "record": "web/tests/unit/solver/unique-techniques.test.ts"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "U03-length12-guardians1",
+        "alias": "Unique Loops",
+        "record": "web/tests/unit/solver/unique-techniques.test.ts"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "U03-length12-guardians1",
+        "alias": "Unique Loops",
+        "record": "web/tests/unit/solver/unique-techniques.test.ts"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "U03-length12-guardians1",
+        "alias": "Unique Loops",
+        "record": "web/tests/unit/solver/unique-techniques.test.ts"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "U03-length4-guardians1",
+        "alias": "Unique Loops",
+        "record": "web/tests/unit/solver/unique-techniques.test.ts"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "U03-length4-guardians1",
+        "alias": "Unique Loops",
+        "record": "web/tests/unit/solver/unique-techniques.test.ts"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "U03-length4-guardians1",
+        "alias": "Unique Loops",
+        "record": "web/tests/unit/solver/unique-techniques.test.ts"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "U03-length4-guardians1",
+        "alias": "Unique Loops",
+        "record": "web/tests/unit/solver/unique-techniques.test.ts"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "U03-length4-guardians1",
+        "alias": "Unique Loops",
+        "record": "web/tests/unit/solver/unique-techniques.test.ts"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "U03-length12-guardians4-independent",
+        "alias": "Unique Loops",
+        "record": "web/tests/unit/solver/unique-techniques.test.ts"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "U03-length12-guardians4-independent",
+        "alias": "Unique Loops",
+        "record": "web/tests/unit/solver/unique-techniques.test.ts"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "U03-length12-guardians4-independent",
+        "alias": "Unique Loops",
+        "record": "web/tests/unit/solver/unique-techniques.test.ts"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "U03-length12-guardians4-independent",
+        "alias": "Unique Loops",
+        "record": "web/tests/unit/solver/unique-techniques.test.ts"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "U03-length12-guardians4-independent",
+        "alias": "Unique Loops",
+        "record": "web/tests/unit/solver/unique-techniques.test.ts"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "U03-case-shared-links-25-independent",
+        "alias": "Unique Loops",
+        "record": "web/tests/unit/solver/unique-boundaries.test.ts"
+      }
+    ]
   },
   {
     "id": "U04",
@@ -6616,13 +7224,73 @@ export const coverageEntries: readonly CoverageEntry[] = Object.freeze((
     "grammarId": "u04-grammar@1",
     "detectorId": "u04@1",
     "checkerId": "u04-grammar@1",
-    "descriptionPath": "docs/superpowers/specs/2026-09-12-m2-technique-coverage.md",
+    "descriptionPath": "docs/solver/techniques/uniqueness.md",
     "fixtureIds": [
-      "U04-core",
-      "U04-plus1"
+      "U04-BUG-plus1-independent"
     ],
-    "status": "specified",
-    "evidence": []
+    "status": "implemented",
+    "evidence": [
+      {
+        "kind": "positive",
+        "fixtureId": "U04-BUG-plus1-independent",
+        "alias": "BUG",
+        "record": "web/tests/unit/solver/unique-negative.test.ts"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "U04-BUG-plus1-independent",
+        "alias": "BUG",
+        "record": "web/tests/unit/solver/unique-negative.test.ts"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "U04-BUG-plus1-independent",
+        "alias": "BUG",
+        "record": "web/tests/unit/solver/unique-negative.test.ts"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "U04-BUG-plus1-independent",
+        "alias": "BUG",
+        "record": "web/tests/unit/solver/unique-techniques.test.ts"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "U04-BUG-plus1-independent",
+        "alias": "BUG",
+        "record": "web/tests/unit/solver/unique-techniques.test.ts"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "U04-BUG-plus1-independent",
+        "alias": "BUG+1",
+        "record": "web/tests/unit/solver/unique-techniques.test.ts"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "U04-BUG-plus1-independent",
+        "alias": "BUG+1",
+        "record": "web/tests/unit/solver/unique-techniques.test.ts"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "U04-BUG-plus1-independent",
+        "alias": "BUG+1",
+        "record": "web/tests/unit/solver/unique-techniques.test.ts"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "U04-BUG-plus1-independent",
+        "alias": "BUG+1",
+        "record": "web/tests/unit/solver/unique-techniques.test.ts"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "U04-BUG-plus1-independent",
+        "alias": "BUG+1",
+        "record": "web/tests/unit/solver/unique-techniques.test.ts"
+      }
+    ]
   },
   {
     "id": "U05",
@@ -6643,12 +7311,256 @@ export const coverageEntries: readonly CoverageEntry[] = Object.freeze((
     "grammarId": "u05-grammar@1",
     "detectorId": "u05@1",
     "checkerId": "u05-grammar@1",
-    "descriptionPath": "docs/superpowers/specs/2026-09-12-m2-technique-coverage.md",
+    "descriptionPath": "docs/solver/techniques/uniqueness.md",
     "fixtureIds": [
-      "U05-plus2/3/4"
+      "U05-BUG-plus2-independent",
+      "U05-BUG-plus3-independent",
+      "U05-BUG-plus4-C22-prefix-58",
+      "U05-BUG-plus4-C22-prefix-67"
     ],
-    "status": "specified",
-    "evidence": []
+    "status": "implemented",
+    "evidence": [
+      {
+        "kind": "positive",
+        "fixtureId": "U05-BUG-plus2-independent",
+        "alias": "Generalized BUG",
+        "record": "web/tests/unit/solver/unique-negative.test.ts"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "U05-BUG-plus2-independent",
+        "alias": "Generalized BUG",
+        "record": "web/tests/unit/solver/unique-negative.test.ts"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "U05-BUG-plus2-independent",
+        "alias": "Generalized BUG",
+        "record": "web/tests/unit/solver/unique-negative.test.ts"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "U05-BUG-plus2-independent",
+        "alias": "Generalized BUG",
+        "record": "web/tests/unit/solver/unique-techniques.test.ts"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "U05-BUG-plus2-independent",
+        "alias": "Generalized BUG",
+        "record": "web/tests/unit/solver/unique-techniques.test.ts"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "U05-BUG-plus3-independent",
+        "alias": "Generalized BUG",
+        "record": "web/tests/unit/solver/unique-negative.test.ts"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "U05-BUG-plus3-independent",
+        "alias": "Generalized BUG",
+        "record": "web/tests/unit/solver/unique-negative.test.ts"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "U05-BUG-plus3-independent",
+        "alias": "Generalized BUG",
+        "record": "web/tests/unit/solver/unique-negative.test.ts"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "U05-BUG-plus3-independent",
+        "alias": "Generalized BUG",
+        "record": "web/tests/unit/solver/unique-techniques.test.ts"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "U05-BUG-plus3-independent",
+        "alias": "Generalized BUG",
+        "record": "web/tests/unit/solver/unique-techniques.test.ts"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "U05-BUG-plus4-C22-prefix-58",
+        "alias": "Generalized BUG",
+        "record": "web/tests/unit/solver/unique-negative.test.ts"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "U05-BUG-plus4-C22-prefix-58",
+        "alias": "Generalized BUG",
+        "record": "web/tests/unit/solver/unique-negative.test.ts"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "U05-BUG-plus4-C22-prefix-58",
+        "alias": "Generalized BUG",
+        "record": "web/tests/unit/solver/unique-negative.test.ts"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "U05-BUG-plus4-C22-prefix-58",
+        "alias": "Generalized BUG",
+        "record": "web/tests/unit/solver/unique-techniques.test.ts"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "U05-BUG-plus4-C22-prefix-58",
+        "alias": "Generalized BUG",
+        "record": "web/tests/unit/solver/unique-techniques.test.ts"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "U05-BUG-plus4-C22-prefix-67",
+        "alias": "Generalized BUG",
+        "record": "web/tests/unit/solver/unique-negative.test.ts"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "U05-BUG-plus4-C22-prefix-67",
+        "alias": "Generalized BUG",
+        "record": "web/tests/unit/solver/unique-negative.test.ts"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "U05-BUG-plus4-C22-prefix-67",
+        "alias": "Generalized BUG",
+        "record": "web/tests/unit/solver/unique-negative.test.ts"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "U05-BUG-plus4-C22-prefix-67",
+        "alias": "Generalized BUG",
+        "record": "web/tests/unit/solver/unique-techniques.test.ts"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "U05-BUG-plus4-C22-prefix-67",
+        "alias": "Generalized BUG",
+        "record": "web/tests/unit/solver/unique-techniques.test.ts"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "U05-BUG-plus2-independent",
+        "alias": "BUG+n",
+        "record": "web/tests/unit/solver/unique-techniques.test.ts"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "U05-BUG-plus2-independent",
+        "alias": "BUG+n",
+        "record": "web/tests/unit/solver/unique-techniques.test.ts"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "U05-BUG-plus2-independent",
+        "alias": "BUG+n",
+        "record": "web/tests/unit/solver/unique-techniques.test.ts"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "U05-BUG-plus2-independent",
+        "alias": "BUG+n",
+        "record": "web/tests/unit/solver/unique-techniques.test.ts"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "U05-BUG-plus2-independent",
+        "alias": "BUG+n",
+        "record": "web/tests/unit/solver/unique-techniques.test.ts"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "U05-BUG-plus3-independent",
+        "alias": "BUG+n",
+        "record": "web/tests/unit/solver/unique-techniques.test.ts"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "U05-BUG-plus3-independent",
+        "alias": "BUG+n",
+        "record": "web/tests/unit/solver/unique-techniques.test.ts"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "U05-BUG-plus3-independent",
+        "alias": "BUG+n",
+        "record": "web/tests/unit/solver/unique-techniques.test.ts"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "U05-BUG-plus3-independent",
+        "alias": "BUG+n",
+        "record": "web/tests/unit/solver/unique-techniques.test.ts"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "U05-BUG-plus3-independent",
+        "alias": "BUG+n",
+        "record": "web/tests/unit/solver/unique-techniques.test.ts"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "U05-BUG-plus4-C22-prefix-58",
+        "alias": "BUG+n",
+        "record": "web/tests/unit/solver/unique-techniques.test.ts"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "U05-BUG-plus4-C22-prefix-58",
+        "alias": "BUG+n",
+        "record": "web/tests/unit/solver/unique-techniques.test.ts"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "U05-BUG-plus4-C22-prefix-58",
+        "alias": "BUG+n",
+        "record": "web/tests/unit/solver/unique-techniques.test.ts"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "U05-BUG-plus4-C22-prefix-58",
+        "alias": "BUG+n",
+        "record": "web/tests/unit/solver/unique-techniques.test.ts"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "U05-BUG-plus4-C22-prefix-58",
+        "alias": "BUG+n",
+        "record": "web/tests/unit/solver/unique-techniques.test.ts"
+      },
+      {
+        "kind": "positive",
+        "fixtureId": "U05-BUG-plus4-C22-prefix-67",
+        "alias": "BUG+n",
+        "record": "web/tests/unit/solver/unique-techniques.test.ts"
+      },
+      {
+        "kind": "negative",
+        "fixtureId": "U05-BUG-plus4-C22-prefix-67",
+        "alias": "BUG+n",
+        "record": "web/tests/unit/solver/unique-techniques.test.ts"
+      },
+      {
+        "kind": "boundary",
+        "fixtureId": "U05-BUG-plus4-C22-prefix-67",
+        "alias": "BUG+n",
+        "record": "web/tests/unit/solver/unique-techniques.test.ts"
+      },
+      {
+        "kind": "original-clue",
+        "fixtureId": "U05-BUG-plus4-C22-prefix-67",
+        "alias": "BUG+n",
+        "record": "web/tests/unit/solver/unique-techniques.test.ts"
+      },
+      {
+        "kind": "independent-oracle",
+        "fixtureId": "U05-BUG-plus4-C22-prefix-67",
+        "alias": "BUG+n",
+        "record": "web/tests/unit/solver/unique-techniques.test.ts"
+      }
+    ]
   }
 ] as CoverageEntry[]).map(freeze));
 

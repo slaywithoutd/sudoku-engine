@@ -123,8 +123,9 @@ export function independentTemplates(f: TechniqueFixture) {
 /** Independent wire assembly from independently recomputed mathematical sets. */
 export function independentTemplateCertificate(
   f: TechniqueFixture,
+  acceptedView?: import("../../src/solver/state/types").ReadView,
 ): DeductionProposal {
-  const view = fixtureView(f),
+  const view = acceptedView ?? fixtureView(f),
     math = independentTemplates(f),
     plan = f.expectedPattern as unknown as { mode: string; symbols: number[] };
   const nodes: ProofNode[] = [],
@@ -156,7 +157,7 @@ export function independentTemplateCertificate(
     const source = [...view.facts.values()].find(
       (f) =>
         !f.openAssumptions.length &&
-        !f.conditional &&
+        (!f.conditional || !!acceptedView) &&
         JSON.stringify(canonical(f.proposition)) ===
           JSON.stringify(canonical(claim)),
     );

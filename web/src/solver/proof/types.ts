@@ -3,6 +3,7 @@ import type { NodeId } from "../rules/types";
 import type { StateKey } from "../snapshot";
 import type { Proposition, ReadView } from "../state/types";
 import type { Limits } from "../limits";
+import type { UniqueAuthority } from "../conditional";
 export type { Limits } from "../limits";
 export type { Proposition, Fact, Literal } from "../state/types";
 export type AssumptionPolicy = "unconditional" | "discharged" | "unique-only";
@@ -43,6 +44,9 @@ export interface CheckContext {
   readonly retained: ReadonlyMap<NodeId, ProofNode>;
   readonly policy: AssumptionPolicy;
   readonly uniqueEvidenceId: string | null;
+  readonly uniqueAuthority?: UniqueAuthority;
+  /** Checker-populated exact owned view, before bounded presentation copies. */
+  readonly authorityView?: ReadView;
   readonly limits: Limits;
   /** Checker-populated metadata for the exact admitted premise objects. */
   readonly premiseInferences?: ReadonlyMap<NodeId, CheckedInference>;

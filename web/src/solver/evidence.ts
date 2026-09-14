@@ -2,6 +2,7 @@ import type { ConstraintId, SymbolId, CellId } from "./problem";
 import type { ExactStats } from "./exact";
 import type { Assembly } from "./rules/types";
 import type { RunKey, SolverSnapshot } from "./snapshot";
+import { makeSnapshot } from "./snapshot";
 import type { ReadView } from "./state/types";
 import type { CheckedStep } from "./proof/types";
 import { canonicalProblem } from "./problem";
@@ -32,6 +33,55 @@ export interface EvidenceMerge { readonly count: CountEvidence; readonly human: 
 // Local acceptance survives terminalization but cannot be forged by deserialization.
 // A transport receiver must first authorize/revalidate fresh process evidence here.
 const acceptedCounts = new WeakMap<CountEvidence, Readonly<RunKey>>();
+declare const uniqueParentBrand: unique symbol;
+/** Read-only, realm-local authority. No count witness is exposed to proof consumers. */
+export interface AcceptedUniqueParent {
+  readonly [uniqueParentBrand]: true;
+  readonly evidenceId: string;
+}
+export interface UniqueParentDetails {
+  readonly snapshot: SolverSnapshot;
+  readonly run: Readonly<RunKey>;
+  readonly assembly: Assembly;
+  readonly prefix: readonly CheckedStep[];
+}
+const uniqueParents = new WeakMap<AcceptedUniqueParent, UniqueParentDetails>();
+const uniqueParentCounts = new WeakMap<AcceptedUniqueParent, CountEvidence>();
+const revokedUniqueCounts = new WeakSet<CountEvidence>();
+
+/**
+ * The controller calls this with its actual current, non-quarantined primary
+ * acceptance context. Serialized evidence, invalidated paths and witness-only
+ * unknown counts cannot create this capability. On lifecycle invalidation the
+ * controller must revoke the returned parent before admitting further work.
+ */
+export function acceptedUniqueParent(count: CountEvidence, context: EvidenceContext,
+  quarantined: boolean): AcceptedUniqueParent | undefined {
+  const accepted = acceptedCounts.get(count);
+  if (quarantined !== false || revokedUniqueCounts.has(count) || !accepted || count.kind !== "unique" || !context ||
+    context.run.operation !== "primary" || context.human === "invalidated" ||
+    !sameRun(accepted, context.run) || !boundContext(context.snapshot, context) ||
+    !isAcceptedPath(context.initialView, context.acceptedView, context.accepted) || !unconditional(context.accepted) ||
+    !compatible(count.witness, context.acceptedView)) return undefined;
+  const parent = Object.freeze({ evidenceId: count.evidenceId }) as AcceptedUniqueParent;
+  uniqueParents.set(parent, Object.freeze({ snapshot: makeSnapshot(context.snapshot.problem, context.snapshot.source, context.snapshot.snapshotId, context.snapshot.inputRevision), run: accepted,
+    assembly: context.assembly, prefix: Object.freeze([...context.accepted]) }));
+  uniqueParentCounts.set(parent, count);
+  return parent;
+}
+
+/** Read-only active-parent query. It cannot authenticate a wire-shaped record. */
+export function uniqueParentDetails(parent: AcceptedUniqueParent): UniqueParentDetails | undefined {
+  const count = uniqueParentCounts.get(parent);
+  return count && !revokedUniqueCounts.has(count) ? uniqueParents.get(parent) : undefined;
+}
+
+/** Revocation is monotone; callers cannot restore an old parent capability. */
+export function revokeUniqueParent(parent: AcceptedUniqueParent): void {
+  const count = uniqueParentCounts.get(parent);
+  if (count) { revokedUniqueCounts.add(count); acceptedCounts.delete(count); }
+  uniqueParents.delete(parent);
+}
 const runFields = ["requestId", "snapshotId", "inputRevision", "problemKey", "operation", "mode", "engine", "profile",
   "scheduler", "checker", "exact", "optionsKey", "parentEvidenceId"] as const;
 const version = /^[a-z][a-z0-9-]*@[1-9]\d*$/;

@@ -17,6 +17,7 @@ import { checkSkPattern } from "./sk-grammar";
 import { checkFireworksPattern } from "./fireworks-grammar";
 import { checkOrPattern } from "./or-grammar";
 import { checkTemplatePattern } from "../proof/template-cover";
+import { checkUniquePattern } from "./unique-grammar";
 
 function fields(p: Record<string, unknown>, names: string[]): void {
   requireProof(sameValue(Object.keys(p).sort(), names.sort()), "invalid-technique-pattern");
@@ -47,6 +48,7 @@ export function checkTechniqueGrammar(proposal: DeductionProposal, view: ReadVie
   available: ReadonlyMap<number, ProofNode>): void {
   requireProof(proposal.pattern && typeof proposal.pattern === "object" && !Array.isArray(proposal.pattern), "invalid-technique-pattern");
   const p = proposal.pattern as Record<string, unknown>, nodes = proposal.proof.nodes, domains = view.state.domains;
+  if (["u01@1","u02@1","u03@1","u04@1","u05@1"].includes(proposal.technique)) { checkUniquePattern(proposal,view,available); return; }
   for (const cell of view.assembly.problem.cells) {
     const fact = view.facts.get(view.state.domainFacts[cell]);
     requireProof(fact && sameValue(domainAssertion(fact.proposition), { cell, mask: domains[cell] }), "unproved-current-domain");
