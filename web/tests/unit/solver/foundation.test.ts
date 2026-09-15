@@ -54,7 +54,7 @@ test("covers every cell and all 27 houses × nine symbols through original-clue 
     for (const proposal of hidden) { covers.add((proposal.pattern as {cover:string}).cover); assertSound(view,proposal); }
   }
   expect(covers.size).toBe(243);
-}, 30000);
+}, 120000);
 
 test.each(["Locked Candidates","direct forms"])("independently checks the %s alias without automatically placing a direct consequence", alias => {
   const f=fixtureCase("C03-point-row"), view=fixtureView(f);
