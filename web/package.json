@@ -14,6 +14,7 @@
     "test:serve": "vite --host 127.0.0.1 --port 5174 --strictPort"
   },
   "devDependencies": {
+    "@openai/sites-vite-plugin": "^0.2.0",
     "@playwright/test": "1.63.0",
     "@types/node": "24.13.4",
     "fake-indexeddb": "6.2.5",
