@@ -6,7 +6,6 @@ export default defineConfig({
   server: { host: "localhost", port: 5173, strictPort: true },
   build: {
     rollupOptions: {
-      preserveEntrySignatures: "strict",
       input: {
         index: "index.html",
         sitesWorker: "src/sites-worker.ts",
