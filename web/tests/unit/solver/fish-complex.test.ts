@@ -1,7 +1,7 @@
 import { expect,test } from "vitest";
 import { createHash } from "node:crypto";
 import { appendFileSync } from "node:fs";
-import { fishFixtures,fishFixture,independentFish,findFish } from "../../solver/fish-acceptance";
+import { fishFixtures,independentFish,findFish } from "../../solver/fish-acceptance";
 import { fixtureView,assertSound,originalCluePrefix } from "../../solver/acceptance";
 import { oracle } from "../../solver/oracle";
 import { replay } from "../../../src/solver/proof/replay";

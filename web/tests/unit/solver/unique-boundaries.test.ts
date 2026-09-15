@@ -3,7 +3,7 @@ import bounds from "../../solver/fixtures/unique-link-bound.json";
 import caseBounds from "../../solver/fixtures/unique-case-link-bound.json";
 import {uniqueHarness,uniqueLimits} from "../../solver/unique-harness";
 import {independentUniquePlan,independentNamedUnique,independentUniqueTrade,type UniqueSeed} from "../../solver/unique-independent";
-import {compileUnique,type UniquePlan} from "../../../src/solver/techniques/unique-compiler";
+import {compileUnique} from "../../../src/solver/techniques/unique-compiler";
 import {checkProposal,verifyCertificate} from "../../../src/solver/proof/checker";
 import {retainedProof} from "../../../src/solver/state/candidates";
 import {replayConditional} from "../../../src/solver/proof/replay";

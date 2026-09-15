@@ -147,7 +147,7 @@ test("live checker credit narrows frozen limits and accounts rejected work",()=>
 });
 
 import {CertificateBuilder,literal} from "../../../src/solver/proof/builder";
-import {matchingFacts,preparedSources} from "../../../src/solver/state/source-index";
+import {preparedSources} from "../../../src/solver/state/source-index";
 import {conflict} from "../../../src/solver/techniques/pattern-contracts";
 import {chainFixture,independentChainCertificate} from "../../solver/chains-acceptance";
 import {fixtureView} from "../../solver/acceptance";

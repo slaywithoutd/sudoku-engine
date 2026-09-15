@@ -819,8 +819,7 @@ test("a genuine 25-link OR branch is primitive-valid and rejected by the named s
 test("signed retained OR clauses support forcing but cannot be inserted as positive candidates", () => {
   const { view } = orFixture(c28.find((f) => f.id === "C28-inserted-or2")!),
     context = discoveryContext();
-  let source = 0,
-    alternatives: any[] = [];
+  let source = 0;
   for (const e of buildProvedClauses(view, context.workspace))
     if (e.kind === "ready") {
       const entry = e.value.entries.find((e) =>
@@ -828,7 +827,6 @@ test("signed retained OR clauses support forcing but cannot be inserted as posit
       )!;
       expect(entry).toBeDefined();
       source = entry.source;
-      alternatives = [...entry.alternatives];
       e.value.dispose();
     }
   // Search the actual scalar graph rather than fabricate signed branch facts.

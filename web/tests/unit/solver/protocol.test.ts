@@ -1,4 +1,4 @@
-import {describe,expect,test} from "vitest";
+import {expect,test} from "vitest";
 import {decodeMessage} from "../../../src/solver/transport/protocol";
 
 const key={requestId:"r",snapshotId:"s",inputRevision:0,problemKey:"p",operation:"primary" as const,mode:"explain" as const,engine:"engine@1",profile:"classic-expanded@1",scheduler:"scheduler@1",checker:"checker@1",exact:"original-dfs@1",optionsKey:"o",parentEvidenceId:null};

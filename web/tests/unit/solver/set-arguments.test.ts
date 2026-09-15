@@ -34,7 +34,7 @@ import { retainedProof, commitChecked, retainCheckedFacts } from "../../../src/s
 import type { DeductionProposal } from "../../../src/solver/proof/types";
 import { IndexWorkspace } from "../../../src/solver/indexes/workspace";
 import { AlignedExclusionSearch } from "../../../src/solver/techniques/aligned-exclusion";
-import { originalCluePrefix, type TechniqueFixture } from "../../solver/acceptance";
+import { type TechniqueFixture } from "../../solver/acceptance";
 import { replay } from "../../../src/solver/proof/replay";
 import type { SolverSnapshot } from "../../../src/solver/snapshot";
 import { oracle } from "../../solver/oracle";

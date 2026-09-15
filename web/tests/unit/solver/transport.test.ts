@@ -1,4 +1,4 @@
-import {describe,expect,test} from "vitest";
+import {expect,test} from "vitest";
 import {encodeRecords,decodeRecords} from "../../../src/solver/transport/codec";
 import {createSender} from "../../../src/solver/transport/sender";
 import {createReceiver} from "../../../src/solver/transport/receiver";

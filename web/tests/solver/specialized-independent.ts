@@ -14,7 +14,6 @@ const positive=(cell:number,symbol:number)=>({cell,symbol,positive:true});
  * detector, recognizer, table iterator or weighted-count helper. */
 class IndependentSpecializedProof extends FixtureProof {
  fact(kind:"cover"|"all-different",cells:number[],symbol?:number):number {
-  const p=kind==="cover"?{kind,cells,symbol}:{kind,cells};
   const found=[...this.view.facts.values()].find(f=>f.proposition.kind===kind&&JSON.stringify(f.proposition.cells)===JSON.stringify(cells)&&(f.proposition.kind!=="cover"||f.proposition.symbol===symbol));
   if(!found)throw Error("independent-source");return found.id;
  }
@@ -116,7 +115,7 @@ export function independentSpecialized(f:any):DeductionProposal {
   locals.slice(1).forEach((next:Relation)=>{ring=b.joinRows(ring,next,[],true);joins.push(ring.id);});
   table=ring;const routes:any[]=[];
   for(const e of effects) {
-   const link=p.links.findIndex((l:any,i:number)=>l.symbols.includes(e.symbol)&&cellsOf(l.house).includes(e.cell)&&!p.groups.flat().includes(e.cell)),cells=sorted([...p.groups[link],...p.groups[(link+1)%8]]),weak:number[]=[];
+  const link=p.links.findIndex((l:any)=>l.symbols.includes(e.symbol)&&cellsOf(l.house).includes(e.cell)&&!p.groups.flat().includes(e.cell)),cells=sorted([...p.groups[link],...p.groups[(link+1)%8]]),weak:number[]=[];
    const cover=b.project(table,b.clause(cells.map(c=>positive(c,e.symbol))));let root=cover;
    for(const c of cells){const edge=b.add("weak-link@1",[b.fact("all-different",cellsOf(p.links[link].house))],b.clause([{cell:c,symbol:e.symbol,positive:false},{cell:e.cell,symbol:e.symbol,positive:false}]));weak.push(edge);root=b.resolve(root,edge,c,e.symbol);}
    roots.push(root);routes.push({link,symbol:e.symbol,cell:e.cell,cover,weak,root});

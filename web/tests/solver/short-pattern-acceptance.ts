@@ -1,5 +1,5 @@
 import type { Json } from "../../src/solver/problem";
-import type { DeductionProposal,Effect,ProofNode,Proposition } from "../../src/solver/proof/types";
+import type { DeductionProposal,ProofNode,Proposition } from "../../src/solver/proof/types";
 import type { ReadView } from "../../src/solver/state/types";
 import { fixtureView,type TechniqueFixture } from "./acceptance";
 import { discoveryContext } from "./discovery-context";
