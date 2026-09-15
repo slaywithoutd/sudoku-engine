@@ -2,7 +2,7 @@
 
 Last updated: 2026-09-15.
 
-**M2 implementation review reached T27, but M2 is not release-complete.** T19–T26 have task commits in the isolated `feat/m2-engine` worktree. The final unit gate has four timeouts, and benchmark calibration is still outstanding. Read the [M2 solver verification](m2-solver-verification.md) for exact evidence and limitations.
+**M2 implementation review reached T27, but M2 is not release-complete.** T19–T26 have task commits in the isolated `feat/m2-engine` worktree. Fresh post-cleanup verification passed typecheck, all 1,745 unit tests, build, 27 development E2E tests, 11 production E2E tests and the whitespace check; benchmark calibration and release acceptance evidence are still outstanding. Read the [M2 solver verification](m2-solver-verification.md) for exact evidence and limitations.
 
 **Latest feature:** Settings → Appearance now offers Light/Dark plus Blue, Green, Pink, Purple and Gray pastel themes. All ten combinations apply throughout the application and persist in IndexedDB. Legacy libraries default to light green; backup appearance restores only with settings opt-in. Fresh verification: 64 application tests, 23 browser tests, typecheck and build passed. See [appearance verification](appearance-verification.md) and D058. No appearance implementation work remains.
 
@@ -16,7 +16,7 @@ Last updated: 2026-09-15.
 
 Implementation is on local branch `release/first-release`, based on planning commit `7c9512b`. Work was committed task by task. All ten tasks in the [implementation plan](superpowers/plans/2026-09-12-first-release.md) are complete. See the [release verification record](release-verification.md) for implementation commit, acceptance coverage, fixes, evidence and limitations.
 
-**M2 implementation is authorized under D065/D066.** The approved design is `0e98c2b`; implementation lives in `.worktrees/m2-engine` on `feat/m2-engine`. T01-T18 and all bounded C01-C33/U01-U05 catalogue families retain their independent review evidence. T19–T26 added scheduling, orchestration, transport, worker, controller, UI, integration and benchmark scaffolding, but the final acceptance record still contains four unit timeouts and unvalidated resource defaults. Exact results are in [M2 solver verification](m2-solver-verification.md) and [M2 implementation progress](m2-implementation-progress.md).
+**M2 implementation is authorized under D065/D066.** The approved design is `0e98c2b`; implementation lives in `.worktrees/m2-engine` on `feat/m2-engine`. T01-T18 and all bounded C01-C33/U01-U05 catalogue families retain their independent review evidence. T19–T26 added scheduling, orchestration, transport, worker, controller, UI, integration and benchmark scaffolding. The post-cleanup whole-suite gate is green, but the benchmark matrix and numerical resource defaults remain unvalidated, and rollout remains disabled. Exact results are in [M2 solver verification](m2-solver-verification.md) and [M2 implementation progress](m2-implementation-progress.md).
 
 All 38 catalogue rows retain independently verified per-alias evidence; the pre-T19 catalogue readiness gate is closed. Final whole-suite acceptance, complete runtime integration and benchmark calibration remain required. Authentic conditional OR/template source integration is covered at the engine level; the solver is not release-enabled in the application, and proposed defaults remain unvalidated.
 

@@ -1,6 +1,6 @@
 # M2 implementation progress
 
-Approved design/plan: `0e98c2b`, 2026-09-12. Authorization and coding conventions: D065/D066. Implementation branch: `feat/m2-engine`, isolated worktree `.worktrees/m2-engine`; initial base `f3eb4ac`. The complete expanded M2 release is not implemented yet. **Paused by user request on 2026-09-14.** See the [complete pause/resume handoff](m2-resume-handoff.md) for current code, review findings and remaining work.
+Approved design/plan: `0e98c2b`, 2026-09-12. Authorization and coding conventions: D065/D066. Implementation branch: `feat/m2-engine`, isolated worktree `.worktrees/m2-engine`; initial base `f3eb4ac`. The complete expanded M2 release is not implemented yet. Historical pause records are preserved in the [complete pause/resume handoff](m2-resume-handoff.md) and the cleanup [auto-resume handoff](m2-auto-resume-handoff.md).
 
 ## Baseline
 
@@ -30,8 +30,9 @@ Approved design/plan: `0e98c2b`, 2026-09-12. Authorization and coding convention
 | T16 Specialized patterns | Complete | `f62a47d`, fixes `e8486a0` / `1d9a36e`: C29-C32 and authentic C32-to-C28 reuse independently reviewed. Initial full 1,460 tests; post-fix 298 affected tests, six selected guardian checks and typecheck passed. |
 | T17 Templates and pattern overlay | Complete | `414b5f7`, fix `2fec0e0`: independent implementation/fix reviews passed. Initial full 1,564 tests; final 163 covering tests and typecheck passed. Separate baseline C12 harness repair `59ee9ea` preserves all assertions. |
 | T18 Conditional uniqueness families | Complete | `a2f7a53`, fix `5a19be1`: independent task and fix reviews passed. All 129 covering tests, 19 final resource checks, 21 fix checks, typecheck and build passed; broad-run timeouts remain recorded below. |
-| T19 Scheduling and bounded rollout | Implemented; review incomplete; paused | `bcf4812`; 182 focused passing cases and typecheck. Three reproduced review issues remain unfixed; a fourth concern is unresolved. [Handoff](m2-resume-handoff.md). |
-| T20-T27 | Pending; not started | Runtime, transport, worker/controller/UI, integrated acceptance, benchmarks and final review remain required; no family dropped. |
+| T19 Scheduling and bounded rollout | Implemented; review fixes recorded | `bcf4812`, review fixes `ccca518`; focused scheduling tests cover carried terminal dependencies, the 4,096-unit Analyze window and proof-only rollout filtering. Release acceptance remains incomplete. Historical review-pause detail is retained below. |
+| T20-T26 | Implemented; release acceptance incomplete | `b2daaaa`, `9fee076`, `5b6ed48`, `7fcdf3f`, `22a2b58`, `5f0aa33`, `3e65f42`; bounded runtime/transport/worker/controller/UI, browser acceptance and benchmark scaffolding are present. The remaining end-to-end contracts and benchmark matrix are still required. |
+| T27 | Final release review incomplete | Fresh post-cleanup verification is recorded below; M2 remains unavailable because benchmark calibration and the remaining release acceptance evidence are incomplete. |
 
 ## Coding conventions
 
@@ -125,3 +126,7 @@ The projected status gate failed first with missing independent evidence, then p
 T19 is committed at `bcf48129e16eedde290bf3b250d9f0af966f6936` across 34 files. The [scheduler guide](solver/scheduling.md) documents APIs and ownership; the [complete implementation evidence](solver/scheduling-verification.md) preserves tests, accounting formulas and limitations. The 182 focused passing cases and typecheck do not constitute task approval: interrupted independent review reproduced lost exclusion watches, an Analyze window overrun, and a proof-only cache incorrectly passed to productive rollout. Early-closure accounting remains under investigation because existing precharge may cover the observed gap. No fix batch has started.
 
 The user requested documentation and a stop during that review. The reviewer was interrupted; T20 was not dispatched. The [pause/resume handoff](m2-resume-handoff.md) records all outstanding tasks, exact review range, verification failures, downstream contracts and deferred fixture/benchmark work. Preserve the worktree and resume only when asked. Numerical defaults and browser response-time targets remain unvalidated.
+
+## Post-cleanup verification (2026-09-15)
+
+The cleanup/hardening commits through `ffd1348` did not change solver limits, product behavior, rollout state, or resource defaults. From `web/`, the complete fresh verification sequence passed: `npm run typecheck`; `npm test` (61 files and 1,745 tests in 827.16 seconds); `npm run build` (1.89 seconds); `npm run test:e2e` (27 tests in 36.3 seconds); `npm run test:e2e:production` (11 tests in 20.2 seconds); and `git diff --check`. The full unit result supersedes the prior inconclusive timeout record for whole-suite correctness only. It does not validate numerical resource defaults, browser response-time targets, the required benchmark matrix, or rollout; all remain disabled or unvalidated as previously recorded.

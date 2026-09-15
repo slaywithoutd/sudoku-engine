@@ -56,6 +56,7 @@ npm run typecheck
 npm test
 npm run build
 npm run test:e2e
+npm run test:e2e:production
 ```
 
 Browser tests use **http://127.0.0.1:5174**, isolated profiles and `web/test-results/`; they do not use the personal library at `localhost:5173`. The restart test relaunches Chromium with its own temporary profile. Screenshots and failure traces are ignored by Git. Save-failure tests simulate adapter errors, not real quota eviction or power-loss durability.
@@ -64,7 +65,7 @@ Production assets are generated in `web/dist/`. There are no runtime UI/storage 
 
 ## Scope and continuation
 
-This release includes classic creation/play, a personal library, settings and backups. The M2 Solve work is present only in the isolated review branch and is not release-enabled; solver, hints, variants, community and AI remain later-stage or incomplete features. **Solve** and **Explore** are not part of this release.
+This release includes classic creation/play, a personal library, settings and backups. The M2 Solve work is present only in the isolated review branch and is not release-enabled; solver, hints, variants, community and AI remain later-stage or incomplete features. Fresh cleanup verification in that branch passed typecheck, 1,745 unit tests, build and both browser suites, but benchmark calibration and numerical resource-default validation remain outstanding, so rollout stays disabled. **Solve** and **Explore** are not part of this release.
 
 Spring/Java files in `src/`, `pom.xml` and the Maven wrappers remain legacy references. The active application is in `web/`.
 
