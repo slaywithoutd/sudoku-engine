@@ -20,8 +20,8 @@ for (const [width, height] of [
       page.getByRole("button", { name: "Sudoku Engine", exact: true }),
     ).toBeVisible();
     await expect(
-      page.getByRole("button", { name: "Solve — coming soon", exact: true }),
-    ).toBeDisabled();
+      page.getByRole("button", { name: "Solve", exact: true }),
+    ).toBeEnabled();
     await page.screenshot({
       path: info.outputPath("home.png"),
       fullPage: true,
