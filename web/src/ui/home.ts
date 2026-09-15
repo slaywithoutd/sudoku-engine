@@ -41,8 +41,9 @@ export function mountHome(
     el("p", "Build a classic, cell by cell, or paste a puzzle."),
     el("span", "New draft →", "card-link"),
   );
-  const solve = button("Solve — coming soon", () => {}, "home-card future");
-  solve.disabled = true;
+  const solve = button("", () => services.navigate({screen:"solve"}), "home-card");
+  solve.setAttribute("aria-label","Solve");
+  solve.append(el("span","03","card-number"),el("h2","Solve"),el("p","Explore a temporary, explained analysis."),el("span","Open solver →","card-link"));
   cards.append(play, create, solve);
   hero.append(
     cards,

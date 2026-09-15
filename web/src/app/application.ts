@@ -7,6 +7,7 @@ import { mountLibrary } from "../ui/library";
 import { mountCreator } from "../ui/creator";
 import { mountPlayer } from "../ui/player";
 import { mountSettings } from "../ui/settings";
+import { mountSolver } from "../ui/solver";
 import { el, button } from "../ui/dom";
 import { downloadBackup } from "../ui/backup";
 export function mountApplication(
@@ -61,6 +62,7 @@ export function mountApplication(
       path: "M4 7h16M4 17h16M9 4v6M15 14v6",
       route: { screen: "settings" } as const,
     },
+    { label: "Solver", screen: "solve", path: "M4 4h16v16H4z", route: { screen: "solve" } as const },
   ].map((item) => {
     const control = button(item.label, () => services.navigate(item.route));
     control.setAttribute("aria-label", item.label);
@@ -134,6 +136,9 @@ export function mountApplication(
         break;
       case "settings":
         dispose = mountSettings(main, services);
+        break;
+      case "solve":
+        dispose = mountSolver(main, services);
         break;
     }
   };
