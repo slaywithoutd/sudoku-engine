@@ -143,7 +143,6 @@ function* insertedPlans(
  * six independent grammar searches receive separate round-robin work service.
  */
 function* generalizedForcingPlans(
-  view: ReadView,
   context: DiscoveryContext,
   graph: ForcingGraph,
   search: GeneralizedSearch,
@@ -194,7 +193,7 @@ function* generalizedForcingPlans(
                     }
                   : undefined,
         );
-        const needed = source.alternatives.flatMap((a, i) =>
+        const needed = source.alternatives.flatMap((_, i) =>
           !branches[i] ? [i] : [],
         );
         if (
@@ -368,7 +367,6 @@ export function* discoverOr(
     ] as const)
       cursors.push(
         generalizedForcingPlans(
-          view,
           context,
           graph,
           search,

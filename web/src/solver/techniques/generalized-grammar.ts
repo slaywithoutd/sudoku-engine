@@ -83,7 +83,7 @@ export class GeneralizedLineage {
   variable(
     position: GeneralizedPosition,
     cover: number,
-    scope: readonly number[],
+    _scope: readonly number[],
     source?: number,
   ): void {
     let values: Candidate[];
