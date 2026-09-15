@@ -258,3 +258,24 @@ re-evaluate missing unique readiness instead of treating disabled as exclusion.
 T20 implements transport/phases and actual receiver protocol, not this task.
 T26 measures bounded synchronous durations and tuning; no calibrated defaults or
 response-time guarantee is claimed. Root performs independent review after commit.
+
+## Independent T19 follow-up review
+
+The paused review findings were reproduced with regressions and corrected:
+
+- carried terminal exclusions retain the event-supplied dependency/watch set;
+- Analyze clamps emitted service to the current 4,096-unit window, preserving
+  charged debt for deterministic accounting;
+- proof-only checked candidates remain admissible for fact retention but are
+  filtered out of productive rollout, with direct hypothetical adoption guarded.
+
+The `HypotheticalSession.check` concern is classified as not a subcount: public
+work events can be fewer than the underlying `verifyBranch` meter while the
+rollout path separately prepays branch ordering, source validation, bounded
+copy/index preparation and publication cleanup, and charges every checker delta
+reported by the session. No undercount was demonstrated, so no accounting
+change was made for that concern.
+
+Fresh follow-up evidence: scheduling and rollout focused suites, 32 passed;
+`npm run typecheck` passed; `git diff --check` passed. The regression tests are
+in `tests/unit/solver/scheduling.test.ts`.

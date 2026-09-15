@@ -143,9 +143,11 @@ export class StepSelection {
         if(!this.ledger.simplerExhausted(job.tier)&&(this.options.mode==="explain"||job.tier>=0&&this.ledger.jobs.some(j=>j.tier===-1&&j.status==="interrupted"))){reason="incomplete-cheaper-tier";break;}
         this.ledger.service(key);let quantum=0;
         const cursor=this.#cursors.get(job)??{debt:0};this.#cursors.set(job,cursor);
-        while(quantum<QUANTUM&&["pending","in-progress","found"].includes(job.status)){
+        while(quantum<QUANTUM&&["pending","in-progress","found"].includes(job.status)&&
+          !(this.options.mode==="analyze"&&window>=4096)){
           if(cursor.debt){
-            this.#checkpoint();const units=Math.min(cursor.debt,QUANTUM-quantum);
+            this.#checkpoint();const units=Math.min(cursor.debt,QUANTUM-quantum,
+              this.options.mode==="analyze"?4096-window:Infinity);
             cursor.debt-=units;quantum+=units;window+=units;job.work+=units;yield {kind:"work",units};
           } else if(cursor.checked){
             this.#buffers.push({step:cursor.checked,lease:cursor.lease!});cursor.checked=undefined;cursor.lease=undefined;
@@ -158,7 +160,7 @@ export class StepSelection {
         if(cursor.checked&&!cursor.debt){this.#buffers.push({step:cursor.checked,lease:cursor.lease!});cursor.checked=undefined;cursor.lease=undefined;
           cursor.checking?.return();cursor.checking=undefined;}
         if(this.#buffers.length&&(job.tier===-1||this.options.mode==="explain"||this.#buffers.length>=4||window>=4096))break;
-        if(this.options.mode==="analyze"&&window>=4096){window=0;}
+        if(this.options.mode==="analyze"&&window>=4096){reason="selection-window";break;}
       }
     }catch(error){
       if(error instanceof WorkLimit||error instanceof IndexInterrupted)reason=error.reason;else throw error;
@@ -166,8 +168,10 @@ export class StepSelection {
     try {
       if(this.#buffers.length){
         let selected=this.#policy.choose(this.#buffers.map(b=>b.step));
-        if(this.options.rollout&&!reason){
-          const rollout=rolloutCandidates(this.#view,[selected,...this.#buffers.filter(b=>b.step!==selected).map(b=>b.step)],{workspace:this.context.workspace,limits:this.options.limits,budget:{remaining:()=>this.#budget.remaining(),spend:units=>{this.#charge(units);return true;},reserve:units=>this.#reserveWork(units)}});
+        if(this.options.rollout&&!reason&&selected.proposal.effects.length>0){
+          const rolloutCandidatesList=[selected,...this.#buffers.filter(b=>b.step!==selected).map(b=>b.step)]
+            .filter(step=>step.proposal.effects.length>0);
+          const rollout=rolloutCandidates(this.#view,rolloutCandidatesList,{workspace:this.context.workspace,limits:this.options.limits,budget:{remaining:()=>this.#budget.remaining(),spend:units=>{this.#charge(units);return true;},reserve:units=>this.#reserveWork(units)}});
           try{for(const event of rollout){if(event.kind==="work")yield event;else selected=event.selected;}}
           finally{rollout.return();}
           // Recheck only the winning first deduction against the actual current source.

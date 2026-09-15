@@ -214,6 +214,7 @@ export class HypotheticalSession {
     const previous=owner(parent);
     requireProof(!previous.branch&&!conditionalViewAuthority(parent),"rollout-primary-source-required");
     requireProof(isCheckedStep(step)&&checkedStepMatchesSource(step,parent),"rollout-source-mismatch");
+    requireProof(step.proposal.effects.length>0,"rollout-requires-productive-step");
     assertCheckedStepActive(step,parent);
     requireProof(checkedImportsMatch(step,previous.nodes),"substituted-step-import");
     requireProof(step.consequences.every(c=>!c.conditional&&!c.openAssumptions.length),"rollout-open-or-conditional-root");

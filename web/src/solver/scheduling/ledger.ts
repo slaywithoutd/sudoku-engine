@@ -45,7 +45,11 @@ export class SchedulingLedger {
   advance(view:ReadView,changes:ChangeSet,cold=false):void{
     const rows=invalidate(changes,this.rows);this.#view=view;
     this.jobs.forEach((job,i)=>{job.status=cold?"pending":rows[i].status;job.reason=cold?undefined:rows[i].reason;job.lastService=0;
-      if(job.descriptor)Object.assign(job,{estimate:job.descriptor.estimate(view),dependencies:job.descriptor.watches(view)});});
+      if(job.descriptor){
+        const carried=!cold&&(job.status==="exhausted"||job.status==="excluded");
+        Object.assign(job,{estimate:job.descriptor.estimate(view),dependencies:carried?rows[i].dependencies:job.descriptor.watches(view)});
+      }
+    });
     this.#ticket=0;
   }
 }

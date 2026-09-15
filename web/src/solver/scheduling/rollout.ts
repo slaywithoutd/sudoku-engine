@@ -16,18 +16,24 @@ export type RolloutEvent={kind:"work";units:number}|{kind:"rollout";selected:Che
 /** Metrics and first-candidate identity only; no hypothetical proof or view escapes. */
 export function* rolloutCandidates(view:ReadView,candidates:readonly CheckedStep[],context:{workspace:IndexWorkspace;limits:Limits;budget:ReservableBudget}):Generator<RolloutEvent,void,void>{
   if(!candidates.length||candidates.length>4)throw Error("invalid-rollout-candidates");
-  const allowance=Math.min(8192,Math.floor(context.budget.remaining()/10)),share=Math.floor(allowance/candidates.length);
-  const costs=candidates.map(step=>featureWork(step)+1);
+  const productive=candidates.filter(step=>step.proposal.effects.length>0);
+  if(!productive.length){
+    yield {kind:"rollout",selected:candidates[0],primaryRevision:view.state.key.revision,usedWork:0,
+      shares:candidates.map(()=>({allowance:0,usedWork:0,steps:0,utility:0,complete:false,reason:"proof-only"}))};
+    return;
+  }
+  const allowance=Math.min(8192,Math.floor(context.budget.remaining()/10)),share=Math.floor(allowance/productive.length);
+  const costs=productive.map(step=>featureWork(step)+1);
   // An unaffordable comparison performs no speculative work and preserves the
   // caller's baseline first candidate, explicitly reporting no evaluated branch.
   if(costs.some(cost=>cost>share)){
-    yield {kind:"rollout",selected:candidates[0],primaryRevision:view.state.key.revision,usedWork:0,
-      shares:candidates.map(()=>({allowance:share,usedWork:0,steps:0,utility:0,complete:false,reason:"insufficient-share"}))};return;
+    yield {kind:"rollout",selected:productive[0],primaryRevision:view.state.key.revision,usedWork:0,
+      shares:productive.map(()=>({allowance:share,usedWork:0,steps:0,utility:0,complete:false,reason:"insufficient-share"}))};return;
   }
   const shares:RolloutShare[]=[];let usedWork=0;
   const ordering=context.workspace.reserve(candidates.length,4096+candidates.reduce((n,step)=>n+checkedStepBytes(step)*4,0));
   try {
-  const entries=candidates.map((step,i)=>{context.workspace.checkpoint();if(!context.budget.spend(costs[i]))throw new WorkLimit();usedWork+=costs[i];
+  const entries=productive.map((step,i)=>{context.workspace.checkpoint();if(!context.budget.spend(costs[i]))throw new WorkLimit();usedWork+=costs[i];
     return {step,cost:costs[i],key:canonicalProof(step)};}).sort((a,b)=>compareText(a.key,b.key));
   const ordered=entries.map(e=>e.step);
   const cheap=getTechniques("classic-expanded@1").filter(d=>d.tier<=1&&/^c0[1-5]@1$/.test(d.id));

@@ -11,6 +11,13 @@ Recorded 2026-09-14 at the user's explicit request to document completed and out
 - No merge, push, deployment, solver UI release or application persistence change was performed.
 - The paused implementation workspace and ignored working records were preserved. Do not clean or delete them while this work is incomplete. No task-owned test process remained at the stop audit; the unrelated pre-existing Node process was left untouched.
 
+## Resume update: T19 review completed
+
+The three communicated T19 findings were reproduced with regression tests and
+fixed in the follow-up commit. The HypotheticalSession work-meter concern was
+reviewed against rollout prepayment and actual checker deltas and was not
+classified as an undercount. See [scheduling verification](solver/scheduling-verification.md#independent-t19-follow-up-review).
+
 The [implementation progress record](m2-implementation-progress.md) contains task-by-task commits and verification from T01 onward. The [approved 27-task plan](superpowers/plans/2026-09-12-m2-classic-solver.md) remains the complete implementation scope; this handoff does not replace or reduce it.
 
 ## Completed and implemented work
@@ -24,7 +31,7 @@ Recent completed work:
 | Conditional uniqueness implementation | `a2f7a53`, native bootstrap claim fix `5a19be1`, documentation `59bb3fb` | T18 reviewed and complete. |
 | Generalized catalogue closure | `18c103c` | Eight missing per-alias negative/boundary evidence cells closed; independent review passed. |
 | Catalogue status promotion | `0bb3762` | All 38 rows independently verified; actual primary/conditional job assembly enabled without bypassing the readiness gate. |
-| Scheduler, selection and confined rollout | `bcf4812` | Implemented and locally tested, **review incomplete with known unfixed findings**. |
+| Scheduler, selection and confined rollout | `bcf4812` + follow-up | T19 review findings fixed and independently rechecked; follow-up commit is the T19 completion point. |
 
 T19 adds documented `WorkBudget`/holds, `SchedulingLedger`, `FairPolicy`, `StepSelection`, canonical option identity, Explain/Analyze ordering, fixed-scan/event-fixed baselines, and isolated bounded rollout. It also adds explicit owned source preparation, exact source tokens, checker usage for rejected/closed checks, immutable stage views, incremental table seeding, and equivalent indexed accesses in affected technique code. User-requested OOP/pattern usage is reflected in stateful owners, registries, policies and factories; pure value/math functions remain simple.
 
@@ -32,7 +39,7 @@ Read the [scheduler guide](solver/scheduling.md) for concrete APIs and resource 
 
 ## T19 review findings at interruption
 
-The reviewer read the complete 34-file diff and ran focused read-only Vite probes. It had **not written a final review report or issued final spec/quality verdicts** when interrupted. The following three reproductions were communicated and remain unfixed:
+The reviewer read the complete 34-file diff and ran focused read-only Vite probes. It had **not written a final review report or issued final spec/quality verdicts** when interrupted. The following three reproductions were communicated and are now fixed in the follow-up commit; exact evidence is in the scheduling verification record:
 
 | Finding | Committed location | Reproduction and consequence |
 | --- | --- | --- |
@@ -44,7 +51,9 @@ A **fourth concern remains unclassified**: closing `HypotheticalSession.check` o
 
 The reviewer also mentioned assessing remaining source-list scan accounting, but communicated no final finding. Preserve that as unfinished review work, not a proven defect.
 
-When explicitly resumed, finish the interrupted review and consolidate its final findings before the first fix batch. Reuse the original T19 implementer for fixes, run covering regressions, then conduct a scoped re-review. **Do not mark T19 complete or begin T20 while blocking T19 findings remain.** No fix round has started yet.
+The interrupted review was resumed, the three findings were fixed with covering
+regressions, and the scoped re-review passed. T19 is complete; T20 is the next
+task in the approved sequence.
 
 ## Verification and honest limits
 
@@ -64,7 +73,7 @@ Current specifications now explicitly recognize implementation approval under D0
 
 D094 records `RunKey.scheduler = scheduler@1` separately from the versioned selected policy in canonical `optionsKey`. A conditional run may choose a different mode/policy while retaining its exact primary parent identity.
 
-D095 records the technical changes required by scheduler integration: exact publication tokens without retaining every old view; confined adoption of actual checked primary deductions; archived discharged scopes remain scoped; complete/facts-only owned source preparation and independent lease disposal; reserve-before-capture with actual-size settlement; complete work charging distinct from service debt; narrowing-only checker credit; metered named source reads; incremental retained-prefix/table preparation; and unchanged finite proof/family/rollout bounds. These are approved implementation directions, but T19 conformance is still under review. Wrong accounting or ownership choices require code/test rework; they do not justify relaxing correctness or silently reducing technique coverage.
+D095 records the technical changes required by scheduler integration: exact publication tokens without retaining every old view; confined adoption of actual checked primary deductions; archived discharged scopes remain scoped; complete/facts-only owned source preparation and independent lease disposal; reserve-before-capture with actual-size settlement; complete work charging distinct from service debt; narrowing-only checker credit; metered named source reads; incremental retained-prefix/table preparation; and unchanged finite proof/family/rollout bounds. T19 follow-up conformance is recorded in the scheduling verification section. Wrong accounting or ownership choices require code/test rework; they do not justify relaxing correctness or silently reducing technique coverage.
 
 Additional handoff clarifications preserve existing requirements: selecting/moving a cell stays accessible during a run while value edits are locked; missing uniqueness authority is disabled, not exhausted/excluded; internal checker headers may be 32 KiB but wire/prefix individual header/node records remain 16 KiB, with 32 KiB control packets separately bounded.
 
@@ -72,7 +81,7 @@ Additional handoff clarifications preserve existing requirements: selecting/movi
 
 | Task | Required work still outstanding | Main planned files/gates |
 | --- | --- | --- |
-| T19 completion | Finish review; repair confirmed findings and any resulting final blocking findings; covering tests and scoped review. | Scheduler/rollout/ownership sources and focused tests above; then update task status. |
+| T19 completion | Completed: repair confirmed findings, covering tests and scoped review. | Scheduler verification follow-up section and follow-up commit. |
 | T20 | Human loop, original-clue initialization, exact phase, acceptance waits, honest fallback and separate conditional runtime. | `web/src/solver/human.ts`, `run.ts`, evidence integration, human/run unit tests. |
 | T21 | Strict protocol-2 codec, bounded proof/prefix streaming, two-chunk backpressure, atomic proof acceptance and stop-human barrier. | `web/src/solver/transport/{protocol,codec,sender,receiver}.ts`, protocol/transport tests. |
 | T22 | Actual Vite worker, transferable authority port, error/watchdog lifecycle, separate worker typecheck and real-browser harness. | `web/src/workers/solver.worker.ts`, `web/src/app/solver-worker.ts`, worker TS config, worker browser tests. |

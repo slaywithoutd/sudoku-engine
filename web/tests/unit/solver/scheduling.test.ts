@@ -60,6 +60,14 @@ describe("deterministic scheduling ownership",()=>{
     ledger.status({technique:"a@1",scopeKey:""},"disabled","missing-unique-authority");
     expect(ledger.complete).toBe(false);
   });
+  test("retained terminal exclusions preserve event dependencies across source changes",()=>{
+    const view=fixture(),job=descriptor("watch@1"),ledger=new SchedulingLedger(view,{rules:[],techniques:[job]});
+    ledger.status({technique:"watch@1",scopeKey:""},"excluded","not-ready",[{kind:"graph"}]);
+    const next={...view,state:{...view.state,key:{...view.state.key,revision:view.state.key.revision}}} as typeof view;
+    ledger.advance(next,{before:view.state.key,after:next.state.key,removed:[],placed:[],cells:[],coverIds:[],relationIds:[],constraintIds:[],graphChanged:false,sourceChanged:true});
+    expect(ledger.rows[0].status).toBe("excluded");
+    expect(ledger.rows[0].dependencies).toEqual([{kind:"graph"}]);
+  });
 });
 
 import {StepSelection,selectStep} from "../../../src/solver/scheduling/select";
@@ -165,6 +173,10 @@ test("proof-only acceptance invalidates source watches despite unchanged revisio
     expect(again.at(-1)).toMatchObject({kind:"logical-stop",complete:true});selection.dispose();expect(w.usage.bytes).toBe(0);
   }
   expect(scans).toBe(4);
+  const rolloutWorkspace=workspace();
+  const rolloutSelection=new StepSelection(initial,{rules:[],techniques:[cache]},{...schedulingOptions({limits,mode:"analyze",rollout:true}),workspace:rolloutWorkspace});
+  expect(()=>[...rolloutSelection.select()]).not.toThrow();
+  rolloutSelection.dispose();expect(rolloutWorkspace.usage.bytes).toEqual(0);
 });
 
 test("prepared source projections preserve genuine coloring checks and are immutable",()=>{
@@ -269,6 +281,16 @@ test("Analyze collects at most four authentic candidates in a4096-unit window",(
   const events=[...selection.select()],selected=events.find(e=>e.kind==="checked-step");expect(proposals).toBe(4);
   if(selected?.kind!=="checked-step")throw Error("no candidate");expect(selected.step.proposal.effects).toEqual([{kind:"place",cell:1,symbol:2}]);
   expect(selection.ledger.rows[0].work).toBeLessThanOrEqual(4096);selection.dispose();expect(w.usage.bytes).toBe(0);
+});
+
+test("Analyze never services beyond the approved 4096-unit window",()=>{
+  const view=fixture(),w=workspace();
+  const first={...descriptor("first@1"),*discover(){yield {kind:"work" as const,units:46};yield {kind:"exhausted" as const};}};
+  const second={...descriptor("second@1"),*discover(){yield {kind:"work" as const,units:4096};yield {kind:"exhausted" as const};}};
+  const selection=new StepSelection(view,{rules:[],techniques:[first,second]},{...schedulingOptions({limits,mode:"analyze"}),workspace:w});
+  [...selection.select()];
+  expect(selection.ledger.rows.reduce((total,row)=>total+row.work,0)).toBeLessThanOrEqual(4096);
+  selection.dispose();expect(w.usage.bytes).toBe(0);
 });
 
 test("disabled discovery is revisited at the same revision when readiness changes",()=>{
