@@ -22,3 +22,7 @@ test("routes roundtrip encoded identifiers", () => {
   for (const route of routes)
     expect(parseRoute(routeHash(route))).toEqual(route);
 });
+test("supports the volatile solve route",()=>{
+  expect(parseRoute("#/solve")).toEqual({screen:"solve"});
+  expect(routeHash({screen:"solve"} as Route)).toBe("#/solve");
+});

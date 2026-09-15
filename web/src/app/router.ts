@@ -1,10 +1,12 @@
 export type Route =
   | { screen: "home" }
+  | { screen: "solve" }
   | { screen: "library"; tab: "drafts" | "puzzles" }
   | { screen: "create"; id: string }
   | { screen: "play"; id: string }
   | { screen: "settings" };
 export function parseRoute(hash: string): Route {
+  if (hash === "#/solve") return { screen: "solve" };
   if (hash === "#/settings") return { screen: "settings" };
   if (hash === "#/library/drafts" || hash === "#/library/puzzles")
     return {
@@ -27,6 +29,8 @@ export function routeHash(route: Route): string {
       return "#/";
     case "settings":
       return "#/settings";
+    case "solve":
+      return "#/solve";
     case "library":
       return `#/library/${route.tab}`;
     default:
