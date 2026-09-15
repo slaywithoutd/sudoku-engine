@@ -1,6 +1,6 @@
 # Sudoku platform roadmap
 
-Updated: 2026-09-14. Status: **M1a + M1b implemented and verified**, with subsequent UI/appearance under D053/D058. **M2 design is approved and implementation is underway under D065/D066.** See [implementation progress](m2-implementation-progress.md). M2 direction is D046–D057; completed planning and proposed choices are D059–D064.
+Updated: 2026-09-15. Status: **M1a + M1b implemented and verified**. **M2 design is approved and implementation review reached T27, but M2 is not release-complete.** See [implementation progress](m2-implementation-progress.md) and [M2 solver verification](m2-solver-verification.md). M2 direction is D046–D057; completed planning and proposed choices are D059–D064.
 
 ## Delivery sequence
 
@@ -70,6 +70,6 @@ Remaining empirical gates are cost tables, proposed 70% human-phase share, confi
 At each later checkpoint: read the decision log, inspect the implemented state, research any changing tool/format behavior, settle that stage's deferred choices, write its specification and implementation plan, and record results in this folder. Preserve earlier user decisions unless the user changes them.
 
 
-## M2 pause checkpoint (2026-09-14)
+## M2 final review checkpoint (2026-09-15)
 
-Implementation is paused at the user's request. T01-T18 and all 38 catalogue rows are independently reviewed. T19 is committed at `bcf4812` with 182 focused passing cases, but independent review is incomplete: exclusion-watch preservation, the Analyze window and cache-only rollout have reproduced unfixed issues. A fourth accounting concern is unresolved. T20-T27 remain unstarted, and M2 is not available in the application. See the [complete handoff](m2-resume-handoff.md) for exact remaining work and verification limits. Resume only on a new user request; do not mark M2 complete.
+T01-T26 have task commits and the T27 verification record is written. Catalogue evidence remains independently reviewed, but the full unit gate has four timeouts, benchmark calibration was not run, and runtime contract coverage is incomplete. M2 is not available in the application and must not be marked complete. See [M2 solver verification](m2-solver-verification.md) for exact results and follow-up.

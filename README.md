@@ -64,7 +64,7 @@ Production assets are generated in `web/dist/`. There are no runtime UI/storage 
 
 ## Scope and continuation
 
-This release includes classic creation/play, a personal library, settings and backups. Solver, hints, variants, community and AI belong to later stages; **Solve** and **Explore** are marked as upcoming.
+This release includes classic creation/play, a personal library, settings and backups. The M2 Solve work is present only in the isolated review branch and is not release-enabled; solver, hints, variants, community and AI remain later-stage or incomplete features. **Solve** and **Explore** are not part of this release.
 
 Spring/Java files in `src/`, `pom.xml` and the Maven wrappers remain legacy references. The active application is in `web/`.
 

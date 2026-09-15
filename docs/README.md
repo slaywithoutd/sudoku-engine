@@ -1,8 +1,8 @@
 # Sudoku platform: resume here
 
-Last updated: 2026-09-14.
+Last updated: 2026-09-15.
 
-**M2 paused at the user's request.** T19 is committed at `bcf4812`, with 182 focused passing cases, but independent review is unfinished and has three reproduced unfixed issues. T20-T27 have not started. Read the [complete pause/resume handoff](m2-resume-handoff.md) and [T19 evidence](solver/scheduling-verification.md) before continuing.
+**M2 implementation review reached T27, but M2 is not release-complete.** T19–T26 have task commits in the isolated `feat/m2-engine` worktree. The final unit gate has four timeouts, and benchmark calibration is still outstanding. Read the [M2 solver verification](m2-solver-verification.md) for exact evidence and limitations.
 
 **Latest feature:** Settings → Appearance now offers Light/Dark plus Blue, Green, Pink, Purple and Gray pastel themes. All ten combinations apply throughout the application and persist in IndexedDB. Legacy libraries default to light green; backup appearance restores only with settings opt-in. Fresh verification: 64 application tests, 23 browser tests, typecheck and build passed. See [appearance verification](appearance-verification.md) and D058. No appearance implementation work remains.
 
@@ -16,9 +16,9 @@ Last updated: 2026-09-14.
 
 Implementation is on local branch `release/first-release`, based on planning commit `7c9512b`. Work was committed task by task. All ten tasks in the [implementation plan](superpowers/plans/2026-09-12-first-release.md) are complete. See the [release verification record](release-verification.md) for implementation commit, acceptance coverage, fixes, evidence and limitations.
 
-**M2 implementation is authorized under D065/D066 and currently paused at the user's request.** The approved design is `0e98c2b`; implementation lives in `.worktrees/m2-engine` on `feat/m2-engine`. T01-T18 and all bounded C01-C33/U01-U05 families have passed independent implementation review. The conditional batch is implemented in `a2f7a53`, with bootstrap race fix `5a19be1` independently reviewed. Its 129 covering tests passed, followed by 19 resource checks and 21 fix checks; typecheck and build passed. The earlier full run had 1,656 passes and 33 test timeouts. Exact history and remaining acceptance gates are recorded in [implementation progress](m2-implementation-progress.md).
+**M2 implementation is authorized under D065/D066.** The approved design is `0e98c2b`; implementation lives in `.worktrees/m2-engine` on `feat/m2-engine`. T01-T18 and all bounded C01-C33/U01-U05 catalogue families retain their independent review evidence. T19–T26 added scheduling, orchestration, transport, worker, controller, UI, integration and benchmark scaffolding, but the final acceptance record still contains four unit timeouts and unvalidated resource defaults. Exact results are in [M2 solver verification](m2-solver-verification.md) and [M2 implementation progress](m2-implementation-progress.md).
 
-All 38 catalogue rows now have independently verified per-alias evidence; the pre-T19 catalogue readiness gate is closed. Scheduler review/fixes, worker/UI integration, final whole-suite acceptance and benchmarks remain required. Authentic conditional OR/template source integration is covered at the engine level; the solver is not yet available in the application, and proposed defaults remain unvalidated.
+All 38 catalogue rows retain independently verified per-alias evidence; the pre-T19 catalogue readiness gate is closed. Final whole-suite acceptance, complete runtime integration and benchmark calibration remain required. Authentic conditional OR/template source integration is covered at the engine level; the solver is not release-enabled in the application, and proposed defaults remain unvalidated.
 
 Read the [screen/evidence specification](superpowers/specs/2026-09-12-m2-classic-solver-design.md), [concrete engine contracts](superpowers/specs/2026-09-12-m2-engine-contracts.md), [38-row bounded coverage matrix](superpowers/specs/2026-09-12-m2-technique-coverage.md) and [27-task implementation plan](superpowers/plans/2026-09-12-m2-classic-solver.md). The [researched rationale](superpowers/specs/2026-09-12-m2-engine-expansion-design.md) retains primary sources. D054-D057 confirm expanded direction; D059-D064 record completed planning and proposed technical choices. The obsolete six-technique/ten-task documents have been replaced. Planning preserved research `24e0d25` and newer application work; the original design and release branches remain preserved.
 

@@ -890,3 +890,10 @@ Record each answer here with its rationale and consequences. If an answer change
 - Preserve the isolated worktree, all focused commits, original checkout, ignored recovery records and existing application work. No merge, push, deployment or release approval is implied. Resume only when the user asks, beginning with unfinished T19 review/fixes rather than restarting completed tasks or the interview.
 - The [complete handoff](m2-resume-handoff.md) records exact findings, remaining files/gates, downstream contracts and deferred evidence/benchmark work. The [durable T19 evidence](solver/scheduling-verification.md) preserves actual commands/results and the concurrent template timeout alongside its isolated pass. Historical full-suite failures and unvalidated defaults remain explicit.
 - Consequence: integration remains unavailable until the outstanding task and release gates pass. The pause changes scheduling of work, not approved feature scope or proof-correctness requirements.
+
+## D097 - T27 verification preserves incomplete M2 status
+
+- Status: recorded 2026-09-15 on `feat/m2-engine`.
+- Evidence: T19–T26 task commits, 27/27 development browser tests, 11/11 production smoke tests, 1,740/1,744 unit tests with four timeouts, and a 2/2 benchmark schema/dry-run. Typecheck, build and diff checks passed.
+- Decision: record the expanded implementation and its limits, but do not mark M2 complete or enable rollout. The four unit timeouts are inconclusive, and the required cold/warm/throttled resource calibration and several end-to-end contract paths remain outstanding.
+- Consequence: roadmap and README distinguish catalogue/algorithm evidence from runtime completion. Gameplay hints, variants and release approval remain outside this checkpoint.
