@@ -1,4 +1,4 @@
-import type { ReadView, Proposition } from "../state/types";
+import type { ReadView } from "../state/types";
 import type { DeductionProposal, ProofNode } from "../proof/types";
 import { clause, requireProof, sameValue } from "../proof/primitives";
 

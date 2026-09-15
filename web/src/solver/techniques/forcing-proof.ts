@@ -4,7 +4,6 @@ import type { Json } from "../problem";
 import type { DeductionProposal, Effect, ProofNode } from "../proof/types";
 import type { Limits } from "../proof/types";
 import type { ReadView, Literal, Proposition } from "../state/types";
-import { sameValue } from "../proof/primitives";
 import { proposedClause } from "../proof/builder";
 
 export const signedKey = (v: Literal): string => `${v.cell}:${v.symbol}:${Number(v.positive)}`;

@@ -1,4 +1,4 @@
-import { CertificateBuilder, literal, proposedClause } from "../proof/builder";
+import { CertificateBuilder, proposedClause } from "../proof/builder";
 import type { ReadView } from "../state/types";
 import type { Discovery } from "./types";
 

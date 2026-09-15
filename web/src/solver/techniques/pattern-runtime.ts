@@ -5,7 +5,7 @@ import type { Discovery,DiscoveryContext,TechniqueDescriptor } from "./types";
 import { coverageEntries } from "./manifest";
 import { buildImplications, type ImplicationIndex, type ImplicationEdge, type CoverEntry } from "../indexes/implications";
 import { IndexInterrupted, type WorkspaceReservation } from "../indexes/workspace";
-import { clause, literals, sameValue } from "../proof/primitives";
+import { clause, literals } from "../proof/primitives";
 import { pos,neg, type BentPattern } from "./pattern-contracts";
 
 /** Borrowed graph recipes live only under this invocation's shared lease. */

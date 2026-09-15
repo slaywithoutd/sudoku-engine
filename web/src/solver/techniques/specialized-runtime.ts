@@ -1,6 +1,6 @@
 import type { ReadView, Literal, Proposition } from "../state/types";
 import type { DeductionProposal, Effect } from "../proof/types";
-import type { Discovery, DiscoveryContext, TechniqueDescriptor } from "./types";
+import type { Discovery, TechniqueDescriptor } from "./types";
 import { coverageEntries } from "./manifest";
 import { IndexInterrupted, type WorkspaceReservation } from "../indexes/workspace";
 import { ForcingProof, forcingProofFits } from "./forcing-proof";

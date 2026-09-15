@@ -1,4 +1,4 @@
-import {matchingFacts,sourceFacts} from "../state/source-index";
+import {matchingFacts} from "../state/source-index";
 import type { ReadView } from "../state/types";
 import type { PatternGraph } from "./pattern-runtime";
 import type { CountPattern, CountScope } from "./set-contracts";

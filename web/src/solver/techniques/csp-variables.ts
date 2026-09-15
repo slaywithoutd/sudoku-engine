@@ -1,7 +1,6 @@
 import {matchingFacts} from "../state/source-index";
 import type { ReadView, Literal } from "../state/types";
 import { assertOwnedView } from "../state/candidates";
-import { sameValue } from "../proof/primitives";
 
 /** Candidate identities remain physical occurrences across variable projections. */
 export type Candidate = readonly [number, number];

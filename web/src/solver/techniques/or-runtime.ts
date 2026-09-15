@@ -29,7 +29,7 @@ import {
   type GeneralizedSearchEvent,
 } from "./generalized-runtime";
 import { buildCspVariables, cspVariableReservation } from "./csp-variables";
-import type { GeneralizedGrammar, GeneralizedPlan } from "./generalized-chains";
+import type { GeneralizedGrammar } from "./generalized-chains";
 
 type OrEvent =
   | { kind: "work"; units: number }

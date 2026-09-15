@@ -1,6 +1,6 @@
 import type {RunKey} from "../snapshot";
 import type {Limits} from "../limits";
-import {decodeMessage,type ProofHeader,type WorkerMessage} from "./protocol";
+import {decodeMessage,type ProofHeader} from "./protocol";
 export interface ReceiverContext{readonly key:RunKey;readonly limits:Limits}
 export interface Receiver{receive(value:unknown):void;dispose():void}
 export function createReceiver(context:ReceiverContext,accept:(step:{readonly header:ProofHeader;readonly chunks:readonly Uint8Array[]})=>number,ack:(batchSeq:number)=>void):Receiver{

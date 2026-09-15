@@ -1,4 +1,4 @@
-import {matchingFacts,sourceFacts} from "../state/source-index";
+import {matchingFacts} from "../state/source-index";
 import type { Json } from "../problem";
 import type { ReadView, Literal } from "../state/types";
 import type { DeductionProposal, Effect } from "../proof/types";

@@ -2,7 +2,7 @@ import type { ReadView } from "../state/types";
 import type { DeductionProposal } from "../proof/types";
 import type { WorkspaceReservation } from "../indexes/workspace";
 import { clause } from "../proof/primitives";
-import { bitOf, candidates, choose, ClassicHouses, product, sortedCells, SpecializedProof, specializedDescriptor, specializedWork,
+import { bitOf, candidates, choose, ClassicHouses, product, SpecializedProof, specializedDescriptor, specializedWork,
  type LocalRelation, type SpecializedWork, type SpecializedStrategy } from "./specialized-runtime";
 
 export interface TridagonPlan {readonly alias:string;readonly boxes:readonly number[];readonly triples:readonly (readonly number[])[];

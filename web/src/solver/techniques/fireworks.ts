@@ -1,7 +1,7 @@
 import type { ReadView } from "../state/types";
 import type { DeductionProposal, Effect } from "../proof/types";
 import type { WorkspaceReservation } from "../indexes/workspace";
-import { clause, literals } from "../proof/primitives";
+import { clause } from "../proof/primitives";
 import { boxOf, candidates, choose, ClassicHouses, sortedCells, SpecializedProof, specializedDescriptor, specializedWork,
   type SpecializedWork, type SpecializedStrategy } from "./specialized-runtime";
 

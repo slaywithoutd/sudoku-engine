@@ -1,7 +1,7 @@
 import type { DeductionProposal, ProofNode } from "../proof/types";
 import type { ReadView } from "../state/types";
 import { clause, requireProof, sameValue } from "../proof/primitives";
-import { cellBox, orderedNumbers, requireFields, SpecializedAdmission } from "./specialized-lineage";
+import { orderedNumbers, requireFields, SpecializedAdmission } from "./specialized-lineage";
 
 export function checkTridagonPattern(proposal:DeductionProposal,view:ReadView,available:ReadonlyMap<number,ProofNode>):void {
  const p=proposal.pattern as any,a=new SpecializedAdmission(proposal,view,available);

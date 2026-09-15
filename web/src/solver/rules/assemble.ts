@@ -13,7 +13,6 @@ import type {
 } from "../problem";
 import type {
   AllDifferent,
-  Assembly,
   AssemblyResult,
   Cover,
   FactId,

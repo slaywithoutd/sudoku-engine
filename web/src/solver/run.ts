@@ -6,7 +6,7 @@ import type {IndexWorkspace} from "./indexes/workspace";
 import type {RunKey,SolverSnapshot} from "./snapshot";
 import type {Limits} from "./limits";
 import type {CheckedStep} from "./proof/types";
-import {humanSteps,type HumanEvent,type HumanStopStatus} from "./human";
+import {humanSteps,type HumanStopStatus} from "./human";
 import {exactInitializationReservation,exactSteps,EXACT_METHOD} from "./exact";
 import {mergeEvidence,type CountEvidence,type EvidenceContext,type HumanStatus} from "./evidence";
 import type {ExactStats} from "./exact";

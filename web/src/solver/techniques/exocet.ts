@@ -1,4 +1,4 @@
-import type { ReadView, Literal } from "../state/types";
+import type { ReadView } from "../state/types";
 import type { DeductionProposal, Effect } from "../proof/types";
 import type { WorkspaceReservation } from "../indexes/workspace";
 import { clause } from "../proof/primitives";
