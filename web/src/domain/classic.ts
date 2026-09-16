@@ -1,4 +1,4 @@
-import type { EditorState, Value } from "./model";
+import type { CellState, Digit, EditorState, Value } from "./model";
 export function parsePuzzleString(text: string): Value[] {
   const normalized = text.replace(/\s/g, "");
   if (!/^[1-9.0]{81}$/.test(normalized))
@@ -42,4 +42,53 @@ export function effectiveValues(
   givens: readonly Value[],
 ): Value[] {
   return editor.cells.map((cell, i) => givens[i] || cell.value);
+}
+/** The 20 cells sharing a row, column or box with `index`, ascending. */
+export function peersOf(index: number): number[] {
+  return PEERS[index];
+}
+const PEERS: number[][] = Array.from({ length: 81 }, (_, index) => {
+  const set = new Set<number>();
+  for (const unit of units) if (unit.includes(index)) unit.forEach((i) => set.add(i));
+  set.delete(index);
+  return [...set].sort((a, b) => a - b);
+});
+/**
+ * Candidates from local row, column and box constraints only — no solving
+ * technique and no knowledge of the solution.
+ */
+export function candidatesFor(values: readonly Value[], index: number): Digit[] {
+  if (values[index]) return [];
+  const used = new Set(PEERS[index].map((i) => values[i]));
+  return ([1, 2, 3, 4, 5, 6, 7, 8, 9] as Digit[]).filter((d) => !used.has(d));
+}
+/** Note digits already placed in a peer cell, per cell index. */
+export function noteConflicts(
+  values: readonly Value[],
+  cells: readonly CellState[],
+): Map<number, Set<Digit>> {
+  const result = new Map<number, Set<Digit>>();
+  cells.forEach((cell, index) => {
+    if (values[index]) return;
+    const notes = [...cell.notes, ...(cell.center ?? [])];
+    if (!notes.length) return;
+    const used = new Set(PEERS[index].map((i) => values[i]));
+    const bad = new Set(notes.filter((n) => used.has(n)));
+    if (bad.size) result.set(index, bad);
+  });
+  return result;
+}
+/** Digits placed nine times without conflicts. */
+export function completedDigits(values: readonly Value[]): Set<Digit> {
+  const counts = new Map<Value, number>();
+  for (const v of values) if (v) counts.set(v, (counts.get(v) ?? 0) + 1);
+  const conflicts = new Set(conflictingCells(values).map((i) => values[i]));
+  return new Set(
+    ([1, 2, 3, 4, 5, 6, 7, 8, 9] as Digit[]).filter(
+      (d) => counts.get(d) === 9 && !conflicts.has(d),
+    ),
+  );
+}
+export function toPuzzleString(values: readonly Value[]): string {
+  return values.map((v) => (v ? String(v) : ".")).join("");
 }

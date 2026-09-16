@@ -1,5 +1,6 @@
 import type {
   CellChange,
+  CellColor,
   CellState,
   Digit,
   Edit,
@@ -7,22 +8,46 @@ import type {
   EditorState,
   Tool,
 } from "./model";
+import { candidatesFor, effectiveValues } from "./classic";
 export type BoardAction =
-  | { type: "digit"; digit: Digit; corner: boolean }
+  | { type: "digit"; digit: Digit; tool: Tool }
+  | { type: "color"; color: CellColor }
   | { type: "erase" }
   | { type: "reset" }
   | { type: "undo" }
   | { type: "redo" }
+  /** index -1 clears the selection. */
   | { type: "select"; index: number }
   | { type: "move"; dr: number; dc: number }
-  | { type: "tool"; tool: Tool };
+  | { type: "tool"; tool: Tool }
+  | { type: "paste"; cell: CellState }
+  | { type: "autofill" };
+const sameDigits = (a: readonly Digit[] = [], b: readonly Digit[] = []) =>
+  a.length === b.length && a.every((n, i) => n === b[i]);
 export function sameCell(a: CellState, b: CellState): boolean {
   return (
     a.value === b.value &&
-    a.notes.length === b.notes.length &&
-    a.notes.every((n, i) => n === b.notes[i])
+    sameDigits(a.notes, b.notes) &&
+    sameDigits(a.center, b.center) &&
+    (a.color ?? 0) === (b.color ?? 0)
   );
 }
+/** Builds a cell with empty optional layers omitted. */
+export function makeCell(
+  value: CellState["value"],
+  notes: readonly Digit[],
+  center: readonly Digit[] = [],
+  color: CellColor = 0,
+): CellState {
+  const cell: CellState = { value, notes: [...notes] };
+  if (center.length) cell.center = [...center];
+  if (color) cell.color = color;
+  return cell;
+}
+const toggle = (list: readonly Digit[] = [], digit: Digit): Digit[] =>
+  list.includes(digit)
+    ? list.filter((n) => n !== digit)
+    : [...list, digit].sort((a, b) => a - b);
 function applyEdit(
   state: EditorState,
   label: Edit["label"],
@@ -38,15 +63,15 @@ function applyEdit(
     future: [],
   };
 }
+const validIndex = (index: number) =>
+  Number.isInteger(index) && index >= 0 && index < 81;
 export function reduceEditor(
   context: EditorContext,
   state: EditorState,
   action: BoardAction,
 ): EditorState {
   if (action.type === "select")
-    return Number.isInteger(action.index) &&
-      action.index >= 0 &&
-      action.index < 81 &&
+    return (validIndex(action.index) || action.index === -1) &&
       action.index !== state.selected
       ? { ...state, selected: action.index }
       : state;
@@ -57,6 +82,7 @@ export function reduceEditor(
       Math.abs(action.dr) + Math.abs(action.dc) !== 1
     )
       return state;
+    if (state.selected < 0) return { ...state, selected: 0 };
     return {
       ...state,
       selected:
@@ -81,38 +107,83 @@ export function reduceEditor(
       future: undo ? [...state.future, edit] : state.future.slice(0, -1),
     };
   }
-  const locked = (i: number) =>
-    context.mode === "play" && context.givens[i] !== 0;
+  const play = context.mode === "play",
+    given = (i: number) => play && context.givens[i] !== 0;
   if (action.type === "reset") {
     const changes: CellChange[] = [];
     state.cells.forEach((before, index) => {
-      if (!locked(index) && (before.value || before.notes.length))
-        changes.push({ index, before, after: { value: 0, notes: [] } });
+      const after = makeCell(0, []);
+      if (!sameCell(before, after)) changes.push({ index, before, after });
     });
     return applyEdit(state, "reset", changes);
   }
-  const index = state.selected,
-    before = state.cells[index];
-  if (locked(index)) return state;
+  if (action.type === "autofill") {
+    if (!play) return state;
+    const values = effectiveValues(state, context.givens),
+      changes: CellChange[] = [];
+    state.cells.forEach((before, index) => {
+      if (values[index]) return;
+      const after = makeCell(
+        0,
+        candidatesFor(values, index),
+        before.center,
+        before.color,
+      );
+      if (!sameCell(before, after)) changes.push({ index, before, after });
+    });
+    return applyEdit(state, "autofill", changes);
+  }
+  const index = state.selected;
+  if (!validIndex(index)) return state;
+  const before = state.cells[index];
+  const color = before.color ?? 0;
   let after: CellState, label: Edit["label"];
-  if (action.type === "erase") {
-    after = before.value ? { ...before, value: 0 } : { ...before, notes: [] };
-    label = "erase";
-  } else {
-    if (!Number.isInteger(action.digit) || action.digit < 1 || action.digit > 9)
+  if (action.type === "color") {
+    if (!play || !Number.isInteger(action.color) || action.color < 0 || action.color > 6)
       return state;
-    if (context.mode === "play" && action.corner) {
+    after = makeCell(
+      before.value,
+      before.notes,
+      before.center,
+      color === action.color ? 0 : action.color,
+    );
+    label = "color";
+  } else if (action.type === "erase") {
+    // Layered: value, then notes, then color — each press reveals the next layer.
+    if (before.value) after = makeCell(0, before.notes, before.center, color);
+    else if (before.notes.length || before.center)
+      after = makeCell(0, [], [], color);
+    else after = makeCell(0, [], [], 0);
+    label = "erase";
+  } else if (action.type === "paste") {
+    if (given(index)) return state;
+    const source = action.cell;
+    after = play
+      ? makeCell(source.value, source.notes, source.center, source.color ?? 0)
+      : makeCell(source.value, []);
+    label = "paste";
+  } else {
+    const { digit, tool } = action;
+    if (!Number.isInteger(digit) || digit < 1 || digit > 9) return state;
+    const mode = play ? tool : "value";
+    if (mode === "color") {
+      if (digit > 6) return state;
+      return reduceEditor(context, state, {
+        type: "color",
+        color: digit as CellColor,
+      });
+    }
+    if (given(index)) return state;
+    if (mode === "corner" || mode === "center") {
       if (before.value) return state;
-      after = {
-        ...before,
-        notes: before.notes.includes(action.digit)
-          ? before.notes.filter((n) => n !== action.digit)
-          : [...before.notes, action.digit].sort((a, b) => a - b),
-      };
-      label = "note";
+      after =
+        mode === "corner"
+          ? makeCell(0, toggle(before.notes, digit), before.center, color)
+          : makeCell(0, before.notes, toggle(before.center, digit), color);
+      label = mode === "corner" ? "note" : "center";
     } else {
-      const erase = before.value === action.digit;
-      after = { ...before, value: erase ? 0 : action.digit };
+      const erase = before.value === digit;
+      after = makeCell(erase ? 0 : digit, before.notes, before.center, color);
       label = erase ? "erase" : "digit";
     }
   }

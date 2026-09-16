@@ -20,7 +20,7 @@ test("state and history survive reopen; stale revisions cannot overwrite", async
   d.drafts.d.editor = reduceEditor(
     { mode: "create", givens: Array(81).fill(0) },
     d.drafts.d.editor,
-    { type: "digit", digit: 5, corner: false },
+    { type: "digit", digit: 5, tool: "value" },
   );
   const saved = await repo.commit(d, 0);
   expect(saved.revision).toBe(1);
@@ -72,9 +72,9 @@ test("restored hidden notes and redo persist atomically; an aborted put never re
   let s = reduceEditor(ctx, d.sessions.p.editor, {
     type: "digit",
     digit: 2,
-    corner: true,
+    tool: "corner",
   });
-  s = reduceEditor(ctx, s, { type: "digit", digit: 5, corner: false });
+  s = reduceEditor(ctx, s, { type: "digit", digit: 5, tool: "value" });
   s = reduceEditor(ctx, s, { type: "undo" });
   d.sessions.p.editor = s;
   const restored = previewRestore(

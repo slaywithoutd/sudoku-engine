@@ -1,20 +1,24 @@
-import type {
-  CellState,
-  Digit,
-  Draft,
-  Edit,
-  EditorState,
-  LibraryData,
-  PlaySession,
-  Puzzle,
-  Value,
+import {
+  EDIT_LABELS,
+  TOOLS,
+  type CellState,
+  type Digit,
+  type Draft,
+  type Edit,
+  type EditorState,
+  type LibraryData,
+  type PlaySession,
+  type Puzzle,
+  type TimerState,
+  type Value,
 } from "./model";
+import { normalizeSettings } from "./settings";
 import { sameCell } from "./editor";
 import { safeId } from "./library";
 import { conflictingCells } from "./classic";
 export interface BackupEnvelope {
   format: "sudoku-engine-backup";
-  version: 1;
+  version: 2;
   exportedAt: string;
   data: LibraryData;
 }
@@ -70,15 +74,29 @@ function integer(x: unknown, min: number, max: number): number {
 function value(x: unknown): Value {
   return integer(x, 0, 9) as Value;
 }
+function digits(x: unknown): Digit[] {
+  const list = array(x).map((n) => integer(n, 1, 9) as Digit);
+  requireValid(list.every((n, i) => i === 0 || list[i - 1] < n));
+  return list;
+}
 function cell(x: unknown, create: boolean): CellState {
   const c = object(x),
-    notes = array(c.notes).map((n) => integer(n, 1, 9) as Digit);
+    notes = digits(c.notes),
+    result: CellState = { value: value(c.value), notes };
+  // Empty optional layers are omitted, never stored as [] or 0.
+  if (c.center !== undefined) {
+    result.center = digits(c.center);
+    requireValid(result.center.length > 0);
+  }
+  if (c.color !== undefined) result.color = integer(c.color, 1, 6) as 1;
   requireValid(
-    notes.every((n, i) => i === 0 || notes[i - 1] < n) &&
-      (!create || notes.length === 0),
+    !create || (notes.length === 0 && !result.center && !result.color),
   );
-  return { value: value(c.value), notes };
+  return result;
 }
+/** Given cells hold no player value or notes; only a background color. */
+const blankGiven = (c: CellState) =>
+  c.value === 0 && c.notes.length === 0 && !c.center;
 function editor(
   x: unknown,
   create: boolean,
@@ -87,23 +105,26 @@ function editor(
   const e = object(x),
     cells = array(e.cells).map((c) => cell(c, create));
   requireValid(cells.length === 81);
-  const selected = integer(e.selected, 0, 80);
-  requireValid(e.tool === "value" || e.tool === "corner");
+  const selected = integer(e.selected, -1, 80);
+  requireValid((TOOLS as readonly unknown[]).includes(e.tool));
   const parseEdits = (x: unknown): Edit[] =>
     array(x).map((raw) => {
       const r = object(raw);
       requireValid(
-        ["digit", "note", "erase", "reset"].includes(string(r.label)),
+        (EDIT_LABELS as readonly string[]).includes(string(r.label)),
       );
       const seen = new Set<number>();
       const changes = array(r.changes).map((rawChange) => {
         const c = object(rawChange),
           index = integer(c.index, 0, 80);
-        requireValid(!seen.has(index) && !givens[index]);
+        requireValid(!seen.has(index));
         seen.add(index);
         const before = cell(c.before, create),
           after = cell(c.after, create);
-        requireValid(!sameCell(before, after));
+        requireValid(
+          !sameCell(before, after) &&
+            (!givens[index] || (blankGiven(before) && blankGiven(after))),
+        );
         return { index, before, after };
       });
       requireValid(changes.length > 0);
@@ -112,8 +133,7 @@ function editor(
   const past = parseEdits(e.past),
     future = parseEdits(e.future);
   for (let i = 0; i < 81; i++)
-    if (givens[i])
-      requireValid(cells[i].value === 0 && cells[i].notes.length === 0);
+    if (givens[i]) requireValid(blankGiven(cells[i]));
   const replay = (edits: Edit[], backward: boolean) => {
     const state = structuredClone(cells);
     for (const edit of [...edits].reverse())
@@ -130,11 +150,14 @@ function editor(
   };
   replay(past, true);
   replay(future, false);
-  return { cells, selected, tool: e.tool, past, future };
+  return { cells, selected, tool: e.tool as EditorState["tool"], past, future };
 }
 export function validateLibrary(input: unknown): LibraryData {
   const x = object(input);
-  requireValid(x.formatVersion === 1, "Unsupported data version.");
+  requireValid(
+    x.formatVersion === 1 || x.formatVersion === 2,
+    "Unsupported data version.",
+  );
   const revision = integer(x.revision, 0, Number.MAX_SAFE_INTEGER - 1),
     puzzles: Record<string, Puzzle> = {},
     drafts: Record<string, Draft> = {},
@@ -194,47 +217,38 @@ export function validateLibrary(input: unknown): LibraryData {
       updatedAt: date(s.updatedAt),
       editor: editor(s.editor, false, puzzles[key].definition.givens),
     };
+    if (s.timer !== undefined) {
+      const t = object(s.timer);
+      requireValid(typeof t.paused === "boolean" && typeof t.started === "boolean");
+      const timer: TimerState = {
+        elapsedMs: integer(t.elapsedMs, 0, Number.MAX_SAFE_INTEGER),
+        paused: t.paused as boolean,
+        started: t.started as boolean,
+      };
+      sessions[key].timer = timer;
+    }
   }
-  const settings = object(x.settings);
-  // Missing fields belong to older version-1 libraries; invalid explicit values do not.
-  const colorMode =
-    settings.colorMode === undefined ? "light" : settings.colorMode;
-  const theme = settings.theme === undefined ? "green" : settings.theme;
-  requireValid(colorMode === "light" || colorMode === "dark");
-  requireValid(
-    theme === "blue" ||
-      theme === "green" ||
-      theme === "pink" ||
-      theme === "purple" ||
-      theme === "gray",
-  );
-  requireValid(
-    typeof settings.showConflicts === "boolean" &&
-      (settings.language === "pt-BR" || settings.language === "en"),
-  );
+  const settings = normalizeSettings(object(x.settings), () => {
+    throw new Error("Invalid backup data.");
+  });
   return {
-    formatVersion: 1,
+    formatVersion: 2,
     revision,
     drafts,
     puzzles,
     sessions,
-    settings: {
-      showConflicts: settings.showConflicts,
-      language: "en",
-      colorMode,
-      theme,
-    },
+    settings,
   };
 }
 export function parseBackup(text: string): BackupEnvelope {
   const x = object(JSON.parse(text));
   requireValid(
-    x.format === "sudoku-engine-backup" && x.version === 1,
+    x.format === "sudoku-engine-backup" && (x.version === 1 || x.version === 2),
     "Backup format or version is not supported.",
   );
   return {
     format: "sudoku-engine-backup",
-    version: 1,
+    version: 2,
     exportedAt: date(x.exportedAt),
     data: validateLibrary(x.data),
   };
@@ -243,7 +257,7 @@ export function exportBackup(data: LibraryData, now: string): string {
   return JSON.stringify(
     {
       format: "sudoku-engine-backup",
-      version: 1,
+      version: 2,
       exportedAt: date(now),
       data: validateLibrary(data),
     },

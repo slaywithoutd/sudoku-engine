@@ -5,10 +5,10 @@ const ctx: EditorContext = { mode: "play", givens: Array(81).fill(0) };
 const digit = (n: 2 | 5, corner = false): BoardAction => ({
   type: "digit",
   digit: n,
-  corner,
+  tool: corner ? "corner" : "value",
 });
 test("hidden notes, layered erase, undo and redo retain independent cell state", () => {
-  let s = reduceEditor(ctx, emptyEditor(), digit(2, true));
+  let s = reduceEditor(ctx, { ...emptyEditor(), selected: 0 }, digit(2, true));
   s = reduceEditor(ctx, s, digit(5));
   expect(s.cells[0]).toEqual({ value: 5, notes: [2] });
   expect(reduceEditor(ctx, s, digit(2, true))).toBe(s);
@@ -27,13 +27,13 @@ test.each([
   [72, 1, 0, 0],
 ])("wraps from %i", (selected, dr, dc, want) => {
   expect(
-    reduceEditor(ctx, { ...emptyEditor(), selected }, { type: "move", dr, dc })
+    reduceEditor(ctx, { ...{ ...emptyEditor(), selected: 0 }, selected }, { type: "move", dr, dc })
       .selected,
   ).toBe(want);
 });
 test("givens lock edits but permit selection; malformed moves and indices ignored", () => {
   const c = { ...ctx, givens: [7, ...Array(80).fill(0)] };
-  const s = emptyEditor();
+  const s = { ...emptyEditor(), selected: 0 };
   for (const a of [
     digit(2),
     digit(2, true),
@@ -46,7 +46,7 @@ test("givens lock edits but permit selection; malformed moves and indices ignore
   expect(reduceEditor(c, s, { type: "select", index: 1 }).selected).toBe(1);
 });
 test("no-op keeps redo, navigation is outside history, new edits discard redo", () => {
-  let s = reduceEditor(ctx, emptyEditor(), digit(5));
+  let s = reduceEditor(ctx, { ...emptyEditor(), selected: 0 }, digit(5));
   expect(reduceEditor(ctx, s, { type: "select", index: 0 })).toBe(s);
   s = reduceEditor(ctx, s, { type: "undo" });
   expect(reduceEditor(ctx, s, { type: "erase" })).toBe(s);
@@ -62,7 +62,7 @@ test.each(["play", "create"] as const)(
   "reentering a value erases it in %s and remains undoable",
   (mode) => {
     const context = { ...ctx, mode };
-    let state = emptyEditor();
+    let state = { ...emptyEditor(), selected: 0 };
     if (mode === "play") state = reduceEditor(context, state, digit(2, true));
     state = reduceEditor(context, state, digit(5));
     const filled = state;
@@ -80,11 +80,11 @@ test.each(["play", "create"] as const)(
 );
 test("reentering a fixed clue never erases it or adds history", () => {
   const context = { ...ctx, givens: [5, ...Array(80).fill(0)] };
-  const state = emptyEditor();
+  const state = { ...emptyEditor(), selected: 0 };
   expect(reduceEditor(context, state, digit(5))).toBe(state);
 });
 test("reset is one undoable edit, keeps selection/tool and never cleans peers", () => {
-  let s = reduceEditor(ctx, emptyEditor(), digit(2, true));
+  let s = reduceEditor(ctx, { ...emptyEditor(), selected: 0 }, digit(2, true));
   s = reduceEditor(ctx, s, { type: "select", index: 1 });
   s = reduceEditor(ctx, s, digit(2, true));
   s = reduceEditor(ctx, s, digit(5));
@@ -95,13 +95,13 @@ test("reset is one undoable edit, keeps selection/tool and never cleans peers", 
   expect(reduceEditor(ctx, s, { type: "undo" }).cells).toEqual(prior.cells);
 });
 test("corner toggle sorts notes; creation always enters clues", () => {
-  let s = reduceEditor(ctx, emptyEditor(), digit(5, true));
+  let s = reduceEditor(ctx, { ...emptyEditor(), selected: 0 }, digit(5, true));
   s = reduceEditor(ctx, s, digit(2, true));
   expect(s.cells[0].notes).toEqual([2, 5]);
   s = reduceEditor(ctx, s, digit(5, true));
   expect(s.cells[0].notes).toEqual([2]);
   expect(
-    reduceEditor({ ...ctx, mode: "create" }, emptyEditor(), digit(2, true))
+    reduceEditor({ ...ctx, mode: "create" }, { ...emptyEditor(), selected: 0 }, digit(2, true))
       .cells[0],
   ).toEqual({ value: 2, notes: [] });
 });

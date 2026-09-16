@@ -1,19 +1,30 @@
-import { emptyEditor, type LibraryData, type Value } from "./model";
+import { emptyEditor, newTimer, type LibraryData, type Value } from "./model";
 import { conflictingCells } from "./classic";
+import { defaultSettings } from "./settings";
 export function emptyLibrary(): LibraryData {
   return {
-    formatVersion: 1,
+    formatVersion: 2,
     revision: 0,
     drafts: {},
     puzzles: {},
     sessions: {},
-    settings: {
-      showConflicts: false,
-      language: "en",
-      colorMode: "light",
-      theme: "green",
-    },
+    settings: defaultSettings(),
   };
+}
+/**
+ * Next free "Puzzle N" across drafts and puzzles. Uses the highest existing
+ * number rather than a count, so deleting a record never produces duplicates.
+ */
+export function nextPuzzleName(data: LibraryData): string {
+  let highest = 0;
+  for (const record of [
+    ...Object.values(data.drafts),
+    ...Object.values(data.puzzles),
+  ]) {
+    const match = /^Puzzle (\d{1,9})$/.exec(record.name);
+    if (match) highest = Math.max(highest, Number(match[1]));
+  }
+  return `Puzzle ${highest + 1}`;
 }
 export function safeId(id: string): boolean {
   return !!id && id !== "prototype" && !Object.hasOwn(Object.prototype, id);
@@ -31,6 +42,7 @@ export function createDraft(
   id: string,
   now: string,
   values: readonly Value[] = Array(81).fill(0),
+  name = nextPuzzleName(data),
 ): LibraryData {
   available(data, id);
   if (
@@ -44,7 +56,7 @@ export function createDraft(
     ...data,
     drafts: {
       ...data.drafts,
-      [id]: { id, name: "Untitled", createdAt: now, updatedAt: now, editor },
+      [id]: { id, name, createdAt: now, updatedAt: now, editor },
     },
   };
 }
@@ -95,7 +107,12 @@ export function startPlay(
     ...data,
     sessions: {
       ...data.sessions,
-      [puzzleId]: { puzzleId, updatedAt: now, editor: emptyEditor() },
+      [puzzleId]: {
+        puzzleId,
+        updatedAt: now,
+        editor: emptyEditor(),
+        timer: newTimer(data.settings.timerStart),
+      },
     },
   };
 }
@@ -107,14 +124,19 @@ export function copyPuzzleToDraft(
 ): LibraryData {
   const puzzle = data.puzzles[puzzleId];
   if (!puzzle) throw new Error("Puzzle not found.");
-  const next = createDraft(data, draftId, now, puzzle.definition.givens);
+  const next = createDraft(
+    data,
+    draftId,
+    now,
+    puzzle.definition.givens,
+    puzzle.name,
+  );
   return {
     ...next,
     drafts: {
       ...next.drafts,
       [draftId]: {
         ...next.drafts[draftId],
-        name: puzzle.name,
         sourcePuzzleId: puzzleId,
       },
     },

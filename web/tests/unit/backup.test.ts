@@ -29,7 +29,7 @@ test.each(["pt-BR", "en"])(
     original.drafts.d.name = "Meu Sudoku";
     const stored = { ...original, settings: { showConflicts: true, language } };
     const loaded = validateLibrary(stored);
-    expect(loaded.settings).toEqual({
+    expect(loaded.settings).toMatchObject({
       showConflicts: true,
       language: "en",
       colorMode: "light",
@@ -113,9 +113,9 @@ test("roundtrip keeps hidden notes, redo, settings; identical records skip", () 
   let s = reduceEditor(ctx, d.sessions.p.editor, {
     type: "digit",
     digit: 2,
-    corner: true,
+    tool: "corner",
   });
-  s = reduceEditor(ctx, s, { type: "digit", digit: 5, corner: false });
+  s = reduceEditor(ctx, s, { type: "digit", digit: 5, tool: "value" });
   s = reduceEditor(ctx, s, { type: "undo" });
   d.sessions.p.editor = s;
   d.settings.showConflicts = true;
@@ -162,7 +162,7 @@ test("changed puzzle remaps two draft links and retries generated collisions", (
   );
   expect(result.data.drafts.copy.sourcePuzzleId).toBe("fresh-p");
   expect(result.data.drafts["fresh-d"].finishedPuzzleId).toBe("fresh-p");
-  expect(result.data.puzzles.p.name).toBe("Untitled");
+  expect(result.data.puzzles.p.name).toBe("Puzzle 1");
 });
 test("settings remain local unless requested; revision remains local", () => {
   const current = emptyLibrary();
@@ -179,8 +179,8 @@ test("settings remain local unless requested; revision remains local", () => {
   ).toBe(true);
 });
 test.each([
-  (x: any) => (x.version = 2),
-  (x: any) => (x.data.formatVersion = 2),
+  (x: any) => (x.version = 3),
+  (x: any) => (x.data.formatVersion = 3),
   (x: any) => x.data.drafts.d.editor.cells.pop(),
   (x: any) => (x.data.drafts.d.editor.cells[0].notes = [2]),
   (x: any) => (x.data.sessions.p.editor.cells[0].notes = [2, 2]),
