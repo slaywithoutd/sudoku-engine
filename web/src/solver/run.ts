@@ -57,12 +57,11 @@ export async function runSolver(request:SolverRunRequest|any,ports:SolverPorts):
     const exactStart=ports.clock.now(),reservation=exactInitializationReservation(request.snapshot.problem,request.assembly);
     const lease=request.workspace.reserve(1,reservation.workspaceBytes);let used=0;let evidenceRun=request.run;
     try {
-      const exact=exactSteps(request.snapshot.problem,request.assembly);let terminal:ExactStats|undefined;
+      const exact=exactSteps(request.snapshot.problem,request.assembly);let terminal:ExactStats|undefined;let limited=false;
       for(const event of exact){
         if(ports.clock.now()>=totalDeadline)break;
         if(event.kind==="work"){
-          if(used+event.units>request.limits.workUnits)break;
-          if(!totalBudget.spend(event.units))break;
+          if(used+event.units>request.limits.workUnits||!totalBudget.spend(event.units)){limited=true;break;}
           used+=event.units;await ports.publish({kind:"work",phase:"exact",units:event.units,stats:event.stats});
         }
         else if(event.kind==="witness"){
@@ -70,11 +69,12 @@ export async function runSolver(request:SolverRunRequest|any,ports:SolverPorts):
           count=mergeEvidence(count,{kind:"unknown",witnesses:[event.values],lowerBound:1},context).count;await ports.publish({kind:"evidence",count,stats:event.stats});
         } else if(event.kind==="exhausted"){terminal=event.stats;const context:EvidenceContext={run:request.run,snapshot:request.snapshot,assembly:request.assembly,initialView:request.view,acceptedView:view,accepted,human,activeExactRun:evidenceRun,phase:"exact"};
           const proof={kind:"root-exhausted" as const,key:evidenceRun,method:EXACT_METHOD,stats:exactStats(event.stats),frontierEmpty:true as const};
-          const witness=count.kind==="unknown"?(count.witnesses[0]??[]):[];
-          count=mergeEvidence(count,{kind:"unique",witness,evidenceId:`${evidenceRun.requestId}:count`,proof,rootExhausted:true},context).count;await ports.publish({kind:"evidence",count,stats:event.stats});
+          const witness=count.kind==="unknown"?count.witnesses[0]:undefined;
+          // An exhausted root with no witness proves zero solutions, not a witness-less unique claim.
+          count=mergeEvidence(count,witness?{kind:"unique",witness,evidenceId:`${evidenceRun.requestId}:count`,proof,rootExhausted:true}:{kind:"zero",proof,evidenceId:`${evidenceRun.requestId}:count`},context).count;await ports.publish({kind:"evidence",count,stats:event.stats});
         } else {terminal=event.stats;}
       }
-      const outcome=terminal?"complete":"timeout";await ports.publish({kind:"terminal",outcome,human,count,stats:terminal});
+      const outcome=terminal?"complete":limited?"resource-limit":"timeout";await ports.publish({kind:"terminal",outcome,human,count,stats:terminal});
     } finally {lease.dispose();void exactStart;}
   } catch(error){await ports.publish({kind:"terminal",outcome:"error",code:error instanceof Error?error.message:"solver-error",human,count});}
 }

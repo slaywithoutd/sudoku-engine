@@ -9,6 +9,8 @@ export interface SolverSnapshot {
   readonly input: unknown;
   readonly options: unknown;
   readonly result: unknown;
+  /** Latest non-terminal worker event of the accepted request (progress, explained step). */
+  readonly lastEvent: unknown;
 }
 
 export interface SolverWorker {
@@ -51,6 +53,7 @@ export function createSolverController(deps: SolverControllerDeps): SolverContro
     input: null,
     options: null,
     result: null,
+    lastEvent: null,
   };
   const listeners = new Set<() => void>();
 
@@ -71,6 +74,7 @@ export function createSolverController(deps: SolverControllerDeps): SolverContro
       requestId: id,
       outcome: "running",
       result: conditional ? { kind: "conditional" } : null,
+      lastEvent: null,
     });
     notify();
     worker = deps.workerFactory.start(
@@ -96,13 +100,18 @@ export function createSolverController(deps: SolverControllerDeps): SolverContro
               acceptedRevision: value.revision ?? state.acceptedRevision,
               result: value.result ?? state.result,
             });
+            worker?.terminate();
             worker = undefined;
+            notify();
+          } else {
+            state = Object.freeze({ ...state, lastEvent: event });
             notify();
           }
         },
         onError(error) {
           if (token !== generation) return;
           state = Object.freeze({ ...state, outcome: "error", result: { error: error.message } });
+          worker?.terminate();
           worker = undefined;
           notify();
         },
@@ -111,7 +120,7 @@ export function createSolverController(deps: SolverControllerDeps): SolverContro
   };
   const replaceInput = (definition: unknown) => {
     invalidate("idle");
-    state = Object.freeze({ ...state, input: structuredClone(definition), result: null });
+    state = Object.freeze({ ...state, input: structuredClone(definition), result: null, lastEvent: null });
     notify();
   };
 

@@ -1,4 +1,5 @@
 import { isConditionalOperation } from "../conditional";
+import { utf8Length } from "../utf8";
 import type { SolverSnapshot } from "../snapshot";
 import type { Assembly } from "../rules/types";
 import type { CheckEvent, DeductionProposal, Limits, Proposition } from "./types";
@@ -26,7 +27,7 @@ export function* initializationReservation(assembly: Assembly): Generator<CheckE
   let nodes = 0, proofBytes = 0;
   const add = (rule: string, conclusion: Proposition, premises: readonly number[] = [], parameters = {}) => {
     const text = JSON.stringify({ id: nodes++, rule, conclusion, premises, parameters, scope: [] });
-    const bytes = new TextEncoder().encode(text).length;
+    const bytes = utf8Length(text);
     requireProof(bytes <= 16384, "proof-byte-limit");
     proofBytes += bytes;
   };

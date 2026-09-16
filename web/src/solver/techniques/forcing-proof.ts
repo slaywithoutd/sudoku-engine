@@ -1,4 +1,5 @@
 import {sourceMaximumId,matchingFacts} from "../state/source-index";
+import {jsonByteLength} from "../utf8";
 import type { WorkspaceReservation } from "../indexes/workspace";
 import type { Json } from "../problem";
 import type { DeductionProposal, Effect, ProofNode } from "../proof/types";
@@ -17,7 +18,7 @@ export interface PathCertificate { readonly clauses: readonly number[]; readonly
 /** Full wire caps still apply after bounded semantic inference expansion. */
 export function forcingProofFits(proposal:DeductionProposal,limits:Limits):boolean {
   if(proposal.proof.nodes.length>limits.stepNodes)return false;
-  const bytes=(value:unknown)=>new TextEncoder().encode(JSON.stringify(value)).length;
+  const bytes=jsonByteLength;
   return bytes(proposal)<=limits.stepBytes&&bytes({...proposal,proof:{...proposal.proof,nodes:[]}})<=32768;
 }
 

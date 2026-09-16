@@ -48,7 +48,10 @@ export function* humanSteps(initial:ReadView,registry:TechniqueJobs,options:Huma
           if(ack==="human-stopped"){yield {kind:"logical-stop",human:"incomplete",reason:"logical-budget",accepted:Object.freeze([...accepted])};return;}
           throw Error("missing-human-acceptance");
         }
-        const next=options.accept(proposal.step);accepted.push(proposal.step);selection.advance(next);view=next;continue;
+        const next=options.accept(proposal.step);accepted.push(proposal.step);selection.advance(next);view=next;
+        // A filled grid satisfying every rule is solved; rescanning the whole profile cannot add information.
+        if(isWitness(view.assembly.problem,view.assembly,view.state.values)){yield {kind:"logical-stop",human:"solved",reason:"solved",accepted:Object.freeze([...accepted])};return;}
+        continue;
       }
       if(stopped){const human=stopStatus(view,stopped);yield {kind:"logical-stop",human,reason:human==="incomplete"?"logical-budget":stopped.reason,accepted:Object.freeze([...accepted])};return;}
     }

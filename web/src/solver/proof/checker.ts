@@ -1,4 +1,5 @@
 import { canonicalProblem } from "../problem";
+import { jsonByteLength } from "../utf8";
 import { conditionalViewAuthority, uniqueAuthorityMatches, uniqueAuthorityOwns, type UniqueAuthority } from "../conditional";
 import { checkTechniqueGrammar,checkTechniqueGrammarSteps } from "../techniques/grammar";
 import { assertOwnedView, isHypotheticalView, branchScope, ownsBranchNode, retainedProof } from "../state/candidates";
@@ -171,7 +172,7 @@ function copyBounded<T>(input: T, limit: number): { value: T; bytes: number } {
     }
     if (typeof value === "string") {
       requireProof(value.length <= remaining, "proof-byte-limit");
-      charge(new TextEncoder().encode(JSON.stringify(value)).length);
+      charge(jsonByteLength(value));
       return value;
     }
     requireProof(typeof value === "object" && value !== null, "invalid-proof-json");
@@ -184,6 +185,24 @@ function copyBounded<T>(input: T, limit: number): { value: T; bytes: number } {
     const keys = Reflect.ownKeys(value);
     requireProof(keys.length <= (array ? 4097 : 64), "proof-arity-limit");
     charge(2);
+    // Dense arrays (own indices plus `length` only) take an index walk with the
+    // same charges; anything unusual falls through to the key-validating path.
+    if (array && keys.length === value.length + 1) {
+      const dense: Json[] = [];
+      let valid = true;
+      for (let index = 0; index < value.length; index++) {
+        const descriptor = Object.getOwnPropertyDescriptor(value, index);
+        if (!descriptor || !descriptor.enumerable || !("value" in descriptor)) { valid = false; break; }
+      }
+      if (valid) {
+        for (let index = 0; index < value.length; index++) {
+          if (index > 0) charge(1);
+          dense.push(visit((value as unknown[])[index], depth + 1));
+        }
+        active.delete(value);
+        return Object.freeze(dense);
+      }
+    }
     const result: Record<string, Json> | Json[] = array ? [] : {};
     let entries = 0;
     for (const key of keys) {
@@ -195,7 +214,7 @@ function copyBounded<T>(input: T, limit: number): { value: T; bytes: number } {
       if (entries++ > 0) charge(1);
       if (!array) {
         requireProof(key.length <= remaining, "proof-byte-limit");
-        charge(new TextEncoder().encode(JSON.stringify(key)).length + 1);
+        charge(jsonByteLength(key) + 1);
       }
       Object.defineProperty(result, key, { value: visit(descriptor.value, depth + 1), enumerable: true });
     }

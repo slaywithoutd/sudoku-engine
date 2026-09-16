@@ -1,4 +1,5 @@
 import type { ReadView, Proposition } from "../state/types";
+import { jsonByteLength } from "../utf8";
 import type { DiscoveryContext, Discovery, TechniqueDescriptor } from "./types";
 import type { DeductionProposal, Effect } from "../proof/types";
 import {
@@ -105,8 +106,7 @@ const chunk = (codes: readonly number[]) => {
     result.push(codes.slice(i, i + 1024));
   return result;
 };
-const bytes = (value: unknown) =>
-  new TextEncoder().encode(JSON.stringify(value)).length;
+const bytes = jsonByteLength;
 
 /**
  * Complete single/pair/triple projection or synchronous pairwise fixed point.
