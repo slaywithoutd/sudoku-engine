@@ -2,6 +2,7 @@ import type { ScreenServices } from "../app/controller";
 import { createDraft } from "../domain/library";
 import { el, button } from "./dom";
 import { icon, type IconName } from "./icons";
+import { randomSplash } from "./splash";
 export function newDraft(services: ScreenServices): void {
   const id = services.newId();
   services.controller.update((data) => createDraft(data, id, services.now()));
@@ -14,7 +15,7 @@ export function mountHome(
   const hero = el("section", undefined, "hero");
   hero.append(
     el("h1", "One number at a time."),
-    el("p", "Play your library, build new puzzles or let the solver explain one.", "intro"),
+    el("p", randomSplash(), "intro splash"),
   );
   const cards = el("div", undefined, "home-cards");
   const card = (name: string, iconName: IconName, text: string, onClick: () => void) => {

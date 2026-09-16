@@ -497,6 +497,20 @@ dialog .actions .ghost:first-child { margin-right: auto; }
 .hero { max-width: 64rem; margin: 0 auto; padding-top: clamp(1rem, 6vh, 5rem); }
 .hero h1 { font-size: clamp(2.2rem, 4vw, 3.4rem); font-weight: 700; letter-spacing: -0.03em; line-height: 1.08; margin-bottom: 0.75rem; }
 .intro { font-size: 1.1rem; color: var(--muted); max-width: 36rem; }
+.intro.splash {
+  display: inline-block;
+  color: var(--accent);
+  font-weight: 600;
+  font-style: italic;
+  transform-origin: left center;
+  animation: splash-in 0.4s var(--ease) both;
+}
+.intro.splash::before { content: "\201C"; }
+.intro.splash::after { content: "\201D"; }
+@keyframes splash-in {
+  from { opacity: 0; transform: scale(0.92) rotate(-1.5deg) translateY(3px); }
+  to { opacity: 1; transform: none; }
+}
 .home-cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1.25rem; margin-top: 2.5rem; }
 .home-card {
   display: grid;
