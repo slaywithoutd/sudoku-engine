@@ -8,7 +8,10 @@ import { mountCreator } from "../ui/creator";
 import { mountPlayer } from "../ui/player";
 import { mountSettings } from "../ui/settings";
 import { mountSolver } from "../ui/solver";
+import { mountHelp } from "../ui/help";
 import { el, button } from "../ui/dom";
+import { icon, type IconName } from "../ui/icons";
+import { exitFullscreen } from "../ui/game";
 import { downloadBackup } from "../ui/backup";
 export function mountApplication(
   root: HTMLElement,
@@ -39,41 +42,23 @@ export function mountApplication(
     status = el("span"),
     error = el("p", undefined, "error");
   brand.setAttribute("aria-label", "Sudoku Engine");
-  const mark = el("span", "▦", "brand-mark");
-  mark.setAttribute("aria-hidden", "true");
+  const mark = el("span", undefined, "brand-mark");
+  mark.append(icon("solve"));
   brand.replaceChildren(mark, el("span", "Sudoku Engine", "brand-name"));
   nav.setAttribute("aria-label", "Main navigation");
-  const navItems = [
-    {
-      label: "Home",
-      screen: "home",
-      path: "M3 10 12 3l9 7M5 9v12h5v-7h4v7h5V9",
-      route: { screen: "home" } as const,
-    },
-    {
-      label: "Library",
-      screen: "library",
-      path: "M4 4h6v16H4zM14 4h6v16h-6z",
-      route: { screen: "library", tab: "puzzles" } as const,
-    },
-    {
-      label: "Settings",
-      screen: "settings",
-      path: "M4 7h16M4 17h16M9 4v6M15 14v6",
-      route: { screen: "settings" } as const,
-    },
-    { label: "Solver", screen: "solve", path: "M4 4h16v16H4z", route: { screen: "solve" } as const },
-  ].map((item) => {
-    const control = button(item.label, () => services.navigate(item.route));
+  const navItems = (
+    [
+      { label: "Home", screen: "home", icon: "home", route: { screen: "home" } },
+      { label: "Library", screen: "library", icon: "library", route: { screen: "library", tab: "puzzles" } },
+      { label: "Solver", screen: "solve", icon: "solve", route: { screen: "solve" } },
+      { label: "Help", screen: "help", icon: "help", route: { screen: "help" } },
+      { label: "Settings", screen: "settings", icon: "settings", route: { screen: "settings" } },
+    ] as { label: string; screen: string; icon: IconName; route: Parameters<ScreenServices["navigate"]>[0] }[]
+  ).map((item) => {
+    const control = button("", () => services.navigate(item.route));
     control.setAttribute("aria-label", item.label);
     control.title = item.label;
-    const icon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-    icon.setAttribute("viewBox", "0 0 24 24");
-    icon.setAttribute("aria-hidden", "true");
-    const path = document.createElementNS(icon.namespaceURI, "path");
-    path.setAttribute("d", item.path);
-    icon.append(path);
-    control.replaceChildren(icon, el("span", item.label));
+    control.replaceChildren(icon(item.icon), el("span", item.label));
     nav.append(control);
     return { ...item, control };
   });
@@ -84,17 +69,10 @@ export function mountApplication(
     }),
     backup = button("Export work", () => downloadBackup(services));
   saveArea.append(status, retry, backup, error);
-  sidebar.append(
-    brand,
-    el("p", "YOUR SPACE TO PLAY", "sidebar-caption"),
-    nav,
-    saveArea,
-  );
+  sidebar.append(brand, nav, saveArea);
   root.append(sidebar, main);
   const updateStatus = () => {
-    const appearance = controller.snapshot().settings;
-    document.documentElement.dataset.mode = appearance.colorMode;
-    document.documentElement.dataset.theme = appearance.theme;
+    applyAppearance(controller.snapshot().settings);
     const s = controller.status();
     status.textContent =
       s.kind === "saved"
@@ -112,10 +90,9 @@ export function mountApplication(
     document.querySelectorAll("dialog").forEach((d) => d.remove());
     main.replaceChildren();
     const r = parseRoute(location.hash);
-    main.classList.toggle(
-      "editor-screen",
-      r.screen === "create" || r.screen === "play",
-    );
+    const game = r.screen === "create" || r.screen === "play" || r.screen === "solve";
+    if (!game) exitFullscreen();
+    main.classList.toggle("editor-screen", game);
     for (const item of navItems) {
       if (item.screen === r.screen)
         item.control.setAttribute("aria-current", "page");
@@ -138,7 +115,10 @@ export function mountApplication(
         dispose = mountSettings(main, services);
         break;
       case "solve":
-        dispose = mountSolver(main, services);
+        dispose = mountSolver(main, services, r.source);
+        break;
+      case "help":
+        dispose = mountHelp(main, services);
         break;
     }
   };
@@ -160,4 +140,18 @@ export function mountApplication(
     window.removeEventListener("beforeunload", beforeUnload);
     repository.close();
   };
+}
+
+/** Mirrors appearance and accessibility settings onto <html> for CSS. */
+export function applyAppearance(settings: LibraryData["settings"]): void {
+  const root = document.documentElement.dataset;
+  root.mode = settings.colorMode;
+  root.theme = settings.theme;
+  root.textScale = String(settings.textScale);
+  root.digitScale = String(settings.digitScale);
+  root.palette = settings.palette;
+  root.boldDigits = String(settings.boldDigits);
+  root.contrast = settings.highContrast ? "high" : "normal";
+  root.patterns = String(settings.colorPatterns);
+  root.motion = settings.reduceMotion ? "reduce" : "auto";
 }

@@ -1,4 +1,4 @@
-import { emptyEditor, newTimer, type LibraryData, type Value } from "./model";
+import { emptyEditor, newTimer, type CellState, type LibraryData, type Value } from "./model";
 import { conflictingCells } from "./classic";
 import { defaultSettings } from "./settings";
 export function emptyLibrary(): LibraryData {
@@ -192,4 +192,41 @@ export function deleteRecord(
     }
   }
   return { ...data, puzzles, sessions, drafts };
+}
+/**
+ * Adds a finished puzzle with restored progress from a game export.
+ * History is not exported, so the session starts with an empty undo stack.
+ */
+export function importGame(
+  data: LibraryData,
+  puzzleId: string,
+  now: string,
+  game: { givens: readonly Value[]; cells: readonly CellState[]; elapsedMs?: number; name?: string },
+): LibraryData {
+  available(data, puzzleId);
+  if (conflictingCells(game.givens).length)
+    throw new Error("A puzzle with conflicting clues can only be imported as a draft.");
+  const editor = emptyEditor();
+  editor.cells = structuredClone([...game.cells]);
+  return {
+    ...data,
+    puzzles: {
+      ...data.puzzles,
+      [puzzleId]: {
+        id: puzzleId,
+        name: game.name ?? nextPuzzleName(data),
+        createdAt: now,
+        definition: { kind: "classic", version: 1, width: 9, height: 9, givens: [...game.givens] },
+      },
+    },
+    sessions: {
+      ...data.sessions,
+      [puzzleId]: {
+        puzzleId,
+        updatedAt: now,
+        editor,
+        timer: { ...newTimer(data.settings.timerStart), elapsedMs: game.elapsedMs ?? 0, started: true },
+      },
+    },
+  };
 }

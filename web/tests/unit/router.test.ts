@@ -18,6 +18,9 @@ test("routes roundtrip encoded identifiers", () => {
     { screen: "create", id: "a/b ?" },
     { screen: "play", id: "id" },
     { screen: "settings" },
+    { screen: "help" },
+    { screen: "solve", source: { kind: "puzzle", id: "x/y" } },
+    { screen: "solve", source: { kind: "draft", id: "d" } },
   ];
   for (const route of routes)
     expect(parseRoute(routeHash(route))).toEqual(route);
