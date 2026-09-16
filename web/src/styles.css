@@ -758,15 +758,20 @@ dialog .actions .ghost:first-child { margin-right: auto; }
   pointer-events: none;
   z-index: -1;
 }
-.cell:hover:not(:disabled) { background: transparent; }
-/* Translucent so an annotation color underneath (.cell background, painted
-   below this pseudo-element) stays visible instead of being fully hidden. */
-.board:not(:has([aria-readonly])) .cell:hover::before { background: color-mix(in srgb, var(--hover) 70%, transparent); }
-.cell.peer::before { background: color-mix(in srgb, var(--peer) 70%, transparent); }
-.cell.area::before { background: color-mix(in srgb, var(--area) 70%, transparent); }
-.cell.same-digit::before { background: color-mix(in srgb, var(--same) 70%, transparent); }
+/* Highlight strength for the "seen" and selection overlays below, as a
+   layer over whatever the cell already shows. Every highlighted cell keeps
+   this strength except colored ones, which drop it so an annotation color
+   underneath (the .cell background, painted below this pseudo-element)
+   stays legible instead of being washed out — the same overlay, tuned per
+   layer rather than a one-off rule per state. */
+.cell { --seen-opacity: 70%; --selected-opacity: 65%; }
+.cell[data-color] { --seen-opacity: 32%; --selected-opacity: 40%; }
+.board:not(:has([aria-readonly])) .cell:hover::before { background: color-mix(in srgb, var(--hover) var(--seen-opacity), transparent); }
+.cell.peer::before { background: color-mix(in srgb, var(--peer) var(--seen-opacity), transparent); }
+.cell.area::before { background: color-mix(in srgb, var(--area) var(--seen-opacity), transparent); }
+.cell.same-digit::before { background: color-mix(in srgb, var(--same) var(--seen-opacity), transparent); }
 .cell[aria-selected="true"] { z-index: 1; }
-.cell[aria-selected="true"]::before { background: color-mix(in srgb, var(--selection) 65%, transparent); box-shadow: inset 0 0 0 2px var(--selection-border); }
+.cell[aria-selected="true"]::before { background: color-mix(in srgb, var(--selection) var(--selected-opacity), transparent); box-shadow: inset 0 0 0 2px var(--selection-border); }
 :root[data-contrast="high"] .cell[aria-selected="true"]::before { box-shadow: inset 0 0 0 3px var(--selection-border); }
 .cell:focus-visible { outline: none; }
 .cell:focus-visible::before { box-shadow: inset 0 0 0 3px var(--focus); }
