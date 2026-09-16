@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { cell, playString, saved } from "./helpers";
+import { cell, openLibrary, openSettings, playString, saved } from "./helpers";
 import { PUZZLE } from "../fixtures";
 
 test("all ten appearances apply across settings, board and dialogs and survive reload", async ({
@@ -16,7 +16,7 @@ test("all ten appearances apply across settings, board and dialogs and survive r
   const colors = new Set<string>();
   for (const mode of ["Light", "Dark"]) {
     for (const theme of ["Blue", "Green", "Pink", "Purple", "Gray"]) {
-      await page.getByRole("button", { name: "Settings", exact: true }).click();
+      await openSettings(page);
       await page.getByRole("radio", { name: mode, exact: true }).check();
       await page.getByRole("radio", { name: theme, exact: true }).check();
       await expect(
@@ -27,6 +27,9 @@ test("all ten appearances apply across settings, board and dialogs and survive r
       ).toBeChecked();
       await saved(page);
       await page.goto(playUrl);
+      // Leaving the board clears the selection; select again to measure note contrast on it.
+      await cell(page, 2).click();
+      await expect(cell(page, 2)).toHaveAttribute("aria-selected", "true");
       await expect(page.locator("html")).toHaveAttribute(
         "data-mode",
         mode.toLowerCase(),
@@ -72,8 +75,8 @@ test("all ten appearances apply across settings, board and dialogs and survive r
         return [
           ratio(style("html").color, style("html").backgroundColor),
           ratio(
-            style(".side-panel .muted").color,
-            style(".side-panel").backgroundColor,
+            style(".save-area").color,
+            style(".sidebar").backgroundColor,
           ),
           ratio(
             style('[data-cell-index="3"]').color,
@@ -91,7 +94,7 @@ test("all ten appearances apply across settings, board and dialogs and survive r
     }
   }
   expect(colors.size).toBe(10);
-  await page.getByRole("button", { name: "Settings", exact: true }).click();
+  await openSettings(page);
   await page.reload();
   await expect(
     page.getByRole("radio", { name: "Dark", exact: true }),
@@ -112,8 +115,9 @@ test("all ten appearances apply across settings, board and dialogs and survive r
     path: info.outputPath("dark-settings.png"),
     fullPage: true,
   });
-  await page.getByRole("button", { name: "Library", exact: true }).click();
-  await page.getByRole("button", { name: "Rename", exact: true }).click();
+  await openLibrary(page);
+  await page.getByRole("button", { name: /^More actions for/ }).click();
+  await page.getByRole("menuitem", { name: "Rename" }).click();
   await expect(page.getByRole("dialog")).toBeVisible();
   await page.screenshot({ path: info.outputPath("dark-dialog.png") });
 });

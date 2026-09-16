@@ -61,7 +61,9 @@ export function keyIntent(
 ): KeyIntent | null {
   const combo = comboFromEvent(event);
   if (!combo) return null;
-  const action = SHORTCUT_ACTIONS.find((a) => settings.shortcuts[a] === combo);
+  let action = SHORTCUT_ACTIONS.find((a) => settings.shortcuts[a] === combo);
+  // Ctrl+Shift+Z stays a redo alias unless the user bound it to something else.
+  if (!action && combo === "Ctrl+Shift+Z" && settings.shortcuts.redo) action = "redo";
   if (action) {
     const repeatable = action === "undo" || action === "redo";
     return event.repeat && !repeatable ? null : { kind: "command", action };

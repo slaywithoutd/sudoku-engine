@@ -12,7 +12,7 @@ import { countSummary, logicalSummary, solverStatus, cellName } from "./solver-c
 import { el, button } from "./dom";
 import { icon } from "./icons";
 import { iconButton, labeledButton, menuButton, segmented, selectControl, type SelectSection } from "./components";
-import { copyText, gameShell, toast } from "./game";
+import { copyText, fullscreenButton, gameShell, toast } from "./game";
 import { clueSummary, mountPuzzleSurface, type PuzzleSurface } from "./puzzle-editor";
 import { openImportDialog } from "./import-dialog";
 import { nameField } from "./creator";
@@ -164,10 +164,14 @@ export function mountSolver(
         },
       },
       "separator",
-      { label: "Clear board", icon: "reset", danger: true, disabled: phase !== "edit" || !values.some(Boolean), onSelect: () => loadValues(Array(81).fill(0)) },
+      { label: "Clear board", icon: "reset", danger: true, disabled: phase !== "edit" || !values.some(Boolean), onSelect: () => {
+        // Undoable, like Clear board in Create.
+        editor = reduceEditor(inputContext, editor, { type: "reset" });
+        render();
+      } },
     ];
   });
-  shell.actions.append(library.node, importButton, more);
+  shell.actions.append(library.node, importButton, fullscreenButton(), more);
 
   // Solver panel --------------------------------------------------------------
   const panel = el("section", undefined, "solver-panel");
@@ -218,7 +222,7 @@ export function mountSolver(
   const first = iconButton("first", "First step", () => go(0)),
     prev = iconButton("chevronLeft", "Previous step", () => go(current - 1)),
     next = iconButton("chevronRight", "Next step", () => go(current + 1)),
-    last = iconButton("last", "Last step", () => go(steps.length - 1)),
+    last = iconButton("last", "Last step", () => go(visible().length - 1)),
     play = iconButton("play", "Play steps", () => (autoplay ? stopAutoplay() : startAutoplay()));
   const position = el("span", undefined, "step-position");
   position.setAttribute("aria-live", "polite");
@@ -313,9 +317,10 @@ export function mountSolver(
     startedAt = performance.now();
     finishedAt = 0;
     lastPhase = "human";
-    phase = "running";
     solver.replaceInput({ givens: values });
     solver.setOptions({ timeLimitMs: settings().solverTimeLimitS * 1000 });
+    // Enter the running phase only after resetting input, whose "idle" notice is not a finished run.
+    phase = "running";
     mountDisplay();
     solver.start();
     render();
@@ -329,17 +334,21 @@ export function mountSolver(
   };
 
   // Explain navigation
+  /** Steps listed in Explain; hidden basic eliminations still shape each board state. */
+  const visible = () => (settings().solverHideBasic ? steps.filter((step) => step.name !== "Basic elimination") : steps);
+  let listedFor: unknown[] = [];
   const go = (index: number) => {
-    if (!steps.length) return;
-    current = Math.max(0, Math.min(steps.length - 1, index));
-    if (current === steps.length - 1) stopAutoplay();
+    const shown = visible();
+    if (!shown.length) return;
+    current = Math.max(0, Math.min(shown.length - 1, index));
+    if (current === shown.length - 1) stopAutoplay();
     render();
     stepList.children[current]?.scrollIntoView({ block: "nearest" });
   };
   const startAutoplay = () => {
     const speed = settings().solverAutoplayMs;
-    if (!speed || !steps.length) return;
-    if (current >= steps.length - 1) current = 0;
+    if (!speed || !visible().length) return;
+    if (current >= visible().length - 1) current = 0;
     autoplay = setInterval(() => go(current + 1), speed);
     render();
   };
@@ -349,7 +358,7 @@ export function mountSolver(
   }
   const onKey = (event: KeyboardEvent) => {
     if (phase !== "result" || settings().solverView !== "explain" || event.target instanceof HTMLInputElement || document.querySelector("dialog[open]")) return;
-    const target = { ArrowRight: current + 1, ArrowLeft: current - 1, Home: 0, End: steps.length - 1 }[event.key];
+    const target = { ArrowRight: current + 1, ArrowLeft: current - 1, Home: 0, End: visible().length - 1 }[event.key];
     if (target === undefined || event.ctrlKey || event.altKey || event.metaKey) return;
     event.preventDefault();
     go(target);
@@ -392,39 +401,45 @@ export function mountSolver(
     }
   };
   const renderExplain = (): { overlay: BoardOverlay; values: readonly number[] } | undefined => {
-    explainEmpty.hidden = !!steps.length;
-    nav.hidden = stepCard.hidden = legend.hidden = stepList.hidden = !steps.length;
-    if (!steps.length) {
+    const shown = visible();
+    if (current >= shown.length) current = Math.max(0, shown.length - 1);
+    explainEmpty.hidden = !!shown.length;
+    nav.hidden = stepCard.hidden = legend.hidden = stepList.hidden = !shown.length;
+    if (!shown.length) {
       explainEmpty.textContent = phase === "running"
         ? "Steps appear here as they are found."
         : result?.count === "multiple" || result?.count === "zero"
           ? "There are no logical steps to explain: " + countSummary(result.count).toLowerCase()
-          : "No logical steps were found.";
+          : steps.length
+            ? "Only basic eliminations were needed. Turn off “Hide basic eliminations” to see them."
+            : "No logical steps were found.";
       return undefined;
     }
-    if (stepList.children.length !== steps.length) {
+    if (listedFor.length !== shown.length || listedFor.some((step, i) => step !== shown[i])) {
+      listedFor = shown;
       stepList.replaceChildren(
-        ...steps.map((step, i) => {
+        ...shown.map((step, i) => {
           const item = el("li");
           const b = button("", () => go(i), "step-item");
-          b.append(el("span", String(i + 1), "step-number"), el("span", step.name, "step-name"), el("span", describeStep(step), "step-effects"));
+          b.append(el("span", String(steps.indexOf(step) + 1), "step-number"), el("span", step.name, "step-name"), el("span", describeStep(step), "step-effects"));
           item.append(b);
           return item;
         }),
       );
     }
     [...stepList.querySelectorAll(".step-item")].forEach((b, i) => b.setAttribute("aria-current", String(i === current)));
-    const step = steps[current];
-    position.textContent = `Step ${current + 1} of ${steps.length}`;
+    const step = shown[current],
+      order = steps.indexOf(step);
+    position.textContent = `Step ${current + 1} of ${shown.length}`;
     first.disabled = prev.disabled = current === 0;
-    next.disabled = last.disabled = current >= steps.length - 1;
+    next.disabled = last.disabled = current >= shown.length - 1;
     play.hidden = !settings().solverAutoplayMs;
     play.replaceChildren(icon(autoplay ? "pause" : "play"));
     play.setAttribute("aria-label", autoplay ? "Pause steps" : "Play steps");
     stepName.textContent = step.name;
     stepText.textContent = describeStep(step);
     // Board shows the grid *before* the step, with its reasoning highlighted.
-    const before = current === 0 ? clues : steps[current - 1].values;
+    const before = order === 0 ? clues : steps[order - 1].values;
     const focus = new Set(step.effects.map((e) => e.cell));
     const area = new Set(step.cells ?? []);
     if (!area.size) for (const cell of focus) for (const peer of peersOf(cell)) area.add(peer);
@@ -539,7 +554,7 @@ export function mountSolver(
     if (snapshot.outcome !== seenOutcome) {
       seenOutcome = snapshot.outcome;
       status.textContent = solverStatus(snapshot.outcome);
-      if (snapshot.outcome !== "running" && phase === "running") {
+      if (snapshot.outcome !== "running" && snapshot.outcome !== "idle" && phase === "running") {
         finishedAt = performance.now();
         const value = snapshot.result as (Partial<SolveResult> & { error?: string }) | null;
         if (snapshot.outcome === "cancelled") {

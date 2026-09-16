@@ -1,6 +1,6 @@
 # Sudoku Engine
 
-A personal classic Sudoku platform: create drafts, finish puzzles and continue playing in your browser. The English interface uses a sidebar and a large, frameless board.
+A personal classic Sudoku platform: create, play and solve puzzles in your browser. The interface is board-first and assumes you already know Sudoku.
 
 ## Run locally
 
@@ -16,26 +16,17 @@ Open exactly **http://localhost:5173**. Keep the terminal open; `Ctrl+C` stops t
 
 Data belongs to the browser, profile and origin you use. Another browser, `127.0.0.1` or a different port has a separate library. There is no cross-device sync.
 
-## Create and play
+## Create, play and solve
 
-- **Create** opens an autosaved draft, including drafts with conflicts. **Paste puzzle** accepts 81 cells: `1–9` for clues and `0` or `.` for empty cells; whitespace is ignored. Importing creates another draft.
-- **Finish** requires no visible conflicts and creates a puzzle with fixed clues. Solvability and uniqueness are not checked. Empty boards can be finished.
-- **Library** supports opening, continuing, renaming, editing a copy and confirmed deletion. Each puzzle has one current play session. Editing a copy preserves the original progress.
-- **Settings → Appearance** offers Light/Dark modes and five pastel themes: Blue, Green, Pink, Purple and Gray. Changes apply immediately and are saved in this browser. Switching mode keeps your chosen color; older libraries start in light green.
-- **Settings** also offers optional conflict highlighting during play. The creator always shows conflicts.
+- **Create** opens an autosaved draft named `Puzzle N`, including drafts with conflicts. **Import** accepts pasted text or files: 81 cells (`1–9`, `0` or `.`), decorated 9-line grids, `.sdk`/`.ss`/`.sdm`/`.txt` collections and game exports (`.json`), with a live preview and precise errors. Collections can be imported as drafts at once.
+- **Finish** requires no visible conflicts and locks the clues; boards with fewer than 17 clues ask for confirmation.
+- **Play** shows the board first, with a timer, pause (which covers the board), quick game settings, fullscreen and a menu for checking, copy/paste, copying the puzzle, exporting the game, saving an image, opening the solver, editing a copy and restarting.
+- **Solve** uses the same editing surface as Create. **Analyze** shows the result, solution count and technique statistics; **Explain** steps through each deduction on the board. The Library's **Solve** action and the solver's library picker load saved puzzles; nothing is stored unless you choose **Save as draft**.
+- **Settings** groups Appearance, Accessibility (text and digit size, color-blind palette, color patterns, stronger digits, high contrast, reduced motion), Board, Keypad, Notes & warnings, Timer, Completion, Keyboard shortcuts, Solver and Data & backup. **Help** holds every gameplay explanation.
 
-| Control | Action |
-| --- | --- |
-| Click / arrow keys | Select a cell; arrows wrap within the same row or column. |
-| `1–9` / numpad / number buttons | Enter a value. Enter the same value again to erase it and reveal retained notes. Fixed clues cannot be edited. |
-| `Shift` + number or number button | Toggle a note during play. Digits have fixed positions in a 3 × 3 grid. |
-| **Notes** | Toggle the persistent notes tool. Notes only edit empty cells. |
-| `0`, `Delete`, `Backspace` / **Erase** | Clear the value and reveal retained notes; if empty, clear its notes. |
-| `Ctrl+Z` / **Undo** | Undo the last edit. Selection and navigation are outside history. |
-| `Ctrl+Y`, `Ctrl+Shift+Z` / **Redo** | Redo an undone edit. |
-| **Reset** | Clear editable values and notes in one undoable action. |
+Notes come in two layers: corner notes (`Shift` + number) fill the corners, then the edges; center notes (`Ctrl` + number) sit in the middle. Six cell colors are available with the Color tool. **Fill notes** writes candidates from row, column and box constraints only. Erase clears the digit, then notes, then the color. Every edit is undoable, and clicking the selected cell, clicking outside the board or pressing `Esc` clears the selection. Shortcuts are configurable; defaults are `Z`/`X`/`C`/`V` for tools, `P` pause, `F` fullscreen, `Ctrl+C`/`Ctrl+V` copy and paste a cell.
 
-Notes are manual and never removed automatically from neighboring cells. Values hide notes without deleting them. Separate draft/play histories survive reopening. Holding a number key does not repeatedly toggle its value or note.
+The timer counts only active play: paused games, hidden tabs and other focused windows are excluded, and it keeps counting while hidden. It can start immediately or on the first move.
 
 ## Save and recover
 

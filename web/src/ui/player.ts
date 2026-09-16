@@ -19,10 +19,9 @@ import {
   fileName,
   gameShell,
   hasCopiedCell,
-  isFullscreen,
   pasteCellAction,
   toast,
-  toggleFullscreen,
+  fullscreenButton,
 } from "./game";
 import { mountPuzzleSurface } from "./puzzle-editor";
 import { openQuickSettings } from "./settings";
@@ -97,10 +96,10 @@ export function mountPlayer(
     renderTime();
     if (Math.abs(clock.elapsed() - persisted) >= PERSIST_EVERY_MS) writeTimer();
   }, 500);
-  const onActivity = () => {
+  const onActivity = (event: Event) => {
     clock.sync();
     // Persist when leaving so a closed tab keeps its time.
-    if (document.visibilityState === "hidden") writeTimer();
+    if (event.type === "pagehide" || document.visibilityState === "hidden") writeTimer();
   };
   document.addEventListener("visibilitychange", onActivity);
   addEventListener("focus", onActivity);
@@ -118,9 +117,15 @@ export function mountPlayer(
   completion.setAttribute("role", "status");
   completion.hidden = true;
   const completionText = el("p");
-  completion.append(icon("check"), el("h2", "Solved"), completionText, button("Back to library", () => services.navigate({ screen: "library", tab: "puzzles" })));
-  shell.side.append(completion);
+  const completionHead = el("div", undefined, "completion-head");
+  completionHead.append(icon("check"), el("h2", "Solved"), iconButton("close", "Dismiss message", () => {
+    dismissed = true;
+    completion.hidden = true;
+  }, "ghost"));
+  completion.append(completionHead, completionText, button("Back to library", () => services.navigate({ screen: "library", tab: "puzzles" })));
+  shell.side.prepend(completion);
   let announced = complete(),
+    dismissed = false,
     checkRequested = false,
     fullWarned = false;
 
@@ -172,7 +177,7 @@ export function mountPlayer(
   });
 
   // Top bar actions --------------------------------------------------------
-  const fullscreen = iconButton("expand", "Fullscreen", () => toggleFullscreen());
+  const fullscreen = fullscreenButton();
   const quickSettings = iconButton("settings", "Game settings", () => openQuickSettings(services));
   const restart = () => {
     const alsoTimer = switchField({ label: "Also reset the timer", checked: true, onChange: () => {} });
@@ -283,9 +288,6 @@ export function mountPlayer(
     timer.classList.toggle("waiting", waiting);
     timer.title = waiting ? "The timer starts with your first move" : "";
     timer.classList.toggle("done", done);
-    fullscreen.replaceChildren(icon(isFullscreen() ? "shrink" : "expand"));
-    fullscreen.setAttribute("aria-label", isFullscreen() ? "Exit fullscreen" : "Fullscreen");
-    fullscreen.title = fullscreen.getAttribute("aria-label")!;
     // Completion: stop the clock always; announce when checking is on or requested.
     if (done && (data.settings.checkOnFinish || checkRequested)) {
       if (!announced) {
@@ -294,10 +296,12 @@ export function mountPlayer(
         queueMicrotask(() => writeTimer());
       }
       completionText.textContent = data.settings.showTimer ? `Time ${formatDuration(timerOf().elapsedMs)}` : "Every row, column and box is complete.";
-      completion.hidden = false;
+      completion.hidden = dismissed;
     } else completion.hidden = true;
     if (!done) {
       announced = false;
+      // A new complete transition shows the message again.
+      dismissed = false;
       checkRequested = checkRequested && full;
     }
     if (full && !done && data.settings.checkOnFinish) {
@@ -308,12 +312,11 @@ export function mountPlayer(
   };
   update();
   const off = services.controller.subscribe(update);
-  addEventListener("focusmodechange", update);
+
   return () => {
     writeTimer();
     clearInterval(tick);
     off();
-    removeEventListener("focusmodechange", update);
     document.removeEventListener("visibilitychange", onActivity);
     removeEventListener("focus", onActivity);
     removeEventListener("blur", onActivity);

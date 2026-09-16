@@ -811,7 +811,9 @@ dialog .actions .ghost:first-child { margin-right: auto; }
 }
 
 .completion { display: grid; justify-items: start; gap: 0.35rem; padding: 1rem 1.1rem; background: var(--good-surface); color: var(--good-ink); border-radius: var(--radius-lg); }
-.completion h2 { margin: 0; font-size: 1.2rem; }
+.completion h2 { margin: 0; font-size: 1.2rem; flex: 1; }
+.completion-head { display: flex; align-items: center; gap: 0.5rem; width: 100%; }
+.completion-head button { color: inherit; width: 2rem; min-height: 2rem; }
 .completion p { margin: 0 0 0.35rem; }
 .completion button { background: var(--surface); }
 

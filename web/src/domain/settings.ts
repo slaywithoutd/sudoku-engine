@@ -61,6 +61,7 @@ export function defaultSettings(): Settings {
     reduceMotion: false,
     solverView: "explain",
     solverCandidates: true,
+    solverHideBasic: false,
     solverAutoplayMs: 0,
     solverTimeLimitS: 60,
   };

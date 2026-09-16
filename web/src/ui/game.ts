@@ -1,7 +1,8 @@
 import type { CellState, EditorState, Settings, ShortcutAction, Value } from "../domain/model";
 import type { BoardAction } from "../domain/editor";
 import { effectiveValues } from "../domain/classic";
-import { el } from "./dom";
+import { el, button } from "./dom";
+import { icon } from "./icons";
 import { ignoredTarget, keyIntent } from "./input";
 import { keepsSelection } from "./board";
 
@@ -102,6 +103,21 @@ export function toggleFullscreen(): void {
     if (document.fullscreenEnabled) void root.requestFullscreen().catch(() => {});
   }
   dispatchEvent(new Event("focusmodechange"));
+}
+/** Top-bar toggle that keeps its icon and name in sync with focus mode. */
+export function fullscreenButton(): HTMLButtonElement {
+  const node = button("", () => toggleFullscreen(), "icon-button");
+  const sync = () => {
+    const on = isFullscreen();
+    node.replaceChildren(icon(on ? "shrink" : "expand"));
+    node.setAttribute("aria-label", on ? "Exit fullscreen" : "Fullscreen");
+    node.title = node.getAttribute("aria-label")!;
+    if (!node.isConnected && node.dataset.mounted) removeEventListener("focusmodechange", sync);
+    if (node.isConnected) node.dataset.mounted = "";
+  };
+  addEventListener("focusmodechange", sync);
+  sync();
+  return node;
 }
 export const isFullscreen = () => document.documentElement.classList.contains("focus-mode");
 export function exitFullscreen(): void {

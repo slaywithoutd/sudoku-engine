@@ -196,6 +196,7 @@ export function renderSettingsSections(
     shortcuts: () => shortcutRows(services, refreshers),
     solver: () => [
       toggle("solverCandidates", "Show candidates while explaining"),
+      toggle("solverHideBasic", "Hide basic eliminations", "Explain only named techniques"),
       choice("solverAutoplayMs", "Step playback", [
         { value: 0, label: "Manual" },
         { value: 1500, label: "Slow" },

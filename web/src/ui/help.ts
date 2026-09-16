@@ -9,7 +9,7 @@ import { SHORTCUT_LABELS } from "./settings-sections";
 export function mountHelp(container: HTMLElement, services: ScreenServices): () => void {
   const page = el("div", undefined, "help-page");
   const heading = el("div", undefined, "page-heading");
-  heading.append(el("h1", "How to use"), button("Shortcut settings", () => services.navigate({ screen: "settings" })));
+  heading.append(el("h1", "Help"), button("Shortcut settings", () => services.navigate({ screen: "settings" })));
   page.append(heading);
   const section = (title: string, ...children: (HTMLElement | string)[]) => {
     const node = el("section", undefined, "help-section");

@@ -142,6 +142,8 @@ export interface Settings {
   reduceMotion: boolean;
   solverView: (typeof SOLVER_VIEWS)[number];
   solverCandidates: boolean;
+  /** Explain skips "Basic elimination" steps (their effects still apply). */
+  solverHideBasic: boolean;
   solverAutoplayMs: (typeof AUTOPLAY_SPEEDS)[number];
   solverTimeLimitS: (typeof SOLVER_TIME_LIMITS)[number];
 }

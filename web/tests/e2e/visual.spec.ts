@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { PUZZLE } from "../fixtures";
-import { cell, playString } from "./helpers";
+import { cell, openLibrary, openSettings, playString } from "./helpers";
 for (const [width, height] of [
   [1280, 800],
   [1920, 1080],
@@ -19,9 +19,16 @@ for (const [width, height] of [
     await expect(
       page.getByRole("button", { name: "Sudoku Engine", exact: true }),
     ).toBeVisible();
-    await expect(
-      page.getByRole("button", { name: "Solve", exact: true }),
-    ).toBeEnabled();
+    // Play, Create and Solve share equal dimensions on the home screen.
+    const cards = await page.locator(".home-card").evaluateAll((nodes) =>
+      nodes.map((n) => {
+        const r = n.getBoundingClientRect();
+        return [Math.round(r.width), Math.round(r.height)].join("x");
+      }),
+    );
+    expect(cards).toHaveLength(3);
+    expect(new Set(cards).size).toBe(1);
+    await expect(page.getByText("Saved in this browser")).toHaveCount(0);
     await page.screenshot({
       path: info.outputPath("home.png"),
       fullPage: true,
@@ -40,10 +47,11 @@ for (const [width, height] of [
         () => document.documentElement.scrollWidth <= innerWidth,
       ),
     ).toBe(true);
-    const bounds = await page.locator(".board-panel").boundingBox();
+    const bounds = await page.locator(".board").boundingBox();
     expect(bounds!.y + bounds!.height).toBeLessThanOrEqual(height);
     const grid = await page.getByRole("grid").boundingBox();
-    expect(grid!.height).toBeGreaterThan(height * 0.9);
+    // The board keeps nearly all height below the compact top bar.
+    expect(grid!.height).toBeGreaterThan(height * 0.8);
     expect(Math.abs(grid!.width - grid!.height)).toBeLessThan(1);
     const numbers = await page
       .getByRole("button", { name: "Number 1", exact: true })
@@ -72,12 +80,13 @@ for (const [width, height] of [
       path: info.outputPath("player.png"),
       fullPage: true,
     });
-    await page.getByRole("button", { name: "Library", exact: true }).click();
-    await page.getByRole("button", { name: "Edit copy", exact: true }).click();
+    await openLibrary(page);
+    await page.getByRole("button", { name: /^More actions for/ }).click();
+    await page.getByRole("menuitem", { name: "Edit a copy" }).click();
     await cell(page, 2).click();
     await page.keyboard.press("5");
     await expect(cell(page, 2)).toHaveClass(/conflict/);
-    const creatorBounds = await page.locator(".board-panel").boundingBox();
+    const creatorBounds = await page.locator(".board").boundingBox();
     expect(creatorBounds!.y + creatorBounds!.height).toBeLessThanOrEqual(
       height,
     );
@@ -85,7 +94,7 @@ for (const [width, height] of [
       path: info.outputPath("creator-conflicts.png"),
       fullPage: true,
     });
-    await page.getByRole("button", { name: "Settings", exact: true }).click();
+    await openSettings(page);
     await page.screenshot({
       path: info.outputPath("settings.png"),
       fullPage: true,

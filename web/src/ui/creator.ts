@@ -6,7 +6,7 @@ import type { ParsedPuzzle } from "../domain/puzzle-format";
 import { el, button } from "./dom";
 import { dialog, confirmDialog } from "./dialogs";
 import { iconButton, labeledButton, menuButton } from "./components";
-import { gameShell, copyText, toast } from "./game";
+import { gameShell, copyText, toast, fullscreenButton } from "./game";
 import { clueSummary, mountPuzzleSurface } from "./puzzle-editor";
 import { openImportDialog } from "./import-dialog";
 
@@ -151,7 +151,7 @@ export function mountCreator(
       });
     else complete();
   }, "primary");
-  shell.actions.append(importButton, more, finish);
+  shell.actions.append(importButton, fullscreenButton(), more, finish);
 
   const update = () => {
     const current = draft();

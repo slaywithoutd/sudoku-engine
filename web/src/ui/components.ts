@@ -165,29 +165,33 @@ function showPopover(
   popover: HTMLElement,
   anchor: HTMLElement,
   matchWidth: boolean,
-  onClose: () => void,
+  /** `lightDismiss` is true when the browser closed it (outside click, Escape). */
+  onClose: (lightDismiss: boolean) => void,
 ): () => void {
   openPopover?.close();
   popover.setAttribute("popover", "auto");
   // Popovers live beside the anchor so fullscreen and dialogs keep them visible.
   (anchor.closest("dialog") ?? document.body).append(popover);
   let closed = false;
-  const close = () => {
+  const finish = (lightDismiss: boolean) => {
     if (closed) return;
     closed = true;
     if (popover.matches(":popover-open")) popover.hidePopover();
     popover.remove();
-    removeEventListener("resize", close);
+    removeEventListener("resize", reposition);
     if (openPopover === handle) openPopover = undefined;
-    onClose();
+    onClose(lightDismiss);
   };
+  const close = () => finish(false);
+  const reposition = () => (anchor.isConnected ? place(popover, anchor, matchWidth) : close());
   const handle = { close };
   popover.addEventListener("toggle", (event) => {
-    if ((event as ToggleEvent).newState === "closed") close();
+    if ((event as ToggleEvent).newState === "closed") finish(true);
   });
   popover.showPopover();
   place(popover, anchor, matchWidth);
-  addEventListener("resize", close);
+  // Scrollbars appearing can fire resize; follow the anchor instead of closing.
+  addEventListener("resize", reposition);
   openPopover = handle;
   return close;
 }
@@ -222,7 +226,7 @@ export function menuButton(
   trigger.setAttribute("aria-haspopup", "menu");
   trigger.setAttribute("aria-expanded", "false");
   let close: (() => void) | undefined,
-    closedAt = 0;
+    closedAt = -Infinity;
   trigger.addEventListener("click", () => {
     if (close) return close();
     if (performance.now() - closedAt < 300) return;
@@ -256,10 +260,11 @@ export function menuButton(
       else rovingKeys(menu, "[role=menuitem]", event);
     });
     trigger.setAttribute("aria-expanded", "true");
-    close = showPopover(menu, trigger, false, () => {
+    close = showPopover(menu, trigger, false, (lightDismiss) => {
       trigger.setAttribute("aria-expanded", "false");
       close = undefined;
-      closedAt = performance.now();
+      // A click on the trigger light-dismisses first; don't let that same click reopen it.
+      if (lightDismiss) closedAt = performance.now();
       if (menu.contains(document.activeElement) || document.activeElement === document.body)
         trigger.focus({ preventScroll: true });
     });
@@ -312,7 +317,7 @@ export function selectControl(options: {
   node.append(trigger);
   let sections = options.sections,
     close: (() => void) | undefined,
-    closedAt = 0,
+    closedAt = -Infinity,
     typed = "",
     typedAt = 0;
   const toggle = () => {
@@ -372,11 +377,11 @@ export function selectControl(options: {
     });
     trigger.setAttribute("aria-expanded", "true");
     node.classList.add("open");
-    close = showPopover(list, trigger, true, () => {
+    close = showPopover(list, trigger, true, (lightDismiss) => {
       trigger.setAttribute("aria-expanded", "false");
       node.classList.remove("open");
       close = undefined;
-      closedAt = performance.now();
+      if (lightDismiss) closedAt = performance.now();
       if (list.contains(document.activeElement) || document.activeElement === document.body)
         trigger.focus({ preventScroll: true });
     });

@@ -25,7 +25,9 @@ test("hidden notes, redo, reset and selection survive refresh and reopened page"
   await cell(reopened, 0).click();
   await reopened.keyboard.press("Delete");
   await expect(cell(reopened, 0).locator("[data-notes]")).toHaveText("2");
-  await reopened.getByRole("button", { name: "Reset", exact: true }).click();
+  await reopened.getByRole("button", { name: "More actions", exact: true }).click();
+  await reopened.getByRole("menuitem", { name: "Restart puzzle" }).click();
+  await reopened.getByRole("dialog").getByRole("button", { name: "Restart", exact: true }).click();
   await expect(cell(reopened, 0).locator("[data-notes]")).toBeEmpty();
   await reopened.keyboard.press("Control+z");
   await expect(cell(reopened, 0).locator("[data-notes]")).toHaveText("2");
@@ -34,7 +36,7 @@ test("hidden notes, redo, reset and selection survive refresh and reopened page"
     const other = await isolated.newPage();
     await other.goto(url);
     await expect(
-      other.getByText("Record not found", { exact: true }),
+      other.getByText("Puzzle not found", { exact: true }),
     ).toBeVisible();
   } finally {
     await isolated.close();
