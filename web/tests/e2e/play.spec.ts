@@ -92,7 +92,7 @@ test("note warnings, labels, seen cells and completed digits follow their settin
   await page.getByRole("switch", { name: "Warn on conflicting notes" }).check();
   await page.getByRole("switch", { name: "Highlight seen cells" }).uncheck();
   await page.getByRole("switch", { name: "Row and column labels" }).check();
-  await page.getByRole("radio", { name: "7 8 9 on top" }).click();
+  await page.getByRole("switch", { name: "Invert keyboard layout" }).check();
   await page.goBack();
   await expect(cell(page, 2).locator(".bad")).toHaveText("5");
   await expect(cell(page, 20)).not.toHaveClass(/peer/);

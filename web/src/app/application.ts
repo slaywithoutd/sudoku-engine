@@ -11,8 +11,9 @@ import { mountSolver } from "../ui/solver";
 import { mountHelp } from "../ui/help";
 import { el, button } from "../ui/dom";
 import { icon, type IconName } from "../ui/icons";
-import { exitFullscreen } from "../ui/game";
+import { exitFullscreen, fullscreenButton } from "../ui/game";
 import { downloadBackup } from "../ui/backup";
+import logoUrl from "../assets/notpron.png";
 export function mountApplication(
   root: HTMLElement,
   repository: Repository,
@@ -42,8 +43,10 @@ export function mountApplication(
     status = el("span"),
     error = el("p", undefined, "error");
   brand.setAttribute("aria-label", "Sudoku Engine");
-  const mark = el("span", undefined, "brand-mark");
-  mark.append(icon("solve"));
+  const mark = document.createElement("img");
+  mark.src = logoUrl;
+  mark.alt = "";
+  mark.className = "brand-mark";
   brand.replaceChildren(mark, el("span", "Sudoku Engine", "brand-name"));
   nav.setAttribute("aria-label", "Main navigation");
   const navItems = (
@@ -70,7 +73,11 @@ export function mountApplication(
     backup = button("Export work", () => downloadBackup(services));
   saveArea.append(status, retry, backup, error);
   sidebar.append(brand, nav, saveArea);
-  root.append(sidebar, main);
+  // Lives outside any single screen so it works everywhere, including the
+  // sidebar-less focus mode it toggles.
+  const fullscreen = fullscreenButton();
+  fullscreen.classList.add("global-fullscreen");
+  root.append(sidebar, main, fullscreen);
   const updateStatus = () => {
     applyAppearance(controller.snapshot().settings);
     const s = controller.status();

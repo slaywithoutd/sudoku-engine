@@ -12,7 +12,7 @@ import { countSummary, logicalSummary, solverStatus, cellName } from "./solver-c
 import { el, button } from "./dom";
 import { icon } from "./icons";
 import { iconButton, labeledButton, menuButton, segmented, selectControl, type SelectSection } from "./components";
-import { copyText, fullscreenButton, gameShell, toast } from "./game";
+import { copyText, gameShell, toast } from "./game";
 import { clueSummary, mountPuzzleSurface, type PuzzleSurface } from "./puzzle-editor";
 import { openImportDialog } from "./import-dialog";
 import { nameField } from "./creator";
@@ -171,7 +171,7 @@ export function mountSolver(
       } },
     ];
   });
-  shell.actions.append(library.node, importButton, fullscreenButton(), more);
+  shell.actions.append(library.node, importButton, more);
 
   // Solver panel --------------------------------------------------------------
   const panel = el("section", undefined, "solver-panel");

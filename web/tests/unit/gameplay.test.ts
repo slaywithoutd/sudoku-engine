@@ -124,7 +124,7 @@ test("version 1 libraries load with defaults; new layers, timer and settings val
     (x: any) => (x.sessions.p.editor.cells[0].color = 7),
     (x: any) => (x.sessions.p.editor.cells[0].value = 5),
     (x: any) => (x.sessions.p.timer.elapsedMs = -1),
-    (x: any) => (x.settings.keypad = "tiny"),
+    (x: any) => (x.settings.keypadHidden = "yes"),
     (x: any) => (x.settings.shortcuts.pause = "Ctrl+Nope"),
     (x: any) => (x.drafts.d.editor.cells[0].color = 1),
   ]) {

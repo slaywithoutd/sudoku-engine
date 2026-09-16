@@ -57,11 +57,14 @@ test("quick game settings open from Play without leaving the game", async ({ pag
   await page.getByRole("button", { name: "Game settings", exact: true }).click();
   const dialog = page.getByRole("dialog", { name: "Game settings" });
   await expect(dialog).toBeVisible();
-  await dialog.getByRole("radio", { name: "Minimized" }).click();
-  await expect(page.getByRole("button", { name: "Show keypad", exact: true })).toBeAttached();
+  await expect(dialog.locator(".settings-live-preview")).toBeVisible();
+  await dialog.getByRole("switch", { name: "Hide keypad" }).check();
   await dialog.getByRole("button", { name: "Done", exact: true }).click();
   expect(page.url()).toBe(url);
-  await page.getByRole("button", { name: "Show keypad", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Number 1", exact: true })).toBeHidden();
+  await page.getByRole("button", { name: "Game settings", exact: true }).click();
+  await dialog.getByRole("switch", { name: "Hide keypad" }).uncheck();
+  await dialog.getByRole("button", { name: "Done", exact: true }).click();
   await expect(page.getByRole("button", { name: "Number 1", exact: true })).toBeVisible();
 });
 

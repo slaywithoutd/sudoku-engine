@@ -21,7 +21,6 @@ import {
   hasCopiedCell,
   pasteCellAction,
   toast,
-  fullscreenButton,
 } from "./game";
 import { mountPuzzleSurface } from "./puzzle-editor";
 import { openQuickSettings } from "./settings";
@@ -177,7 +176,6 @@ export function mountPlayer(
   });
 
   // Top bar actions --------------------------------------------------------
-  const fullscreen = fullscreenButton();
   const quickSettings = iconButton("settings", "Game settings", () => openQuickSettings(services));
   const restart = () => {
     const alsoTimer = switchField({ label: "Also reset the timer", checked: true, onChange: () => {} });
@@ -257,7 +255,7 @@ export function mountPlayer(
       { label: "Restart puzzle", icon: "reset", danger: true, onSelect: restart },
     ];
   });
-  shell.actions.append(quickSettings, fullscreen, more);
+  shell.actions.append(quickSettings, more);
 
   const update = () => {
     const data = services.controller.snapshot(),

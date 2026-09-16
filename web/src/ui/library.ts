@@ -154,7 +154,7 @@ export function mountLibrary(
             confirmDelete(record.name, () => services.controller.update((d) => deleteRecord(d, kind, record.id))),
         },
       ]);
-      actions.append(solve, more, open);
+      actions.append(open, solve, more);
       row.append(thumbnail(givens), info, actions);
       list.append(row);
     }

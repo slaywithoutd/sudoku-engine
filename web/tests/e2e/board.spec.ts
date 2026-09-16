@@ -155,8 +155,8 @@ test("repeated note keydown is ignored, unbound shortcuts stay native, numpad ze
   await expect(corner(page, 0)).toBeVisible();
 });
 
-test("keypad minimizes to a restore bar and defaults to 1 2 3 on top", async ({ page }) => {
-  await page.getByRole("button", { name: "Minimize keypad", exact: true }).click();
+test("keypad collapses to a small expand arrow next to the board and defaults to 1 2 3 on top", async ({ page }) => {
+  await page.getByRole("button", { name: "Collapse keypad", exact: true }).click();
   await expect(page.getByRole("button", { name: "Number 1", exact: true })).toBeHidden();
   await page.getByRole("button", { name: "Show keypad", exact: true }).click();
   await expect(page.getByRole("button", { name: "Number 1", exact: true })).toBeVisible();

@@ -58,7 +58,11 @@ export function mountPuzzleSurface(
     mode: options.mode,
     settings: settings(),
     onAction: dispatch,
-    onCollapse: (collapsed) => updateSetting(services, "keypad", collapsed ? "compact" : "full"),
+    onCollapse: () => updateSetting(services, "keypadCollapsed", true),
+    onExpand: () => {
+      updateSetting(services, "keypadCollapsed", false);
+      if (settings().keypadHidden) updateSetting(services, "keypadHidden", false);
+    },
     onAutofill: options.onAutofill,
   });
   const offOutside = deselectOnOutsidePointer(() => {

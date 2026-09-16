@@ -54,11 +54,27 @@ test("all ten appearances apply across settings, board and dialogs and survive r
       expect(appearance.background).not.toBe(appearance.text);
       colors.add(appearance.background);
       const contrast = await page.evaluate(() => {
+        // color-mix() results serialize as the modern color(srgb r g b / a)
+        // syntax, with 0-1 channels, not legacy rgb()'s 0-255 — normalize both.
+        const channels = (color: string): [number, number, number, number] => {
+          const modern = color.startsWith("color(");
+          const [r, g, b, a = 1] = color.match(/[\d.]+/g)!.map(Number);
+          return modern ? [r * 255, g * 255, b * 255, a] : [r, g, b, a];
+        };
+        // Highlights such as the selection ring are intentionally translucent
+        // (see .cell::before) so an annotation color underneath stays
+        // visible; composite over the real backdrop before measuring, the
+        // way the browser actually paints it, rather than reading its raw
+        // (alpha-blind) color.
+        const composite = (fg: string, bg: string) => {
+          const [fr, fg_, fb, fa] = channels(fg),
+            [br, bg_, bb] = channels(bg);
+          if (fa >= 1) return fg;
+          return `rgb(${fr * fa + br * (1 - fa)}, ${fg_ * fa + bg_ * (1 - fa)}, ${fb * fa + bb * (1 - fa)})`;
+        };
         const luminance = (color: string) => {
-          const rgb = color
-            .match(/[\d.]+/g)!
+          const rgb = channels(color)
             .slice(0, 3)
-            .map(Number)
             .map((v) => {
               v /= 255;
               return v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4;
@@ -72,6 +88,9 @@ test("all ten appearances apply across settings, board and dialogs and survive r
         };
         const style = (selector: string, pseudo?: string) =>
           getComputedStyle(document.querySelector(selector)!, pseudo);
+        // Nothing between the cell and <html> paints its own background.
+        const pageBackdrop = style("html").backgroundColor;
+        const selectedBackdrop = composite(style('[data-cell-index="2"]', "::before").backgroundColor, pageBackdrop);
         return [
           ratio(style("html").color, style("html").backgroundColor),
           ratio(
@@ -82,10 +101,7 @@ test("all ten appearances apply across settings, board and dialogs and survive r
             style('[data-cell-index="3"]').color,
             style("html").backgroundColor,
           ),
-          ratio(
-            style('[data-cell-index="2"] [data-notes]').color,
-            style('[data-cell-index="2"]', "::before").backgroundColor,
-          ),
+          ratio(style('[data-cell-index="2"] [data-notes]').color, selectedBackdrop),
         ];
       });
       expect(Math.min(...contrast)).toBeGreaterThanOrEqual(4.5);

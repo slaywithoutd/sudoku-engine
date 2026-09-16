@@ -86,8 +86,6 @@ export const COLOR_MODES = ["light", "dark"] as const;
 export const THEMES = ["blue", "green", "pink", "purple", "gray"] as const;
 export type ColorMode = (typeof COLOR_MODES)[number];
 export type Theme = (typeof THEMES)[number];
-export const KEYPAD_MODES = ["full", "compact", "hidden"] as const;
-export const KEYPAD_LAYOUTS = ["phone", "calculator"] as const;
 export const TIMER_STARTS = ["immediately", "first-move"] as const;
 export const SCALES = [100, 115, 130] as const;
 export const PALETTES = ["default", "colorblind"] as const;
@@ -120,8 +118,12 @@ export interface Settings {
   showConflicts: boolean;
   /** Highlight notes already ruled out by a placed digit in the same unit. */
   showNoteConflicts: boolean;
-  keypad: (typeof KEYPAD_MODES)[number];
-  keypadLayout: (typeof KEYPAD_LAYOUTS)[number];
+  /** The keypad can still be reached: a small arrow expands it back. */
+  keypadHidden: boolean;
+  /** Collapsed to the expand arrow rail; irrelevant while keypadHidden. */
+  keypadCollapsed: boolean;
+  /** Puts 7 8 9 on top instead of 1 2 3. */
+  invertKeypad: boolean;
   showLabels: boolean;
   highlightPeers: boolean;
   highlightSameDigit: boolean;

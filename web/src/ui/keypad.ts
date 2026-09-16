@@ -1,7 +1,6 @@
 import type { CellColor, Digit, EditorState, Settings, Tool } from "../domain/model";
 import type { BoardAction } from "../domain/editor";
 import { el, button } from "./dom";
-import { icon } from "./icons";
 import { iconButton, labeledButton, segmented, comboLabel } from "./components";
 import { keepsSelection } from "./board";
 
@@ -9,8 +8,10 @@ export interface KeypadOptions {
   mode: "play" | "create";
   settings: Settings;
   onAction: (action: BoardAction) => void;
-  /** Persists the minimized/expanded choice (shared by every screen). */
-  onCollapse: (collapsed: boolean) => void;
+  /** Shrinks the panel to its expand-arrow rail (shared by every screen). */
+  onCollapse: () => void;
+  /** Restores the full panel, also clearing "Hide keypad" if that was set. */
+  onExpand: () => void;
   onAutofill?: () => void;
 }
 export interface KeypadView {
@@ -49,10 +50,8 @@ export function mountKeypad(container: HTMLElement, options: KeypadOptions): Key
     onChange: (value) => options.onAction({ type: "tool", tool: value }),
     className: "tool-switch",
   });
-  const collapse = iconButton("chevronDown", "Minimize keypad", () => options.onCollapse(true), "ghost keypad-collapse");
-  const restore = labeledButton("keypad", "Keypad", () => options.onCollapse(false), "keypad-restore");
-  restore.setAttribute("aria-label", "Show keypad");
-  restore.append(icon("chevronUp"));
+  const collapse = iconButton("chevronLeft", "Collapse keypad", options.onCollapse, "ghost keypad-collapse");
+  const rail = iconButton("chevronRight", "Show keypad", options.onExpand, "keypad-rail");
   if (play) header.append(tools.node);
   else header.append(el("span", "Clues", "keypad-title"));
   header.append(collapse);
@@ -94,7 +93,7 @@ export function mountKeypad(container: HTMLElement, options: KeypadOptions): Key
     actions.append(autofill);
   }
   body.append(digits, colors, actions);
-  node.append(header, body, restore);
+  node.append(header, body, rail);
   container.append(node);
 
   const shortcutTitle = (b: HTMLButtonElement, text: string, action: keyof Settings["shortcuts"]) => {
@@ -108,9 +107,10 @@ export function mountKeypad(container: HTMLElement, options: KeypadOptions): Key
       settings = next;
       tool = play ? state.tool : "value";
       tools.set(tool);
-      // "hidden" still shows the restore bar on touch screens (see CSS).
-      node.dataset.state = settings.keypad === "full" ? "full" : settings.keypad === "compact" ? "minimized" : "hidden";
-      node.classList.toggle("calculator", settings.keypadLayout === "calculator");
+      // "hidden" still shows the expand rail on touch screens (see CSS): with
+      // no physical keyboard, there must always be some way back in.
+      node.dataset.state = settings.keypadHidden ? "hidden" : settings.keypadCollapsed ? "rail" : "expanded";
+      node.classList.toggle("calculator", settings.invertKeypad);
       node.dataset.tool = tool;
       colors.hidden = tool !== "color";
       digits.hidden = tool === "color";

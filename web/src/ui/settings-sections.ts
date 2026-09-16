@@ -55,6 +55,53 @@ export const SHORTCUT_LABELS: Record<ShortcutAction, string> = {
 type Refresher = (settings: Settings) => void;
 const capitalize = (s: string) => s[0].toUpperCase() + s.slice(1);
 
+/** A small fixed puzzle exercising clues, both note layers, colors and a
+ * colored cell that is also selected (so the selection/annotation hierarchy
+ * fix in the board styles stays visible here too). */
+function demoPreviewState() {
+  const givens = parsePuzzleString(
+    "530070000600195000098000060800060003400803001700020006060000280000419005000080079",
+  );
+  const state = emptyEditor();
+  state.selected = 11;
+  state.cells[2] = { value: 4, notes: [] };
+  state.cells[3] = { value: 0, notes: [2, 6] };
+  state.cells[5] = { value: 0, notes: [], center: [2, 4, 8] };
+  state.cells[10] = { value: 0, notes: [], color: 1 };
+  state.cells[11] = { value: 0, notes: [], color: 5 };
+  state.cells[12] = { value: 2, notes: [] };
+  return { givens, state };
+}
+export interface LivePreview {
+  update(settings: Settings): void;
+  destroy(): void;
+}
+/**
+ * A small live board reflecting board- and note-related settings as they
+ * change, so trying a setting never means scrolling away to see its effect.
+ * Callers mount it once and keep it updated from their own subscription.
+ */
+export function mountLivePreview(container: HTMLElement, initial: Settings): LivePreview {
+  const wrap = el("div", undefined, "settings-live-preview"),
+    boardHost = el("div", undefined, "settings-live-preview-board"),
+    label = el("span", "Live preview", "settings-live-preview-label");
+  const { givens, state } = demoPreviewState();
+  const board = mountBoard(boardHost, {
+    context: { mode: "play", givens },
+    state,
+    display: initial,
+    onAction: () => {},
+    interactive: false,
+    label: "Live settings preview",
+  });
+  wrap.append(boardHost, label);
+  container.prepend(wrap);
+  return {
+    update: (settings) => board.update(state, settings),
+    destroy: () => wrap.remove(),
+  };
+}
+
 export function updateSetting<K extends keyof Settings>(services: ScreenServices, key: K, value: Settings[K]): void {
   services.controller.update((data) =>
     data.settings[key] === value ? data : { ...data, settings: { ...data.settings, [key]: value } },
@@ -117,33 +164,12 @@ export function renderSettingsSections(
       ];
     },
     accessibility: () => {
-      const sample = el("div", undefined, "settings-preview");
-      sample.setAttribute("aria-label", "Preview");
-      const givens = parsePuzzleString("530070000600195000098000060800060003400803001700020006060000280000419005000080079");
-      const state = emptyEditor();
-      state.selected = 12;
-      state.cells[2] = { value: 4, notes: [] };
-      state.cells[3] = { value: 0, notes: [2, 6] };
-      state.cells[5] = { value: 0, notes: [], center: [2, 4, 8] };
-      state.cells[10] = { value: 0, notes: [], color: 1 };
-      state.cells[11] = { value: 0, notes: [], color: 5 };
-      state.cells[12] = { value: 2, notes: [] };
-      const board = mountBoard(sample, {
-        context: { mode: "play", givens },
-        state,
-        display: settings(),
-        onAction: () => {},
-        interactive: false,
-        label: "Accessibility preview",
-      });
-      refreshers.push((s) => board.update(state, s));
       const scales = [
         { value: 100, label: "Default" },
         { value: 115, label: "Large" },
         { value: 130, label: "Larger" },
       ] as const;
       return [
-        sample,
         choice("textScale", "Text size", [...scales]),
         choice("digitScale", "Board digit size", [...scales]),
         choice("palette", "Color vision", [
@@ -162,15 +188,8 @@ export function renderSettingsSections(
       toggle("showLabels", "Row and column labels", "A–I rows, 1–9 columns"),
     ],
     keypad: () => [
-      choice("keypad", "Keypad", [
-        { value: "full", label: "Shown" },
-        { value: "compact", label: "Minimized" },
-        { value: "hidden", label: "Hidden" },
-      ], "Touch screens always keep a button to show it"),
-      choice("keypadLayout", "Layout", [
-        { value: "phone", label: "1 2 3 on top" },
-        { value: "calculator", label: "7 8 9 on top" },
-      ]),
+      toggle("keypadHidden", "Hide keypad", "A small arrow next to the board still brings it back"),
+      toggle("invertKeypad", "Invert keyboard layout", "7 8 9 on top instead of 1 2 3"),
       toggle("markCompletedDigits", "Mark completed digits", "Dim a number once all nine are placed"),
     ],
     notes: () => {
@@ -211,6 +230,9 @@ export function renderSettingsSections(
     ],
   };
   for (const id of ids) {
+    // Shortcuts configure input, not the board; set it apart from the
+    // gameplay/appearance settings above it instead of blending into them.
+    if (id === "shortcuts") container.append(el("p", "Input", "settings-group-label"));
     const section = el("section", undefined, "settings-section");
     section.id = `settings-${id}`;
     const heading = el("h2", SECTION_TITLES[id]);
