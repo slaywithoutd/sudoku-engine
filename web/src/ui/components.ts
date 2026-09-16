@@ -29,6 +29,26 @@ export function labeledButton(
   return node;
 }
 
+/** Small pill marking a feature that's on the roadmap but not built yet. */
+export function comingSoonBadge(): HTMLElement {
+  return el("span", "Coming soon", "badge soon");
+}
+
+/**
+ * Disabled button for a not-yet-implemented feature. Looks like a real
+ * future action (icon, label, normal placement) but is clearly inert and
+ * tagged, so it can be enabled later without redesigning its toolbar.
+ */
+export function comingSoonButton(name: IconName, text: string): HTMLButtonElement {
+  const node = labeledButton(name, text, () => {}, "coming-soon");
+  node.disabled = true;
+  // The badge text is visual; the accessible name must say the same thing
+  // since labeledButton's aria-label otherwise hides it from assistive tech.
+  node.setAttribute("aria-label", `${text}, coming soon`);
+  node.append(comingSoonBadge());
+  return node;
+}
+
 export interface SegmentOption<T> {
   value: T;
   label: string;

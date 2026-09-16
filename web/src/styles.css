@@ -328,6 +328,9 @@ label { display: block; font-size: 0.875rem; font-weight: 600; }
   white-space: nowrap;
 }
 .badge.solved { background: var(--good-surface); color: var(--good-ink); }
+.badge.soon { background: var(--subtle); color: var(--accent); }
+button.coming-soon { position: relative; }
+button.coming-soon .badge.soon { margin-left: 0.35rem; }
 .toast {
   position: fixed;
   left: 50%;

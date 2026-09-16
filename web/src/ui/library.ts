@@ -9,7 +9,7 @@ import type { Value } from "../domain/model";
 import { formatDuration } from "../app/play-clock";
 import { el, button } from "./dom";
 import { confirmDelete, renameDialog } from "./dialogs";
-import { iconButton, labeledButton, menuButton } from "./components";
+import { iconButton, labeledButton, comingSoonButton, menuButton } from "./components";
 import { newDraft } from "./home";
 import { openImportDialog } from "./import-dialog";
 import { importAsDrafts } from "./creator";
@@ -30,6 +30,9 @@ export function mountLibrary(
   const heading = el("div", undefined, "page-heading"),
     headingActions = el("div", undefined, "actions");
   headingActions.append(
+    // Not implemented yet; establishes the future navigation point without
+    // pretending community puzzles already exist.
+    comingSoonButton("users", "Explore Community Puzzles"),
     labeledButton("upload", "Import", () =>
       openImportDialog({
         title: "Import puzzle",

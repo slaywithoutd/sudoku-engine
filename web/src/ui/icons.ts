@@ -41,6 +41,7 @@ import saveSvg from "lucide-static/icons/save.svg?raw";
 import fileSvg from "lucide-static/icons/file.svg?raw";
 import eyeSvg from "lucide-static/icons/eye.svg?raw";
 import sendSvg from "lucide-static/icons/send.svg?raw";
+import usersSvg from "lucide-static/icons/users.svg?raw";
 
 /** Custom, hand-drawn glyphs: no lucide icon depicts this app's own conventions. */
 const CUSTOM = {
@@ -85,6 +86,7 @@ const LUCIDE = {
   file: fileSvg,
   eye: eyeSvg,
   send: sendSvg,
+  users: usersSvg,
 } as const;
 export type IconName = keyof typeof CUSTOM | keyof typeof LUCIDE;
 
