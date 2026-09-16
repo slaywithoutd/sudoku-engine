@@ -116,6 +116,9 @@ export function mountPuzzleSurface(
     board.update(state, display, overlay ?? {});
     keypad.setDisabled(!editable());
     keypad.update(state, s, completedDigits(effectiveValues(state, context.givens)));
+    // Lets the board reclaim the keypad's freed grid column when it's
+    // minimized, via the same --side-width layout mechanism (see styles.css).
+    shell.root.dataset.keypad = s.keypadHidden ? "hidden" : s.keypadCollapsed ? "rail" : "expanded";
   };
   render();
   return {

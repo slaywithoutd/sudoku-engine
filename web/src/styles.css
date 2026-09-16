@@ -662,7 +662,13 @@ dialog .actions .ghost:first-child { margin-right: auto; }
   justify-content: center;
   align-items: start;
   gap: 0.75rem 1.75rem;
+  transition: grid-template-columns 0.2s ease;
 }
+/* Reclaims the keypad's grid column for the board when the keypad is
+   minimized to its rail or hidden entirely, so the board recenters into the
+   freed space instead of leaving it empty (see puzzle-editor.ts). */
+.game[data-keypad="rail"] { --side-width: 2.75rem; }
+.game[data-keypad="hidden"] { --side-width: 0rem; }
 .game-bar {
   grid-area: bar;
   display: flex;
@@ -691,6 +697,15 @@ dialog .actions .ghost:first-child { margin-right: auto; }
 .game-actions > button:not(.primary):not(.select-trigger):hover:not(:disabled) { background: var(--hover); }
 .game-stage { grid-area: stage; position: relative; }
 .game-side { grid-area: side; min-width: 0; display: grid; gap: 0.9rem; align-content: start; max-height: calc(100dvh - var(--bar-height) - 3.5rem); overflow-y: auto; padding: 2px; }
+/* The rail/hidden keypad has nothing tall enough to need scrolling, and the
+   scroll container's forced overflow-x (paired with overflow-y: auto) plus
+   its 2px padding otherwise clip the rail button's rounded edge and shadow
+   against the now much narrower --side-width column (see .game[data-keypad]). */
+.game[data-keypad="rail"] .game-side, .game[data-keypad="hidden"] .game-side {
+  overflow: visible;
+  max-height: none;
+  padding: 0;
+}
 
 /* Timer */
 .timer {
