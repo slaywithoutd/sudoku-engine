@@ -28,9 +28,7 @@ const QUICK_SECTIONS: SectionId[] = ["board", "notes", "keypad", "timer", "compl
 
 export function openQuickSettings(services: ScreenServices, focus?: SectionId): void {
   const d = dialog("Game settings", { className: "settings-dialog" });
-  const preview = mountLivePreview(d.body, services.controller.snapshot().settings);
   const off = renderSettingsSections(d.body, services, QUICK_SECTIONS);
-  const offPreview = services.controller.subscribe(() => preview.update(services.controller.snapshot().settings));
   const all = button("All settings", () => {
     d.close();
     services.navigate({ screen: "settings" });
@@ -38,8 +36,6 @@ export function openQuickSettings(services: ScreenServices, focus?: SectionId): 
   d.actions.append(all, button("Done", d.close, "primary"));
   d.node.addEventListener("close", () => {
     off();
-    offPreview();
-    preview.destroy();
   });
   if (focus) d.body.querySelector(`#settings-${focus}`)?.scrollIntoView({ block: "start" });
 }

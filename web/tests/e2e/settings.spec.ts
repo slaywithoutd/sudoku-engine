@@ -57,7 +57,9 @@ test("quick game settings open from Play without leaving the game", async ({ pag
   await page.getByRole("button", { name: "Game settings", exact: true }).click();
   const dialog = page.getByRole("dialog", { name: "Game settings" });
   await expect(dialog).toBeVisible();
-  await expect(dialog.locator(".settings-live-preview")).toBeVisible();
+  // The live preview is only useful on the full config screen; Play's quick
+  // settings would otherwise show a floating board unrelated to the game.
+  await expect(dialog.locator(".settings-live-preview")).toHaveCount(0);
   await dialog.getByRole("switch", { name: "Hide keypad" }).check();
   await dialog.getByRole("button", { name: "Done", exact: true }).click();
   expect(page.url()).toBe(url);
