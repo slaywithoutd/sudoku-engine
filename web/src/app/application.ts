@@ -10,6 +10,7 @@ import { mountSettings } from "../ui/settings";
 import { mountSolver } from "../ui/solver";
 import { el, button } from "../ui/dom";
 import { downloadBackup } from "../ui/backup";
+import logoUrl from "../assets/notpron.png";
 export function mountApplication(
   root: HTMLElement,
   repository: Repository,
@@ -39,8 +40,10 @@ export function mountApplication(
     status = el("span"),
     error = el("p", undefined, "error");
   brand.setAttribute("aria-label", "Sudoku Engine");
-  const mark = el("span", "▦", "brand-mark");
-  mark.setAttribute("aria-hidden", "true");
+  const mark = document.createElement("img");
+  mark.src = logoUrl;
+  mark.alt = "";
+  mark.className = "brand-mark";
   brand.replaceChildren(mark, el("span", "Sudoku Engine", "brand-name"));
   nav.setAttribute("aria-label", "Main navigation");
   const navItems = [
