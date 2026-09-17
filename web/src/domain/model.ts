@@ -37,8 +37,10 @@ export interface Edit {
 }
 export interface EditorState {
   cells: CellState[];
-  /** Selected cell index, or -1 when nothing is selected. */
+  /** Primary/focused cell (drives tab focus, copy/paste), or -1 for none. */
   selected: number;
+  /** Additional cells included in a multi-selection; never includes `selected`. */
+  extraSelected: number[];
   tool: Tool;
   past: Edit[];
   future: Edit[];
@@ -108,6 +110,7 @@ export const SHORTCUT_ACTIONS = [
   "pasteCell",
   "pause",
   "fullscreen",
+  "multiSelect",
 ] as const;
 export type ShortcutAction = (typeof SHORTCUT_ACTIONS)[number];
 export interface Settings {
@@ -164,6 +167,7 @@ export function emptyEditor(): EditorState {
   return {
     cells: Array.from({ length: 81 }, emptyCell),
     selected: -1,
+    extraSelected: [],
     tool: "value",
     past: [],
     future: [],

@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { cell } from "./helpers";
 test.beforeEach(async ({ page }) => {
   await page.goto("/tests/browser/board.html");
 });
@@ -174,3 +175,52 @@ test("the collapsed keypad rail is never clipped by its container", async ({ pag
   const sideBox = (await page.locator(".game-side").boundingBox())!;
   expect(railBox.x).toBeGreaterThanOrEqual(sideBox.x - 0.5);
   expect(railBox.x + railBox.width).toBeLessThanOrEqual(sideBox.x + sideBox.width + 0.5);
+});
+
+test("multi-selection: ctrl+click adds and removes cells, batch edits, clears and toggles via hotkey", async ({ page }) => {
+  await cell(page, 0).click();
+  await cell(page, 1).click({ modifiers: ["Control"] });
+  await cell(page, 2).click({ modifiers: ["Control"] });
+  await expect(page.locator('[aria-selected="true"]')).toHaveCount(3);
+  await expect(page.getByText("3 cells selected")).toBeVisible();
+
+  // A digit press applies to every selected cell in one batch, undoable in one step.
+  await page.keyboard.press("5");
+  await expect(cell(page, 0).locator("[data-value]")).toHaveText("5");
+  await expect(cell(page, 1).locator("[data-value]")).toHaveText("5");
+  await expect(cell(page, 2).locator("[data-value]")).toHaveText("5");
+  await page.keyboard.press("Control+z");
+  await expect(cell(page, 0).locator("[data-value]")).toBeEmpty();
+  await expect(cell(page, 1).locator("[data-value]")).toBeEmpty();
+  await expect(cell(page, 2).locator("[data-value]")).toBeEmpty();
+
+  // Ctrl+click on an already-selected cell removes just that cell.
+  await cell(page, 1).click({ modifiers: ["Control"] });
+  await expect(page.locator('[aria-selected="true"]')).toHaveCount(2);
+
+  // The status chip's own Clear button empties the selection.
+  await page.getByRole("button", { name: "Clear", exact: true }).click();
+  await expect(page.locator('[aria-selected="true"]')).toHaveCount(0);
+  await expect(page.getByText(/cells selected/)).toBeHidden();
+
+  // Shift+Arrow extends the selection by keyboard without any mode toggle.
+  await cell(page, 10).click();
+  await page.keyboard.press("Shift+ArrowRight");
+  await page.keyboard.press("Shift+ArrowRight");
+  await expect(page.locator('[aria-selected="true"]')).toHaveCount(3);
+  await page.keyboard.press("Escape");
+  await expect(page.locator('[aria-selected="true"]')).toHaveCount(0);
+
+  // The default "M" hotkey toggles a mode where plain clicks accumulate instead of replacing.
+  const toggle = page.getByRole("button", { name: "Multi-select mode" });
+  await expect(toggle).toHaveAttribute("aria-pressed", "false");
+  await page.keyboard.press("m");
+  await expect(toggle).toHaveAttribute("aria-pressed", "true");
+  await cell(page, 20).click();
+  await cell(page, 21).click();
+  await expect(page.locator('[aria-selected="true"]')).toHaveCount(2);
+  // Escape exits the mode as well as clearing the selection.
+  await page.keyboard.press("Escape");
+  await expect(toggle).toHaveAttribute("aria-pressed", "false");
+  await expect(page.locator('[aria-selected="true"]')).toHaveCount(0);
+});

@@ -28,6 +28,7 @@ export const DEFAULT_SHORTCUTS: Readonly<Record<ShortcutAction, string>> =
     pasteCell: "Ctrl+V",
     pause: "P",
     fullscreen: "F",
+    multiSelect: "M",
   });
 
 export function defaultSettings(): Settings {

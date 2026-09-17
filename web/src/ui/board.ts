@@ -1,5 +1,6 @@
 import type { Digit, EditorContext, EditorState, Settings } from "../domain/model";
 import type { BoardAction } from "../domain/editor";
+import { selectionOf } from "../domain/editor";
 import {
   conflictingCells,
   effectiveValues,
@@ -41,6 +42,8 @@ export interface BoardOptions {
   /** Read-only boards ignore input and never take focus (previews, results). */
   interactive?: boolean;
   label?: string;
+  /** True while a click should add/remove a cell instead of replacing the selection. */
+  isMultiSelectMode?: () => boolean;
 }
 export interface BoardView {
   node: HTMLElement;
@@ -110,10 +113,16 @@ export function mountBoard(container: HTMLElement, options: BoardOptions): Board
       cell.addEventListener("pointerdown", () => (pointerFocus = true), { signal });
       cell.addEventListener(
         "click",
-        () => {
+        (event) => {
           pointerFocus = false;
-          // Clicking the selected cell again clears the selection.
-          dispatch({ type: "select", index: state.selected === index ? -1 : index });
+          if (event.ctrlKey || event.metaKey || options.isMultiSelectMode?.()) {
+            dispatch({ type: "select", index, mode: "toggle" });
+            return;
+          }
+          // Clicking the only selected cell again clears the selection;
+          // otherwise a plain click always narrows down to just this cell.
+          const solo = state.selected === index && state.extraSelected.length === 0;
+          dispatch({ type: "select", index: solo ? -1 : index });
         },
         { signal },
       );
@@ -172,12 +181,17 @@ export function mountBoard(container: HTMLElement, options: BoardOptions): Board
       conflicts = new Set(display.showConflicts ? conflictingCells(values) : []),
       badNotes = display.showNoteConflicts ? noteConflicts(values, state.cells) : new Map<number, Set<Digit>>(),
       selected = state.selected,
-      peers = new Set(selected >= 0 && display.highlightPeers ? peersOf(selected) : []),
+      selection = new Set(selectionOf(state)),
+      // Seen-cell highlighting covers every selected cell's row/column/box,
+      // not just the primary one.
+      peers = new Set(
+        display.highlightPeers ? [...selection].flatMap((i) => [...peersOf(i)]) : [],
+      ),
       selectedDigit = selected >= 0 ? values[selected] : 0;
     cells.forEach(({ cell, value, corner, center }, i) => {
       const cellState = state.cells[i],
         given = !!options.context.givens[i] && options.context.mode === "play",
-        isSelected = i === selected,
+        isSelected = selection.has(i),
         candidates = overlay.candidates?.[i],
         removed = overlay.removed?.get(i),
         placed = overlay.placed?.get(i);
@@ -185,7 +199,8 @@ export function mountBoard(container: HTMLElement, options: BoardOptions): Board
       cell.setAttribute("aria-selected", String(isSelected));
       cell.classList.toggle("given", given);
       cell.classList.toggle("conflict", conflicts.has(i));
-      cell.classList.toggle("peer", peers.has(i));
+      cell.classList.toggle("peer", peers.has(i) && !isSelected);
+      cell.classList.toggle("primary-selected", i === selected && selection.size > 1);
       cell.classList.toggle("same-digit", !!selectedDigit && !isSelected && display.highlightSameDigit && values[i] === selectedDigit);
       cell.classList.toggle("correct", !!overlay.correct?.has(i));
       cell.classList.toggle("focus", !!overlay.focus?.has(i));

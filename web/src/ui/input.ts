@@ -47,7 +47,8 @@ const held = (event: KeyboardEvent, modifier: NoteModifier) =>
         : false;
 export type KeyIntent =
   | { kind: "digit"; digit: Digit; tool: Tool }
-  | { kind: "move"; dr: number; dc: number }
+  /** `extend`: Shift+Arrow grows the selection instead of moving it. */
+  | { kind: "move"; dr: number; dc: number; extend: boolean }
   | { kind: "erase" }
   | { kind: "command"; action: ShortcutAction };
 /**
@@ -77,7 +78,7 @@ export function keyIntent(
   const plain = !event.ctrlKey && !event.metaKey && !event.altKey;
   if (plain && !/^Numpad[1-9]$/.test(event.code) && Object.hasOwn(moves, event.key)) {
     const [dr, dc] = moves[event.key];
-    return { kind: "move", dr, dc };
+    return { kind: "move", dr, dc, extend: event.shiftKey };
   }
   if (plain && !event.shiftKey && (event.code === "Numpad0" || ["0", "Backspace", "Delete"].includes(event.key)))
     return event.repeat ? null : { kind: "erase" };

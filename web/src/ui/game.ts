@@ -45,6 +45,8 @@ export function bindGameKeys(options: {
   /** Returns false when the command does not apply, letting the browser act. */
   command: (action: ShortcutAction) => boolean;
   enabled?: () => boolean;
+  /** True while the multi-select hotkey/toggle is active. */
+  isMultiSelectMode?: () => boolean;
 }): () => void {
   const listener = (event: KeyboardEvent) => {
     if (event.defaultPrevented || ignoredTarget(event) || options.enabled?.() === false) return;
@@ -55,7 +57,13 @@ export function bindGameKeys(options: {
       return;
     }
     event.preventDefault();
-    if (intent.kind === "move") options.dispatch({ type: "move", dr: intent.dr, dc: intent.dc });
+    if (intent.kind === "move")
+      options.dispatch({
+        type: "move",
+        dr: intent.dr,
+        dc: intent.dc,
+        extend: intent.extend || options.isMultiSelectMode?.() === true,
+      });
     else if (intent.kind === "erase") options.dispatch({ type: "erase" });
     else options.dispatch({ type: "digit", digit: intent.digit, tool: intent.tool });
   };

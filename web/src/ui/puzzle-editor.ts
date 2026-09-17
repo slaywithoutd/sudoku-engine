@@ -1,12 +1,14 @@
 import type { ScreenServices } from "../app/controller";
 import type { EditorState, Settings, ShortcutAction, Value } from "../domain/model";
 import type { BoardAction } from "../domain/editor";
+import { selectionOf } from "../domain/editor";
 import { completedDigits, conflictingCells, effectiveValues } from "../domain/classic";
 import { el } from "./dom";
 import { deselectOnOutsidePointer, mountBoard, type BoardOverlay, type BoardView } from "./board";
 import { mountKeypad, type KeypadView } from "./keypad";
 import { bindGameKeys, copyCell, pasteCellAction, toggleFullscreen, type GameShell } from "./game";
 import { updateSetting } from "./settings-sections";
+import { iconButton, comboLabel } from "./components";
 
 export interface PuzzleSurface {
   board: BoardView;
@@ -14,6 +16,11 @@ export interface PuzzleSurface {
   /** Re-renders board and keypad from the current state and settings. */
   render(overlay?: BoardOverlay): void;
   destroy(): void;
+  multiSelect: {
+    active(): boolean;
+    /** Toggles the mode where plain clicks/arrows add to the selection. */
+    toggle(): void;
+  };
 }
 
 /**
@@ -39,6 +46,7 @@ export function mountPuzzleSurface(
 ): PuzzleSurface {
   const settings = () => services.controller.snapshot().settings;
   const editable = () => options.editable?.() ?? true;
+  let multiSelectMode = false;
   const dispatch = (action: BoardAction) => {
     const selecting = action.type === "select" || action.type === "move";
     if (!selecting && !editable()) return;
@@ -53,7 +61,23 @@ export function mountPuzzleSurface(
     state: options.state(),
     display: settings(),
     onAction: dispatch,
+    isMultiSelectMode: () => multiSelectMode,
   });
+  const selectionCount = el("span"),
+    clearSelection = el("button", "Clear", "selection-status-clear");
+  clearSelection.type = "button";
+  clearSelection.addEventListener("click", () => dispatch({ type: "select", index: -1 }));
+  const selectionStatus = el("span", undefined, "selection-status");
+  selectionStatus.hidden = true;
+  selectionStatus.setAttribute("role", "status");
+  selectionStatus.append(selectionCount, clearSelection);
+  shell.status.append(selectionStatus);
+  const toggleMultiSelect = () => {
+    multiSelectMode = !multiSelectMode;
+    render();
+  };
+  const multiSelectToggle = iconButton("boxSelect", "Multi-select mode", toggleMultiSelect);
+  shell.actions.prepend(multiSelectToggle);
   const keypad = mountKeypad(shell.side, {
     mode: options.mode,
     settings: settings(),
@@ -72,6 +96,7 @@ export function mountPuzzleSurface(
     settings,
     state: options.state,
     dispatch,
+    isMultiSelectMode: () => multiSelectMode,
     command: (action) => {
       if (options.command?.(action)) return true;
       const state = options.state();
@@ -81,8 +106,15 @@ export function mountPuzzleSurface(
         case "erase":
           dispatch({ type: action });
           return true;
+        case "multiSelect":
+          toggleMultiSelect();
+          return true;
         case "deselect":
-          if (state.selected < 0) return false;
+          multiSelectMode = false;
+          if (state.selected < 0) {
+            render();
+            return false;
+          }
           options.dispatch({ type: "select", index: -1 });
           (document.activeElement as HTMLElement | null)?.blur?.();
           return true;
@@ -119,18 +151,33 @@ export function mountPuzzleSurface(
     // Lets the board reclaim the keypad's freed grid column when it's
     // minimized, via the same --side-width layout mechanism (see styles.css).
     shell.root.dataset.keypad = s.keypadHidden ? "hidden" : s.keypadCollapsed ? "rail" : "expanded";
+    board.node.classList.toggle("multi-select-mode", multiSelectMode);
+    const count = selectionOf(state).length;
+    selectionStatus.hidden = count < 2;
+    selectionCount.textContent = `${count} cells selected`;
+    multiSelectToggle.setAttribute("aria-pressed", String(multiSelectMode));
+    const combo = comboLabel(s.shortcuts.multiSelect),
+      label = `Multi-select mode${multiSelectMode ? " (on)" : ""}`;
+    multiSelectToggle.setAttribute("aria-label", label);
+    multiSelectToggle.title = combo ? `${label} — ${combo}, or Ctrl+click a cell` : `${label} — Ctrl+click a cell`;
   };
   render();
   return {
     board,
     keypad,
     render,
+    multiSelect: {
+      active: () => multiSelectMode,
+      toggle: toggleMultiSelect,
+    },
     destroy() {
       offOutside();
       offKeys();
       board.destroy();
       keypad.destroy();
       boardHost.remove();
+      multiSelectToggle.remove();
+      selectionStatus.remove();
     },
   };
 }

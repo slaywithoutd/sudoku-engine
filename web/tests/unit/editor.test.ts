@@ -1,6 +1,6 @@
 import { expect, test } from "vitest";
 import { emptyEditor, type EditorContext } from "../../src/domain/model";
-import { reduceEditor, type BoardAction } from "../../src/domain/editor";
+import { reduceEditor, selectionOf, type BoardAction } from "../../src/domain/editor";
 const ctx: EditorContext = { mode: "play", givens: Array(81).fill(0) };
 const digit = (n: 2 | 5, corner = false): BoardAction => ({
   type: "digit",
@@ -93,6 +93,60 @@ test("reset is one undoable edit, keeps selection/tool and never cleans peers", 
   s = reduceEditor(ctx, s, { type: "reset" });
   expect(s.past.length).toBe(prior.past.length + 1);
   expect(reduceEditor(ctx, s, { type: "undo" }).cells).toEqual(prior.cells);
+});
+test("toggle select builds, shrinks and demotes a multi-selection", () => {
+  let s = { ...emptyEditor(), selected: 0 };
+  s = reduceEditor(ctx, s, { type: "select", index: 3, mode: "toggle" });
+  expect(selectionOf(s)).toEqual([0, 3]);
+  s = reduceEditor(ctx, s, { type: "select", index: 5, mode: "toggle" });
+  expect(selectionOf(s)).toEqual([0, 3, 5]);
+  // Toggling an extra off removes just that cell.
+  s = reduceEditor(ctx, s, { type: "select", index: 3, mode: "toggle" });
+  expect(selectionOf(s)).toEqual([0, 5]);
+  // Toggling the primary off promotes the next extra in its place.
+  s = reduceEditor(ctx, s, { type: "select", index: 0, mode: "toggle" });
+  expect(s.selected).toBe(5);
+  expect(selectionOf(s)).toEqual([5]);
+  s = reduceEditor(ctx, s, { type: "select", index: 5, mode: "toggle" });
+  expect(selectionOf(s)).toEqual([]);
+  expect(s.selected).toBe(-1);
+});
+test("a plain (non-toggle) select always replaces the whole selection", () => {
+  let s = { ...emptyEditor(), selected: 0 };
+  s = reduceEditor(ctx, s, { type: "select", index: 3, mode: "toggle" });
+  s = reduceEditor(ctx, s, { type: "select", index: 7 });
+  expect(selectionOf(s)).toEqual([7]);
+});
+test("extending a move grows the selection; a plain move replaces it", () => {
+  let s = { ...emptyEditor(), selected: 0 };
+  s = reduceEditor(ctx, s, { type: "move", dr: 0, dc: 1, extend: true });
+  expect(selectionOf(s)).toEqual([1, 0]);
+  s = reduceEditor(ctx, s, { type: "move", dr: 0, dc: 1, extend: true });
+  expect(selectionOf(s)).toEqual([2, 0, 1]);
+  s = reduceEditor(ctx, s, { type: "move", dr: 0, dc: 1 });
+  expect(selectionOf(s)).toEqual([3]);
+});
+test("editing actions apply to every selected cell as one undoable batch", () => {
+  let s = { ...emptyEditor(), selected: 0 };
+  s = reduceEditor(ctx, s, { type: "select", index: 1, mode: "toggle" });
+  s = reduceEditor(ctx, s, { type: "select", index: 2, mode: "toggle" });
+  s = reduceEditor(ctx, s, digit(5));
+  expect(s.cells[0].value).toBe(5);
+  expect(s.cells[1].value).toBe(5);
+  expect(s.cells[2].value).toBe(5);
+  expect(s.past.length).toBe(1);
+  s = reduceEditor(ctx, s, { type: "undo" });
+  expect(s.cells[0].value).toBe(0);
+  expect(s.cells[1].value).toBe(0);
+  expect(s.cells[2].value).toBe(0);
+});
+test("a given cell in the selection is skipped without blocking the rest", () => {
+  const c = { ...ctx, givens: [7, 0, 0, ...Array(78).fill(0)] };
+  let s = { ...emptyEditor(), selected: 0 };
+  s = reduceEditor(c, s, { type: "select", index: 1, mode: "toggle" });
+  s = reduceEditor(c, s, digit(5));
+  expect(s.cells[0].value).toBe(0); // given cell untouched
+  expect(s.cells[1].value).toBe(5);
 });
 test("corner toggle sorts notes; creation always enters clues", () => {
   let s = reduceEditor(ctx, { ...emptyEditor(), selected: 0 }, digit(5, true));

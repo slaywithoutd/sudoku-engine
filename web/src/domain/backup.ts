@@ -106,6 +106,13 @@ function editor(
     cells = array(e.cells).map((c) => cell(c, create));
   requireValid(cells.length === 81);
   const selected = integer(e.selected, -1, 80);
+  // Older backups predate multi-selection; treat a missing field as "none".
+  const extraSelected =
+    e.extraSelected === undefined
+      ? []
+      : [...new Set(array(e.extraSelected).map((i) => integer(i, 0, 80)))].filter(
+          (i) => i !== selected,
+        );
   requireValid((TOOLS as readonly unknown[]).includes(e.tool));
   const parseEdits = (x: unknown): Edit[] =>
     array(x).map((raw) => {
@@ -150,7 +157,14 @@ function editor(
   };
   replay(past, true);
   replay(future, false);
-  return { cells, selected, tool: e.tool as EditorState["tool"], past, future };
+  return {
+    cells,
+    selected,
+    extraSelected,
+    tool: e.tool as EditorState["tool"],
+    past,
+    future,
+  };
 }
 export function validateLibrary(input: unknown): LibraryData {
   const x = object(input);
