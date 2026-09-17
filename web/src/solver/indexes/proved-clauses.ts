@@ -31,24 +31,24 @@ export function* buildProvedClauses(
     const entries: ProvedClauseEntry[] = [];
     for (const fact of view.facts.values()) {
       yield* work(workspace);
-      const p = fact.proposition;
+      const proposition = fact.proposition;
       if (
         fact.openAssumptions.length ||
         nodes.get(fact.root)?.scope.length ||
-        p.kind !== "clause" ||
-        p.alternatives.length < 2 ||
-        p.alternatives.length > 4
+        proposition.kind !== "clause" ||
+        proposition.alternatives.length < 2 ||
+        proposition.alternatives.length > 4
       )
         continue;
       // Scope is also lexical: a closed intermediate inside an assumption may
       // have no taint yet is not a global source. Authentic root scope is checked
       // when a compiler imports it; indexing excludes that source proactively.
-      reserveRecord(lease, p.alternatives.length + 1);
+      reserveRecord(lease, proposition.alternatives.length + 1);
       entries.push(
         freezeRecord({
           ...evidence(view, [fact.id]),
           source: fact.id,
-          alternatives: p.alternatives,
+          alternatives: proposition.alternatives,
         }),
       );
     }

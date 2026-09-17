@@ -13,3 +13,6 @@ web/.vercel/
 .vscode/
 .idea/
 .claude/
+
+# Linter toolchain (installed on demand by `npm run lint`)
+web/tooling/lint/node_modules/

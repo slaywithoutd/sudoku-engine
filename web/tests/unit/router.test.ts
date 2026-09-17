@@ -1,14 +1,8 @@
 import { expect, test } from "vitest";
 import { parseRoute, routeHash, type Route } from "../../src/app/router";
-test.each([
-  "",
-  "garbage",
-  "#/play/",
-  "#/play/%xx",
-  "#/library/nope",
-  "#/play/a/b",
-])("bad route %s falls home", (hash) =>
-  expect(parseRoute(hash)).toEqual({ screen: "home" }),
+test.each(["", "garbage", "#/play/", "#/play/%xx", "#/library/nope", "#/play/a/b"])(
+  "bad route %s falls home",
+  (hash) => expect(parseRoute(hash)).toEqual({ screen: "home" }),
 );
 test("routes roundtrip encoded identifiers", () => {
   const routes: Route[] = [
@@ -22,10 +16,9 @@ test("routes roundtrip encoded identifiers", () => {
     { screen: "solve", source: { kind: "puzzle", id: "x/y" } },
     { screen: "solve", source: { kind: "draft", id: "d" } },
   ];
-  for (const route of routes)
-    expect(parseRoute(routeHash(route))).toEqual(route);
+  for (const route of routes) expect(parseRoute(routeHash(route))).toEqual(route);
 });
-test("supports the volatile solve route",()=>{
-  expect(parseRoute("#/solve")).toEqual({screen:"solve"});
-  expect(routeHash({screen:"solve"} as Route)).toBe("#/solve");
+test("supports the volatile solve route", () => {
+  expect(parseRoute("#/solve")).toEqual({ screen: "solve" });
+  expect(routeHash({ screen: "solve" } as Route)).toBe("#/solve");
 });

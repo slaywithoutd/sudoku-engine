@@ -19,28 +19,16 @@ test("all ten appearances apply across settings, board and dialogs and survive r
       await openSettings(page);
       await page.getByRole("radio", { name: mode, exact: true }).check();
       await page.getByRole("radio", { name: theme, exact: true }).check();
-      await expect(
-        page.getByRole("radio", { name: mode, exact: true }),
-      ).toBeChecked();
-      await expect(
-        page.getByRole("radio", { name: theme, exact: true }),
-      ).toBeChecked();
+      await expect(page.getByRole("radio", { name: mode, exact: true })).toBeChecked();
+      await expect(page.getByRole("radio", { name: theme, exact: true })).toBeChecked();
       await saved(page);
       await page.goto(playUrl);
       // Leaving the board clears the selection; select again to measure note contrast on it.
       await cell(page, 2).click();
       await expect(cell(page, 2)).toHaveAttribute("aria-selected", "true");
-      await expect(page.locator("html")).toHaveAttribute(
-        "data-mode",
-        mode.toLowerCase(),
-      );
-      await expect(page.locator("html")).toHaveAttribute(
-        "data-theme",
-        theme.toLowerCase(),
-      );
-      await expect(cell(page, 2).locator("[data-notes]")).toHaveText(
-        "123456789",
-      );
+      await expect(page.locator("html")).toHaveAttribute("data-mode", mode.toLowerCase());
+      await expect(page.locator("html")).toHaveAttribute("data-theme", theme.toLowerCase());
+      await expect(cell(page, 2).locator("[data-notes]")).toHaveText("123456789");
       await expect(cell(page, 3).locator("[data-value]")).toHaveText("6");
       const appearance = await page.evaluate(() => {
         const root = getComputedStyle(document.documentElement);
@@ -90,17 +78,14 @@ test("all ten appearances apply across settings, board and dialogs and survive r
           getComputedStyle(document.querySelector(selector)!, pseudo);
         // Nothing between the cell and <html> paints its own background.
         const pageBackdrop = style("html").backgroundColor;
-        const selectedBackdrop = composite(style('[data-cell-index="2"]', "::before").backgroundColor, pageBackdrop);
+        const selectedBackdrop = composite(
+          style('[data-cell-index="2"]', "::before").backgroundColor,
+          pageBackdrop,
+        );
         return [
           ratio(style("html").color, style("html").backgroundColor),
-          ratio(
-            style(".save-area").color,
-            style(".sidebar").backgroundColor,
-          ),
-          ratio(
-            style('[data-cell-index="3"]').color,
-            style("html").backgroundColor,
-          ),
+          ratio(style(".save-area").color, style(".sidebar").backgroundColor),
+          ratio(style('[data-cell-index="3"]').color, style("html").backgroundColor),
           ratio(style('[data-cell-index="2"] [data-notes]').color, selectedBackdrop),
         ];
       });
@@ -112,21 +97,13 @@ test("all ten appearances apply across settings, board and dialogs and survive r
   expect(colors.size).toBe(10);
   await openSettings(page);
   await page.reload();
-  await expect(
-    page.getByRole("radio", { name: "Dark", exact: true }),
-  ).toBeChecked();
-  await expect(
-    page.getByRole("radio", { name: "Gray", exact: true }),
-  ).toBeChecked();
+  await expect(page.getByRole("radio", { name: "Dark", exact: true })).toBeChecked();
+  await expect(page.getByRole("radio", { name: "Gray", exact: true })).toBeChecked();
   await page.getByRole("radio", { name: "Gray", exact: true }).focus();
   await page.keyboard.press("ArrowLeft");
-  await expect(
-    page.getByRole("radio", { name: "Purple", exact: true }),
-  ).toBeChecked();
+  await expect(page.getByRole("radio", { name: "Purple", exact: true })).toBeChecked();
   await page.keyboard.press("ArrowRight");
-  await expect(
-    page.getByRole("radio", { name: "Gray", exact: true }),
-  ).toBeChecked();
+  await expect(page.getByRole("radio", { name: "Gray", exact: true })).toBeChecked();
   await page.screenshot({
     path: info.outputPath("dark-settings.png"),
     fullPage: true,

@@ -3,11 +3,16 @@ import { PUZZLE } from "../fixtures";
 import { playString } from "./helpers";
 
 const nav = (page: Page, name: string) =>
-  page.getByRole("navigation", { name: "Main navigation" }).getByRole("button", { name, exact: true });
-const focusMode = (page: Page) => page.evaluate(() => document.documentElement.classList.contains("focus-mode"));
+  page
+    .getByRole("navigation", { name: "Main navigation" })
+    .getByRole("button", { name, exact: true });
+const focusMode = (page: Page) =>
+  page.evaluate(() => document.documentElement.classList.contains("focus-mode"));
 const boardWidth = async (page: Page) => (await page.locator(".board").boundingBox())!.width;
 
-test("fullscreen is application-wide: it survives navigation and only the user turns it off", async ({ page }) => {
+test("fullscreen is application-wide: it survives navigation and only the user turns it off", async ({
+  page,
+}) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await playString(page, PUZZLE);
   await page.getByRole("button", { name: "Fullscreen", exact: true }).click();
@@ -25,7 +30,9 @@ test("fullscreen is application-wide: it survives navigation and only the user t
   expect(await focusMode(page)).toBe(false);
 });
 
-test("the sidebar collapses to a rail for more board space and restores without shrinking the board", async ({ page }) => {
+test("the sidebar collapses to a rail for more board space and restores without shrinking the board", async ({
+  page,
+}) => {
   // Width-bound workspace, where the sidebar's width directly limits the board.
   await page.setViewportSize({ width: 1500, height: 1100 });
   await playString(page, PUZZLE);
@@ -55,7 +62,9 @@ const VIEWPORTS = [
   { width: 390, height: 844 },
 ];
 
-test("one layout system fits the board, keypad and Multi-select at every proportion", async ({ page }) => {
+test("one layout system fits the board, keypad and Multi-select at every proportion", async ({
+  page,
+}) => {
   await playString(page, PUZZLE);
   // The browser window cannot be resized while truly fullscreen; the app's
   // fullscreen state (and the layout it drives) is what's under test here.
@@ -67,14 +76,18 @@ test("one layout system fits the board, keypad and Multi-select at every proport
     for (const size of VIEWPORTS) {
       await page.setViewportSize(size);
       const label = `${size.width}x${size.height}${fullscreen ? " fullscreen" : ""}`;
-      await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), label).toBe(true);
+      await expect
+        .poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), label)
+        .toBe(true);
       // Let the grid's column transition finish before measuring.
-      await expect.poll(async () => {
-        const before = await page.locator(".board").boundingBox();
-        await page.waitForTimeout(250);
-        const after = await page.locator(".board").boundingBox();
-        return before!.width === after!.width && before!.y === after!.y;
-      }, label).toBe(true);
+      await expect
+        .poll(async () => {
+          const before = await page.locator(".board").boundingBox();
+          await page.waitForTimeout(250);
+          const after = await page.locator(".board").boundingBox();
+          return before!.width === after!.width && before!.y === after!.y;
+        }, label)
+        .toBe(true);
       const main = (await page.locator("main").boundingBox())!;
       const board = (await page.locator(".board").boundingBox())!;
       const keypad = (await page.locator(".keypad-panel").boundingBox())!;

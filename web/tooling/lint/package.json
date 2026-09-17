@@ -1,0 +1,15 @@
+{
+  "name": "lint-toolchain",
+  "private": true,
+  "version": "0.0.0",
+  "description": "ESLint toolchain for the web app. typescript-eslint needs the JavaScript compiler API, which typescript@7 no longer ships, so this package pins typescript@6 for the linter only and keeps `tsc` on TypeScript 7.",
+  "type": "module",
+  "main": "index.js",
+  "dependencies": {
+    "@eslint/js": "10.0.1",
+    "eslint": "10.10.0",
+    "globals": "17.12.0",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.70.0"
+  }
+}

@@ -120,7 +120,12 @@ export function createSolverController(deps: SolverControllerDeps): SolverContro
   };
   const replaceInput = (definition: unknown) => {
     invalidate("idle");
-    state = Object.freeze({ ...state, input: structuredClone(definition), result: null, lastEvent: null });
+    state = Object.freeze({
+      ...state,
+      input: structuredClone(definition),
+      result: null,
+      lastEvent: null,
+    });
     notify();
   };
 

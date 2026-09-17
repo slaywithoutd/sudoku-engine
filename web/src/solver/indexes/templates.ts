@@ -1,19 +1,12 @@
 import type { ReadView } from "../state/types";
 import { assertOwnedView, isAcceptedDescendant } from "../state/candidates";
-import {
-  buildIndex,
-  evidence,
-  freezeRecord,
-  OwnedIndex,
-  work,
-} from "./workspace";
+import { buildIndex, evidence, freezeRecord, OwnedIndex, work } from "./workspace";
 import type { IndexEntry, IndexEvent, IndexWorkspace } from "./workspace";
+import { symbolMask } from "../state/read";
 
 export const TEMPLATE_TUPLE_LIMIT = 100000;
 export class TemplateLimit extends Error {
-  constructor(
-    readonly reason: "template-tuple-limit" | "template-state-mismatch",
-  ) {
+  constructor(readonly reason: "template-tuple-limit" | "template-state-mismatch") {
     super(reason);
   }
 }
@@ -67,8 +60,7 @@ export class TemplateOperationContext {
 
   consumeTuple(view: ReadView): void {
     this.assertRevision(view);
-    if (this.#tupleTests === TEMPLATE_TUPLE_LIMIT)
-      throw new TemplateLimit("template-tuple-limit");
+    if (this.#tupleTests === TEMPLATE_TUPLE_LIMIT) throw new TemplateLimit("template-tuple-limit");
     this.#tupleTests++;
   }
 }
@@ -134,23 +126,17 @@ export function* buildTemplates(
         if (
           columns & (1 << column) ||
           boxes & (1 << box) ||
-          !(view.state.domains[cell] & (1 << (symbol - 1)))
+          !(view.state.domains[cell] & symbolMask(symbol))
         )
           continue;
         // A placed occurrence in this row must be selected even if callers
         // have not yet run its peer exclusions.
         let anotherAnchor = false;
-        for (let c = row * 9; c < row * 9 + 9; c++) {
-          if (view.state.values[c] === symbol && c !== cell)
-            anotherAnchor = true;
+        for (let other = row * 9; other < row * 9 + 9; other++) {
+          if (view.state.values[other] === symbol && other !== cell) anotherAnchor = true;
         }
         if (!anotherAnchor)
-          yield* extend(
-            row + 1,
-            columns | (1 << column),
-            boxes | (1 << box),
-            code * 9 + column,
-          );
+          yield* extend(row + 1, columns | (1 << column), boxes | (1 << box), code * 9 + column);
       }
     }
     yield* extend(0, 0, 0, 0);

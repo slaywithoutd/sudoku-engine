@@ -15,10 +15,7 @@ const group = (v: any): Pair[] => (typeof v[0] === "number" ? [v] : v);
  * algebra and original complete domain facts, never production generalized
  * builders, indexes, discovery, recognition, or certificate IDs.
  */
-export function independentGeneralized(
-  view: ReadView,
-  recipe: unknown,
-): DeductionProposal {
+export function independentGeneralized(view: ReadView, recipe: unknown): DeductionProposal {
   const p = structuredClone(recipe) as any,
     b = new IndependentChainProof(view);
   const assumption = b.add("assume@1", [], b.clause([literal(p.target)]));
@@ -47,9 +44,7 @@ export function independentGeneralized(
           ? "C26"
           : "C27";
   const effects: Effect[] =
-    p.mode === "cache"
-      ? []
-      : [{ kind: "remove", cell: p.target[0], symbol: p.target[1] }];
+    p.mode === "cache" ? [] : [{ kind: "remove", cell: p.target[0], symbol: p.target[1] }];
   return b.proposal(
     row,
     {
@@ -62,15 +57,9 @@ export function independentGeneralized(
   );
 }
 
-function independentPositions(
-  b: IndependentChainProof,
-  p: any,
-  assumption: number,
-) {
+function independentPositions(b: IndependentChainProof, p: any, assumption: number) {
   b.lexicalScope = [assumption];
-  const results = new Map<string, number>([
-    [JSON.stringify([p.target]), assumption],
-  ]);
+  const results = new Map<string, number>([[JSON.stringify([p.target]), assumption]]);
   const exclusion = (value: Pair, witness: Pair[], start: number) => {
     const weak: number[] = [],
       reductions: number[] = [];
@@ -82,10 +71,7 @@ function independentPositions(
       result = b.add(
         "resolution@1",
         [result, weak[i]],
-        b.clause([
-          ...witness.slice(i + 1).map((v) => literal(v)),
-          literal(value, false),
-        ]),
+        b.clause([...witness.slice(i + 1).map((v) => literal(v)), literal(value, false)]),
       );
       reductions.push(result);
     }
@@ -127,18 +113,14 @@ function independentPositions(
       const ordered = position.alternatives.map(
         (value: Pair) =>
           exclusions[
-            entries.findIndex(
-              (e: any) => JSON.stringify(e.literal) === JSON.stringify(value),
-            )
+            entries.findIndex((e: any) => JSON.stringify(e.literal) === JSON.stringify(value))
           ].result,
       );
       result = b.add("contradiction@1", [cover, ...ordered], { kind: "false" });
     } else {
       let remaining: Pair[] = [...position.alternatives];
       entries.forEach((e: any, i: number) => {
-        remaining = remaining.filter(
-          (v) => JSON.stringify(v) !== JSON.stringify(e.literal),
-        );
+        remaining = remaining.filter((v) => JSON.stringify(v) !== JSON.stringify(e.literal));
         result = b.add(
           "resolution@1",
           [result, exclusions[i].result],
@@ -154,11 +136,7 @@ function independentPositions(
     closing = null;
   const last = p.positions.at(-1);
   if (last.right !== null) {
-    closing = exclusion(
-      p.consequence ?? p.target,
-      group(last.right),
-      positions.at(-1).result,
-    );
+    closing = exclusion(p.consequence ?? p.target, group(last.right), positions.at(-1).result);
     contradiction = p.consequence
       ? closing.result
       : b.add("contradiction@1", [assumption, closing.result], {
@@ -181,11 +159,7 @@ export function independentOrForcing(
     const assumption = b.add("assume@1", [], b.clause([branch.assumption]));
     b.lexicalScope = [assumption];
     if (branch.generalized) {
-      const generalized = independentPositions(
-        b,
-        branch.generalized,
-        assumption,
-      );
+      const generalized = independentPositions(b, branch.generalized, assumption);
       return {
         assumption,
         result: generalized.contradiction,
@@ -206,8 +180,7 @@ export function independentOrForcing(
           ? [...view.facts.values()].find(
               (f) =>
                 f.proposition.kind === "all-different" &&
-                JSON.stringify(f.proposition.cells) ===
-                  JSON.stringify(house.cells),
+                JSON.stringify(f.proposition.cells) === JSON.stringify(house.cells),
             )
           : undefined;
         const edge =

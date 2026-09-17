@@ -11,9 +11,7 @@ test("strict string syntax is independent of conflicts and completion", () => {
   expect(parsePuzzleString(" . ".repeat(81))).toEqual(Array(81).fill(0));
   for (const text of ["0".repeat(80), "0".repeat(82), "0".repeat(80) + "x"])
     expect(() => parsePuzzleString(text)).toThrow();
-  expect(conflictingCells(parsePuzzleString("11" + "0".repeat(79)))).toEqual([
-    0, 1,
-  ]);
+  expect(conflictingCells(parsePuzzleString("11" + "0".repeat(79)))).toEqual([0, 1]);
   expect(isComplete(parsePuzzleString(SOLUTION))).toBe(true);
   expect(isComplete(Array(81).fill(0))).toBe(false);
   expect(isComplete(Array(81).fill(1))).toBe(false);

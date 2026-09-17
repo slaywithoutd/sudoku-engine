@@ -74,7 +74,8 @@ export interface CheckedStep {
   readonly consequences: readonly CheckedInference[];
   readonly afterRevision: number;
 }
-export type CheckEvent = { readonly kind: "work"; readonly units: number }
+export type CheckEvent =
+  | { readonly kind: "work"; readonly units: number }
   | { readonly kind: "checked"; readonly step: CheckedStep }
   | { readonly kind: "rejected"; readonly code: string };
 
@@ -85,7 +86,8 @@ export interface CheckedCertificate {
   readonly proposal: DeductionProposal;
   readonly consequences: readonly CheckedInference[];
 }
-export type CertificateEvent = { readonly kind: "work"; readonly units: number }
+export type CertificateEvent =
+  | { readonly kind: "work"; readonly units: number }
   | { readonly kind: "verified"; readonly certificate: CheckedCertificate }
   | { readonly kind: "rejected"; readonly code: string };
 
@@ -97,6 +99,7 @@ export interface BranchCertificate {
   readonly consequences: readonly CheckedInference[];
   readonly scope: readonly number[];
 }
-export type BranchEvent = { readonly kind: "work"; readonly units: number }
+export type BranchEvent =
+  | { readonly kind: "work"; readonly units: number }
   | { readonly kind: "branch-checked"; readonly certificate: BranchCertificate }
   | { readonly kind: "rejected"; readonly code: string };

@@ -34,7 +34,8 @@ const summarize = (givens: Value[], extra: Partial<ParsedPuzzle> = {}): ParsedPu
 function lineCells(line: string): string[] {
   return [...line].filter((c) => /[1-9]/.test(c) || EMPTY.has(c));
 }
-const toValues = (cells: string[]): Value[] => cells.map((c) => (EMPTY.has(c) ? 0 : (Number(c) as Value)));
+const toValues = (cells: string[]): Value[] =>
+  cells.map((c) => (EMPTY.has(c) ? 0 : (Number(c) as Value)));
 
 function parseGame(json: unknown): ParsedPuzzle {
   const fail = (): never => {
@@ -55,9 +56,28 @@ function parseGame(json: unknown): ParsedPuzzle {
     extra.cells = x.cells.map((raw, i) => {
       const c = raw as Record<string, unknown>;
       const digits = (v: unknown) =>
-        v === undefined ? [] : Array.isArray(v) && v.every((n, k) => Number.isInteger(n) && n >= 1 && n <= 9 && (k === 0 || v[k - 1] < n)) ? (v as CellState["notes"]) : fail();
-      if (!c || typeof c !== "object" || !Number.isInteger(c.value) || (c.value as number) < 0 || (c.value as number) > 9) fail();
-      const color = c.color === undefined ? 0 : Number.isInteger(c.color) && (c.color as number) >= 1 && (c.color as number) <= 6 ? (c.color as 1) : fail();
+        v === undefined
+          ? []
+          : Array.isArray(v) &&
+              v.every(
+                (n, k) => Number.isInteger(n) && n >= 1 && n <= 9 && (k === 0 || v[k - 1] < n),
+              )
+            ? (v as CellState["notes"])
+            : fail();
+      if (
+        !c ||
+        typeof c !== "object" ||
+        !Number.isInteger(c.value) ||
+        (c.value as number) < 0 ||
+        (c.value as number) > 9
+      )
+        fail();
+      const color =
+        c.color === undefined
+          ? 0
+          : Number.isInteger(c.color) && (c.color as number) >= 1 && (c.color as number) <= 6
+            ? (c.color as 1)
+            : fail();
       const cell = makeCell(c.value as Value, digits(c.notes), digits(c.center), color);
       // Clue cells never carry player values or notes.
       if (givens[i] && !sameCell(cell, makeCell(0, [], [], color))) fail();
@@ -83,7 +103,11 @@ export function parsePuzzles(text: string): ParseResult {
     try {
       return { puzzles: [parseGame(JSON.parse(trimmed))] };
     } catch (error) {
-      return { puzzles: [], error: error instanceof SyntaxError ? "The JSON could not be read." : (error as Error).message };
+      return {
+        puzzles: [],
+        error:
+          error instanceof SyntaxError ? "The JSON could not be read." : (error as Error).message,
+      };
     }
   }
   // Comment/metadata lines (#A author, [Puzzle] headers) carry no cells.
@@ -116,7 +140,8 @@ export function parsePuzzles(text: string): ParseResult {
           : `${where} has ${all.length} cells; a classic Sudoku needs 81.`,
     };
   }
-  if (!puzzles.length) return { puzzles: [], error: "No puzzle found. Use digits 1–9 and 0 or . for blanks." };
+  if (!puzzles.length)
+    return { puzzles: [], error: "No puzzle found. Use digits 1–9 and 0 or . for blanks." };
   return { puzzles };
 }
 

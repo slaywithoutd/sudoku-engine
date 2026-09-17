@@ -20,7 +20,9 @@ test("new drafts get the next Puzzle number; names autosave while focused", asyn
   await expect(page.getByLabel("Puzzle name")).toHaveValue("Puzzle 2");
 });
 
-test("conflicting draft saves, cannot finish, and playable clues remain locked", async ({ page }) => {
+test("conflicting draft saves, cannot finish, and playable clues remain locked", async ({
+  page,
+}) => {
   await page.goto("/");
   await page.getByRole("button", { name: "Create", exact: true }).click();
   await cell(page, 0).click();
@@ -48,7 +50,9 @@ test("conflicting draft saves, cannot finish, and playable clues remain locked",
   await expect(page.locator(".cell.conflict")).toHaveCount(2);
 });
 
-test("import preserves the current draft; copy and confirmed deletion preserve original progress", async ({ page }) => {
+test("import preserves the current draft; copy and confirmed deletion preserve original progress", async ({
+  page,
+}) => {
   await page.goto("/");
   await page.getByRole("button", { name: "Create", exact: true }).click();
   await page.getByLabel("Puzzle name").fill("Meu rascunho");
@@ -56,7 +60,9 @@ test("import preserves the current draft; copy and confirmed deletion preserve o
   await page.getByRole("button", { name: "Import", exact: true }).click();
   await page.getByLabel("Puzzle text").fill("bad");
   await expect(page.getByRole("alert")).toContainText("needs 81");
-  await expect(page.getByRole("button", { name: "Import as new draft", exact: true })).toBeDisabled();
+  await expect(
+    page.getByRole("button", { name: "Import as new draft", exact: true }),
+  ).toBeDisabled();
   await page.getByLabel("Puzzle text").fill(PUZZLE);
   await expect(page.getByRole("dialog")).toContainText("30 clues");
   await page.getByRole("button", { name: "Import as new draft", exact: true }).click();
@@ -86,7 +92,9 @@ test("import preserves the current draft; copy and confirmed deletion preserve o
   await expect(page.getByText("Meu rascunho", { exact: true })).toBeVisible();
 });
 
-test("library sends a puzzle straight to the solver, which can save it as a draft", async ({ page }) => {
+test("library sends a puzzle straight to the solver, which can save it as a draft", async ({
+  page,
+}) => {
   await page.goto("/");
   await page.getByRole("button", { name: "Create", exact: true }).click();
   await importText(page, PUZZLE);

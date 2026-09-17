@@ -59,5 +59,7 @@ export function formatDuration(ms: number): string {
     hours = Math.floor(total / 3600),
     minutes = Math.floor((total % 3600) / 60),
     seconds = String(total % 60).padStart(2, "0");
-  return hours ? `${hours}:${String(minutes).padStart(2, "0")}:${seconds}` : `${minutes}:${seconds}`;
+  return hours
+    ? `${hours}:${String(minutes).padStart(2, "0")}:${seconds}`
+    : `${minutes}:${seconds}`;
 }

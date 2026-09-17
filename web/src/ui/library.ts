@@ -1,9 +1,5 @@
 import type { ScreenServices } from "../app/controller";
-import {
-  copyPuzzleToDraft,
-  deleteRecord,
-  renameRecord,
-} from "../domain/library";
+import { copyPuzzleToDraft, deleteRecord, renameRecord } from "../domain/library";
 import { effectiveValues, isComplete } from "../domain/classic";
 import type { Value } from "../domain/model";
 import { formatDuration } from "../app/play-clock";
@@ -81,14 +77,20 @@ export function mountLibrary(
       const empty = el("div", undefined, "empty-state");
       empty.append(
         el("h2", tab === "drafts" ? "No drafts" : "No puzzles yet"),
-        el("p", tab === "drafts" ? "Drafts you create or import appear here." : "Finish a draft to add it here."),
+        el(
+          "p",
+          tab === "drafts"
+            ? "Drafts you create or import appear here."
+            : "Finish a draft to add it here.",
+        ),
         labeledButton("pen", "Create a puzzle", () => newDraft(services), "primary"),
       );
       list.append(empty);
       return;
     }
     const sorted = [...items].sort((a, b) => {
-      const time = (r: typeof a) => ("updatedAt" in r ? r.updatedAt : data.sessions[r.id]?.updatedAt ?? r.createdAt);
+      const time = (r: typeof a) =>
+        "updatedAt" in r ? r.updatedAt : (data.sessions[r.id]?.updatedAt ?? r.createdAt);
       return time(b).localeCompare(time(a));
     });
     for (const record of sorted) {
@@ -117,7 +119,13 @@ export function mountLibrary(
       info.append(title, meta);
       const kind = isPuzzle ? "puzzle" : "draft";
       const open = button(
-        !isPuzzle ? "Edit" : status === "In progress" ? "Continue" : status === "Solved" ? "Review" : "Play",
+        !isPuzzle
+          ? "Edit"
+          : status === "In progress"
+            ? "Continue"
+            : status === "Solved"
+              ? "Review"
+              : "Play",
         () => services.navigate({ screen: isPuzzle ? "play" : "create", id: record.id }),
         "primary",
       );
@@ -126,37 +134,46 @@ export function mountLibrary(
         services.navigate({ screen: "solve", source: { kind, id: record.id } }),
       );
       solve.setAttribute("aria-label", `Solve ${record.name}`);
-      const more = menuButton(iconButton("more", `More actions for ${record.name}`, () => {}), () => [
-        {
-          label: "Rename",
-          icon: "pen",
-          onSelect: () =>
-            renameDialog(record.name, (name) =>
-              services.controller.update((d) => renameRecord(d, kind, record.id, name, services.now())),
-            ),
-        },
-        ...(isPuzzle
-          ? [
-              {
-                label: "Edit a copy",
-                icon: "copy" as const,
-                onSelect: () => {
-                  const id = services.newId();
-                  services.controller.update((d) => copyPuzzleToDraft(d, record.id, id, services.now()));
-                  services.navigate({ screen: "create", id });
+      const more = menuButton(
+        iconButton("more", `More actions for ${record.name}`, () => {}),
+        () => [
+          {
+            label: "Rename",
+            icon: "pen",
+            onSelect: () =>
+              renameDialog(record.name, (name) =>
+                services.controller.update((d) =>
+                  renameRecord(d, kind, record.id, name, services.now()),
+                ),
+              ),
+          },
+          ...(isPuzzle
+            ? [
+                {
+                  label: "Edit a copy",
+                  icon: "copy" as const,
+                  onSelect: () => {
+                    const id = services.newId();
+                    services.controller.update((d) =>
+                      copyPuzzleToDraft(d, record.id, id, services.now()),
+                    );
+                    services.navigate({ screen: "create", id });
+                  },
                 },
-              },
-            ]
-          : []),
-        "separator",
-        {
-          label: "Delete",
-          icon: "close",
-          danger: true,
-          onSelect: () =>
-            confirmDelete(record.name, () => services.controller.update((d) => deleteRecord(d, kind, record.id))),
-        },
-      ]);
+              ]
+            : []),
+          "separator",
+          {
+            label: "Delete",
+            icon: "close",
+            danger: true,
+            onSelect: () =>
+              confirmDelete(record.name, () =>
+                services.controller.update((d) => deleteRecord(d, kind, record.id)),
+              ),
+          },
+        ],
+      );
       actions.append(open, solve, more);
       row.append(thumbnail(givens), info, actions);
       list.append(row);

@@ -2,7 +2,9 @@ import { expect, test } from "@playwright/test";
 import { SOLUTION } from "../fixtures";
 import { cell, openMenu, openSettings, playString } from "./helpers";
 
-test("valid completion is dismissible and reappears only on a new complete transition", async ({ page }) => {
+test("valid completion is dismissible and reappears only on a new complete transition", async ({
+  page,
+}) => {
   await playString(page, SOLUTION.slice(0, 80) + "0");
   await cell(page, 80).click();
   await page.keyboard.press("9");

@@ -6,11 +6,16 @@ import { emptyEditor } from "../../src/domain/model";
 import { NOW, PUZZLE } from "../fixtures";
 
 const grid = (text: string) =>
-  [0, 1, 2, 3, 4, 5, 6, 7, 8].map((r) => text.slice(r * 9, r * 9 + 9)).map((row) => `${row.slice(0, 3)}|${row.slice(3, 6)}|${row.slice(6)}`);
+  [0, 1, 2, 3, 4, 5, 6, 7, 8]
+    .map((r) => text.slice(r * 9, r * 9 + 9))
+    .map((row) => `${row.slice(0, 3)}|${row.slice(3, 6)}|${row.slice(6)}`);
 
 test.each([
   ["single line with dots", PUZZLE.replace(/0/g, ".")],
-  ["decorated grid", [...grid(PUZZLE).slice(0, 3), "---+---+---", ...grid(PUZZLE).slice(3)].join("\n")],
+  [
+    "decorated grid",
+    [...grid(PUZZLE).slice(0, 3), "---+---+---", ...grid(PUZZLE).slice(3)].join("\n"),
+  ],
   ["SadMan header", `#Aauthor\n#Ttitle\n${grid(PUZZLE.replace(/0/g, ".")).join("\n")}`],
 ])("parses %s", (_, text) => {
   const result = parsePuzzles(text);
@@ -36,10 +41,17 @@ test("game exports round-trip progress into a valid library", () => {
   const cells = emptyEditor().cells;
   cells[2] = { value: 4, notes: [1], center: [7], color: 2 };
   cells[0] = { value: 0, notes: [], color: 5 };
-  const text = gameExport({ name: "Evening", givens: [...PUZZLE].map(Number) as never, cells, elapsedMs: 65_000 });
+  const text = gameExport({
+    name: "Evening",
+    givens: [...PUZZLE].map(Number) as never,
+    cells,
+    elapsedMs: 65_000,
+  });
   const [parsed] = parsePuzzles(text).puzzles;
   expect(parsed).toMatchObject({ name: "Evening", elapsedMs: 65_000 });
-  const data = validateLibrary(importGame(emptyLibrary(), "g", NOW, { ...parsed, cells: parsed.cells! }));
+  const data = validateLibrary(
+    importGame(emptyLibrary(), "g", NOW, { ...parsed, cells: parsed.cells! }),
+  );
   expect(data.sessions.g.editor.cells[2]).toEqual(cells[2]);
   expect(data.sessions.g.timer?.elapsedMs).toBe(65_000);
   const tampered = JSON.parse(text);

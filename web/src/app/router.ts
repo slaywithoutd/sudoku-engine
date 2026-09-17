@@ -26,7 +26,9 @@ export function parseRoute(hash: string): Route {
   const solve = /^#\/solve\/(puzzle|draft)\/([^/]+)$/.exec(hash);
   if (solve) {
     const id = decode(solve[2]);
-    return id ? { screen: "solve", source: { kind: solve[1] as SolveSource["kind"], id } } : { screen: "solve" };
+    return id
+      ? { screen: "solve", source: { kind: solve[1] as SolveSource["kind"], id } }
+      : { screen: "solve" };
   }
   const match = /^#\/(create|play)\/([^/]+)$/.exec(hash);
   if (match) {
@@ -44,7 +46,9 @@ export function routeHash(route: Route): string {
     case "help":
       return "#/help";
     case "solve":
-      return route.source ? `#/solve/${route.source.kind}/${encodeURIComponent(route.source.id)}` : "#/solve";
+      return route.source
+        ? `#/solve/${route.source.kind}/${encodeURIComponent(route.source.id)}`
+        : "#/solve";
     case "library":
       return `#/library/${route.tab}`;
     default:

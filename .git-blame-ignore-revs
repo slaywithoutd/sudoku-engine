@@ -1,0 +1,5 @@
+# Commits that only reformat code. Enabled with:
+#   git config blame.ignoreRevsFile .git-blame-ignore-revs
+
+# style: format the web app with Prettier
+308c6a7b9cf58b67eb6ae8178baf0d9da9e25e6a

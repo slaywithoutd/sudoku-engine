@@ -87,7 +87,9 @@ export function copyCell(state: EditorState, givens: readonly Value[]): boolean 
   return true;
 }
 export function pasteCellAction(state: EditorState): BoardAction | null {
-  return copiedCell && state.selected >= 0 ? { type: "paste", cell: structuredClone(copiedCell) } : null;
+  return copiedCell && state.selected >= 0
+    ? { type: "paste", cell: structuredClone(copiedCell) }
+    : null;
 }
 export const hasCopiedCell = () => copiedCell !== null;
 
@@ -113,7 +115,8 @@ export function toggleFullscreen(): void {
     if (document.fullscreenElement) void document.exitFullscreen().catch(() => {});
   } else {
     root.classList.add("focus-mode");
-    if (document.fullscreenEnabled && !document.fullscreenElement) void root.requestFullscreen().catch(() => {});
+    if (document.fullscreenEnabled && !document.fullscreenElement)
+      void root.requestFullscreen().catch(() => {});
   }
   dispatchEvent(new Event("focusmodechange"));
 }
@@ -149,7 +152,13 @@ export function download(name: string, blob: Blob): void {
   setTimeout(() => URL.revokeObjectURL(url), 0);
 }
 export const fileName = (name: string, extension: string) =>
-  `${name.trim().replace(/[^\w\- ]+/g, "").replace(/\s+/g, "-").toLowerCase() || "sudoku"}.${extension}`;
+  `${
+    name
+      .trim()
+      .replace(/[^\w\- ]+/g, "")
+      .replace(/\s+/g, "-")
+      .toLowerCase() || "sudoku"
+  }.${extension}`;
 
 /** Renders the board to a PNG with the current theme, independent of screen size. */
 export async function boardImage(givens: readonly Value[], state: EditorState): Promise<Blob> {
@@ -182,7 +191,17 @@ export async function boardImage(givens: readonly Value[], state: EditorState): 
     }
     ctx.fillStyle = token("--note");
     ctx.font = `500 ${cell * 0.22}px ${font}`;
-    const slots = [[0, 0], [2, 0], [0, 2], [2, 2], [1, 0], [1, 2], [0, 1], [2, 1], [1, 1]];
+    const slots = [
+      [0, 0],
+      [2, 0],
+      [0, 2],
+      [2, 2],
+      [1, 0],
+      [1, 2],
+      [0, 1],
+      [2, 1],
+      [1, 1],
+    ];
     c.notes.forEach((n, k) => {
       const [sx, sy] = slots[k];
       ctx.fillText(String(n), x + cell * (0.2 + sx * 0.3), y + cell * (0.2 + sy * 0.3));
@@ -203,7 +222,10 @@ export async function boardImage(givens: readonly Value[], state: EditorState): 
     ctx.stroke();
   }
   return new Promise((resolve, reject) =>
-    canvas.toBlob((blob) => (blob ? resolve(blob) : reject(new Error("Image export failed."))), "image/png"),
+    canvas.toBlob(
+      (blob) => (blob ? resolve(blob) : reject(new Error("Image export failed."))),
+      "image/png",
+    ),
   );
 }
 

@@ -75,10 +75,7 @@ function domainAllows(mask: number, digit: number): boolean {
  */
 class ExactCoverOracle {
   private readonly rows: CandidateRow[] = [];
-  private readonly columnRows: number[][] = Array.from(
-    { length: COLUMN_COUNT },
-    () => [],
-  );
+  private readonly columnRows: number[][] = Array.from({ length: COLUMN_COUNT }, () => []);
   private readonly witnesses: number[][] = [];
   private nodes = 0;
   private interrupted = false;
@@ -96,8 +93,7 @@ class ExactCoverOracle {
     }
 
     const uncoveredColumns = new Set<number>();
-    for (let column = 0; column < COLUMN_COUNT; column += 1)
-      uncoveredColumns.add(column);
+    for (let column = 0; column < COLUMN_COUNT; column += 1) uncoveredColumns.add(column);
 
     const exhausted = this.search(uncoveredColumns, activeRows, []);
     return {

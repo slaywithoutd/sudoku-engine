@@ -8,7 +8,9 @@ const seconds = async (page: import("@playwright/test").Page) => {
   return m * 60 + s;
 };
 
-test("the timer tracks active play while hidden, ignores pauses and inactive pages, and persists", async ({ page }) => {
+test("the timer tracks active play while hidden, ignores pauses and inactive pages, and persists", async ({
+  page,
+}) => {
   await page.clock.install();
   await playString(page, PUZZLE);
   await openSettings(page);
@@ -37,7 +39,10 @@ test("the timer tracks active play while hidden, ignores pauses and inactive pag
   });
   await page.clock.runFor(60_000);
   await page.evaluate(() => {
-    Object.defineProperty(document, "visibilityState", { configurable: true, get: () => "visible" });
+    Object.defineProperty(document, "visibilityState", {
+      configurable: true,
+      get: () => "visible",
+    });
     document.dispatchEvent(new Event("visibilitychange"));
   });
   await page.clock.runFor(2_000);
@@ -49,7 +54,9 @@ test("the timer tracks active play while hidden, ignores pauses and inactive pag
   expect(await seconds(page)).toBeGreaterThanOrEqual(kept - 10);
 });
 
-test("games can start the timer on the first move and restart with or without resetting it", async ({ page }) => {
+test("games can start the timer on the first move and restart with or without resetting it", async ({
+  page,
+}) => {
   await page.clock.install();
   await page.goto("/");
   await openSettings(page);
@@ -82,7 +89,9 @@ test("fill notes uses only row, column and box constraints and is undoable", asy
   await expect(cell(page, 2).locator("[data-notes]")).toBeHidden();
 });
 
-test("note warnings, labels, seen cells and completed digits follow their settings", async ({ page }) => {
+test("note warnings, labels, seen cells and completed digits follow their settings", async ({
+  page,
+}) => {
   await playString(page, PUZZLE);
   await cell(page, 2).click();
   await page.keyboard.press("Shift+Digit5");
@@ -102,12 +111,15 @@ test("note warnings, labels, seen cells and completed digits follow their settin
   expect(seven.y).toBeLessThan(one.y);
 });
 
-test("a persistent cell color survives hover and composes with seen-cell/selection highlighting", async ({ page }) => {
+test("a persistent cell color survives hover and composes with seen-cell/selection highlighting", async ({
+  page,
+}) => {
   await playString(page, PUZZLE);
   await cell(page, 5).click();
   await page.keyboard.press("v"); // toolColor shortcut
   await page.keyboard.press("1"); // color 1
-  const background = (i: number) => cell(page, i).evaluate((el) => getComputedStyle(el).backgroundColor);
+  const background = (i: number) =>
+    cell(page, i).evaluate((el) => getComputedStyle(el).backgroundColor);
   const colored = await background(5);
   expect(colored).not.toBe("rgba(0, 0, 0, 0)");
   // The bug this guards against set the cell's own background to
@@ -127,7 +139,10 @@ test("a persistent cell color survives hover and composes with seen-cell/selecti
   expect(coloredPeerBg).not.toBe(plainPeerBg);
 });
 
-test("export game, copy puzzle and fullscreen are available from the game chrome", async ({ page, context }) => {
+test("export game, copy puzzle and fullscreen are available from the game chrome", async ({
+  page,
+  context,
+}) => {
   await context.grantPermissions(["clipboard-read", "clipboard-write"]);
   await playString(page, PUZZLE);
   await cell(page, 2).click();

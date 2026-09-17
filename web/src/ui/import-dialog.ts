@@ -39,7 +39,7 @@ export function openImportDialog(options: {
   textarea.spellcheck = false;
   textarea.rows = 5;
   textarea.placeholder = "530070000600195000098000060…";
-  textarea.setAttribute("aria-describedby", `${status.id = crypto.randomUUID()}`);
+  textarea.setAttribute("aria-describedby", `${(status.id = crypto.randomUUID())}`);
   status.setAttribute("aria-live", "polite");
   file.type = "file";
   file.accept = IMPORT_EXTENSIONS.join(",");
@@ -55,7 +55,13 @@ export function openImportDialog(options: {
     board = mountBoard(boardHost, {
       context: { mode: "play", givens: puzzle?.givens ?? Array(81).fill(0) },
       state: { ...emptyEditor(), cells: puzzle?.cells ?? emptyEditor().cells },
-      display: { ...options.settings, showConflicts: true, highlightPeers: false, highlightSameDigit: false, showLabels: false },
+      display: {
+        ...options.settings,
+        showConflicts: true,
+        highlightPeers: false,
+        highlightSameDigit: false,
+        showLabels: false,
+      },
       onAction: () => {},
       interactive: false,
       label: "Import preview",
@@ -82,7 +88,10 @@ export function openImportDialog(options: {
     if (!textarea.value.trim()) status.textContent = "Nothing to preview yet.";
     else if (result.error) status.textContent = result.error;
     else {
-      const parts = [`${first.clues} clues`, first.conflicts ? `${first.conflicts} cells in conflict` : "no conflicts"];
+      const parts = [
+        `${first.clues} clues`,
+        first.conflicts ? `${first.conflicts} cells in conflict` : "no conflicts",
+      ];
       if (first.cells) parts.push("includes progress");
       if (parsed.length > 1) parts.unshift(`${parsed.length} puzzles — showing the first`);
       status.textContent = parts.join(" · ");

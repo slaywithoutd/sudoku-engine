@@ -53,14 +53,8 @@ export function makeCell(
   return cell;
 }
 const toggle = (list: readonly Digit[] = [], digit: Digit): Digit[] =>
-  list.includes(digit)
-    ? list.filter((n) => n !== digit)
-    : [...list, digit].sort((a, b) => a - b);
-function applyEdit(
-  state: EditorState,
-  label: Edit["label"],
-  changes: CellChange[],
-): EditorState {
+  list.includes(digit) ? list.filter((n) => n !== digit) : [...list, digit].sort((a, b) => a - b);
+function applyEdit(state: EditorState, label: Edit["label"], changes: CellChange[]): EditorState {
   if (!changes.length) return state;
   const cells = state.cells.slice();
   for (const c of changes) cells[c.index] = structuredClone(c.after);
@@ -71,8 +65,7 @@ function applyEdit(
     future: [],
   };
 }
-const validIndex = (index: number) =>
-  Number.isInteger(index) && index >= 0 && index < 81;
+const validIndex = (index: number) => Number.isInteger(index) && index >= 0 && index < 81;
 export function reduceEditor(
   context: EditorContext,
   state: EditorState,
@@ -126,8 +119,7 @@ export function reduceEditor(
       edit = source.at(-1);
     if (!edit) return state;
     const cells = state.cells.slice();
-    for (const c of edit.changes)
-      cells[c.index] = structuredClone(undo ? c.before : c.after);
+    for (const c of edit.changes) cells[c.index] = structuredClone(undo ? c.before : c.after);
     return {
       ...state,
       cells,
@@ -151,12 +143,7 @@ export function reduceEditor(
       changes: CellChange[] = [];
     state.cells.forEach((before, index) => {
       if (values[index]) return;
-      const after = makeCell(
-        0,
-        candidatesFor(values, index),
-        before.center,
-        before.color,
-      );
+      const after = makeCell(0, candidatesFor(values, index), before.center, before.color);
       if (!sameCell(before, after)) changes.push({ index, before, after });
     });
     return applyEdit(state, "autofill", changes);
@@ -165,7 +152,10 @@ export function reduceEditor(
   // multi-select existed); per-cell skips (given clues, already-valued
   // cells) happen inside the loop below so one locked cell in a multi-select
   // doesn't block the edit for the rest of the selection.
-  if (action.type === "color" && (!play || !Number.isInteger(action.color) || action.color < 0 || action.color > 6))
+  if (
+    action.type === "color" &&
+    (!play || !Number.isInteger(action.color) || action.color < 0 || action.color > 6)
+  )
     return state;
   let digitMode: Tool | undefined;
   if (action.type === "digit") {
@@ -196,8 +186,7 @@ export function reduceEditor(
     } else if (action.type === "erase") {
       // Layered: value, then notes, then color — each press reveals the next layer.
       if (before.value) after = makeCell(0, before.notes, before.center, color);
-      else if (before.notes.length || before.center)
-        after = makeCell(0, [], [], color);
+      else if (before.notes.length || before.center) after = makeCell(0, [], [], color);
       else after = makeCell(0, [], [], 0);
       label = "erase";
     } else if (action.type === "paste") {

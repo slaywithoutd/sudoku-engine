@@ -1,6 +1,12 @@
 import type { ScreenServices } from "../app/controller";
 import type { SolveSource } from "../app/router";
-import { emptyEditor, type Digit, type EditorState, type Settings, type Value } from "../domain/model";
+import {
+  emptyEditor,
+  type Digit,
+  type EditorState,
+  type Settings,
+  type Value,
+} from "../domain/model";
 import { reduceEditor } from "../domain/editor";
 import { effectiveValues, isComplete, peersOf, toPuzzleString } from "../domain/classic";
 import { createDraft, nextPuzzleName } from "../domain/library";
@@ -11,7 +17,14 @@ import { mountBoard, type BoardOverlay, type BoardView } from "./board";
 import { countSummary, logicalSummary, solverStatus, cellName } from "./solver-copy";
 import { el, button } from "./dom";
 import { icon } from "./icons";
-import { iconButton, labeledButton, menuButton, segmented, selectControl, type SelectSection } from "./components";
+import {
+  iconButton,
+  labeledButton,
+  menuButton,
+  segmented,
+  selectControl,
+  type SelectSection,
+} from "./components";
 import { copyText, gameShell, toast } from "./game";
 import { clueSummary, mountPuzzleSurface, type PuzzleSurface } from "./puzzle-editor";
 import { openImportDialog } from "./import-dialog";
@@ -67,7 +80,13 @@ export function classicSolverController(services: ScreenServices): SolverControl
         // Engine Analyze stays disabled (docs/decisions.md D063): every run uses
         // Explain, and the Analyze/Explain switch only changes the presentation.
         return startWorker(
-          { kind: "solve-classic", requestId, givens: input.givens, mode: "explain", timeLimitMs: options?.timeLimitMs },
+          {
+            kind: "solve-classic",
+            requestId,
+            givens: input.givens,
+            mode: "explain",
+            timeLimitMs: options?.timeLimitMs,
+          },
           { onEvent: handlers.onEvent, onError: handlers.onError },
         );
       },
@@ -83,7 +102,9 @@ export function describeStep(step: Pick<SolveStep, "effects">): string {
   const bySymbol = new Map<number, number[]>();
   for (const e of removed) bySymbol.set(e.symbol, [...(bySymbol.get(e.symbol) ?? []), e.cell]);
   for (const [symbol, cells] of bySymbol)
-    parts.push(`removes ${symbol} from ${cells.slice(0, 4).map(cellName).join(", ")}${cells.length > 4 ? ` +${cells.length - 4}` : ""}`);
+    parts.push(
+      `removes ${symbol} from ${cells.slice(0, 4).map(cellName).join(", ")}${cells.length > 4 ? ` +${cells.length - 4}` : ""}`,
+    );
   const text = parts.join("; ") || "No change";
   return text[0].toUpperCase() + text.slice(1);
 }
@@ -115,7 +136,11 @@ export function mountSolver(
   let puzzleName = nextPuzzleName(services.controller.snapshot());
 
   // Top bar ------------------------------------------------------------------
-  const name = nameField("Puzzle name", puzzleName, (value) => (puzzleName = value.trim() || nextPuzzleName(services.controller.snapshot())));
+  const name = nameField(
+    "Puzzle name",
+    puzzleName,
+    (value) => (puzzleName = value.trim() || nextPuzzleName(services.controller.snapshot())),
+  );
   const summary = el("span", undefined, "chip");
   summary.setAttribute("role", "status");
   summary.dataset.testid = "clue-summary";
@@ -145,32 +170,48 @@ export function mountSolver(
       },
     }),
   );
-  const more = menuButton(iconButton("more", "More actions", () => {}), () => {
-    const values = editor.cells.map((c) => c.value);
-    return [
-      {
-        label: "Copy puzzle",
-        icon: "copy",
-        onSelect: async () => toast((await copyText(toPuzzleString(values))) ? "Puzzle copied as 81 characters." : "Copying is blocked in this browser."),
-      },
-      {
-        label: "Save as draft",
-        icon: "save",
-        disabled: !values.some(Boolean),
-        onSelect: () => {
-          const id = services.newId();
-          services.controller.update((data) => createDraft(data, id, services.now(), values, puzzleName));
-          toast(`“${puzzleName}” saved to your drafts.`);
+  const more = menuButton(
+    iconButton("more", "More actions", () => {}),
+    () => {
+      const values = editor.cells.map((c) => c.value);
+      return [
+        {
+          label: "Copy puzzle",
+          icon: "copy",
+          onSelect: async () =>
+            toast(
+              (await copyText(toPuzzleString(values)))
+                ? "Puzzle copied as 81 characters."
+                : "Copying is blocked in this browser.",
+            ),
         },
-      },
-      "separator",
-      { label: "Clear board", icon: "reset", danger: true, disabled: phase !== "edit" || !values.some(Boolean), onSelect: () => {
-        // Undoable, like Clear board in Create.
-        editor = reduceEditor(inputContext, editor, { type: "reset" });
-        render();
-      } },
-    ];
-  });
+        {
+          label: "Save as draft",
+          icon: "save",
+          disabled: !values.some(Boolean),
+          onSelect: () => {
+            const id = services.newId();
+            services.controller.update((data) =>
+              createDraft(data, id, services.now(), values, puzzleName),
+            );
+            toast(`“${puzzleName}” saved to your drafts.`);
+          },
+        },
+        "separator",
+        {
+          label: "Clear board",
+          icon: "reset",
+          danger: true,
+          disabled: phase !== "edit" || !values.some(Boolean),
+          onSelect: () => {
+            // Undoable, like Clear board in Create.
+            editor = reduceEditor(inputContext, editor, { type: "reset" });
+            render();
+          },
+        },
+      ];
+    },
+  );
   shell.actions.append(library.node, importButton, more);
 
   // Solver panel --------------------------------------------------------------
@@ -233,7 +274,11 @@ export function mountSolver(
   stepCard.append(stepName, stepText);
   const stepList = el("ol", undefined, "step-list");
   const legend = el("div", undefined, "legend");
-  for (const [cls, label] of [["area", "Reasoning"], ["focus", "Changed"], ["removed", "Eliminated"]] as const) {
+  for (const [cls, label] of [
+    ["area", "Reasoning"],
+    ["focus", "Changed"],
+    ["removed", "Eliminated"],
+  ] as const) {
     const item = el("span", undefined, `legend-item ${cls}`);
     item.append(el("i"), el("span", label));
     legend.append(item);
@@ -335,7 +380,8 @@ export function mountSolver(
 
   // Explain navigation
   /** Steps listed in Explain; hidden basic eliminations still shape each board state. */
-  const visible = () => (settings().solverHideBasic ? steps.filter((step) => step.name !== "Basic elimination") : steps);
+  const visible = () =>
+    settings().solverHideBasic ? steps.filter((step) => step.name !== "Basic elimination") : steps;
   let listedFor: unknown[] = [];
   const go = (index: number) => {
     const shown = visible();
@@ -357,8 +403,19 @@ export function mountSolver(
     autoplay = undefined;
   }
   const onKey = (event: KeyboardEvent) => {
-    if (phase !== "result" || settings().solverView !== "explain" || event.target instanceof HTMLInputElement || document.querySelector("dialog[open]")) return;
-    const target = { ArrowRight: current + 1, ArrowLeft: current - 1, Home: 0, End: visible().length - 1 }[event.key];
+    if (
+      phase !== "result" ||
+      settings().solverView !== "explain" ||
+      event.target instanceof HTMLInputElement ||
+      document.querySelector("dialog[open]")
+    )
+      return;
+    const target = {
+      ArrowRight: current + 1,
+      ArrowLeft: current - 1,
+      Home: 0,
+      End: visible().length - 1,
+    }[event.key];
     if (target === undefined || event.ctrlKey || event.altKey || event.metaKey) return;
     event.preventDefault();
     go(target);
@@ -366,16 +423,38 @@ export function mountSolver(
   document.addEventListener("keydown", onKey);
 
   // Rendering --------------------------------------------------------------------
-  const stat = (list: HTMLElement, label: string, value: string) => list.append(el("dt", label), el("dd", value));
+  const stat = (list: HTMLElement, label: string, value: string) =>
+    list.append(el("dt", label), el("dd", value));
   const renderAnalysis = () => {
     analysis.replaceChildren();
     if (phase !== "result" || !result) return;
     const headline = el("div", undefined, "result-headline");
     const solved = result.count === "unique";
     headline.classList.toggle("good", solved);
-    headline.classList.toggle("bad", result.count === "zero" || result.count === "multiple" || !!result.error);
-    headline.append(icon(solved ? "check" : "flag"), el("h2", result.error ? "Solver error" : result.count === "unique" ? "Unique solution" : result.count === "multiple" ? "Multiple solutions" : result.count === "zero" ? "No solution" : "Inconclusive"));
-    const detail = el("p", result.error ? result.error : countSummary(result.count ?? "unknown"), "result-detail");
+    headline.classList.toggle(
+      "bad",
+      result.count === "zero" || result.count === "multiple" || !!result.error,
+    );
+    headline.append(
+      icon(solved ? "check" : "flag"),
+      el(
+        "h2",
+        result.error
+          ? "Solver error"
+          : result.count === "unique"
+            ? "Unique solution"
+            : result.count === "multiple"
+              ? "Multiple solutions"
+              : result.count === "zero"
+                ? "No solution"
+                : "Inconclusive",
+      ),
+    );
+    const detail = el(
+      "p",
+      result.error ? result.error : countSummary(result.count ?? "unknown"),
+      "result-detail",
+    );
     const logic = el("p", logicalSummary(result.human ?? "", result.steps ?? 0), "result-detail");
     const stats = el("dl", undefined, "stats");
     stat(stats, "Clues", String(clues.filter(Boolean).length));
@@ -406,13 +485,14 @@ export function mountSolver(
     explainEmpty.hidden = !!shown.length;
     nav.hidden = stepCard.hidden = legend.hidden = stepList.hidden = !shown.length;
     if (!shown.length) {
-      explainEmpty.textContent = phase === "running"
-        ? "Steps appear here as they are found."
-        : result?.count === "multiple" || result?.count === "zero"
-          ? "There are no logical steps to explain: " + countSummary(result.count).toLowerCase()
-          : steps.length
-            ? "Only basic eliminations were needed. Turn off “Hide basic eliminations” to see them."
-            : "No logical steps were found.";
+      explainEmpty.textContent =
+        phase === "running"
+          ? "Steps appear here as they are found."
+          : result?.count === "multiple" || result?.count === "zero"
+            ? "There are no logical steps to explain: " + countSummary(result.count).toLowerCase()
+            : steps.length
+              ? "Only basic eliminations were needed. Turn off “Hide basic eliminations” to see them."
+              : "No logical steps were found.";
       return undefined;
     }
     if (listedFor.length !== shown.length || listedFor.some((step, i) => step !== shown[i])) {
@@ -421,13 +501,19 @@ export function mountSolver(
         ...shown.map((step, i) => {
           const item = el("li");
           const b = button("", () => go(i), "step-item");
-          b.append(el("span", String(steps.indexOf(step) + 1), "step-number"), el("span", step.name, "step-name"), el("span", describeStep(step), "step-effects"));
+          b.append(
+            el("span", String(steps.indexOf(step) + 1), "step-number"),
+            el("span", step.name, "step-name"),
+            el("span", describeStep(step), "step-effects"),
+          );
           item.append(b);
           return item;
         }),
       );
     }
-    [...stepList.querySelectorAll(".step-item")].forEach((b, i) => b.setAttribute("aria-current", String(i === current)));
+    [...stepList.querySelectorAll(".step-item")].forEach((b, i) =>
+      b.setAttribute("aria-current", String(i === current)),
+    );
     const step = shown[current],
       order = steps.indexOf(step);
     position.textContent = `Step ${current + 1} of ${shown.length}`;
@@ -444,22 +530,43 @@ export function mountSolver(
     const area = new Set(step.cells ?? []);
     if (!area.size) for (const cell of focus) for (const peer of peersOf(cell)) area.add(peer);
     const removed = new Map<number, Set<number>>();
-    for (const e of step.effects) if (e.kind === "remove") removed.set(e.cell, new Set([...(removed.get(e.cell) ?? []), e.symbol]));
-    const placed = new Map(step.effects.filter((e) => e.kind === "place").map((e) => [e.cell, e.symbol]));
+    for (const e of step.effects)
+      if (e.kind === "remove")
+        removed.set(e.cell, new Set([...(removed.get(e.cell) ?? []), e.symbol]));
+    const placed = new Map(
+      step.effects.filter((e) => e.kind === "place").map((e) => [e.cell, e.symbol]),
+    );
     const showAll = settings().solverCandidates && step.candidates;
     const candidates = before.map((v, i) =>
-      v ? null : showAll ? digitsOf(step.candidates![i]) : removed.has(i) ? ([...removed.get(i)!].sort() as Digit[]) : [],
+      v
+        ? null
+        : showAll
+          ? digitsOf(step.candidates![i])
+          : removed.has(i)
+            ? ([...removed.get(i)!].sort() as Digit[])
+            : [],
     );
     return {
       values: before,
-      overlay: { focus, area, removed, placed, candidates, derived: new Set(before.flatMap((v, i) => (v && !clues[i] ? [i] : []))) },
+      overlay: {
+        focus,
+        area,
+        removed,
+        placed,
+        candidates,
+        derived: new Set(before.flatMap((v, i) => (v && !clues[i] ? [i] : []))),
+      },
     };
   };
   const renderProgress = () => {
     progress.hidden = phase !== "running";
     if (phase !== "running") return;
     progressStats.replaceChildren();
-    stat(progressStats, "Phase", lastPhase === "exact" ? "Verifying uniqueness" : "Finding logical steps");
+    stat(
+      progressStats,
+      "Phase",
+      lastPhase === "exact" ? "Verifying uniqueness" : "Finding logical steps",
+    );
     stat(progressStats, "Steps found", String(steps.length));
     stat(progressStats, "Elapsed", formatDuration(performance.now() - startedAt));
   };
@@ -473,15 +580,27 @@ export function mountSolver(
         title: "Puzzles",
         options: Object.values(data.puzzles).map((p) => {
           const session = data.sessions[p.id];
-          const state = !session ? undefined : isComplete(effectiveValues(session.editor, p.definition.givens)) ? "Solved" : "In progress";
-          return { value: `puzzle:${p.id}`, label: p.name, description: describe(p.definition.givens, state) };
+          const state = !session
+            ? undefined
+            : isComplete(effectiveValues(session.editor, p.definition.givens))
+              ? "Solved"
+              : "In progress";
+          return {
+            value: `puzzle:${p.id}`,
+            label: p.name,
+            description: describe(p.definition.givens, state),
+          };
         }),
       },
       {
         title: "Drafts",
         options: Object.values(data.drafts)
           .filter((d) => !d.finishedPuzzleId)
-          .map((d) => ({ value: `draft:${d.id}`, label: d.name, description: describe(d.editor.cells.map((c) => c.value)) })),
+          .map((d) => ({
+            value: `draft:${d.id}`,
+            label: d.name,
+            description: describe(d.editor.cells.map((c) => c.value)),
+          })),
       },
     ];
     library.setSections(sections);
@@ -498,7 +617,11 @@ export function mountSolver(
     shell.root.dataset.phase = phase;
     solve.hidden = phase !== "edit";
     solve.disabled = !!conflicts || !editor.cells.some((c) => c.value);
-    solve.title = conflicts ? "Resolve the highlighted conflicts first" : solve.disabled ? "Enter or import clues first" : "";
+    solve.title = conflicts
+      ? "Resolve the highlighted conflicts first"
+      : solve.disabled
+        ? "Enter or import clues first"
+        : "";
     cancel.hidden = !running;
     edit.hidden = phase !== "result";
     library.setDisabled(running);
@@ -517,15 +640,25 @@ export function mountSolver(
     if (surface) surface.render();
     if (display) {
       const explained = explaining && phase === "result" ? renderExplain() : undefined;
-      if (explained) display.update(editorFrom(explained.values), { ...s, highlightPeers: false, highlightSameDigit: false }, explained.overlay);
+      if (explained)
+        display.update(
+          editorFrom(explained.values),
+          { ...s, highlightPeers: false, highlightSameDigit: false },
+          explained.overlay,
+        );
       else {
         if (explaining) renderExplain();
-        const shown = phase === "running"
-          ? steps.at(-1)?.values ?? precount ?? clues
-          : result?.solution ?? result?.logicalValues ?? clues;
-        display.update(editorFrom(shown), { ...s, highlightPeers: false, highlightSameDigit: false }, {
-          derived: new Set(shown.flatMap((v, i) => (v && !clues[i] ? [i] : []))),
-        });
+        const shown =
+          phase === "running"
+            ? (steps.at(-1)?.values ?? precount ?? clues)
+            : (result?.solution ?? result?.logicalValues ?? clues);
+        display.update(
+          editorFrom(shown),
+          { ...s, highlightPeers: false, highlightSameDigit: false },
+          {
+            derived: new Set(shown.flatMap((v, i) => (v && !clues[i] ? [i] : []))),
+          },
+        );
       }
     }
     if (running && !elapsedTicker) elapsedTicker = setInterval(renderProgress, 500);
@@ -563,9 +696,13 @@ export function mountSolver(
           status.hidden = false;
         } else {
           phase = "result";
-          result = value && typeof value.count === "string"
-            ? value
-            : { count: "unknown", error: `The solver stopped with an error${value?.error || value?.code ? `: ${value.error ?? value.code}` : ""}.` };
+          result =
+            value && typeof value.count === "string"
+              ? value
+              : {
+                  count: "unknown",
+                  error: `The solver stopped with an error${value?.error || value?.code ? `: ${value.error ?? value.code}` : ""}.`,
+                };
           status.textContent = solverStatus(result.outcome ?? snapshot.outcome);
           current = 0;
           if (settings().solverAutoplayMs && settings().solverView === "explain") startAutoplay();

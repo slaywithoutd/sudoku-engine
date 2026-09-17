@@ -15,11 +15,7 @@ import {
 import { reduceEditor } from "../../src/domain/editor";
 import { NOW } from "../fixtures";
 const fixture = () =>
-  startPlay(
-    finishDraft(createDraft(emptyLibrary(), "d", NOW), "d", "p", NOW),
-    "p",
-    NOW,
-  );
+  startPlay(finishDraft(createDraft(emptyLibrary(), "d", NOW), "d", "p", NOW), "p", NOW);
 const envelope = (data = fixture()) => parseBackup(exportBackup(data, NOW));
 
 test.each(["pt-BR", "en"])(
@@ -46,9 +42,7 @@ test.each(["pt-BR", "en"])(
       }),
     );
     expect(imported.data).toEqual(loaded);
-    expect(JSON.parse(exportBackup(loaded, NOW)).data.settings.language).toBe(
-      "en",
-    );
+    expect(JSON.parse(exportBackup(loaded, NOW)).data.settings.language).toBe("en");
   },
 );
 test("appearance survives backup roundtrip and only restores with settings opt-in", () => {
@@ -66,20 +60,17 @@ test("appearance survives backup roundtrip and only restores with settings opt-i
     colorMode: "dark",
     theme: "purple",
   });
-  expect(
-    previewRestore(original, backup, () => "new", false).data.settings,
-  ).toMatchObject({ colorMode: "light", theme: "green" });
-  expect(
-    previewRestore(original, backup, () => "new", true).data.settings,
-  ).toMatchObject({ colorMode: "dark", theme: "purple" });
+  expect(previewRestore(original, backup, () => "new", false).data.settings).toMatchObject({
+    colorMode: "light",
+    theme: "green",
+  });
+  expect(previewRestore(original, backup, () => "new", true).data.settings).toMatchObject({
+    colorMode: "dark",
+    theme: "purple",
+  });
 });
 
-test.each([
-  { colorMode: "system" },
-  { colorMode: null },
-  { theme: "red" },
-  { theme: null },
-])(
+test.each([{ colorMode: "system" }, { colorMode: null }, { theme: "red" }, { theme: null }])(
   "rejects malformed appearance instead of silently restoring it: %j",
   (appearance) => {
     const original = fixture();
@@ -96,9 +87,7 @@ test.each(["toString", "valueOf", "hasOwnProperty", "__defineGetter__"])(
   "rejects inherited dictionary key %s throughout lifecycle and restore",
   (key) => {
     expect(() => createDraft(emptyLibrary(), key, NOW)).toThrow();
-    expect(() =>
-      finishDraft(createDraft(emptyLibrary(), "d", NOW), "d", key, NOW),
-    ).toThrow();
+    expect(() => finishDraft(createDraft(emptyLibrary(), "d", NOW), "d", key, NOW)).toThrow();
     const x = JSON.parse(exportBackup(fixture(), NOW));
     x.data.puzzles[key] = { ...x.data.puzzles.p, id: key };
     delete x.data.puzzles.p;
@@ -131,17 +120,10 @@ test("changed session copies its identical puzzle and archived history branch", 
   incoming.sessions.p.editor.selected = 1;
   let n = 0;
   const before = structuredClone(current);
-  const result = previewRestore(
-    current,
-    envelope(incoming),
-    () => `new${++n}`,
-    false,
-  );
+  const result = previewRestore(current, envelope(incoming), () => `new${++n}`, false);
   expect(result.copied).toBe(3);
   expect(current).toEqual(before);
-  const imported = Object.values(result.data.puzzles).find(
-    (p) => p.id !== "p",
-  )!;
+  const imported = Object.values(result.data.puzzles).find((p) => p.id !== "p")!;
   expect(result.data.sessions[imported.id].editor.selected).toBe(1);
   expect(
     Object.values(result.data.drafts).some(
@@ -154,12 +136,7 @@ test("changed puzzle remaps two draft links and retries generated collisions", (
   let incoming = copyPuzzleToDraft(fixture(), "p", "copy", NOW);
   incoming.puzzles.p.name = "Changed";
   const ids = ["p", "d", "fresh-p", "copy", "fresh-d"];
-  const result = previewRestore(
-    fixture(),
-    envelope(incoming),
-    () => ids.shift()!,
-    false,
-  );
+  const result = previewRestore(fixture(), envelope(incoming), () => ids.shift()!, false);
   expect(result.data.drafts.copy.sourcePuzzleId).toBe("fresh-p");
   expect(result.data.drafts["fresh-d"].finishedPuzzleId).toBe("fresh-p");
   expect(result.data.puzzles.p.name).toBe("Puzzle 1");
@@ -170,12 +147,12 @@ test("settings remain local unless requested; revision remains local", () => {
   const incoming = emptyLibrary();
   incoming.revision = 99;
   incoming.settings.showConflicts = true;
+  expect(previewRestore(current, envelope(incoming), () => "x", false).data).toMatchObject({
+    revision: 4,
+    settings: { showConflicts: false },
+  });
   expect(
-    previewRestore(current, envelope(incoming), () => "x", false).data,
-  ).toMatchObject({ revision: 4, settings: { showConflicts: false } });
-  expect(
-    previewRestore(current, envelope(incoming), () => "x", true).data.settings
-      .showConflicts,
+    previewRestore(current, envelope(incoming), () => "x", true).data.settings.showConflicts,
   ).toBe(true);
 });
 test.each([

@@ -11,20 +11,14 @@ for (let n = 0; n < 9; n++) {
   units.push(Array.from({ length: 9 }, (_, r) => r * 9 + n));
   const br = Math.floor(n / 3) * 3,
     bc = (n % 3) * 3;
-  units.push(
-    Array.from(
-      { length: 9 },
-      (_, k) => (br + Math.floor(k / 3)) * 9 + bc + (k % 3),
-    ),
-  );
+  units.push(Array.from({ length: 9 }, (_, k) => (br + Math.floor(k / 3)) * 9 + bc + (k % 3)));
 }
 export function conflictingCells(values: readonly Value[]): number[] {
   const conflicts = new Set<number>();
   for (const unit of units) {
     const groups = new Map<Value, number[]>();
     for (const i of unit)
-      if (values[i])
-        groups.set(values[i], [...(groups.get(values[i]) ?? []), i]);
+      if (values[i]) groups.set(values[i], [...(groups.get(values[i]) ?? []), i]);
     for (const group of groups.values())
       if (group.length > 1) for (const i of group) conflicts.add(i);
   }
@@ -37,10 +31,7 @@ export function isComplete(values: readonly Value[]): boolean {
     conflictingCells(values).length === 0
   );
 }
-export function effectiveValues(
-  editor: EditorState,
-  givens: readonly Value[],
-): Value[] {
+export function effectiveValues(editor: EditorState, givens: readonly Value[]): Value[] {
   return editor.cells.map((cell, i) => givens[i] || cell.value);
 }
 /** The 20 cells sharing a row, column or box with `index`, ascending. */

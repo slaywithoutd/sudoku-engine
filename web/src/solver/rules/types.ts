@@ -81,5 +81,4 @@ export interface Assembly {
 }
 
 export type AssemblyResult =
-  | { ok: true; value: Assembly }
-  | { ok: false; issues: readonly RuleIssue[] };
+  { ok: true; value: Assembly } | { ok: false; issues: readonly RuleIssue[] };

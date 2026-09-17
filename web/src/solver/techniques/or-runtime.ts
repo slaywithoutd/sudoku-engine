@@ -6,21 +6,11 @@ import {
   type ProvedClauseIndex,
   type ProvedClauseEntry,
 } from "../indexes/proved-clauses";
-import {
-  buildImplications,
-  type ImplicationIndex,
-} from "../indexes/implications";
-import {
-  IndexInterrupted,
-  type WorkspaceReservation,
-} from "../indexes/workspace";
+import { buildImplications, type ImplicationIndex } from "../indexes/implications";
+import { IndexInterrupted, type WorkspaceReservation } from "../indexes/workspace";
 import { ForcingGraph } from "./forcing-runtime";
 import { forcingProofFits, signedKey, type ForcingLink } from "./forcing-proof";
-import {
-  compileOrForcing,
-  type OrForcingPlan,
-  type OrBranch,
-} from "./or-forcing";
+import { compileOrForcing, type OrForcingPlan, type OrBranch } from "./or-forcing";
 import {
   GeneralizedRun,
   GeneralizedSearch,
@@ -30,6 +20,8 @@ import {
 } from "./generalized-runtime";
 import { buildCspVariables, cspVariableReservation } from "./csp-variables";
 import type { GeneralizedGrammar } from "./generalized-chains";
+import { symbolMask } from "../state/read";
+import { defined } from "../invariants";
 
 type OrEvent =
   | { kind: "work"; units: number }
@@ -49,10 +41,7 @@ function* forcingPlans(
   sources: readonly ProvedClauseEntry[],
 ): Generator<OrEvent> {
   for (const source of sources) {
-    const lease = context.workspace.reserve(
-      1,
-      source.alternatives.length * 1500000,
-    );
+    const lease = context.workspace.reserve(1, source.alternatives.length * 1500000);
     try {
       const results: {
         assumption: Literal;
@@ -80,13 +69,13 @@ function* forcingPlans(
       for (const cell of view.assembly.problem.cells)
         if (!view.state.values[cell])
           for (const symbol of view.assembly.problem.symbols)
-            if (view.state.domains[cell] & (1 << (symbol - 1)))
+            if (view.state.domains[cell] & symbolMask(symbol))
               for (const positive of [false, true]) {
                 yield { kind: "work", units: 1 };
                 const result = { cell, symbol, positive };
                 if (
                   !results.every(
-                    (r) => r.contradiction || r.paths.has(signedKey(result)),
+                    (outcome) => outcome.contradiction || outcome.paths.has(signedKey(result)),
                   )
                 )
                   continue;
@@ -97,11 +86,11 @@ function* forcingPlans(
                     kind: "or-forcing",
                     source: source.source,
                     alternatives: source.alternatives,
-                    branches: results.map((r) => ({
-                      assumption: r.assumption,
-                      result: r.contradiction ? "false" : result,
-                      paths: r.contradiction ?? [
-                        r.paths.get(signedKey(result))!,
+                    branches: results.map((outcome) => ({
+                      assumption: outcome.assumption,
+                      result: outcome.contradiction ? "false" : result,
+                      paths: outcome.contradiction ?? [
+                        defined(outcome.paths.get(signedKey(result)), "path"),
                       ],
                     })),
                   },
@@ -124,12 +113,11 @@ function* insertedPlans(
     for (const source of sources) {
       const cursor = search.plans("inserted-or-whip", length, {
         id: source.source,
-        values: source.alternatives.map((v) => [v.cell, v.symbol]),
+        values: source.alternatives.map((literal) => [literal.cell, literal.symbol]),
       });
       try {
         for (const event of cursor) {
-          if (event.kind === "plan" && event.plan.positions.length !== length)
-            continue;
+          if (event.kind === "plan" && event.plan.positions.length !== length) continue;
           yield event;
         }
       } finally {
@@ -150,10 +138,7 @@ function* generalizedForcingPlans(
   grammar: GeneralizedGrammar,
 ): Generator<OrEvent> {
   for (const source of sources) {
-    const lease = context.workspace.reserve(
-      1,
-      source.alternatives.length * 1500000,
-    );
+    const lease = context.workspace.reserve(1, source.alternatives.length * 1500000);
     try {
       const paths: Map<string, ForcingLink[]>[] = [],
         contradictions: (ForcingLink[][] | undefined)[] = [];
@@ -172,35 +157,28 @@ function* generalizedForcingPlans(
         }
       }
       const effects = new Map<string, Literal>();
-      for (const a of source.alternatives)
-        effects.set(`${a.cell}:${a.symbol}`, { ...a, positive: false });
+      for (const literal of source.alternatives)
+        effects.set(`${literal.cell}:${literal.symbol}`, { ...literal, positive: false });
       for (const variable of search.variables)
         if (variable.cell !== undefined)
           for (const [cell, symbol] of variable.alternatives)
             effects.set(`${cell}:${symbol}`, { cell, symbol, positive: false });
       function* caseJob(target: Literal, selected: number): Generator<OrEvent> {
-        const branches: (OrBranch | undefined)[] = source.alternatives.map(
-          (a, i) =>
-            i === selected
-              ? undefined
-              : contradictions[i]
-                ? { assumption: a, result: "false", paths: contradictions[i] }
-                : paths[i].has(signedKey(target))
-                  ? {
-                      assumption: a,
-                      result: target,
-                      paths: [paths[i].get(signedKey(target))!],
-                    }
-                  : undefined,
+        const branches: (OrBranch | undefined)[] = source.alternatives.map((literal, i) =>
+          i === selected
+            ? undefined
+            : contradictions[i]
+              ? { assumption: literal, result: "false", paths: contradictions[i] }
+              : paths[i].has(signedKey(target))
+                ? {
+                    assumption: literal,
+                    result: target,
+                    paths: [defined(paths[i].get(signedKey(target)), "get")],
+                  }
+                : undefined,
         );
-        const needed = source.alternatives.flatMap((_, i) =>
-          !branches[i] ? [i] : [],
-        );
-        if (
-          !needed.length ||
-          needed.some((i) => !source.alternatives[i].positive)
-        )
-          return;
+        const needed = source.alternatives.flatMap((_, i) => (!branches[i] ? [i] : []));
+        if (!needed.length || needed.some((i) => !source.alternatives[i].positive)) return;
         const storage = context.workspace.reserve(1, needed.length * 600000);
         const cursors: {
           branch: number;
@@ -208,26 +186,24 @@ function* generalizedForcingPlans(
         }[] = [];
         try {
           for (const i of needed) {
-            const a = source.alternatives[i],
-              own = a.cell === target.cell && a.symbol === target.symbol;
+            const literal = source.alternatives[i],
+              own = literal.cell === target.cell && literal.symbol === target.symbol;
             // Other cases may require a different scalar/group grammar. Their
             // independent searches are interleaved instead of pooling rights.
-            for (const form of i === selected
-              ? [grammar]
-              : (["braid", "g-whip"] as const))
+            for (const form of i === selected ? [grammar] : (["braid", "g-whip"] as const))
               cursors.push({
                 branch: i,
                 cursor: search.plans(
                   form,
                   12,
                   undefined,
-                  [a.cell, a.symbol],
+                  [literal.cell, literal.symbol],
                   own ? undefined : [target.cell, target.symbol],
                 ),
               });
           }
           while (cursors.length)
-            for (let i = 0; i < cursors.length; ) {
+            for (let i = 0; i < cursors.length;) {
               const item = cursors[i];
               if (branches[item.branch]) {
                 item.cursor.return(undefined);
@@ -250,7 +226,7 @@ function* generalizedForcingPlans(
               }
               i++;
             }
-          if (branches.every((b): b is OrBranch => !!b))
+          if (branches.every((right): right is OrBranch => !!right))
             yield {
               kind: "or-plan",
               effect: {
@@ -270,12 +246,12 @@ function* generalizedForcingPlans(
           storage.dispose();
         }
       }
-      const ownJobs = source.alternatives.flatMap((a, i) =>
-        a.positive ? [caseJob({ ...a, positive: false }, i)] : [],
+      const ownJobs = source.alternatives.flatMap((literal, i) =>
+        literal.positive ? [caseJob({ ...literal, positive: false }, i)] : [],
       );
       try {
         while (ownJobs.length)
-          for (let i = 0; i < ownJobs.length; ) {
+          for (let i = 0; i < ownJobs.length;) {
             const next = ownJobs[i].next();
             if (next.done) ownJobs.splice(i, 1);
             else {
@@ -296,10 +272,7 @@ function* generalizedForcingPlans(
   }
 }
 
-export function* discoverOr(
-  view: ReadView,
-  context: DiscoveryContext,
-): Discovery {
+export function* discoverOr(view: ReadView, context: DiscoveryContext): Discovery {
   assertOwnedView(view);
   const run = new GeneralizedRun(context);
   let clauses: ProvedClauseIndex | undefined,
@@ -310,12 +283,11 @@ export function* discoverOr(
     run.tick();
     for (const event of buildProvedClauses(view, context.workspace)) {
       if (event.kind === "ready") clauses = event.value;
-      else if (event.kind === "interrupted")
-        throw new IndexInterrupted(event.reason);
+      else if (event.kind === "interrupted") throw new IndexInterrupted(event.reason);
       run.tick();
       if (event.kind === "work") yield event;
     }
-    if (!clauses!.entries.length) {
+    if (!defined(clauses, "clauses").entries.length) {
       yield {
         kind: "excluded",
         reason: "missing-proved-or-clause",
@@ -328,56 +300,47 @@ export function* discoverOr(
     const graph = new ForcingGraph(view, context, lease);
     for (const event of buildImplications(view, context.workspace)) {
       if (event.kind === "ready") implications = event.value;
-      else if (event.kind === "interrupted")
-        throw new IndexInterrupted(event.reason);
+      else if (event.kind === "interrupted") throw new IndexInterrupted(event.reason);
       run.tick();
       if (event.kind === "work") yield event;
     }
-    for (const event of graph.prepare(implications!)) {
+    for (const event of graph.prepare(defined(implications, "implications"))) {
       run.tick();
       yield event;
     }
     const search = new GeneralizedSearch(view, buildCspVariables(view));
     for (const size of [2, 3, 4]) {
-      const entries = clauses!.entries.filter(
-        (e) => e.alternatives.length === size,
+      const entries = defined(clauses, "clauses").entries.filter(
+        (entry) => entry.alternatives.length === size,
       );
-      const positive = entries.filter((e) =>
-        e.alternatives.every((v) => v.positive),
+      const positive = entries.filter((entry) =>
+        entry.alternatives.every((literal) => literal.positive),
       );
       const signed = entries.filter(
-        (e) => !e.alternatives.every((v) => v.positive),
+        (entry) => !entry.alternatives.every((literal) => literal.positive),
       );
       if (positive.length) {
         cursors.push(forcingPlans(view, context, graph, positive));
         cursors.push(insertedPlans(search, positive));
       }
-      if (signed.length)
-        cursors.push(forcingPlans(view, context, graph, signed));
+      if (signed.length) cursors.push(forcingPlans(view, context, graph, signed));
     }
     // These searches include signed clauses but only speculate positively for
     // a generalized candidate branch; other signed alternatives use static paths.
-    for (const grammar of [
-      "bivalue",
-      "z",
-      "t",
-      "whip",
-      "braid",
-      "g-whip",
-    ] as const)
+    for (const grammar of ["bivalue", "z", "t", "whip", "braid", "g-whip"] as const)
       cursors.push(
         generalizedForcingPlans(
           context,
           graph,
           search,
-          clauses!.entries.filter((e) =>
-            e.alternatives.some((a) => a.positive),
+          defined(clauses, "clauses").entries.filter((entry) =>
+            entry.alternatives.some((literal) => literal.positive),
           ),
           grammar,
         ),
       );
     while (cursors.length)
-      for (let i = 0; i < cursors.length; ) {
+      for (let i = 0; i < cursors.length;) {
         run.tick();
         const next = cursors[i].next();
         if (next.done) {
@@ -390,12 +353,7 @@ export function* discoverOr(
         else {
           const compilation = context.workspace.reserve(1, 5000000);
           try {
-            const proposal = compileOrForcing(
-              view,
-              event.plan,
-              event.effect,
-              compilation,
-            );
+            const proposal = compileOrForcing(view, event.plan, event.effect, compilation);
             run.tick();
             if (!forcingProofFits(proposal, context.limits))
               throw Error("generalized-proof-step-limit");
@@ -416,6 +374,4 @@ export function* discoverOr(
     lease?.dispose();
   }
 }
-export const orTechniques = Object.freeze([
-  generalizedDescriptor("C28", discoverOr),
-]);
+export const orTechniques = Object.freeze([generalizedDescriptor("C28", discoverOr)]);

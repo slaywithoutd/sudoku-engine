@@ -1,9 +1,7 @@
 import type { LibraryData } from "../domain/model";
 import type { Repository } from "../storage/repository";
 import type { Route } from "./router";
-export type SaveStatus =
-  | { kind: "saved" | "saving" }
-  | { kind: "error"; error: Error };
+export type SaveStatus = { kind: "saved" | "saving" } | { kind: "error"; error: Error };
 export interface Controller {
   snapshot(): LibraryData;
   status(): SaveStatus;
@@ -18,10 +16,7 @@ export interface ScreenServices {
   newId: () => string;
   now: () => string;
 }
-export function createController(
-  repository: Repository,
-  initial: LibraryData,
-): Controller {
+export function createController(repository: Repository, initial: LibraryData): Controller {
   let data = initial,
     generation = 0,
     savedGeneration = 0,
@@ -35,10 +30,7 @@ export function createController(
       while (savedGeneration < generation) {
         const capturedGeneration = generation,
           capturedData = data;
-        const committed = await repository.commit(
-          capturedData,
-          committedRevision,
-        );
+        const committed = await repository.commit(capturedData, committedRevision);
         committedRevision = committed.revision;
         data = { ...data, revision: committedRevision };
         savedGeneration = capturedGeneration;
@@ -52,8 +44,7 @@ export function createController(
     }
   }
   function start(): void {
-    if (running || status.kind === "error" || savedGeneration === generation)
-      return;
+    if (running || status.kind === "error" || savedGeneration === generation) return;
     status = { kind: "saving" };
     running = drain().then(() => {
       running = undefined;

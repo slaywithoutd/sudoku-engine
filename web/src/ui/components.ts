@@ -174,9 +174,10 @@ function place(popover: HTMLElement, anchor: HTMLElement, matchWidth: boolean) {
     left = rect.right - width;
   left = Math.max(margin, left);
   const below = rect.bottom + 6,
-    top = below + height > innerHeight - margin && rect.top - height - 6 > margin
-      ? rect.top - height - 6
-      : Math.max(margin, Math.min(below, innerHeight - height - margin));
+    top =
+      below + height > innerHeight - margin && rect.top - height - 6 > margin
+        ? rect.top - height - 6
+        : Math.max(margin, Math.min(below, innerHeight - height - margin));
   popover.style.left = `${left}px`;
   popover.style.top = `${top}px`;
 }
@@ -218,7 +219,8 @@ function showPopover(
 
 function rovingKeys(container: HTMLElement, selector: string, event: KeyboardEvent): boolean {
   const items = [...container.querySelectorAll<HTMLElement>(selector)].filter(
-    (item) => !(item as HTMLButtonElement).disabled && item.getAttribute("aria-disabled") !== "true",
+    (item) =>
+      !(item as HTMLButtonElement).disabled && item.getAttribute("aria-disabled") !== "true",
   );
   if (!items.length) return false;
   const index = items.indexOf(document.activeElement as HTMLElement);
@@ -270,7 +272,10 @@ export function menuButton(
       item.setAttribute("role", "menuitem");
       item.tabIndex = -1;
       item.disabled = !!entry.disabled;
-      item.append(entry.icon ? icon(entry.icon) : el("span", undefined, "icon"), el("span", entry.label));
+      item.append(
+        entry.icon ? icon(entry.icon) : el("span", undefined, "icon"),
+        el("span", entry.label),
+      );
       if (entry.shortcut) item.append(el("kbd", entry.shortcut));
       menu.append(item);
     }
@@ -393,7 +398,9 @@ export function selectControl(options: {
       }
     });
     list.addEventListener("focusin", (event) => {
-      list.querySelectorAll("[role=option]").forEach((o) => o.setAttribute("aria-selected", String(o === event.target)));
+      list
+        .querySelectorAll("[role=option]")
+        .forEach((o) => o.setAttribute("aria-selected", String(o === event.target)));
     });
     trigger.setAttribute("aria-expanded", "true");
     node.classList.add("open");
@@ -433,7 +440,23 @@ export function comboLabel(combo: string): string {
   return combo
     .split("+")
     .map((part) =>
-      part === "Ctrl" ? (mac ? "⌘" : "Ctrl") : part === "Alt" ? (mac ? "⌥" : "Alt") : part === "Shift" ? (mac ? "⇧" : "Shift") : part === "Delete" ? "Del" : part === "Escape" ? "Esc" : part,
+      part === "Ctrl"
+        ? mac
+          ? "⌘"
+          : "Ctrl"
+        : part === "Alt"
+          ? mac
+            ? "⌥"
+            : "Alt"
+          : part === "Shift"
+            ? mac
+              ? "⇧"
+              : "Shift"
+            : part === "Delete"
+              ? "Del"
+              : part === "Escape"
+                ? "Esc"
+                : part,
     )
     .join(mac ? "" : "+");
 }

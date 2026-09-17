@@ -17,10 +17,7 @@ export function emptyLibrary(): LibraryData {
  */
 export function nextPuzzleName(data: LibraryData): string {
   let highest = 0;
-  for (const record of [
-    ...Object.values(data.drafts),
-    ...Object.values(data.puzzles),
-  ]) {
+  for (const record of [...Object.values(data.drafts), ...Object.values(data.puzzles)]) {
     const match = /^Puzzle (\d{1,9})$/.exec(record.name);
     if (match) highest = Math.max(highest, Number(match[1]));
   }
@@ -30,11 +27,7 @@ export function safeId(id: string): boolean {
   return !!id && id !== "prototype" && !Object.hasOwn(Object.prototype, id);
 }
 function available(data: LibraryData, id: string): void {
-  if (
-    !safeId(id) ||
-    Object.hasOwn(data.drafts, id) ||
-    Object.hasOwn(data.puzzles, id)
-  )
+  if (!safeId(id) || Object.hasOwn(data.drafts, id) || Object.hasOwn(data.puzzles, id))
     throw new Error("The identifier already exists or is invalid.");
 }
 export function createDraft(
@@ -45,10 +38,7 @@ export function createDraft(
   name = nextPuzzleName(data),
 ): LibraryData {
   available(data, id);
-  if (
-    values.length !== 81 ||
-    !values.every((v) => Number.isInteger(v) && v >= 0 && v <= 9)
-  )
+  if (values.length !== 81 || !values.every((v) => Number.isInteger(v) && v >= 0 && v <= 9))
     throw new Error("Invalid cells.");
   const editor = emptyEditor();
   editor.cells = values.map((value) => ({ value, notes: [] }));
@@ -67,12 +57,10 @@ export function finishDraft(
   now: string,
 ): LibraryData {
   const draft = data.drafts[draftId];
-  if (!draft || draft.finishedPuzzleId)
-    throw new Error("This draft is not available for editing.");
+  if (!draft || draft.finishedPuzzleId) throw new Error("This draft is not available for editing.");
   available(data, puzzleId);
   const givens = draft.editor.cells.map((c) => c.value);
-  if (conflictingCells(givens).length)
-    throw new Error("Resolve conflicts before finishing.");
+  if (conflictingCells(givens).length) throw new Error("Resolve conflicts before finishing.");
   return {
     ...data,
     drafts: {
@@ -96,11 +84,7 @@ export function finishDraft(
     },
   };
 }
-export function startPlay(
-  data: LibraryData,
-  puzzleId: string,
-  now: string,
-): LibraryData {
+export function startPlay(data: LibraryData, puzzleId: string, now: string): LibraryData {
   if (!data.puzzles[puzzleId]) throw new Error("Puzzle not found.");
   if (data.sessions[puzzleId]) return data;
   return {
@@ -124,13 +108,7 @@ export function copyPuzzleToDraft(
 ): LibraryData {
   const puzzle = data.puzzles[puzzleId];
   if (!puzzle) throw new Error("Puzzle not found.");
-  const next = createDraft(
-    data,
-    draftId,
-    now,
-    puzzle.definition.givens,
-    puzzle.name,
-  );
+  const next = createDraft(data, draftId, now, puzzle.definition.givens, puzzle.name);
   return {
     ...next,
     drafts: {
@@ -166,14 +144,9 @@ export function renameRecord(
     ? data
     : { ...data, puzzles: { ...data.puzzles, [id]: { ...puzzle, name } } };
 }
-export function deleteRecord(
-  data: LibraryData,
-  kind: "draft" | "puzzle",
-  id: string,
-): LibraryData {
+export function deleteRecord(data: LibraryData, kind: "draft" | "puzzle", id: string): LibraryData {
   if (kind === "draft") {
-    if (!data.drafts[id] || data.drafts[id].finishedPuzzleId)
-      throw new Error("Draft unavailable.");
+    if (!data.drafts[id] || data.drafts[id].finishedPuzzleId) throw new Error("Draft unavailable.");
     const drafts = { ...data.drafts };
     delete drafts[id];
     return { ...data, drafts };
@@ -201,7 +174,12 @@ export function importGame(
   data: LibraryData,
   puzzleId: string,
   now: string,
-  game: { givens: readonly Value[]; cells: readonly CellState[]; elapsedMs?: number; name?: string },
+  game: {
+    givens: readonly Value[];
+    cells: readonly CellState[];
+    elapsedMs?: number;
+    name?: string;
+  },
 ): LibraryData {
   available(data, puzzleId);
   if (conflictingCells(game.givens).length)
@@ -225,7 +203,11 @@ export function importGame(
         puzzleId,
         updatedAt: now,
         editor,
-        timer: { ...newTimer(data.settings.timerStart), elapsedMs: game.elapsedMs ?? 0, started: true },
+        timer: {
+          ...newTimer(data.settings.timerStart),
+          elapsedMs: game.elapsedMs ?? 0,
+          started: true,
+        },
       },
     },
   };

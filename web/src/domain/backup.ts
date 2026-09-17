@@ -28,10 +28,7 @@ export interface RestorePreview {
   copied: number;
   skipped: number;
 }
-function requireValid(
-  condition: unknown,
-  message = "Invalid backup data.",
-): asserts condition {
+function requireValid(condition: unknown, message = "Invalid backup data."): asserts condition {
   if (!condition) throw new Error(message);
 }
 function object(x: unknown): Record<string, unknown> {
@@ -66,9 +63,7 @@ function date(x: unknown): string {
   return s;
 }
 function integer(x: unknown, min: number, max: number): number {
-  requireValid(
-    typeof x === "number" && Number.isSafeInteger(x) && x >= min && x <= max,
-  );
+  requireValid(typeof x === "number" && Number.isSafeInteger(x) && x >= min && x <= max);
   return x;
 }
 function value(x: unknown): Value {
@@ -89,14 +84,11 @@ function cell(x: unknown, create: boolean): CellState {
     requireValid(result.center.length > 0);
   }
   if (c.color !== undefined) result.color = integer(c.color, 1, 6) as 1;
-  requireValid(
-    !create || (notes.length === 0 && !result.center && !result.color),
-  );
+  requireValid(!create || (notes.length === 0 && !result.center && !result.color));
   return result;
 }
 /** Given cells hold no player value or notes; only a background color. */
-const blankGiven = (c: CellState) =>
-  c.value === 0 && c.notes.length === 0 && !c.center;
+const blankGiven = (c: CellState) => c.value === 0 && c.notes.length === 0 && !c.center;
 function editor(
   x: unknown,
   create: boolean,
@@ -117,9 +109,7 @@ function editor(
   const parseEdits = (x: unknown): Edit[] =>
     array(x).map((raw) => {
       const r = object(raw);
-      requireValid(
-        (EDIT_LABELS as readonly string[]).includes(string(r.label)),
-      );
+      requireValid((EDIT_LABELS as readonly string[]).includes(string(r.label)));
       const seen = new Set<number>();
       const changes = array(r.changes).map((rawChange) => {
         const c = object(rawChange),
@@ -129,8 +119,7 @@ function editor(
         const before = cell(c.before, create),
           after = cell(c.after, create);
         requireValid(
-          !sameCell(before, after) &&
-            (!givens[index] || (blankGiven(before) && blankGiven(after))),
+          !sameCell(before, after) && (!givens[index] || (blankGiven(before) && blankGiven(after))),
         );
         return { index, before, after };
       });
@@ -139,17 +128,13 @@ function editor(
     });
   const past = parseEdits(e.past),
     future = parseEdits(e.future);
-  for (let i = 0; i < 81; i++)
-    if (givens[i]) requireValid(blankGiven(cells[i]));
+  for (let i = 0; i < 81; i++) if (givens[i]) requireValid(blankGiven(cells[i]));
   const replay = (edits: Edit[], backward: boolean) => {
     const state = structuredClone(cells);
     for (const edit of [...edits].reverse())
       for (const change of edit.changes) {
         requireValid(
-          sameCell(
-            state[change.index],
-            backward ? change.after : change.before,
-          ),
+          sameCell(state[change.index], backward ? change.after : change.before),
           "Inconsistent history.",
         );
         state[change.index] = backward ? change.before : change.after;
@@ -168,10 +153,7 @@ function editor(
 }
 export function validateLibrary(input: unknown): LibraryData {
   const x = object(input);
-  requireValid(
-    x.formatVersion === 1 || x.formatVersion === 2,
-    "Unsupported data version.",
-  );
+  requireValid(x.formatVersion === 1 || x.formatVersion === 2, "Unsupported data version.");
   const revision = integer(x.revision, 0, Number.MAX_SAFE_INTEGER - 1),
     puzzles: Record<string, Puzzle> = {},
     drafts: Record<string, Draft> = {},
@@ -181,12 +163,7 @@ export function validateLibrary(input: unknown): LibraryData {
     const p = object(raw);
     requireValid(id(p.id) === key);
     const d = object(p.definition);
-    requireValid(
-      d.kind === "classic" &&
-        d.version === 1 &&
-        d.width === 9 &&
-        d.height === 9,
-    );
+    requireValid(d.kind === "classic" && d.version === 1 && d.width === 9 && d.height === 9);
     const givens = array(d.givens).map(value);
     requireValid(givens.length === 81 && conflictingCells(givens).length === 0);
     puzzles[key] = {
@@ -216,8 +193,7 @@ export function validateLibrary(input: unknown): LibraryData {
     if (draft.finishedPuzzleId)
       requireValid(
         draft.editor.cells.every(
-          (c, i) =>
-            c.value === puzzles[draft.finishedPuzzleId!].definition.givens[i],
+          (c, i) => c.value === puzzles[draft.finishedPuzzleId!].definition.givens[i],
         ),
       );
     drafts[key] = draft;
@@ -279,8 +255,7 @@ export function exportBackup(data: LibraryData, now: string): string {
     2,
   );
 }
-const equal = (a: unknown, b: unknown) =>
-  JSON.stringify(a) === JSON.stringify(b);
+const equal = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
 export function previewRestore(
   current: LibraryData,
   incoming: BackupEnvelope,
@@ -332,10 +307,8 @@ export function previewRestore(
   }
   for (const d of Object.values(source.drafts)) {
     const remapped = { ...d };
-    if (d.sourcePuzzleId)
-      remapped.sourcePuzzleId = puzzleIds.get(d.sourcePuzzleId)!;
-    if (d.finishedPuzzleId)
-      remapped.finishedPuzzleId = puzzleIds.get(d.finishedPuzzleId)!;
+    if (d.sourcePuzzleId) remapped.sourcePuzzleId = puzzleIds.get(d.sourcePuzzleId)!;
+    if (d.finishedPuzzleId) remapped.finishedPuzzleId = puzzleIds.get(d.finishedPuzzleId)!;
     const existing = local.drafts[d.id];
     if (existing && equal(existing, remapped)) result.skipped++;
     else if (existing || Object.hasOwn(local.puzzles, d.id)) {

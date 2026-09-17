@@ -1,9 +1,5 @@
 import { canonicalProblem } from "../../src/solver/problem";
-import type {
-  ConstraintInstance,
-  EngineProblem,
-  Json,
-} from "../../src/solver/problem";
+import type { ConstraintInstance, EngineProblem, Json } from "../../src/solver/problem";
 import { AllDifferentRule } from "../../src/solver/rules/all-different";
 import { requireProof, sameValue } from "../../src/solver/proof/primitives";
 import type { CheckContext, CheckedInference, PrimitiveInput } from "../../src/solver/proof/types";
@@ -17,36 +13,71 @@ import type {
 
 /** Small test rule semantics; no production registry imports these modules. */
 function relationCapabilities(rule: ConstraintInstance, context: RuleContext): RuleCapabilities {
-  const tuples = context.problem.symbols.flatMap(a => context.problem.symbols
-    .filter(b => rule.type === "sum@1" ? a + b === (rule.parameters as { total: number }).total : a < b).map(b => [a,b]));
-  return { allDifferent: [], covers: [], relations: [{ id: `${rule.id}:relation`, cells: rule.cells, tuples,
-    premise: context.roots.get(rule.id)! }], primitiveIds: ["relation@1"] };
+  const tuples = context.problem.symbols.flatMap((a) =>
+    context.problem.symbols
+      .filter((b) =>
+        rule.type === "sum@1" ? a + b === (rule.parameters as { total: number }).total : a < b,
+      )
+      .map((b) => [a, b]),
+  );
+  return {
+    allDifferent: [],
+    covers: [],
+    relations: [
+      {
+        id: `${rule.id}:relation`,
+        cells: rule.cells,
+        tuples,
+        premise: context.roots.get(rule.id)!,
+      },
+    ],
+    primitiveIds: ["relation@1"],
+  };
 }
 
 /** Independently reconstruct tuples, without calling capability discovery. */
 function checkMockPrimitive(input: PrimitiveInput, context: CheckContext): CheckedInference {
-  const id = input.conclusion.kind === "rule" ? input.conclusion.constraintId : (input.parameters as { constraintId: string }).constraintId;
-  const rule = context.view.assembly.problem.constraints.find(rule => rule.id === id)!;
+  const id =
+    input.conclusion.kind === "rule"
+      ? input.conclusion.constraintId
+      : (input.parameters as { constraintId: string }).constraintId;
+  const rule = context.view.assembly.problem.constraints.find((rule) => rule.id === id)!;
   requireProof(rule && rule.cells.length === 2, "invalid-mock-scope");
-  if (input.rule === "rule-instance@1") requireProof(input.premises.length === 0 && sameValue(input.parameters, {}) &&
-    sameValue(input.conclusion, { kind: "rule", constraintId: id }), "invalid-mock-root");
+  if (input.rule === "rule-instance@1")
+    requireProof(
+      input.premises.length === 0 &&
+        sameValue(input.parameters, {}) &&
+        sameValue(input.conclusion, { kind: "rule", constraintId: id }),
+      "invalid-mock-root",
+    );
   else {
-    requireProof(input.rule === "relation@1" && input.premises.length === 1 && sameValue(input.parameters, { constraintId: id }) &&
-      sameValue(context.retained.get(input.premises[0])?.conclusion, { kind: "rule", constraintId: id }), "invalid-mock-relation-premise");
+    requireProof(
+      input.rule === "relation@1" &&
+        input.premises.length === 1 &&
+        sameValue(input.parameters, { constraintId: id }) &&
+        sameValue(context.retained.get(input.premises[0])?.conclusion, {
+          kind: "rule",
+          constraintId: id,
+        }),
+      "invalid-mock-relation-premise",
+    );
     const tuples: number[][] = [];
-    for (const a of context.view.assembly.problem.symbols) for (const b of context.view.assembly.problem.symbols) {
-      const valid = rule.type === "order@1" ? b > a : b === (rule.parameters as { total: number }).total - a;
-      if (valid) tuples.push([a,b]);
-    }
-    requireProof(sameValue(input.conclusion, { kind: "relation", cells: rule.cells, tuples }), "invalid-mock-relation");
+    for (const a of context.view.assembly.problem.symbols)
+      for (const b of context.view.assembly.problem.symbols) {
+        const valid =
+          rule.type === "order@1" ? b > a : b === (rule.parameters as { total: number }).total - a;
+        if (valid) tuples.push([a, b]);
+      }
+    requireProof(
+      sameValue(input.conclusion, { kind: "relation", cells: rule.cells, tuples }),
+      "invalid-mock-relation",
+    );
   }
   return { conclusion: input.conclusion, rules: [id], conditional: false, openAssumptions: [] };
 }
 
 function parameterObject(parameters: Json): Readonly<Record<string, Json>> | null {
-  return parameters !== null &&
-    typeof parameters === "object" &&
-    !Array.isArray(parameters)
+  return parameters !== null && typeof parameters === "object" && !Array.isArray(parameters)
     ? (parameters as Readonly<Record<string, Json>>)
     : null;
 }
@@ -94,11 +125,7 @@ const orderRule: RuleModule = Object.freeze({
   },
   validate(_problem: EngineProblem, rule: ConstraintInstance): readonly RuleIssue[] {
     const parameters = parameterObject(rule.parameters);
-    if (
-      rule.cells.length !== 2 ||
-      parameters === null ||
-      Object.keys(parameters).length !== 0
-    )
+    if (rule.cells.length !== 2 || parameters === null || Object.keys(parameters).length !== 0)
       return issue(rule, "order@1 requires two ordered cells and no parameters");
     return [];
   },

@@ -8,7 +8,9 @@ const corner = (page: import("@playwright/test").Page, index: number) =>
 const center = (page: import("@playwright/test").Page, index: number) =>
   page.locator(`[data-cell-index="${index}"] [data-center-notes]`);
 
-test("repeated value entry erases, restores hidden notes and ignores held keys", async ({ page }) => {
+test("repeated value entry erases, restores hidden notes and ignores held keys", async ({
+  page,
+}) => {
   const cell = page.locator('[data-cell-index="0"]');
   await cell.click();
   await page.keyboard.press("Shift+Digit2");
@@ -35,12 +37,14 @@ test("corner notes fill corners first and leave the middle to center notes", asy
   await expect(corner(page, 0)).toHaveText("2479");
   await expect(center(page, 0)).toHaveText("15");
   const box = (await cell.boundingBox())!;
-  const spots = await corner(page, 0).locator("span").evaluateAll((nodes) =>
-    nodes.map((n) => {
-      const r = n.getBoundingClientRect();
-      return { x: r.x + r.width / 2, y: r.y + r.height / 2 };
-    }),
-  );
+  const spots = await corner(page, 0)
+    .locator("span")
+    .evaluateAll((nodes) =>
+      nodes.map((n) => {
+        const r = n.getBoundingClientRect();
+        return { x: r.x + r.width / 2, y: r.y + r.height / 2 };
+      }),
+    );
   // Sorted digits 2,4,7,9 occupy top-left, top-right, bottom-left, bottom-right.
   expect(spots[0].x).toBeLessThan(box.x + box.width / 3);
   expect(spots[0].y).toBeLessThan(box.y + box.height / 3);
@@ -48,7 +52,9 @@ test("corner notes fill corners first and leave the middle to center notes", asy
   expect(spots[2].y).toBeGreaterThan(box.y + (box.height * 2) / 3);
   expect(spots[3].x).toBeGreaterThan(box.x + (box.width * 2) / 3);
   const middle = (await center(page, 0).boundingBox())!;
-  expect(Math.abs(middle.y + middle.height / 2 - (box.y + box.height / 2))).toBeLessThan(box.height * 0.1);
+  expect(Math.abs(middle.y + middle.height / 2 - (box.y + box.height / 2))).toBeLessThan(
+    box.height * 0.1,
+  );
 });
 
 test("wrap, deselection, hidden notes and undo use real events", async ({ page }) => {
@@ -88,7 +94,9 @@ test("wrap, deselection, hidden notes and undo use real events", async ({ page }
   await expect(page.locator('[aria-selected="true"]')).toHaveCount(1);
 });
 
-test("pointer modifiers, persistent tools, numpad, colors, locked givens and form isolation", async ({ page }) => {
+test("pointer modifiers, persistent tools, numpad, colors, locked givens and form isolation", async ({
+  page,
+}) => {
   const cell = page.locator('[data-cell-index="0"]');
   await cell.click();
   await page.getByRole("button", { name: "Number 3", exact: true }).click({ modifiers: ["Shift"] });
@@ -97,7 +105,10 @@ test("pointer modifiers, persistent tools, numpad, colors, locked givens and for
   await page.keyboard.press("Numpad2");
   await expect(corner(page, 0)).toHaveText("23");
   await page.keyboard.press("C");
-  await expect(page.getByRole("radio", { name: /^Center/ })).toHaveAttribute("aria-checked", "true");
+  await expect(page.getByRole("radio", { name: /^Center/ })).toHaveAttribute(
+    "aria-checked",
+    "true",
+  );
   await page.getByRole("button", { name: "Center note 8", exact: true }).click();
   await expect(center(page, 0)).toHaveText("8");
   await page.keyboard.press("V");
@@ -118,14 +129,18 @@ test("pointer modifiers, persistent tools, numpad, colors, locked givens and for
   await expect(given.locator("[data-value]")).toHaveText("9");
 });
 
-test("remount removes listeners; all nine notes fit and copy/paste carries every layer", async ({ page }, info) => {
+test("remount removes listeners; all nine notes fit and copy/paste carries every layer", async ({
+  page,
+}, info) => {
   await page.getByRole("button", { name: "Remount", exact: true }).click();
   const cell = page.locator('[data-cell-index="0"]');
   await cell.click();
   for (let n = 1; n <= 9; n++) await page.keyboard.press(`Shift+Digit${n}`);
   await expect(corner(page, 0)).toHaveText("123456789");
   expect(
-    await corner(page, 0).evaluate((e) => e.scrollWidth <= e.clientWidth && e.scrollHeight <= e.clientHeight),
+    await corner(page, 0).evaluate(
+      (e) => e.scrollWidth <= e.clientWidth && e.scrollHeight <= e.clientHeight,
+    ),
   ).toBe(true);
   await page.keyboard.press("Control+Digit4");
   await page.keyboard.press("Control+c");
@@ -138,7 +153,9 @@ test("remount removes listeners; all nine notes fit and copy/paste carries every
   await page.screenshot({ path: info.outputPath("nine-notes.png") });
 });
 
-test("repeated note keydown is ignored, unbound shortcuts stay native, numpad zero erases", async ({ page }) => {
+test("repeated note keydown is ignored, unbound shortcuts stay native, numpad zero erases", async ({
+  page,
+}) => {
   const cell = page.locator('[data-cell-index="0"]');
   await cell.click();
   await page.keyboard.down("Shift");
@@ -156,7 +173,9 @@ test("repeated note keydown is ignored, unbound shortcuts stay native, numpad ze
   await expect(corner(page, 0)).toBeVisible();
 });
 
-test("keypad collapses to a small expand arrow next to the board and defaults to 1 2 3 on top", async ({ page }) => {
+test("keypad collapses to a small expand arrow next to the board and defaults to 1 2 3 on top", async ({
+  page,
+}) => {
   await page.getByRole("button", { name: "Collapse keypad", exact: true }).click();
   await expect(page.getByRole("button", { name: "Number 1", exact: true })).toBeHidden();
   await page.getByRole("button", { name: "Show keypad", exact: true }).click();
@@ -177,7 +196,9 @@ test("the collapsed keypad rail is never clipped by its container", async ({ pag
   expect(railBox.x + railBox.width).toBeLessThanOrEqual(sideBox.x + sideBox.width + 0.5);
 });
 
-test("multi-selection: ctrl+click adds and removes cells, batch edits, clears and toggles via hotkey", async ({ page }) => {
+test("multi-selection: ctrl+click adds and removes cells, batch edits, clears and toggles via hotkey", async ({
+  page,
+}) => {
   await cell(page, 0).click();
   await cell(page, 1).click({ modifiers: ["Control"] });
   await cell(page, 2).click({ modifiers: ["Control"] });

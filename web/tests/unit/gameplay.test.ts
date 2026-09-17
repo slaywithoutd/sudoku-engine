@@ -46,7 +46,14 @@ test("corner and center notes are independent layers and survive a value", () =>
   expect(s.cells[2]).toEqual({ value: 0, notes: [1], center: [2, 4] });
   s = run(play, s, { type: "erase" });
   expect(s.cells[2]).toEqual({ value: 0, notes: [] });
-  expect(s.past.map((e) => e.label)).toEqual(["note", "center", "center", "digit", "erase", "erase"]);
+  expect(s.past.map((e) => e.label)).toEqual([
+    "note",
+    "center",
+    "center",
+    "digit",
+    "erase",
+    "erase",
+  ]);
 });
 
 test("cell colors toggle, apply to clues, erase last and are ignored when creating", () => {
@@ -55,13 +62,23 @@ test("cell colors toggle, apply to clues, erase last and are ignored when creati
   expect(run(play, s, { type: "color", color: 3 }).cells[0]).toEqual({ value: 0, notes: [] });
   s = run(play, s, { type: "erase" });
   expect(s.cells[0]).toEqual({ value: 0, notes: [] });
-  expect(reduceEditor(play, at(0), { type: "digit", digit: 7, tool: "color" }).past).toHaveLength(0);
+  expect(reduceEditor(play, at(0), { type: "digit", digit: 7, tool: "color" }).past).toHaveLength(
+    0,
+  );
   const create: EditorContext = { mode: "create", givens: Array(81).fill(0) };
-  expect(run(create, at(0), { type: "digit", digit: 3, tool: "color" }).cells[0]).toEqual({ value: 3, notes: [] });
+  expect(run(create, at(0), { type: "digit", digit: 3, tool: "color" }).cells[0]).toEqual({
+    value: 3,
+    notes: [],
+  });
 });
 
 test("paste copies every layer onto editable cells only", () => {
-  const cell = { value: 0 as Value, notes: [1, 2] as const, center: [5] as const, color: 2 as const };
+  const cell = {
+    value: 0 as Value,
+    notes: [1, 2] as const,
+    center: [5] as const,
+    color: 2 as const,
+  };
   const s = run(play, at(2), { type: "paste", cell: structuredClone(cell) as never });
   expect(s.cells[2]).toEqual(cell);
   expect(s.past.at(-1)?.label).toBe("paste");
@@ -103,7 +120,11 @@ test("default names use the highest Puzzle number and never duplicate after dele
 });
 
 test("version 1 libraries load with defaults; new layers, timer and settings validate", () => {
-  let data = startPlay(finishDraft(createDraft(emptyLibrary(), "d", NOW, givens), "d", "p", NOW), "p", NOW);
+  let data = startPlay(
+    finishDraft(createDraft(emptyLibrary(), "d", NOW, givens), "d", "p", NOW),
+    "p",
+    NOW,
+  );
   expect(data.sessions.p.timer).toEqual({ elapsedMs: 0, paused: false, started: true });
   const v1 = structuredClone(data) as unknown as Record<string, any>;
   v1.formatVersion = 1;
@@ -112,10 +133,21 @@ test("version 1 libraries load with defaults; new layers, timer and settings val
   v1.sessions.p.editor.selected = 0;
   const loaded = validateLibrary(v1);
   expect(loaded.formatVersion).toBe(2);
-  expect(loaded.settings).toEqual({ ...defaultSettings(), showConflicts: true, colorMode: "dark", theme: "blue" });
+  expect(loaded.settings).toEqual({
+    ...defaultSettings(),
+    showConflicts: true,
+    colorMode: "dark",
+    theme: "blue",
+  });
   data = structuredClone(loaded);
   const session = data.sessions.p;
-  session.editor = run(play, { ...session.editor, selected: 0 }, { type: "color", color: 4 }, { type: "select", index: 2 }, { type: "digit", digit: 1, tool: "center" });
+  session.editor = run(
+    play,
+    { ...session.editor, selected: 0 },
+    { type: "color", color: 4 },
+    { type: "select", index: 2 },
+    { type: "digit", digit: 1, tool: "center" },
+  );
   session.timer = { elapsedMs: 1234, paused: true, started: true };
   data.settings.shortcuts.pause = "Ctrl+Shift+P";
   expect(validateLibrary(data)).toEqual(data);

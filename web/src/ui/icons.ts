@@ -98,7 +98,10 @@ export type IconName = keyof typeof CUSTOM | keyof typeof LUCIDE;
 
 /** lucide-static ships a full `<svg ...>` document; keep only its inner shapes. */
 function innerMarkup(source: string): string {
-  return source.replace(/^[\s\S]*?<svg[^>]*>/, "").replace(/<\/svg>\s*$/, "").trim();
+  return source
+    .replace(/^[\s\S]*?<svg[^>]*>/, "")
+    .replace(/<\/svg>\s*$/, "")
+    .trim();
 }
 const MARKUP: Partial<Record<IconName, string>> = Object.fromEntries(
   Object.entries(LUCIDE).map(([name, source]) => [name, innerMarkup(source)]),

@@ -52,13 +52,17 @@ export function mountPlayer(
   shell.title.append(title);
 
   // Timer ------------------------------------------------------------------
-  const clock = createPlayClock(timerOf().elapsedMs, () => {
-    const t = timerOf();
-    return t.started && !t.paused && !complete();
-  }, {
-    now: () => performance.now(),
-    pageActive: () => document.visibilityState === "visible" && document.hasFocus(),
-  });
+  const clock = createPlayClock(
+    timerOf().elapsedMs,
+    () => {
+      const t = timerOf();
+      return t.started && !t.paused && !complete();
+    },
+    {
+      now: () => performance.now(),
+      pageActive: () => document.visibilityState === "visible" && document.hasFocus(),
+    },
+  );
   let persisted = timerOf().elapsedMs;
   const writeTimer = (patch: Partial<TimerState> = {}) => {
     clock.sync();
@@ -68,7 +72,13 @@ export function mountPlayer(
       if (!s) return data;
       const timer = { ...timerOf(s), elapsedMs, ...patch };
       const before = timerOf(s);
-      if (timer.elapsedMs === before.elapsedMs && timer.paused === before.paused && timer.started === before.started && s.timer) return data;
+      if (
+        timer.elapsedMs === before.elapsedMs &&
+        timer.paused === before.paused &&
+        timer.started === before.started &&
+        s.timer
+      )
+        return data;
       persisted = timer.elapsedMs;
       return { ...data, sessions: { ...data.sessions, [id]: { ...s, timer } } };
     });
@@ -117,11 +127,24 @@ export function mountPlayer(
   completion.hidden = true;
   const completionText = el("p");
   const completionHead = el("div", undefined, "completion-head");
-  completionHead.append(icon("check"), el("h2", "Solved"), iconButton("close", "Dismiss message", () => {
-    dismissed = true;
-    completion.hidden = true;
-  }, "ghost"));
-  completion.append(completionHead, completionText, button("Back to library", () => services.navigate({ screen: "library", tab: "puzzles" })));
+  completionHead.append(
+    icon("check"),
+    el("h2", "Solved"),
+    iconButton(
+      "close",
+      "Dismiss message",
+      () => {
+        dismissed = true;
+        completion.hidden = true;
+      },
+      "ghost",
+    ),
+  );
+  completion.append(
+    completionHead,
+    completionText,
+    button("Back to library", () => services.navigate({ screen: "library", tab: "puzzles" })),
+  );
   shell.side.prepend(completion);
   let announced = complete(),
     dismissed = false,
@@ -150,7 +173,10 @@ export function mountPlayer(
       const edited = editor.past !== s.editor.past;
       const t = timerOf(s);
       const timer = edited && !t.started ? { ...t, started: true } : s.timer;
-      return { ...data, sessions: { ...data.sessions, [id]: { ...s, editor, timer, updatedAt: services.now() } } };
+      return {
+        ...data,
+        sessions: { ...data.sessions, [id]: { ...s, editor, timer, updatedAt: services.now() } },
+      };
     });
     clock.sync();
   };
@@ -178,7 +204,11 @@ export function mountPlayer(
   // Top bar actions --------------------------------------------------------
   const quickSettings = iconButton("settings", "Game settings", () => openQuickSettings(services));
   const restart = () => {
-    const alsoTimer = switchField({ label: "Also reset the timer", checked: true, onChange: () => {} });
+    const alsoTimer = switchField({
+      label: "Also reset the timer",
+      checked: true,
+      onChange: () => {},
+    });
     confirmDialog({
       title: "Restart this puzzle?",
       message: "All digits, notes and colors are cleared. You can undo this.",
@@ -189,7 +219,11 @@ export function mountPlayer(
         apply({ type: "reset" });
         if (alsoTimer.input.checked) {
           clock.reset(0);
-          writeTimer({ elapsedMs: 0, paused: false, started: settings().timerStart === "immediately" });
+          writeTimer({
+            elapsedMs: 0,
+            paused: false,
+            started: settings().timerStart === "immediately",
+          });
         }
         announced = false;
         update();
@@ -202,59 +236,97 @@ export function mountPlayer(
       conflicts = conflictingCells(values).length;
     checkRequested = true;
     if (!empty && !conflicts) update();
-    else toast(conflicts ? `Not solved: ${conflicts} cells break a rule.` : `No conflicts so far · ${empty} cells left.`);
+    else
+      toast(
+        conflicts
+          ? `Not solved: ${conflicts} cells break a rule.`
+          : `No conflicts so far · ${empty} cells left.`,
+      );
   };
-  const more = menuButton(iconButton("more", "More actions", () => {}), () => {
-    const state = session()!.editor,
-      shortcut = (action: ShortcutAction) => comboLabel(settings().shortcuts[action]) || undefined;
-    return [
-      { label: "Check puzzle", icon: "check", onSelect: checkNow },
-      "separator",
-      { label: "Copy cell", icon: "copy", disabled: state.selected < 0, shortcut: shortcut("copyCell"), onSelect: () => copyCell(state, givens) && toast("Cell copied.") },
-      {
-        label: "Paste cell",
-        icon: "paste",
-        disabled: state.selected < 0 || !hasCopiedCell(),
-        shortcut: shortcut("pasteCell"),
-        onSelect: () => {
-          const paste = pasteCellAction(session()!.editor);
-          if (paste) apply(paste);
+  const more = menuButton(
+    iconButton("more", "More actions", () => {}),
+    () => {
+      const state = session()!.editor,
+        shortcut = (action: ShortcutAction) =>
+          comboLabel(settings().shortcuts[action]) || undefined;
+      return [
+        { label: "Check puzzle", icon: "check", onSelect: checkNow },
+        "separator",
+        {
+          label: "Copy cell",
+          icon: "copy",
+          disabled: state.selected < 0,
+          shortcut: shortcut("copyCell"),
+          onSelect: () => copyCell(state, givens) && toast("Cell copied."),
         },
-      },
-      {
-        label: "Copy puzzle",
-        icon: "copy",
-        onSelect: async () => toast((await copyText(toPuzzleString(givens))) ? "Puzzle copied as 81 characters." : "Copying is blocked in this browser."),
-      },
-      {
-        label: "Export game",
-        icon: "download",
-        onSelect: () => {
-          writeTimer();
-          const s = session()!;
-          download(fileName(puzzle.name, "json"), new Blob([gameExport({ name: services.controller.snapshot().puzzles[id].name, givens, cells: s.editor.cells, elapsedMs: timerOf(s).elapsedMs })], { type: "application/json" }));
+        {
+          label: "Paste cell",
+          icon: "paste",
+          disabled: state.selected < 0 || !hasCopiedCell(),
+          shortcut: shortcut("pasteCell"),
+          onSelect: () => {
+            const paste = pasteCellAction(session()!.editor);
+            if (paste) apply(paste);
+          },
         },
-      },
-      {
-        label: "Save image",
-        icon: "image",
-        onSelect: async () => download(fileName(puzzle.name, "png"), await boardImage(givens, session()!.editor)),
-      },
-      "separator",
-      { label: "Open in solver", icon: "solve", onSelect: () => services.navigate({ screen: "solve", source: { kind: "puzzle", id } }) },
-      {
-        label: "Edit a copy",
-        icon: "pen",
-        onSelect: () => {
-          const draftId = services.newId();
-          services.controller.update((d) => copyPuzzleToDraft(d, id, draftId, services.now()));
-          services.navigate({ screen: "create", id: draftId });
+        {
+          label: "Copy puzzle",
+          icon: "copy",
+          onSelect: async () =>
+            toast(
+              (await copyText(toPuzzleString(givens)))
+                ? "Puzzle copied as 81 characters."
+                : "Copying is blocked in this browser.",
+            ),
         },
-      },
-      "separator",
-      { label: "Restart puzzle", icon: "reset", danger: true, onSelect: restart },
-    ];
-  });
+        {
+          label: "Export game",
+          icon: "download",
+          onSelect: () => {
+            writeTimer();
+            const s = session()!;
+            download(
+              fileName(puzzle.name, "json"),
+              new Blob(
+                [
+                  gameExport({
+                    name: services.controller.snapshot().puzzles[id].name,
+                    givens,
+                    cells: s.editor.cells,
+                    elapsedMs: timerOf(s).elapsedMs,
+                  }),
+                ],
+                { type: "application/json" },
+              ),
+            );
+          },
+        },
+        {
+          label: "Save image",
+          icon: "image",
+          onSelect: async () =>
+            download(fileName(puzzle.name, "png"), await boardImage(givens, session()!.editor)),
+        },
+        "separator",
+        {
+          label: "Open in solver",
+          icon: "solve",
+          onSelect: () => services.navigate({ screen: "solve", source: { kind: "puzzle", id } }),
+        },
+        {
+          label: "Edit a copy",
+          icon: "pen",
+          onSelect: () => {
+            const draftId = services.newId();
+            services.controller.update((d) => copyPuzzleToDraft(d, id, draftId, services.now()));
+            services.navigate({ screen: "create", id: draftId });
+          },
+        },
+        "separator",
+        { label: "Restart puzzle", icon: "reset", danger: true, onSelect: restart },
+      ];
+    },
+  );
   shell.actions.append(quickSettings, more);
 
   const update = () => {
@@ -269,9 +341,10 @@ export function mountPlayer(
     title.textContent = data.puzzles[id].name;
     // Correctness marks: player digits equal to the unique solution.
     if (data.settings.markCorrectDigits) loadSolution();
-    const correct = data.settings.markCorrectDigits && solution
-      ? new Set(values.flatMap((v, i) => (!givens[i] && v && v === solution![i] ? [i] : [])))
-      : undefined;
+    const correct =
+      data.settings.markCorrectDigits && solution
+        ? new Set(values.flatMap((v, i) => (!givens[i] && v && v === solution![i] ? [i] : [])))
+        : undefined;
     surface.render({ correct });
     timerText.hidden = !data.settings.showTimer;
     pause.hidden = done;
@@ -293,7 +366,9 @@ export function mountPlayer(
         // Persist the final time outside this render pass.
         queueMicrotask(() => writeTimer());
       }
-      completionText.textContent = data.settings.showTimer ? `Time ${formatDuration(timerOf().elapsedMs)}` : "Every row, column and box is complete.";
+      completionText.textContent = data.settings.showTimer
+        ? `Time ${formatDuration(timerOf().elapsedMs)}`
+        : "Every row, column and box is complete.";
       completion.hidden = dismissed;
     } else completion.hidden = true;
     if (!done) {

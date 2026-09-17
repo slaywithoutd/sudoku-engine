@@ -37,8 +37,7 @@ function expectedPeers(cell: number): number[] {
     return (
       candidateRow === row ||
       candidateColumn === column ||
-      (Math.floor(candidateRow / 3) === boxRow &&
-        Math.floor(candidateColumn / 3) === boxColumn)
+      (Math.floor(candidateRow / 3) === boxRow && Math.floor(candidateColumn / 3) === boxColumn)
     );
   });
 }
@@ -50,7 +49,10 @@ function expectFailure(result: ReturnType<typeof assemble>, code: string) {
 
 describe("capability assembly", () => {
   test("rejects unsupported rules instead of silently dropping them", () => {
-    expectFailure(assemble(withUnknownRule(makeMockProblem()), mockRuleRegistry), "unsupported-rule");
+    expectFailure(
+      assemble(withUnknownRule(makeMockProblem()), mockRuleRegistry),
+      "unsupported-rule",
+    );
   });
 
   test("builds complete classic covers and all 81 peer sets independently", () => {
@@ -135,8 +137,8 @@ describe("capability assembly", () => {
     };
     const events = [...result.value.modules.get(rule.id)!.propagate(view, rule)];
     expect(events.at(-1)).toEqual({ kind: "exhausted" });
-    expect(events.some(e => e.kind === "work")).toBe(true);
-    expect(events.some(e => e.kind === "proposal")).toBe(false);
+    expect(events.some((e) => e.kind === "work")).toBe(true);
+    expect(events.some((e) => e.kind === "proposal")).toBe(false);
   });
 
   test("rejects malformed rule parameters and duplicate registry types", () => {
@@ -178,7 +180,10 @@ describe("capability assembly", () => {
       },
     };
     expectFailure(
-      assemble(makeMockProblem(), mockRuleRegistry.map((rule) => (rule.type === "order@1" ? badCapabilities : rule))),
+      assemble(
+        makeMockProblem(),
+        mockRuleRegistry.map((rule) => (rule.type === "order@1" ? badCapabilities : rule)),
+      ),
       "invalid-capability",
     );
 
@@ -194,7 +199,10 @@ describe("capability assembly", () => {
       },
     };
     expectFailure(
-      assemble(makeMockProblem(), mockRuleRegistry.map((rule) => (rule.type === "order@1" ? foreignPremise : rule))),
+      assemble(
+        makeMockProblem(),
+        mockRuleRegistry.map((rule) => (rule.type === "order@1" ? foreignPremise : rule)),
+      ),
       "invalid-capability",
     );
 
@@ -219,7 +227,10 @@ describe("capability assembly", () => {
       },
     };
     expectFailure(
-      assemble(makeMockProblem(), mockRuleRegistry.map((rule) => (rule.type === "order@1" ? sparseCapabilities : rule))),
+      assemble(
+        makeMockProblem(),
+        mockRuleRegistry.map((rule) => (rule.type === "order@1" ? sparseCapabilities : rule)),
+      ),
       "invalid-capability",
     );
   });
@@ -240,9 +251,7 @@ describe("capability assembly", () => {
     expectFailure(
       assemble(
         makeMockProblem(),
-        mockRuleRegistry.map((rule) =>
-          rule.type === "order@1" ? unknownPrimitive : rule,
-        ),
+        mockRuleRegistry.map((rule) => (rule.type === "order@1" ? unknownPrimitive : rule)),
       ),
       "unsupported-primitive",
     );
@@ -255,7 +264,9 @@ describe("capability assembly", () => {
     expect(Object.isFrozen(result.value.allDifferent)).toBe(true);
     expect(Object.isFrozen(result.value.allDifferent[0].cells)).toBe(true);
     expect("set" in result.value.modules).toBe(false);
-    expect(() => (result.value.modules as Map<string, RuleModule>).set("x", mockRuleRegistry[0])).toThrow();
+    expect(() =>
+      (result.value.modules as Map<string, RuleModule>).set("x", mockRuleRegistry[0]),
+    ).toThrow();
     expect(() => (result.value.peers[0] as number[]).push(80)).toThrow();
   });
 });
