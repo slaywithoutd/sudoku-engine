@@ -2,7 +2,8 @@ import { conditionalViewAuthority } from "../conditional";
 import { canonicalProblem } from "../problem";
 import type { BranchId } from "../problem";
 import type { Assembly, FactId, NodeId } from "../rules/types";
-import type { CheckedStep, ProofNode } from "../proof/types";
+import type { CheckedInference, CheckedStep, ProofNode } from "../proof/types";
+import type { StateKey } from "../snapshot";
 import {
   checkedEffectState,
   checkedImportsMatch,
@@ -12,6 +13,7 @@ import {
   checkedStepMatchesSource,
 } from "../proof/checker";
 import { requireProof, sameValue } from "../proof/primitives";
+import { defined } from "../invariants";
 import { createRoots, ImmutableMap, rootNode } from "./facts";
 import { CandidateIndexes } from "./indexes";
 import type { CandidateState, Fact, Literal, ReadView } from "./types";
@@ -80,6 +82,53 @@ class BranchAppendMap<K, V> implements ReadonlyMap<K, V> {
   forEach(callback: (value: V, key: K, map: ReadonlyMap<K, V>) => void, thisArg?: unknown): void {
     for (const [key, value] of this.entries()) callback.call(thisArg, value, key, this);
   }
+}
+
+/** A checked proof node published as its own root fact. */
+function rootFact(node: ProofNode, inference: CheckedInference, state: StateKey): Fact {
+  return Object.freeze({
+    id: node.id,
+    root: node.id,
+    state,
+    proposition: inference.conclusion,
+    openAssumptions: inference.openAssumptions,
+    conditional: inference.conditional,
+    rules: inference.rules,
+  });
+}
+
+/** The proof root whose domain claim exactly matches the edited domain of `cell`. */
+function domainRoot(
+  step: CheckedStep,
+  facts: ReadonlyMap<FactId, Fact>,
+  cell: number,
+  mask: number,
+): FactId {
+  const root = step.proposal.proof.roots.find((id) => {
+    const proposition = facts.get(id)?.proposition;
+    return proposition?.kind === "domain" && proposition.cell === cell && proposition.mask === mask;
+  });
+  requireProof(root !== undefined, "missing-domain-fact");
+  return root;
+}
+
+/** Frozen negative literals for every dropped candidate and positive ones for new placements. */
+function changedLiterals(
+  before: CandidateState,
+  after: CandidateState,
+  cells: readonly number[],
+  symbols: readonly number[],
+): { removed: Literal[]; placed: Literal[] } {
+  const removed: Literal[] = [],
+    placed: Literal[] = [];
+  for (const cell of cells) {
+    for (const symbol of symbols)
+      if ((before.domains[cell] & ~after.domains[cell] & symbolMask(symbol)) !== 0)
+        removed.push(Object.freeze({ cell, symbol, positive: false }));
+    if (after.values[cell] !== before.values[cell])
+      placed.push(Object.freeze({ cell, symbol: after.values[cell], positive: true }));
+  }
+  return { removed, placed };
 }
 
 interface AcceptedLineage {
@@ -163,31 +212,10 @@ class CandidateOwner {
       const inference = checkedNodeInference(node);
       requireProof(inference, "inauthentic-proof-node");
       nodes.set(node.id, node);
-      facts.set(
-        node.id,
-        Object.freeze({
-          id: node.id,
-          root: node.id,
-          state: key,
-          proposition: inference.conclusion,
-          openAssumptions: inference.openAssumptions,
-          conditional: inference.conditional,
-          rules: inference.rules,
-        }),
-      );
+      facts.set(node.id, rootFact(node, inference, key));
     }
-    for (const cell of edited.cells) {
-      const root = step.proposal.proof.roots.find((id) => {
-        const proposition = facts.get(id)?.proposition;
-        return (
-          proposition?.kind === "domain" &&
-          proposition.cell === cell &&
-          proposition.mask === edited.domains[cell]
-        );
-      });
-      requireProof(root !== undefined, "missing-domain-fact");
-      domainFacts[cell] = root;
-    }
+    for (const cell of edited.cells)
+      domainFacts[cell] = domainRoot(step, facts, cell, edited.domains[cell]);
     const state = Object.freeze({
       key,
       values: Object.freeze(edited.values),
@@ -203,15 +231,12 @@ class CandidateOwner {
       edited.cells,
       step,
     );
-    const removed: Literal[] = [],
-      placed: Literal[] = [];
-    for (const cell of edited.cells) {
-      for (const symbol of this.view.assembly.problem.symbols)
-        if ((before.domains[cell] & ~state.domains[cell] & symbolMask(symbol)) !== 0)
-          removed.push(Object.freeze({ cell, symbol, positive: false }));
-      if (state.values[cell] !== before.values[cell])
-        placed.push(Object.freeze({ cell, symbol: state.values[cell], positive: true }));
-    }
+    const { removed, placed } = changedLiterals(
+      before,
+      state,
+      edited.cells,
+      this.view.assembly.problem.symbols,
+    );
     const incidence = this.indexes.affected(edited.cells);
     const changes: ChangeSet = Object.freeze({
       before: before.key,
@@ -246,18 +271,7 @@ class CandidateOwner {
       const inference = checkedNodeInference(node);
       requireProof(inference, "inauthentic-proof-node");
       nodes.set(node.id, node);
-      facts.set(
-        node.id,
-        Object.freeze({
-          id: node.id,
-          root: node.id,
-          state: this.view.state.key,
-          proposition: inference.conclusion,
-          openAssumptions: inference.openAssumptions,
-          conditional: inference.conditional,
-          rules: inference.rules,
-        }),
-      );
+      facts.set(node.id, rootFact(node, inference, this.view.state.key));
     }
     return new CandidateOwner(
       this.view.assembly,
@@ -393,6 +407,59 @@ export class HypotheticalSession {
     charge: (units: number) => void,
   ): HypotheticalSession {
     const previous = owner(parent);
+    HypotheticalSession.#requireRolloutSource(parent, previous, step, charge);
+    const edited = checkedEffectState(parent, step.proposal, step.consequences);
+    const session = new HypotheticalSession(parent, label, workspace);
+    session.#rollout = true;
+    try {
+      const branch = owner(session.view).branch;
+      requireProof(branch, "not-hypothetical-view");
+      branch.resource.lease.grow(
+        step.proposal.proof.nodes.length,
+        65536 + step.proposal.proof.nodes.length * 2048 + parent.facts.size * 128,
+      );
+      const nodes = new Map<NodeId, ProofNode>(),
+        facts = new Map<FactId, Fact>(),
+        domainFacts = [...parent.state.domainFacts];
+      const key = Object.freeze({ ...session.view.state.key, revision: step.afterRevision });
+      for (const node of step.proposal.proof.nodes) {
+        const inference = checkedNodeInference(node);
+        requireProof(inference && !nodes.has(node.id), "inauthentic-proof-node");
+        nodes.set(node.id, node);
+        facts.set(node.id, rootFact(node, inference, key));
+      }
+      const published = new BranchAppendMap(parent.facts, facts);
+      for (const cell of edited.cells)
+        domainFacts[cell] = domainRoot(step, published, cell, edited.domains[cell]);
+      const state = Object.freeze({
+        key,
+        values: Object.freeze(edited.values),
+        domains: Object.freeze(edited.domains),
+        domainFacts: Object.freeze(domainFacts),
+      });
+      session.#view = new CandidateOwner(
+        parent.assembly,
+        state,
+        published,
+        new BranchAppendMap(previous.nodes, nodes),
+        owner(session.view),
+        edited.cells,
+        undefined,
+        branch,
+      ).view;
+      return session;
+    } catch (error) {
+      session.dispose();
+      throw error;
+    }
+  }
+  /** Rollout only adopts an unconditional, productive step checked against this exact source. */
+  static #requireRolloutSource(
+    parent: ReadView,
+    previous: CandidateOwner,
+    step: CheckedStep,
+    charge: (units: number) => void,
+  ): void {
     requireProof(
       !previous.branch && !conditionalViewAuthority(parent),
       "rollout-primary-source-required",
@@ -405,7 +472,9 @@ export class HypotheticalSession {
     assertCheckedStepActive(step, parent);
     requireProof(checkedImportsMatch(step, previous.nodes), "substituted-step-import");
     requireProof(
-      step.consequences.every((c) => !c.conditional && !c.openAssumptions.length),
+      step.consequences.every(
+        (consequence) => !consequence.conditional && !consequence.openAssumptions.length,
+      ),
       "rollout-open-or-conditional-root",
     );
     // Charge source validation, bounded changed-cell indexes and cleanup first.
@@ -420,65 +489,6 @@ export class HypotheticalSession {
       requireProof(!fact.conditional, "rollout-conditional-source");
     for (const node of step.proposal.proof.nodes)
       requireProof(!checkedNodeInference(node)?.conditional, "rollout-conditional-source");
-    const edited = checkedEffectState(parent, step.proposal, step.consequences);
-    const session = new HypotheticalSession(parent, label, workspace);
-    session.#rollout = true;
-    try {
-      const branch = owner(session.view).branch!;
-      branch.resource.lease.grow(
-        step.proposal.proof.nodes.length,
-        65536 + step.proposal.proof.nodes.length * 2048 + parent.facts.size * 128,
-      );
-      const nodes = new Map<NodeId, ProofNode>(),
-        facts = new Map<FactId, Fact>(),
-        domainFacts = [...parent.state.domainFacts];
-      const key = Object.freeze({ ...session.view.state.key, revision: step.afterRevision });
-      for (const node of step.proposal.proof.nodes) {
-        const inference = checkedNodeInference(node);
-        requireProof(inference && !nodes.has(node.id), "inauthentic-proof-node");
-        nodes.set(node.id, node);
-        facts.set(
-          node.id,
-          Object.freeze({
-            id: node.id,
-            root: node.id,
-            state: key,
-            proposition: inference.conclusion,
-            openAssumptions: inference.openAssumptions,
-            conditional: inference.conditional,
-            rules: inference.rules,
-          }),
-        );
-      }
-      for (const cell of edited.cells) {
-        const root = step.proposal.proof.roots.find((id) => {
-          const p = (facts.get(id) ?? parent.facts.get(id))?.proposition;
-          return p?.kind === "domain" && p.cell === cell && p.mask === edited.domains[cell];
-        });
-        requireProof(root !== undefined, "missing-domain-fact");
-        domainFacts[cell] = root;
-      }
-      const state = Object.freeze({
-        key,
-        values: Object.freeze(edited.values),
-        domains: Object.freeze(edited.domains),
-        domainFacts: Object.freeze(domainFacts),
-      });
-      session.#view = new CandidateOwner(
-        parent.assembly,
-        state,
-        new BranchAppendMap(parent.facts, facts),
-        new BranchAppendMap(previous.nodes, nodes),
-        owner(session.view),
-        edited.cells,
-        undefined,
-        branch,
-      ).view;
-      return session;
-    } catch (error) {
-      session.dispose();
-      throw error;
-    }
   }
   get view(): ReadView {
     requireProof(this.#view, "disposed-hypothetical-session");
@@ -587,31 +597,9 @@ export class HypotheticalSession {
   publish(certificate: BranchCertificate): void {
     const view = this.view;
     const previous = owner(view);
-    const branch = previous.branch!;
-    if (this.#rollout)
-      requireProof(
-        this.#rolloutSteps < 16 &&
-          certificate.proposal.effects.length > 0 &&
-          ["c01@1", "c02@1", "c03@1", "c04@1", "c05@1"].includes(certificate.proposal.technique),
-        "rollout-step-limit",
-      );
-    requireProof(branchCertificateSource(certificate) === view, "foreign-branch-certificate");
-    requireProof(
-      !certificate.consequences.some(
-        (c) =>
-          c.conclusion.kind === "false" ||
-          (c.conclusion.kind === "domain" && c.conclusion.mask === 0),
-      ),
-      "contradictory-branch-publication",
-    );
-
-    // Publication independently protects every existing fact binding. Validate
-    // the entire bundle before growing the lease or allocating replacement maps.
-    for (const node of certificate.proposal.proof.nodes) {
-      requireProof(!previous.nodes.has(node.id) && !view.facts.has(node.id), "reused-proof-node");
-      requireProof(branchNodeInference(node), "inauthentic-branch-node");
-    }
-
+    const branch = previous.branch;
+    requireProof(branch, "not-hypothetical-view");
+    this.#requirePublishable(certificate, view, previous);
     branch.resource.lease.grow(
       1,
       65536 + certificate.proposal.proof.nodes.length * 2048 + view.facts.size * 128,
@@ -623,27 +611,22 @@ export class HypotheticalSession {
     const values = [...view.state.values];
     const key = Object.freeze({ ...view.state.key, revision: view.state.key.revision + 1 });
     for (const node of certificate.proposal.proof.nodes) {
-      const inference = branchNodeInference(node)!;
+      const inference = branchNodeInference(node);
+      requireProof(inference, "inauthentic-proof-node");
       nodes.set(node.id, node);
-      facts.set(
-        node.id,
-        Object.freeze({
-          id: node.id,
-          root: node.id,
-          state: key,
-          proposition: inference.conclusion,
-          openAssumptions: inference.openAssumptions,
-          conditional: inference.conditional,
-          rules: inference.rules,
-        }),
-      );
+      facts.set(node.id, rootFact(node, inference, key));
     }
     for (const id of certificate.proposal.proof.roots) {
-      const p = (nodes.get(id) ?? previous.nodes.get(id))!.conclusion;
-      if (p.kind === "domain") {
-        requireProof((p.mask & view.state.domains[p.cell]) === p.mask, "branch-domain-widening");
-        domains[p.cell] = p.mask;
-        domainFacts[p.cell] = id;
+      const root = nodes.get(id) ?? previous.nodes.get(id);
+      requireProof(root, "missing-branch-root");
+      const conclusion = root.conclusion;
+      if (conclusion.kind === "domain") {
+        requireProof(
+          (conclusion.mask & view.state.domains[conclusion.cell]) === conclusion.mask,
+          "branch-domain-widening",
+        );
+        domains[conclusion.cell] = conclusion.mask;
+        domainFacts[conclusion.cell] = id;
       }
     }
     for (const effect of certificate.proposal.effects) {
@@ -666,13 +649,38 @@ export class HypotheticalSession {
         : new Map([...previous.nodes, ...nodes]),
       previous,
       view.assembly.problem.cells.filter(
-        (c) =>
-          state.values[c] !== view.state.values[c] || state.domains[c] !== view.state.domains[c],
+        (cell) =>
+          state.values[cell] !== view.state.values[cell] ||
+          state.domains[cell] !== view.state.domains[cell],
       ),
       undefined,
       { parent: branch.parent, scope: certificate.scope, resource: branch.resource },
     ).view;
     if (this.#rollout) this.#rolloutSteps++;
+  }
+  /** Publication independently protects every existing fact binding. Validate
+   * the entire bundle before growing the lease or allocating replacement maps. */
+  #requirePublishable(certificate: BranchCertificate, view: ReadView, previous: CandidateOwner) {
+    if (this.#rollout)
+      requireProof(
+        this.#rolloutSteps < 16 &&
+          certificate.proposal.effects.length > 0 &&
+          ["c01@1", "c02@1", "c03@1", "c04@1", "c05@1"].includes(certificate.proposal.technique),
+        "rollout-step-limit",
+      );
+    requireProof(branchCertificateSource(certificate) === view, "foreign-branch-certificate");
+    requireProof(
+      !certificate.consequences.some(
+        (consequence) =>
+          consequence.conclusion.kind === "false" ||
+          (consequence.conclusion.kind === "domain" && consequence.conclusion.mask === 0),
+      ),
+      "contradictory-branch-publication",
+    );
+    for (const node of certificate.proposal.proof.nodes) {
+      requireProof(!previous.nodes.has(node.id) && !view.facts.has(node.id), "reused-proof-node");
+      requireProof(branchNodeInference(node), "inauthentic-branch-node");
+    }
   }
   dispose(): void {
     if (this.#view) {
@@ -714,11 +722,39 @@ export function rebuildOwnedIndexes(view: ReadView): ReadView {
 export function initialize(input: Assembly, branch: BranchId): ReadView {
   // Validate original input before copying it, using the root factory's caps.
   const roots = createRoots(input, branch);
-  const assembly: Assembly = Object.freeze({
+  const assembly = frozenAssembly(input);
+  const values = Object.freeze([...assembly.problem.givens]);
+  const domainFacts = [...assembly.problem.cells];
+  for (const fact of roots.values())
+    if (fact.proposition.kind === "literal" && fact.proposition.value.positive)
+      domainFacts[fact.proposition.value.cell] = fact.id;
+  const state: CandidateState = Object.freeze({
+    key: defined(roots.get(0), "root-fact").state,
+    values,
+    domains: Object.freeze(
+      values.map((value) =>
+        value === 0 ? 2 ** assembly.problem.symbols.length - 1 : symbolMask(value),
+      ),
+    ),
+    domainFacts: Object.freeze(domainFacts),
+  });
+  return new CandidateOwner(
+    assembly,
+    state,
+    roots,
+    new Map([...roots.values()].map((fact) => [fact.root, rootNode(fact)])),
+  ).view;
+}
+
+/** Deep-frozen copy of the assembly, with peers rebuilt from the checked capabilities. */
+function frozenAssembly(input: Assembly): Assembly {
+  return Object.freeze({
     ...input,
     problem: canonicalProblem(input.problem),
     modules: new ImmutableMap(
-      input.problem.constraints.map((rule) => [rule.id, input.modules.get(rule.id)!] as const),
+      input.problem.constraints.map(
+        (rule) => [rule.id, defined(input.modules.get(rule.id), "rule-module")] as const,
+      ),
     ),
     allDifferent: Object.freeze(
       input.allDifferent.map((scope) =>
@@ -751,32 +787,11 @@ export function initialize(input: Assembly, branch: BranchId): ReadView {
                 .flatMap((scope) => scope.cells)
                 .filter((peer) => peer !== cell),
             ),
-          ].sort((a, b) => a - b),
+          ].sort((left, right) => left - right),
         ),
       ),
     ),
   });
-  const values = Object.freeze([...assembly.problem.givens]);
-  const domainFacts = [...assembly.problem.cells];
-  for (const fact of roots.values())
-    if (fact.proposition.kind === "literal" && fact.proposition.value.positive)
-      domainFacts[fact.proposition.value.cell] = fact.id;
-  const state: CandidateState = Object.freeze({
-    key: roots.get(0)!.state,
-    values,
-    domains: Object.freeze(
-      values.map((value) =>
-        value === 0 ? 2 ** assembly.problem.symbols.length - 1 : symbolMask(value),
-      ),
-    ),
-    domainFacts: Object.freeze(domainFacts),
-  });
-  return new CandidateOwner(
-    assembly,
-    state,
-    roots,
-    new Map([...roots.values()].map((fact) => [fact.root, rootNode(fact)])),
-  ).view;
 }
 
 /** Exact immutable prefix to supply as CheckContext.retained on the next check. */
@@ -861,9 +876,9 @@ export function acceptedStepChanges(
   );
   assertCheckedStepActive(step, after);
   const cells = before.assembly.problem.cells.filter(
-    (c) =>
-      before.state.values[c] !== after.state.values[c] ||
-      before.state.domains[c] !== after.state.domains[c],
+    (cell) =>
+      before.state.values[cell] !== after.state.values[cell] ||
+      before.state.domains[cell] !== after.state.domains[cell],
   );
   const removed: Literal[] = [],
     placed: Literal[] = [];

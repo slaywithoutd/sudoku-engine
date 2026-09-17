@@ -10,7 +10,10 @@ export interface SchedulerPolicy {
   choose(checked: readonly CheckedStep[]): CheckedStep;
 }
 const clamp = (n: number) => Math.max(1, Math.min(1024, Number.isFinite(n) ? Math.floor(n) : 1));
-/** Frozen integer priorities are engineering hypotheses; tickets guarantee service independently. */
+/**
+ * Frozen integer priorities are engineering hypotheses; tickets guarantee
+ * service independently.
+ */
 export class FairPolicy implements SchedulerPolicy {
   #view?: ReadView;
   #features = new WeakMap<CheckedStep, StepFeatures>();
@@ -20,7 +23,7 @@ export class FairPolicy implements SchedulerPolicy {
     techniques: readonly TechniqueDescriptor[],
     readonly mode: "explain" | "analyze" = id === "analyze-fair@1" ? "analyze" : "explain",
   ) {
-    this.#tiers = new Map(techniques.map((d) => [d.id, d.tier]));
+    this.#tiers = new Map(techniques.map((descriptor) => [descriptor.id, descriptor.tier]));
   }
   next(ledger: SchedulingLedger, view: ReadView): JobKey {
     if (this.#view !== view) this.#features = new WeakMap();
@@ -35,39 +38,44 @@ export class FairPolicy implements SchedulerPolicy {
     }
     const baseline = this.id === "fixed-scan@1" || this.id === "event-fixed@1";
     const oldest = !baseline && (ledger.ticket + 1) % 4 === 0;
-    jobs.sort((a, b) => {
-      if (oldest) return a.lastService - b.lastService || compareJob(a, b);
-      if (baseline) return compareJob(a, b);
-      const ae = a.estimate,
-        be = b.estimate;
+    jobs.sort((left, right) => {
+      if (oldest) return left.lastService - right.lastService || compareJob(left, right);
+      if (baseline) return compareJob(left, right);
+      const leftEstimate = left.estimate,
+        rightEstimate = right.estimate;
       return (
-        clamp(be.hit) * clamp(be.gain) * clamp(ae.cost) -
-          clamp(ae.hit) * clamp(ae.gain) * clamp(be.cost) || compareJob(a, b)
+        clamp(rightEstimate.hit) * clamp(rightEstimate.gain) * clamp(leftEstimate.cost) -
+          clamp(leftEstimate.hit) * clamp(leftEstimate.gain) * clamp(rightEstimate.cost) ||
+        compareJob(left, right)
       );
     });
     return jobs[0].key;
   }
   choose(checked: readonly CheckedStep[]): CheckedStep {
     if (!checked.length || !this.#view) throw Error("no-checked-candidate");
+    const view = this.#view;
     const scored = checked.map((step) => {
-      let f = this.#features.get(step);
-      if (!f) {
-        f = stepFeatures(step, this.#view!);
-        this.#features.set(step, f);
+      let features = this.#features.get(step);
+      if (!features) {
+        features = stepFeatures(step, view);
+        this.#features.set(step, features);
       }
-      return { step, f };
+      return { step, features };
     });
-    scored.sort((a, b) => {
+    scored.sort((left, right) => {
       const tier =
-        (this.#tiers.get(a.step.proposal.technique) ?? -1) -
-        (this.#tiers.get(b.step.proposal.technique) ?? -1);
+        (this.#tiers.get(left.step.proposal.technique) ?? -1) -
+        (this.#tiers.get(right.step.proposal.technique) ?? -1);
       return (
-        (this.mode === "analyze" ? b.f.utility - a.f.utility || compareFeatures(a.f, b.f) : 0) ||
+        (this.mode === "analyze"
+          ? right.features.utility - left.features.utility ||
+            compareFeatures(left.features, right.features)
+          : 0) ||
         tier ||
-        compareFeatures(a.f, b.f) ||
-        compareText(a.step.proposal.technique, b.step.proposal.technique) ||
-        compareText(a.f.effects, b.f.effects) ||
-        compareText(a.f.proof, b.f.proof)
+        compareFeatures(left.features, right.features) ||
+        compareText(left.step.proposal.technique, right.step.proposal.technique) ||
+        compareText(left.features.effects, right.features.effects) ||
+        compareText(left.features.proof, right.features.proof)
       );
     });
     return scored[0].step;
