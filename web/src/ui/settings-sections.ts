@@ -11,7 +11,7 @@ import {
 import { DEFAULT_SHORTCUTS } from "../domain/settings";
 import { parsePuzzleString } from "../domain/classic";
 import { el, button } from "./dom";
-import { comboLabel, segmented, switchField } from "./components";
+import { comboLabel, iconButton, segmented, switchField } from "./components";
 import { comboFromEvent } from "./input";
 import { mountBoard } from "./board";
 
@@ -50,6 +50,7 @@ export const SHORTCUT_LABELS: Record<ShortcutAction, string> = {
   pasteCell: "Paste cell",
   pause: "Pause / resume timer",
   fullscreen: "Fullscreen",
+  multiSelect: "Toggle multi-select mode",
 };
 
 type Refresher = (settings: Settings) => void;
@@ -76,16 +77,70 @@ export interface LivePreview {
   update(settings: Settings): void;
   destroy(): void;
 }
+/** Keeps a fixed-position panel inside the viewport as it (or the window) moves/resizes. */
+function clampToViewport(panel: HTMLElement): void {
+  const margin = 8,
+    maxX = Math.max(margin, innerWidth - panel.offsetWidth - margin),
+    maxY = Math.max(margin, innerHeight - panel.offsetHeight - margin),
+    x = Math.min(Math.max(margin, panel.offsetLeft), maxX),
+    y = Math.min(Math.max(margin, panel.offsetTop), maxY);
+  panel.style.left = `${x}px`;
+  panel.style.top = `${y}px`;
+}
+/** Drags `panel` by pointer gestures on `handle`, clamped to the viewport. */
+function makeDraggable(handle: HTMLElement, panel: HTMLElement): () => void {
+  let dragging = false, dx = 0, dy = 0;
+  const down = (event: PointerEvent) => {
+    // Let header buttons (minimize/close) handle their own clicks.
+    if ((event.target as HTMLElement).closest("button")) return;
+    dragging = true;
+    dx = event.clientX - panel.offsetLeft;
+    dy = event.clientY - panel.offsetTop;
+    handle.setPointerCapture(event.pointerId);
+    handle.classList.add("dragging");
+  };
+  const move = (event: PointerEvent) => {
+    if (!dragging) return;
+    panel.style.left = `${event.clientX - dx}px`;
+    panel.style.top = `${event.clientY - dy}px`;
+    clampToViewport(panel);
+  };
+  const up = () => {
+    dragging = false;
+    handle.classList.remove("dragging");
+  };
+  handle.addEventListener("pointerdown", down);
+  handle.addEventListener("pointermove", move);
+  handle.addEventListener("pointerup", up);
+  handle.addEventListener("pointercancel", up);
+  return () => {
+    handle.removeEventListener("pointerdown", down);
+    handle.removeEventListener("pointermove", move);
+    handle.removeEventListener("pointerup", up);
+    handle.removeEventListener("pointercancel", up);
+  };
+}
 /**
- * A small live board reflecting board- and note-related settings as they
+ * A larger live board reflecting board- and note-related settings as they
  * change, so trying a setting never means scrolling away to see its effect.
+ * Floats over the settings page (draggable, clamped to the viewport) so it
+ * stays visible while scrolling; it can be minimized to a small handle or
+ * closed entirely, with a way back inline in the page either way — the same
+ * "never fully gone" pattern as the keypad's collapse/hide states.
  * Callers mount it once and keep it updated from their own subscription.
  */
 export function mountLivePreview(container: HTMLElement, initial: Settings): LivePreview {
-  const wrap = el("div", undefined, "settings-live-preview"),
-    boardHost = el("div", undefined, "settings-live-preview-board"),
-    label = el("span", "Live preview", "settings-live-preview-label");
   const { givens, state } = demoPreviewState();
+  const panel = el("div", undefined, "live-preview-panel"),
+    header = el("div", undefined, "live-preview-header"),
+    title = el("span", "Live preview", "live-preview-title"),
+    boardHost = el("div", undefined, "live-preview-board"),
+    minimize = iconButton("chevronDown", "Minimize preview", () => setMinimized(true)),
+    expand = iconButton("chevronUp", "Expand preview", () => setMinimized(false)),
+    close = iconButton("close", "Hide preview", () => setOpen(false));
+  expand.hidden = true;
+  header.append(title, minimize, expand, close);
+  panel.append(header, boardHost);
   const board = mountBoard(boardHost, {
     context: { mode: "play", givens },
     state,
@@ -94,11 +149,36 @@ export function mountLivePreview(container: HTMLElement, initial: Settings): Liv
     interactive: false,
     label: "Live settings preview",
   });
-  wrap.append(boardHost, label);
-  container.prepend(wrap);
+  const restore = button("Show live preview", () => setOpen(true), "ghost live-preview-restore");
+  restore.hidden = true;
+  container.prepend(restore);
+  document.body.append(panel);
+  // Starts near the top-right, clear of the settings TOC.
+  panel.style.top = "5rem";
+  panel.style.left = `${innerWidth - panel.offsetWidth - 24}px`;
+  const setMinimized = (value: boolean) => {
+    panel.classList.toggle("minimized", value);
+    minimize.hidden = value;
+    expand.hidden = !value;
+    clampToViewport(panel);
+  };
+  const setOpen = (value: boolean) => {
+    panel.hidden = !value;
+    restore.hidden = value;
+    if (value) clampToViewport(panel);
+  };
+  const offDrag = makeDraggable(header, panel);
+  const onResize = () => clampToViewport(panel);
+  addEventListener("resize", onResize);
   return {
     update: (settings) => board.update(state, settings),
-    destroy: () => wrap.remove(),
+    destroy: () => {
+      offDrag();
+      removeEventListener("resize", onResize);
+      panel.remove();
+      restore.remove();
+      board.destroy();
+    },
   };
 }
 

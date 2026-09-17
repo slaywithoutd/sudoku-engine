@@ -27,6 +27,50 @@ test("accessibility settings apply immediately, persist and never rely on hue al
   expect(background).toContain("gradient");
 });
 
+test("the live preview floats over the full settings page, updates live, drags and can be minimized or closed", async ({ page }) => {
+  await page.goto("/");
+  await openSettings(page);
+  const panel = page.locator(".live-preview-panel");
+  await expect(panel).toBeVisible();
+
+  // Stays visible (fixed position) while the settings list scrolls under it.
+  await page.mouse.wheel(0, 1200);
+  await expect(panel).toBeVisible();
+
+  // Updates live as a board-affecting setting changes.
+  await expect(panel.locator(".board")).not.toHaveClass(/with-labels/);
+  await page.getByRole("switch", { name: "Row and column labels" }).check();
+  await expect(panel.locator(".board")).toHaveClass(/with-labels/);
+  await page.getByRole("switch", { name: "Row and column labels" }).uncheck();
+
+  // Draggable, clamped to a sane on-screen position.
+  const before = (await panel.boundingBox())!;
+  const header = panel.locator(".live-preview-header");
+  const handle = (await header.boundingBox())!;
+  await page.mouse.move(handle.x + handle.width / 2, handle.y + handle.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(handle.x - 250, handle.y + 150, { steps: 5 });
+  await page.mouse.up();
+  const after = (await panel.boundingBox())!;
+  expect(after.x).not.toBeCloseTo(before.x, 0);
+  const viewport = page.viewportSize()!;
+  expect(after.x).toBeGreaterThanOrEqual(0);
+  expect(after.y).toBeGreaterThanOrEqual(0);
+  expect(after.x + after.width).toBeLessThanOrEqual(viewport.width);
+
+  // Minimize hides the board but keeps the panel (and a way back).
+  await page.getByRole("button", { name: "Minimize preview" }).click();
+  await expect(panel.locator(".live-preview-board")).toBeHidden();
+  await page.getByRole("button", { name: "Expand preview" }).click();
+  await expect(panel.locator(".live-preview-board")).toBeVisible();
+
+  // Close hides it entirely; an inline control brings it back.
+  await page.getByRole("button", { name: "Hide preview" }).click();
+  await expect(panel).toBeHidden();
+  await page.getByRole("button", { name: "Show live preview", exact: true }).click();
+  await expect(panel).toBeVisible();
+});
+
 test("keyboard shortcuts can be remapped, cleared and restored; Help lists the current keys", async ({ page }) => {
   await playString(page, PUZZLE);
   const playUrl = page.url();
@@ -59,7 +103,7 @@ test("quick game settings open from Play without leaving the game", async ({ pag
   await expect(dialog).toBeVisible();
   // The live preview is only useful on the full config screen; Play's quick
   // settings would otherwise show a floating board unrelated to the game.
-  await expect(dialog.locator(".settings-live-preview")).toHaveCount(0);
+  await expect(page.locator(".live-preview-panel")).toHaveCount(0);
   await dialog.getByRole("switch", { name: "Hide keypad" }).check();
   await dialog.getByRole("button", { name: "Done", exact: true }).click();
   expect(page.url()).toBe(url);
