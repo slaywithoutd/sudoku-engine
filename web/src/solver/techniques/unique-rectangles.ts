@@ -1,11 +1,12 @@
 import type { ReadView } from "../state/types";
 import type { UniqueGeometry } from "./unique-compiler";
+import { symbolMask } from "../state/read";
 export type UniqueGeometryEvent =
   | { readonly kind: "work"; readonly units: number }
   | { readonly kind: "geometry"; readonly geometry: UniqueGeometry };
 export type UniqueGeometryCursor = Generator<UniqueGeometryEvent, void, void>;
 export const uniqueSymbols = (mask: number): number[] =>
-  Array.from({ length: 9 }, (_, i) => i + 1).filter((s) => mask & (1 << (s - 1)));
+  Array.from({ length: 9 }, (_, i) => i + 1).filter((s) => mask & symbolMask(s));
 export function* uniqueCombinations(
   values: readonly number[],
   size: number,
@@ -97,7 +98,7 @@ export class UniqueRectangles {
           continue;
         for (const core of uniqueCombinations(view.assembly.problem.symbols, 2)) {
           yield { kind: "work", units: 1 };
-          const mask = core.reduce((m, s) => m | (1 << (s - 1)), 0),
+          const mask = core.reduce((m, s) => m | symbolMask(s), 0),
             avoidable = kind.startsWith("avoidable");
           if (
             cells.some((c) =>
@@ -140,7 +141,7 @@ export class UniqueRectangles {
             yield { kind: "geometry", geometry: g };
           if (kind === "type3" && adjacent) {
             const extras = [...new Set(g.guardians.map((a) => a.symbol))],
-              extraMask = extras.reduce((m, s) => m | (1 << (s - 1)), 0);
+              extraMask = extras.reduce((m, s) => m | symbolMask(s), 0);
             if (extras.length < 2 || extras.length > 4) continue;
             for (const house of view.assembly.allDifferent)
               if (roofs.every((c) => house.cells.includes(c))) {
@@ -160,7 +161,7 @@ export class UniqueRectangles {
           if (["type4", "type6", "hidden"].includes(kind))
             for (const strongSymbol of core) {
               const houses = view.assembly.allDifferent.filter((h) => {
-                const supports = h.cells.filter((c) => domains[c] & (1 << (strongSymbol - 1)));
+                const supports = h.cells.filter((c) => domains[c] & symbolMask(strongSymbol));
                 return supports.length === 2 && supports.every((c) => cells.includes(c));
               });
               if (kind === "type4" && adjacent)
@@ -226,7 +227,7 @@ export class UniqueRectangles {
         const common = cells.reduce((mask, c) => mask & view.state.domains[c], 511);
         for (const core of uniqueCombinations(uniqueSymbols(common), 3)) {
           yield { kind: "work", units: 1 };
-          const mask = core.reduce((m, s) => m | (1 << (s - 1)), 0),
+          const mask = core.reduce((m, s) => m | symbolMask(s), 0),
             g = uniqueGeometry(
               view,
               "U02",

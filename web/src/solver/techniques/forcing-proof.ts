@@ -6,10 +6,11 @@ import type { DeductionProposal, Effect, ProofNode } from "../proof/types";
 import type { Limits } from "../proof/types";
 import type { ReadView, Literal, Proposition } from "../state/types";
 import { proposedClause } from "../proof/builder";
+import { findHouse, findHouseWithCells, symbolMask } from "../state/read";
 
 export const signedKey = (v: Literal): string => `${v.cell}:${v.symbol}:${Number(v.positive)}`;
 export const opposite = (v: Literal): Literal => ({ ...v, positive: !v.positive });
-export const bit = (s: number): number => 1 << (s - 1);
+export const bit = (s: number): number => symbolMask(s);
 export const symbols = (view: ReadView, c: number): number[] =>
   view.assembly.problem.symbols.filter((s) => view.state.domains[c] & bit(s));
 export interface ForcingReason {
@@ -82,7 +83,7 @@ export class ForcingProof {
     return fact.id;
   }
   house(id: string): readonly number[] {
-    const h = this.view.assembly.allDifferent.find((h) => h.id === id);
+    const h = findHouse(this.view, id);
     if (!h) throw Error("missing-forcing-house");
     return h.cells;
   }
@@ -151,9 +152,7 @@ export class ForcingProof {
           !(this.view.state.domains[cell] & bit(effect.symbol))
         )
           continue;
-        const house = this.view.assembly.allDifferent.find(
-          (h) => h.cells.includes(cell) && h.cells.includes(effect.cell),
-        );
+        const house = findHouseWithCells(this.view, cell, effect.cell);
         if (!house) continue;
         const weak = this.add(
           "weak-link@1",

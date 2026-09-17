@@ -7,6 +7,7 @@ import {
   validLiteral,
 } from "./primitives";
 import type { CheckContext, CheckedInference, PrimitiveInput, ProofNode } from "./types";
+import { symbolMask } from "../state/read";
 
 export interface TableDefinition {
   readonly cells: readonly number[];
@@ -150,7 +151,7 @@ export class TableChecker {
       return;
     }
     const alternatives = table.box.map((mask) =>
-      Array.from({ length: 9 }, (_, i) => i + 1).filter((symbol) => mask & (1 << (symbol - 1))),
+      Array.from({ length: 9 }, (_, i) => i + 1).filter((symbol) => mask & symbolMask(symbol)),
     );
     const indexes = alternatives.map(() => 0);
     if (alternatives.some((values) => values.length === 0)) return;
@@ -292,7 +293,7 @@ export class TableChecker {
       for (const row of this.rows(sources[0])) {
         if (row !== null) {
           count++;
-          if (cell !== -1) mask |= 1 << (row[cells.indexOf(cell)] - 1);
+          if (cell !== -1) mask |= symbolMask(row[cells.indexOf(cell)]);
         }
         yield 1;
       }
@@ -305,8 +306,8 @@ export class TableChecker {
               validLiteral(claim.value, context) &&
               sameValue(claim, { kind: "literal", value: claim.value }) &&
               (claim.value.positive
-                ? mask === 1 << (claim.value.symbol - 1)
-                : (mask & (1 << (claim.value.symbol - 1))) === 0),
+                ? mask === symbolMask(claim.value.symbol)
+                : (mask & symbolMask(claim.value.symbol)) === 0),
         "invalid-table-projection",
       );
       return derived(input, context);
@@ -355,7 +356,7 @@ export class TableChecker {
       const volume = box.reduce(
         (total, mask) =>
           total *
-          context.view.assembly.problem.symbols.filter((symbol) => mask & (1 << (symbol - 1)))
+          context.view.assembly.problem.symbols.filter((symbol) => mask & symbolMask(symbol))
             .length,
         1,
       );

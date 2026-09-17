@@ -10,6 +10,7 @@ import {
   work,
 } from "./workspace";
 import type { IndexEntry, IndexEvent, WorkspaceReservation } from "./workspace";
+import { symbolMask } from "../state/read";
 
 /**
  * Bounded, untrusted recipes. A detector must expand these through its named
@@ -107,7 +108,7 @@ export function* buildImplications(
       weak = new Set<string>(),
       strong = new Set<string>();
     const symbols = (cell: number) =>
-      view.assembly.problem.symbols.filter((s) => view.state.domains[cell] & (1 << (s - 1)));
+      view.assembly.problem.symbols.filter((s) => view.state.domains[cell] & symbolMask(s));
     const edge = (
       kind: "weak" | "strong",
       a: Literal,
@@ -167,7 +168,7 @@ export function* buildImplications(
         yield* work(workspace);
         cover(
           p.cells
-            .filter((c) => view.state.domains[c] & (1 << (p.symbol - 1)))
+            .filter((c) => view.state.domains[c] & symbolMask(p.symbol))
             .map((c) => candidate(c, p.symbol)),
           [fact.id, ...p.cells.map((c) => view.state.domainFacts[c])],
           { kind: "house-cover", source: fact.id },
@@ -194,7 +195,7 @@ export function* buildImplications(
                   if (
                     tuple[p.cells.indexOf(cells[i])] === a &&
                     tuple[p.cells.indexOf(cells[j])] === b &&
-                    p.cells.every((c, k) => view.state.domains[c] & (1 << (tuple[k] - 1)))
+                    p.cells.every((c, k) => view.state.domains[c] & symbolMask(tuple[k]))
                   ) {
                     compatible = true;
                     break;

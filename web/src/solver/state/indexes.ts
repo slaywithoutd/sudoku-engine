@@ -3,6 +3,7 @@ import type { ReadView, CandidateState } from "./types";
 import { ImmutableMap } from "./facts";
 import { requireProof } from "../proof/primitives";
 import { rebuildOwnedIndexes } from "./candidates";
+import { symbolMask } from "./read";
 
 interface Incidence {
   readonly constraints: readonly string[];
@@ -56,7 +57,7 @@ export class CandidateIndexes {
               ? old
               : Object.freeze(
                   cover.cells
-                    .filter((cell) => (state.domains[cell] & (1 << (cover.symbol - 1))) !== 0)
+                    .filter((cell) => (state.domains[cell] & symbolMask(cover.symbol)) !== 0)
                     .sort((a, b) => a - b),
                 );
           return [cover.id, cells] as const;

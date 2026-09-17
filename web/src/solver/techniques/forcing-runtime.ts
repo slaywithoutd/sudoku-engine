@@ -3,6 +3,7 @@ import type { Discovery, DiscoveryContext, TechniqueDescriptor } from "./types";
 import { buildImplications, type ImplicationIndex } from "../indexes/implications";
 import { IndexInterrupted, type WorkspaceReservation } from "../indexes/workspace";
 import { assertOwnedView, HypotheticalSession } from "../state/candidates";
+import { findHouseEqualTo } from "../state/read";
 import { coverageEntries } from "./manifest";
 import { compileForcing, type ForcingPlan } from "./forcing";
 import {
@@ -36,7 +37,7 @@ export class ForcingGraph {
       else {
         const p = this.view.facts.get(r.source)!.proposition;
         if (!("cells" in p)) continue;
-        const h = this.view.assembly.allDifferent.find((h) => h.cells.join() === p.cells.join());
+        const h = findHouseEqualTo(this.view, p.cells);
         if (!h) continue;
         reason = { kind: r.kind, house: h.id, symbol: a.symbol };
       }

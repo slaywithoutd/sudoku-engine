@@ -8,6 +8,7 @@ import { assertOwnedView, retainedProof } from "../state/candidates";
 import { ForcingProof } from "./forcing-proof";
 import { coverageEntries } from "./manifest";
 import { sameValue, domainAssertion } from "../proof/primitives";
+import { symbolMask } from "../state/read";
 
 export interface TemplatePlan {
   readonly mode: "single" | "pair" | "triple" | "incompatibility";
@@ -191,7 +192,7 @@ function* overlay(
     for (let s = 0; s < plan.symbols.length; s++) {
       yield* work(context.workspace);
       const symbol = plan.symbols[s],
-        bit = 1 << (symbol - 1);
+        bit = symbolMask(symbol);
       if (!view.state.values[cell] && view.state.domains[cell] & bit && !occurs[s][cell])
         effects.push({ kind: "remove", cell, symbol });
     }
@@ -334,7 +335,7 @@ function* compile(
           root: view.state.domainFacts[effect.cell],
           mask: view.state.domains[effect.cell],
         },
-        mask = prior.mask & ~(1 << (effect.symbol - 1));
+        mask = prior.mask & ~symbolMask(effect.symbol);
       domains.set(effect.cell, {
         root: builder.add("domain-restrict@1", [prior.root, root], {
           kind: "domain",

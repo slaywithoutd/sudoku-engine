@@ -8,6 +8,7 @@ import {
   type FishPattern,
   type FishRequirement,
 } from "./fish-grammar";
+import { symbolMask } from "../state/read";
 
 const literal = (cell: number, symbol: number, positive: boolean): Proposition => ({
   kind: "literal",
@@ -80,7 +81,7 @@ class FishComponentLineage {
             sameValue(n.conclusion, {
               kind: "domain",
               cell: fin,
-              mask: this.view.state.domains[fin] & ~(1 << (z - 1)),
+              mask: this.view.state.domains[fin] & ~symbolMask(z),
             }),
         );
       const restricted = candidates.find((n) => {

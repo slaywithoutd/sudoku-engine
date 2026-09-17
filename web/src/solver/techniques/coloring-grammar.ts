@@ -4,6 +4,7 @@ import type { DeductionProposal, ProofNode } from "../proof/types";
 import { clause, requireProof, sameValue } from "../proof/primitives";
 import type { ColoringPattern, ColorEdge } from "./coloring";
 import { ChainSources, projectedSource } from "./chains-grammar";
+import { classicHouseContaining, symbolMask } from "../state/read";
 
 const key = (l: Literal) => `${l.cell}:${l.symbol}`;
 const identity = (e: ColorEdge) =>
@@ -81,7 +82,7 @@ export function* checkColoringPatternSteps(
             view.assembly.problem.cells.includes(l.cell) &&
             view.assembly.problem.symbols.includes(l.symbol) &&
             !view.state.values[l.cell] &&
-            !!(view.state.domains[l.cell] & (1 << (l.symbol - 1))) &&
+            !!(view.state.domains[l.cell] & symbolMask(l.symbol)) &&
             !allKeys.has(key(l)),
           "invalid-color-members",
         );
@@ -139,7 +140,7 @@ export function* checkColoringPatternSteps(
       for (const cell of view.assembly.problem.cells) {
         if (view.state.values[cell]) continue;
         const symbols = view.assembly.problem.symbols.filter(
-          (s) => view.state.domains[cell] & (1 << (s - 1)),
+          (s) => view.state.domains[cell] & symbolMask(s),
         );
         if (symbols.length === 2)
           include({
@@ -152,15 +153,9 @@ export function* checkColoringPatternSteps(
       yield 1;
       if (fact.openAssumptions.length || fact.proposition.kind !== "cover") continue;
       const cover = fact.proposition;
-      const house =
-        view.assembly.allDifferent.find(
-          (h) => h.cells.length === 9 && sameValue(h.cells, cover.cells),
-        ) ??
-        view.assembly.allDifferent.find(
-          (h) => h.cells.length === 9 && cover.cells.every((c) => h.cells.includes(c)),
-        );
+      const house = classicHouseContaining(view, cover.cells);
       if (!house) continue;
-      const cells = cover.cells.filter((c) => view.state.domains[c] & (1 << (cover.symbol - 1)));
+      const cells = cover.cells.filter((c) => view.state.domains[c] & symbolMask(cover.symbol));
       if (cells.length !== 2 || cells.some((c) => view.state.values[c])) continue;
       // The house's checked all-different source supplies the at-most-one side.
       const prepared = preparedSources(view, "complete");

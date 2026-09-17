@@ -17,6 +17,7 @@ import { Subsets, LockedSubsets } from "./subsets";
 import { proposedClause } from "../proof/builder";
 import { checkNetPattern } from "./nets-grammar";
 import type { NetBranchCertificate } from "./nets";
+import { findHouse, symbolMask } from "../state/read";
 type Work = { kind: "work"; units: number };
 class NetInterrupted extends Error {
   constructor(readonly reason: "time-limit" | "work-limit" | "proof-step-limit") {
@@ -144,8 +145,8 @@ class NetSearch {
               view.state.domains[link.reason.cell!] !== this.parent.state.domains[link.reason.cell!]
             );
           if (link.reason.kind !== "house-cover") return false;
-          const house = view.assembly.allDifferent.find((h) => h.id === link.reason.house)!,
-            bit = 1 << (link.reason.symbol! - 1);
+          const house = findHouse(view, link.reason.house)!,
+            bit = symbolMask(link.reason.symbol!);
           return house.cells.some(
             (c) => (view.state.domains[c] & bit) !== (this.parent.state.domains[c] & bit),
           );

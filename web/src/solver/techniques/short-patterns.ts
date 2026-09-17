@@ -16,6 +16,7 @@ import {
   type PatternGraph,
   type PatternStrategy,
 } from "./pattern-runtime";
+import { classicHouseEqualTo, symbolMask } from "../state/read";
 
 type PathEvent =
   | { kind: "work"; units: number }
@@ -39,9 +40,7 @@ export class ShortPatterns implements PatternStrategy {
         continue;
       const source = view.facts.get(left.recipe.source)!.proposition;
       if (source.kind !== "cover") continue;
-      const h = view.assembly.allDifferent.find(
-        (h) => h.cells.length === 9 && h.cells.join() === source.cells.join(),
-      );
+      const h = classicHouseEqualTo(view, source.cells);
       if (!h) continue;
       const symbol = source.symbol,
         cells = left.literals.map((l) => l.cell);
@@ -68,9 +67,7 @@ export class ShortPatterns implements PatternStrategy {
             continue;
           const rs = view.facts.get(right.recipe.source)!.proposition;
           if (rs.kind !== "cover") continue;
-          const rh = view.assembly.allDifferent.find(
-            (h) => h.cells.length === 9 && h.cells.join() === rs.cells.join(),
-          );
+          const rh = classicHouseEqualTo(view, rs.cells);
           if (!rh || rh.id === h.id) continue;
           if (arm.empty !== undefined && orientation(rh.cells) === "box") continue;
           for (const [c, d] of [right.literals, [...right.literals].reverse()]) {
@@ -86,7 +83,7 @@ export class ShortPatterns implements PatternStrategy {
               yield { kind: "work", units: 1 };
               if (
                 !view.state.values[target] &&
-                view.state.domains[target] & (1 << (symbol - 1)) &&
+                view.state.domains[target] & symbolMask(symbol) &&
                 [...arm.a, d.cell].every(
                   (cell) => cell !== target && graph.has(pos(cell, symbol), pos(target, symbol)),
                 )

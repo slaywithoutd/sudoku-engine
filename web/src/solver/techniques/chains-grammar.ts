@@ -2,6 +2,7 @@ import type { ReadView, Literal } from "../state/types";
 import type { DeductionProposal, ProofNode } from "../proof/types";
 import { clause, requireProof, sameValue } from "../proof/primitives";
 import type { ChainEvent, ChainPattern, StrongSource } from "./chains-certificate";
+import { findHouse, symbolMask } from "../state/read";
 
 const key = (l: Literal): string => `${l.cell}:${l.symbol}`;
 const neg = (l: Literal): Literal => ({ ...l, positive: false });
@@ -16,7 +17,7 @@ function current(view: ReadView, l: Literal): boolean {
     view.assembly.problem.cells.includes(l.cell) &&
     view.assembly.problem.symbols.includes(l.symbol) &&
     !view.state.values[l.cell] &&
-    !!(view.state.domains[l.cell] & (1 << (l.symbol - 1)))
+    !!(view.state.domains[l.cell] & symbolMask(l.symbol))
   );
 }
 function classic(cells: readonly number[]): boolean {
@@ -44,7 +45,7 @@ export class ChainSources {
     if (source.kind === "cell") {
       fields(source, ["kind", "cell"]);
       const all = this.view.assembly.problem.symbols
-        .filter((s) => this.view.state.domains[source.cell] & (1 << (s - 1)))
+        .filter((s) => this.view.state.domains[source.cell] & symbolMask(s))
         .map((symbol) => ({ cell: source.cell, symbol, positive: true }));
       requireProof(
         all.length === 2 &&
@@ -60,7 +61,7 @@ export class ChainSources {
           ? ["kind", "house", "symbol"]
           : ["kind", "house", "symbol", "source"],
       );
-      const house = this.view.assembly.allDifferent.find((h) => h.id === source.house);
+      const house = findHouse(this.view, source.house);
       requireProof(house && classic(house.cells), "invalid-chain-house");
       const support = this.available.get(node.premises[0]),
         fact = support && this.view.facts.get(support.premises[0]);
@@ -74,7 +75,7 @@ export class ChainSources {
         "invalid-proved-cover-source",
       );
       const all = fact.proposition.cells
-        .filter((c) => this.view.state.domains[c] & (1 << (source.symbol - 1)))
+        .filter((c) => this.view.state.domains[c] & symbolMask(source.symbol))
         .map((cell) => ({ cell, symbol: source.symbol, positive: true }));
       requireProof(
         sameValue(clause(all), clause(members)) &&
@@ -94,7 +95,7 @@ export class ChainSources {
       requireProof(source.kind === "als", "unknown-chain-source");
       fields(source, ["kind", "cells", "house", "symbols"]);
       const cells = source.cells,
-        house = this.view.assembly.allDifferent.find((h) => h.id === source.house);
+        house = findHouse(this.view, source.house);
       requireProof(
         Array.isArray(cells) &&
           distinct(cells) &&
@@ -106,7 +107,7 @@ export class ChainSources {
         "als-out-of-profile",
       );
       const union = cells.reduce((m, c) => m | this.view.state.domains[c], 0);
-      const symbols = this.view.assembly.problem.symbols.filter((s) => union & (1 << (s - 1)));
+      const symbols = this.view.assembly.problem.symbols.filter((s) => union & symbolMask(s));
       requireProof(
         symbols.length === cells.length + 1 &&
           sameValue(symbols, source.symbols) &&
@@ -123,7 +124,7 @@ export class ChainSources {
               .filter((l) => l.symbol === symbol)
               .map((l) => l.cell)
               .sort((a, b) => a - b),
-            cells.filter((c) => this.view.state.domains[c] & (1 << (symbol - 1))),
+            cells.filter((c) => this.view.state.domains[c] & symbolMask(symbol)),
           ),
           "incomplete-als-occurrences",
         );
@@ -268,7 +269,7 @@ function checkEvent(view: ReadView, event: ChainEvent): void {
           a.cells.filter((c) => b.cells.includes(c)).length === 3 &&
           sameValue(
             a.cells.filter(
-              (c) => b.cells.includes(c) && view.state.domains[c] & (1 << (symbol - 1)),
+              (c) => b.cells.includes(c) && view.state.domains[c] & symbolMask(symbol),
             ),
             cells,
           ),

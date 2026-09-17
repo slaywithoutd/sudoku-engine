@@ -24,6 +24,7 @@ import { TableChecker } from "./tables";
 import { SubsetCountChecker } from "./subset-count";
 import type { TableDefinition } from "./tables";
 import type { ProofNode } from "./types";
+import { symbolMask } from "../state/read";
 
 export class ProofError extends Error {
   constructor(readonly code: string) {
@@ -238,7 +239,7 @@ export function domainAssertion(
 ): { cell: number; mask: number } | undefined {
   if (proposition.kind === "domain") return { cell: proposition.cell, mask: proposition.mask };
   if (proposition.kind === "literal" && proposition.value.positive)
-    return { cell: proposition.value.cell, mask: 1 << (proposition.value.symbol - 1) };
+    return { cell: proposition.value.cell, mask: symbolMask(proposition.value.symbol) };
   return undefined;
 }
 
@@ -306,7 +307,7 @@ function restrictDomain(input: PrimitiveInput, context: CheckContext): CheckedIn
       restriction.value.cell === domain.cell,
     "invalid-domain-restriction",
   );
-  const bit = 1 << (restriction.value.symbol - 1);
+  const bit = symbolMask(restriction.value.symbol);
   const mask = restriction.value.positive ? domain.mask & bit : domain.mask & ~bit;
   requireProof(
     sameValue(input.conclusion, { kind: "domain", cell: domain.cell, mask }),
@@ -344,7 +345,7 @@ function coverClause(input: PrimitiveInput, context: CheckContext): CheckedInfer
   else {
     requireProof(domain, "invalid-cover-clause");
     alternatives = context.view.assembly.problem.symbols
-      .filter((symbol) => (domain.mask & (1 << (symbol - 1))) !== 0)
+      .filter((symbol) => (domain.mask & symbolMask(symbol)) !== 0)
       .map((symbol) => ({ cell: domain.cell, symbol, positive: true }));
   }
   requireProof(sameValue(input.conclusion, clause(alternatives)), "invalid-cover-clause");

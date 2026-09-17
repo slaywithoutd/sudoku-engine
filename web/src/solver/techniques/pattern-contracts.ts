@@ -3,6 +3,7 @@ import type { ReadView, Literal } from "../state/types";
 import type { DeductionProposal, Effect, ProofNode } from "../proof/types";
 import { clause, literals, requireProof, sameValue } from "../proof/primitives";
 import { requireBentEffectLineage, requireDualRootLineage } from "./pattern-proof-lineage";
+import { findHouse, symbolMask } from "../state/read";
 
 export interface ShortPath {
   symbol: number;
@@ -52,7 +53,7 @@ export interface PatternRequirements {
 export const pos = (cell: number, symbol: number): Literal => ({ cell, symbol, positive: true });
 export const neg = (cell: number, symbol: number): Literal => ({ cell, symbol, positive: false });
 export const digits = (view: ReadView, cell: number) =>
-  view.assembly.problem.symbols.filter((s) => view.state.domains[cell] & (1 << (s - 1)));
+  view.assembly.problem.symbols.filter((s) => view.state.domains[cell] & symbolMask(s));
 export const row = (c: number) => Math.floor(c / 9),
   column = (c: number) => c % 9,
   box = (c: number) => Math.floor(c / 27) * 3 + Math.floor((c % 9) / 3);
@@ -61,9 +62,7 @@ export function shortPathIdentity(view: ReadView, path: ShortPath): string {
   return JSON.stringify({
     symbol: path.symbol,
     vertices: path.vertices,
-    strongScopes: path.strongHouses.map(
-      (id) => view.assembly.allDifferent.find((h) => h.id === id)?.cells ?? null,
-    ),
+    strongScopes: path.strongHouses.map((id) => findHouse(view, id)?.cells ?? null),
   });
 }
 function exact(p: object, keys: string[]) {
@@ -91,12 +90,12 @@ function sorted(values: number[]) {
   );
 }
 function house(view: ReadView, id: string) {
-  const h = view.assembly.allDifferent.find((h) => h.id === id);
+  const h = findHouse(view, id);
   requireProof(h && h.cells.length === 9, "invalid-pattern-house");
   return h;
 }
 function current(view: ReadView, l: Literal) {
-  return !!(view.state.domains[l.cell] & (1 << (l.symbol - 1)));
+  return !!(view.state.domains[l.cell] & symbolMask(l.symbol));
 }
 function requirement(): PatternRequirements {
   return { clauses: [], vocabulary: [], paths: [] };
@@ -123,7 +122,7 @@ export function conflict(view: ReadView, a: Literal, b: Literal): boolean {
         (tuple) =>
           tuple[p.cells.indexOf(a.cell)] === a.symbol &&
           tuple[p.cells.indexOf(b.cell)] === b.symbol &&
-          p.cells.every((c, i) => view.state.domains[c] & (1 << (tuple[i] - 1))),
+          p.cells.every((c, i) => view.state.domains[c] & symbolMask(tuple[i])),
       )
     )
       return true;

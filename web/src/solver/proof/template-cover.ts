@@ -7,6 +7,7 @@ import type {
   ProofNode,
 } from "./types";
 import type { Proposition, ReadView } from "../state/types";
+import { symbolMask } from "../state/read";
 
 type Mode = "single" | "pair" | "triple" | "incompatibility";
 interface Parameters {
@@ -178,7 +179,7 @@ export class TemplateCoverChecker {
           kind: "literal",
           value: { cell, symbol, positive: true },
         }) &&
-          domains[cell] === 1 << (symbol - 1) &&
+          domains[cell] === symbolMask(symbol) &&
           (!problem.givens[cell] || problem.givens[cell] === symbol),
         "invalid-template-anchor",
       );
@@ -199,7 +200,7 @@ export class TemplateCoverChecker {
       if (boxes.size === 9)
         for (let s = 0; s < p.symbols.length; s++) {
           yield 1; // At most 81 mask/anchor checks between cooperative boundaries.
-          const bit = 1 << (p.symbols[s] - 1);
+          const bit = symbolMask(p.symbols[s]);
           let legal = true;
           for (let cell = 0; cell < 81; cell++) {
             const selected = columns[Math.floor(cell / 9)] === cell % 9;
@@ -330,7 +331,7 @@ export class TemplateCoverChecker {
       for (let s = 0; s < p.symbols.length; s++) {
         yield 1;
         const symbol = p.symbols[s],
-          bit = 1 << (symbol - 1);
+          bit = symbolMask(symbol);
         if (!context.view.state.values[cell] && domains[cell] & bit && !occurrences[s][cell])
           terms.push({
             kind: "literal",

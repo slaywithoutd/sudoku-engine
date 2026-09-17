@@ -18,6 +18,7 @@ import {
   type ChainWork,
   type StrongSource,
 } from "./chains-certificate";
+import { classicHouseContaining, classicHouseEqualTo, symbolMask } from "../state/read";
 
 export type ChainCandidate = { kind: "candidate"; pattern: ChainPattern; effects: Effect[] };
 type Arc = { a: number; b: number; source: StrongSource };
@@ -61,13 +62,7 @@ export class ChainSearch {
       else {
         const fact = this.view.facts.get(entry.recipe.source)!.proposition;
         if (fact.kind !== "cover") continue;
-        const house =
-          this.view.assembly.allDifferent.find(
-            (h) => h.cells.length === 9 && h.cells.join() === fact.cells.join(),
-          ) ??
-          this.view.assembly.allDifferent.find(
-            (h) => h.cells.length === 9 && fact.cells.every((c) => h.cells.includes(c)),
-          );
+        const house = classicHouseContaining(this.view, fact.cells);
         if (!house) continue;
         source =
           house.cells.join() === fact.cells.join()
@@ -115,7 +110,7 @@ export class ChainSearch {
             const members = cells
               .filter(
                 (c) =>
-                  !this.view.state.values[c] && this.view.state.domains[c] & (1 << (symbol - 1)),
+                  !this.view.state.values[c] && this.view.state.domains[c] & symbolMask(symbol),
               )
               .map((c) => candidate(c, symbol));
             if (members.length > 1) this.event({ members, als: null });
@@ -134,9 +129,7 @@ export class ChainSearch {
         yield { kind: "work", units: 1 };
         const fact = this.view.facts.get(als.recipe.source)!.proposition;
         if (fact.kind !== "all-different") continue;
-        const house = this.view.assembly.allDifferent.find(
-          (h) => h.cells.length === 9 && h.cells.join() === fact.cells.join(),
-        );
+        const house = classicHouseEqualTo(this.view, fact.cells);
         if (!house) continue;
         for (let a = 0; a < als.occurrences.length; a++)
           for (let b = a + 1; b < als.occurrences.length; b++) {
@@ -173,7 +166,7 @@ export class ChainSearch {
           a.id !== b.id &&
           a.cells.filter((c) => b.cells.includes(c)).length === 3 &&
           a.cells
-            .filter((c) => b.cells.includes(c) && this.view.state.domains[c] & (1 << (symbol - 1)))
+            .filter((c) => b.cells.includes(c) && this.view.state.domains[c] & symbolMask(symbol))
             .join() === cells,
       ),
     );
@@ -228,7 +221,7 @@ export class ChainSearch {
           if (
             cell !== endpoint.cell &&
             !this.view.state.values[cell] &&
-            this.view.state.domains[cell] & (1 << (endpoint.symbol - 1)) &&
+            this.view.state.domains[cell] & symbolMask(endpoint.symbol) &&
             this.graph.has(endpoint, candidate(cell, endpoint.symbol))
           ) {
             effects.push({ kind: "remove", cell, symbol: endpoint.symbol });
@@ -250,7 +243,7 @@ export class ChainSearch {
           yield { kind: "work", units: 1 };
           if (
             this.view.state.values[cell] ||
-            !(this.view.state.domains[cell] & (1 << (symbol - 1))) ||
+            !(this.view.state.domains[cell] & symbolMask(symbol)) ||
             effects.some((e) => e.cell === cell && e.symbol === symbol)
           )
             continue;

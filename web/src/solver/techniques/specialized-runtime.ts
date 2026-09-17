@@ -5,9 +5,10 @@ import { coverageEntries } from "./manifest";
 import { IndexInterrupted, type WorkspaceReservation } from "../indexes/workspace";
 import { ForcingProof, forcingProofFits } from "./forcing-proof";
 import { clause, literals, sameValue } from "../proof/primitives";
+import { findHouseEqualTo, findHouseWithCells, symbolMask } from "../state/read";
 
 export const boxOf = (c: number): number => Math.floor(c / 27) * 3 + Math.floor((c % 9) / 3);
-export const bitOf = (s: number): number => 1 << (s - 1);
+export const bitOf = (s: number): number => symbolMask(s);
 export const sortedCells = (cells: readonly number[]): number[] =>
   [...new Set(cells)].sort((a, b) => a - b);
 export const candidates = (view: ReadView, c: number): number[] =>
@@ -53,7 +54,7 @@ export class ClassicHouses {
         const cells = Array.from({ length: 81 }, (_, c) => c).filter(
           (c) => (kind === "row" ? Math.floor(c / 9) : kind === "column" ? c % 9 : boxOf(c)) === i,
         );
-        list.push(view.assembly.allDifferent.find((h) => sameValue(h.cells, cells))?.cells);
+        list.push(findHouseEqualTo(view, cells)?.cells);
       }
   }
   peer(a: number, b: number): boolean {
@@ -160,10 +161,7 @@ export class SpecializedProof {
   }
   scope(cells: readonly number[], house?: readonly number[]): number {
     const selected = sortedCells(cells),
-      source =
-        house ??
-        this.view.assembly.allDifferent.find((h) => selected.every((c) => h.cells.includes(c)))
-          ?.cells;
+      source = house ?? findHouseWithCells(this.view, ...selected)?.cells;
     if (!source) throw Error("missing-specialized-scope");
     return this.add(
       "all-different-subset@1",

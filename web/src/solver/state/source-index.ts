@@ -4,6 +4,7 @@ import type { Fact, ReadView, Proposition, Literal } from "./types";
 import { assertOwnedView } from "./candidates";
 import { captureProofRecord } from "../proof/checker";
 import type { IndexWorkspace, WorkspaceReservation } from "../indexes/workspace";
+import { symbolMask } from "./read";
 
 export interface SourcePreparationOptions {
   readonly level?: "facts" | "complete";
@@ -82,7 +83,7 @@ export class SourceIndex {
               for (let k = 0; k < p.cells.length; k++) {
                 workspace.checkpoint();
                 yield { kind: "work", units: 1 };
-                if (!(this.#source.state.domains[p.cells[k]] & (1 << (tuple[k] - 1)))) live = false;
+                if (!(this.#source.state.domains[p.cells[k]] & symbolMask(tuple[k]))) live = false;
               }
               if (live) allowed.add(`${tuple[i]}:${tuple[j]}`);
             }

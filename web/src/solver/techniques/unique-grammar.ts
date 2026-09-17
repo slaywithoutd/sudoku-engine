@@ -4,9 +4,10 @@ import type { DeductionProposal, ProofNode } from "../proof/types";
 import { clause, requireProof, sameValue } from "../proof/primitives";
 import { ForcingLineage, checkForcingRoots } from "./forcing-grammar";
 import type { UniqueGeometry, UniquePlan, UniqueCertificate } from "./unique-compiler";
+import { findHouse, houseCells, symbolMask } from "../state/read";
 
 const symbols = (mask: number): number[] =>
-  Array.from({ length: 9 }, (_, i) => i + 1).filter((s) => mask & (1 << (s - 1)));
+  Array.from({ length: 9 }, (_, i) => i + 1).filter((s) => mask & symbolMask(s));
 const row = (c: number): number => Math.floor(c / 9),
   col = (c: number): number => c % 9;
 const box = (c: number): number => Math.floor(c / 27) * 3 + Math.floor((c % 9) / 3);
@@ -238,7 +239,7 @@ export function checkUniqueGeometry(
   }
   if (g.kind === "type3") {
     const extra = [...new Set(guardians.map((a) => a.symbol))].sort((a, b) => a - b),
-      h = view.assembly.allDifferent.find((h) => h.id === g.subsetHouse);
+      h = findHouse(view, g.subsetHouse);
     requireProof(
       adjacent &&
         extra.length >= 2 &&
@@ -269,14 +270,14 @@ export function checkUniqueGeometry(
         new Set(g.strongHouses).size === g.strongHouses.length,
       "unique-strong-house-count",
     );
-    const houses = g.strongHouses.map((id) => view.assembly.allDifferent.find((h) => h.id === id));
+    const houses = g.strongHouses.map((id) => findHouse(view, id));
     requireProof(
       houses.every(
         (h) =>
           h &&
-          h.cells.filter((c) => domains[c] & (1 << (g.strongSymbol! - 1))).length === 2 &&
+          h.cells.filter((c) => domains[c] & symbolMask(g.strongSymbol!)).length === 2 &&
           h.cells
-            .filter((c) => domains[c] & (1 << (g.strongSymbol! - 1)))
+            .filter((c) => domains[c] & symbolMask(g.strongSymbol!))
             .every((c) => cells.includes(c)),
       ),
       "unique-strong-supports",
@@ -292,9 +293,7 @@ export function checkUniqueGeometry(
         "unique-type4-effect",
       );
     if (g.kind === "type6") {
-      const causal = g.causalHouses.map((id) =>
-        view.assembly.allDifferent.find((h) => h.id === id),
-      );
+      const causal = g.causalHouses.map((id) => findHouse(view, id));
       requireProof(
         roofs.length === 2 &&
           !adjacent &&
@@ -538,9 +537,7 @@ function checkUniqueOne(
   }
   const neededHouses =
     g.kind === "type6"
-      ? g.causalHouses.filter(
-          (id) => !view.assembly.allDifferent.find((h) => h.id === id)!.cells.includes(effect.cell),
-        )
+      ? g.causalHouses.filter((id) => !houseCells(view, id).includes(effect.cell))
       : g.strongHouses;
   if (g.kind === "type6") requireProof(neededHouses.length === 1, "unique-type6-opposite-house");
   for (const id of neededHouses)
@@ -554,7 +551,7 @@ function checkUniqueOne(
           support.conclusion.symbol === g.strongSymbol &&
           sameValue(view.facts.get(support.premises[0])?.proposition, {
             kind: "cover",
-            cells: view.assembly.allDifferent.find((h) => h.id === id)!.cells,
+            cells: houseCells(view, id),
             symbol: g.strongSymbol,
           })
         );

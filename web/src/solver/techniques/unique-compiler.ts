@@ -9,6 +9,7 @@ import {
 } from "../conditional";
 import { proposedClause } from "../proof/builder";
 import { ForcingProof, opposite, type ForcingLink, type PathCertificate } from "./forcing-proof";
+import { symbolMask } from "../state/read";
 
 export interface UniqueGeometry {
   readonly row: "U01" | "U02" | "U03" | "U04" | "U05";
@@ -182,7 +183,7 @@ export function compileUnique(
         b.add("domain-restrict@1", [view.state.domainFacts[e.cell], roots[i]], {
           kind: "domain",
           cell: e.cell,
-          mask: view.state.domains[e.cell] & ~(1 << (e.symbol - 1)),
+          mask: view.state.domains[e.cell] & ~symbolMask(e.symbol),
         }),
       );
     return b.bundle(

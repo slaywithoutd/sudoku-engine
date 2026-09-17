@@ -14,6 +14,7 @@ import {
   type FishComponent,
   type FishPattern,
 } from "./fish-grammar";
+import { houseCells, houseWithCells, symbolMask } from "../state/read";
 
 type Work = { kind: "work"; units: number };
 type Candidate = { pattern: FishPattern; effects: readonly Effect[] };
@@ -59,7 +60,7 @@ class FishSources {
     return this.ids.has(sourceKey(cells, symbol));
   }
   source(id: string, symbol = 0): number {
-    const cells = this.view.assembly.allDifferent.find((h) => h.id === id)!.cells,
+    const cells = houseCells(this.view, id),
       value = this.ids.get(cells.join() + "/" + symbol);
     if (value === undefined) throw Error("fish-missing-source");
     return value;
@@ -106,12 +107,8 @@ class FishCompiler {
       const symbol = p.symbol,
         b = Array(81).fill(0) as number[],
         u = Array(81).fill(0) as number[];
-      for (const id of p.bases)
-        for (const cell of this.view.assembly.allDifferent.find((h) => h.id === id)!.cells)
-          b[cell]++;
-      for (const id of p.covers)
-        for (const cell of this.view.assembly.allDifferent.find((h) => h.id === id)!.cells)
-          u[cell]++;
+      for (const id of p.bases) for (const cell of houseCells(this.view, id)) b[cell]++;
+      for (const id of p.covers) for (const cell of houseCells(this.view, id)) u[cell]++;
       const requirement = {
         coefficients: u.map((v, c) => v - b[c]),
         effects: candidate.effects.filter(
@@ -136,9 +133,7 @@ class FishCompiler {
           if (requirement.coefficients[c] < 0) domains.set(c, this.view.state.domainFacts[c]);
         for (const fin of p.fins) {
           yield { kind: "work", units: 1 };
-          const house = this.view.assembly.allDifferent.find(
-            (h) => h.cells.includes(fin) && h.cells.includes(effect.cell),
-          )!;
+          const house = houseWithCells(this.view, fin, effect.cell);
           const weak = this.add(
             "weak-link@1",
             [this.source(house.id)],
@@ -164,7 +159,7 @@ class FishCompiler {
               {
                 kind: "domain",
                 cell: fin,
-                mask: this.view.state.domains[fin] & ~(1 << (symbol - 1)),
+                mask: this.view.state.domains[fin] & ~symbolMask(symbol),
               },
               {},
               scope,
@@ -209,7 +204,7 @@ class FishCompiler {
           {
             kind: "domain",
             cell: e.cell,
-            mask: this.view.state.domains[e.cell] & ~(1 << (e.symbol - 1)),
+            mask: this.view.state.domains[e.cell] & ~symbolMask(e.symbol),
           },
         ),
       );
@@ -389,7 +384,7 @@ class FishSearch {
       // symbol. The second pass includes every remaining combination exactly once.
       for (const deferred of [false, true])
         for (const symbol of this.view.assembly.problem.symbols) {
-          const bit = 1 << (symbol - 1),
+          const bit = symbolMask(symbol),
             current = this.view.assembly.problem.cells.filter(
               (c) => this.view.state.domains[c] & bit,
             );

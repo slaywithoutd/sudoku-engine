@@ -11,6 +11,7 @@ import type {
   RuleIssue,
   RuleModule,
 } from "./types";
+import { symbolMask } from "../state/read";
 
 /** Versioned strategy for the only production rule supported in M2. */
 export class AllDifferentRule implements RuleModule {
@@ -105,7 +106,7 @@ export class AllDifferentRule implements RuleModule {
           source === cell ||
           !symbol ||
           view.state.values[cell] ||
-          !(view.state.domains[cell] & (1 << (symbol - 1)))
+          !(view.state.domains[cell] & symbolMask(symbol))
         )
           continue;
         if (seen.has(`${cell}:${symbol}`)) continue;

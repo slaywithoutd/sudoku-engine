@@ -1,6 +1,7 @@
 import { CertificateBuilder, literal } from "../proof/builder";
 import type { ReadView } from "../state/types";
 import type { Discovery } from "./types";
+import { symbolMask } from "../state/read";
 
 /** Lexicographic finite combination cursor; no per-combination scheduler jobs. */
 function* combinations(
@@ -17,7 +18,7 @@ function* combinations(
     yield* combinations(values, size, [...prefix, values[i]], i + 1);
 }
 function symbols(view: ReadView, mask: number) {
-  return view.assembly.problem.symbols.filter((s) => mask & (1 << (s - 1)));
+  return view.assembly.problem.symbols.filter((s) => mask & symbolMask(s));
 }
 const names: Record<number, string> = { 2: "Pair", 3: "Triple", 4: "Quad" };
 const complements: Record<number, string> = {
@@ -43,11 +44,11 @@ export class Subsets {
         for (const digits of combinations(view.assembly.problem.symbols, size)) {
           yield { kind: "work", units: 1 };
           if (digits.some((d) => house.cells.some((c) => view.state.values[c] === d))) continue;
-          const mask = digits.reduce((m, d) => m | (1 << (d - 1)), 0);
+          const mask = digits.reduce((m, d) => m | symbolMask(d), 0);
           const cells = house.cells.filter((c) => view.state.domains[c] & mask);
           if (
             cells.length !== size ||
-            digits.some((d) => !cells.some((c) => view.state.domains[c] & (1 << (d - 1))))
+            digits.some((d) => !cells.some((c) => view.state.domains[c] & symbolMask(d)))
           )
             continue;
           yield* this.propose(view, house, cells, digits, "hidden");

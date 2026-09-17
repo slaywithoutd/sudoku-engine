@@ -2,6 +2,7 @@ import type { ReadView } from "../state/types";
 import type { DeductionProposal } from "../proof/types";
 import { proposedClause } from "../proof/builder";
 import { ForcingProof, bit, type ForcingLink } from "./forcing-proof";
+import { houseWithCells } from "../state/read";
 export { netTechniques } from "./nets-runtime";
 
 export type NetOperation =
@@ -146,9 +147,7 @@ class NetDomains {
         if (removed & bit(digit)) {
           let root: number;
           if (step.kind === "singleton-peer") {
-            const house = b.view.assembly.allDifferent.find(
-              (h) => h.cells.includes(step.cell) && h.cells.includes(cell),
-            )!;
+            const house = houseWithCells(b.view, step.cell, cell);
             const weak = b.add(
               "weak-link@1",
               [b.fact({ kind: "all-different", cells: house.cells })],

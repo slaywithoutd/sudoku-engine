@@ -9,6 +9,7 @@ import {
   type PatternGraph,
   type PatternStrategy,
 } from "./pattern-runtime";
+import { symbolMask } from "../state/read";
 
 /** Enumerates only the declared 4..6 cells; no grid search or solution facts. */
 export class BentSubsets implements PatternStrategy {
@@ -36,7 +37,7 @@ export class BentSubsets implements PatternStrategy {
             conflicts.push([selected[i], selected[j]]);
         }
       const occurrences = Object.fromEntries(
-        symbols.map((s) => [s, selected.filter((c) => view.state.domains[c] & (1 << (s - 1)))]),
+        symbols.map((s) => [s, selected.filter((c) => view.state.domains[c] & symbolMask(s))]),
       );
       const unrestricted = symbols.filter((s) =>
         occurrences[s].some((a, i) =>
@@ -53,7 +54,7 @@ export class BentSubsets implements PatternStrategy {
         if (
           !view.state.values[target] &&
           !selected.includes(target) &&
-          view.state.domains[target] & (1 << (z - 1)) &&
+          view.state.domains[target] & symbolMask(z) &&
           occurrences[z].every((c) => graph.has(pos(c, z), pos(target, z)))
         )
           effects.push({ kind: "remove", cell: target, symbol: z });

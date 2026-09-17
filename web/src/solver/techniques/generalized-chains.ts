@@ -4,6 +4,7 @@ import type { WorkspaceReservation } from "../indexes/workspace";
 import { proposedClause } from "../proof/builder";
 import { ForcingProof } from "./forcing-proof";
 import { candidateLiteral, members, type Candidate, type CandidateSet } from "./csp-variables";
+import { findHouseWithCells } from "../state/read";
 
 export type GeneralizedGrammar =
   "bivalue" | "z" | "t" | "whip" | "braid" | "g-whip" | "inserted-or-whip";
@@ -95,9 +96,7 @@ export class GeneralizedProof {
       reductions: number[] = [];
     let result = root;
     for (const [i, from] of witness.entries()) {
-      const house = this.view.assembly.allDifferent.find(
-        (h) => h.cells.includes(from[0]) && h.cells.includes(value[0]),
-      );
+      const house = findHouseWithCells(this.view, from[0], value[0]);
       const scope = b.scope;
       b.scope = [];
       let edge: number;

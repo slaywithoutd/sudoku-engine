@@ -8,6 +8,7 @@ import {
 } from "./primitives";
 import { weightedIncidences, type WeightedPremise } from "./counts";
 import type { CheckContext, CheckedInference, PrimitiveInput } from "./types";
+import { symbolMask } from "../state/read";
 
 /** Finite signed-count entailment. Falsifying the proposed clause fixes unary
  * occupancy bits; an exact lower bound above U-L rejects that whole assignment
@@ -87,7 +88,7 @@ export class CoverCountClauseChecker {
     }
     requireProof(domains.size === needed.size, "incomplete-count-clause-domains");
     let minimum = 0;
-    const bit = 1 << (p.symbol - 1);
+    const bit = symbolMask(p.symbol);
     for (const [cell, mask] of domains) {
       yield 1;
       const canOne = (mask & bit) !== 0,

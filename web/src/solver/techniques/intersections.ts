@@ -1,6 +1,7 @@
 import { CertificateBuilder, proposedClause } from "../proof/builder";
 import type { ReadView } from "../state/types";
 import type { Discovery } from "./types";
+import { symbolMask } from "../state/read";
 
 /** Canonical cover/group/symbol intersections; single support belongs to C02. */
 export class LockedCandidates {
@@ -15,14 +16,14 @@ export class LockedCandidates {
           intersection.length === group.cells.length
         )
           continue;
-        const cells = cover.cells.filter((c) => view.state.domains[c] & (1 << (cover.symbol - 1)));
+        const cells = cover.cells.filter((c) => view.state.domains[c] & symbolMask(cover.symbol));
         if (cells.length < 2 || cells.length > 3 || cells.some((c) => !intersection.includes(c)))
           continue;
         const targets = group.cells.filter(
           (c) =>
             !cover.cells.includes(c) &&
             !view.state.values[c] &&
-            view.state.domains[c] & (1 << (cover.symbol - 1)),
+            view.state.domains[c] & symbolMask(cover.symbol),
         );
         if (!targets.length) continue;
         const primary = cover.id.startsWith("box:")

@@ -2,6 +2,7 @@ import type { ReadView } from "../state/types";
 import { assertOwnedView, isAcceptedDescendant } from "../state/candidates";
 import { buildIndex, evidence, freezeRecord, OwnedIndex, work } from "./workspace";
 import type { IndexEntry, IndexEvent, IndexWorkspace } from "./workspace";
+import { symbolMask } from "../state/read";
 
 export const TEMPLATE_TUPLE_LIMIT = 100000;
 export class TemplateLimit extends Error {
@@ -125,7 +126,7 @@ export function* buildTemplates(
         if (
           columns & (1 << column) ||
           boxes & (1 << box) ||
-          !(view.state.domains[cell] & (1 << (symbol - 1)))
+          !(view.state.domains[cell] & symbolMask(symbol))
         )
           continue;
         // A placed occurrence in this row must be selected even if callers

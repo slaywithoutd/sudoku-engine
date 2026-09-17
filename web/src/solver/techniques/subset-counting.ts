@@ -5,6 +5,7 @@ import type { CountPattern, CountScope } from "./set-contracts";
 import type { SetCursor } from "./set-runtime";
 import type { ChainWork } from "./chains-certificate";
 import { combinations, setDigits, setUnion } from "./set-certificate";
+import { symbolMask } from "../state/read";
 
 /** Untrusted occupancy maxima compiler. The primitive independently enumerates
  * subsets in numeric order; this search enumerates cardinalities from largest
@@ -21,7 +22,7 @@ export function* countCapacities(
     const possible = cells.filter((c) =>
       c === target.cell
         ? symbol === target.symbol
-        : view.state.domains[c] & (1 << (symbol - 1)) &&
+        : view.state.domains[c] & symbolMask(symbol) &&
           !(
             symbol === target.symbol &&
             scopes.some((s) => s.cells.includes(c) && s.cells.includes(target.cell))

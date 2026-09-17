@@ -2,6 +2,7 @@ import { matchingFacts } from "../state/source-index";
 import type { ReadView } from "../state/types";
 import type { Effect } from "../proof/types";
 import { requireProof, sameValue } from "../proof/primitives";
+import { findHouse, symbolMask } from "../state/read";
 
 export interface FishComponent {
   readonly alias: string;
@@ -36,7 +37,7 @@ export const fishNames: Readonly<Record<number, string>> = Object.freeze({
 });
 /** Geometry is reconstructed from real scopes; IDs alone confer no capability. */
 export function fishHouse(view: ReadView, id: string): readonly number[] {
-  const h = view.assembly.allDifferent.find((h) => h.id === id);
+  const h = findHouse(view, id);
   requireProof(
     h &&
       h.cells.length === 9 &&
@@ -125,7 +126,7 @@ export function validateFishGeometry(view: ReadView, p: FishComponent): FishRequ
   for (const cells of bases) for (const c of cells) baseCounts[c]++;
   for (const cells of covers) for (const c of cells) coverCounts[c]++;
   const coefficients = baseCounts.map((b, c) => coverCounts[c] - b),
-    bit = 1 << (p.symbol - 1);
+    bit = symbolMask(p.symbol);
   const current = (c: number) => !!(view.state.domains[c] & bit);
   const fins = baseCounts.flatMap((b, c) =>
     current(c) && (b > 1 || (b > 0 && coverCounts[c] === 0)) ? [c] : [],

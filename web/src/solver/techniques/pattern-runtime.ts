@@ -12,6 +12,7 @@ import {
 import { IndexInterrupted, type WorkspaceReservation } from "../indexes/workspace";
 import { clause, literals } from "../proof/primitives";
 import { pos, neg, type BentPattern } from "./pattern-contracts";
+import { findHouse, symbolMask } from "../state/read";
 
 /** Borrowed graph recipes live only under this invocation's shared lease. */
 export class PatternGraph {
@@ -209,13 +210,13 @@ export class PatternBuilder {
       [this.view.state.domainFacts[cell]],
       clause(
         this.view.assembly.problem.symbols
-          .filter((s) => this.view.state.domains[cell] & (1 << (s - 1)))
+          .filter((s) => this.view.state.domains[cell] & symbolMask(s))
           .map((s) => pos(cell, s)),
       ),
     );
   }
   house(id: string, symbol: number): number {
-    const h = this.view.assembly.allDifferent.find((h) => h.id === id)!;
+    const h = findHouse(this.view, id)!;
     const cover = this.graph.covers.get(`${h.cells.join()}/${symbol}`);
     if (!cover) throw Error("missing-pattern-cover");
     const source = this.add("support@1", [...cover.premises], {
@@ -242,7 +243,7 @@ export class PatternBuilder {
       for (const cell of relation.cells) {
         yield { kind: "work", units: 1 };
         const mask = this.view.state.domains[cell],
-          digits = this.view.assembly.problem.symbols.filter((s) => mask & (1 << (s - 1)));
+          digits = this.view.assembly.problem.symbols.filter((s) => mask & symbolMask(s));
         const filter = this.add(
           "table-filter@1",
           [this.view.state.domainFacts[cell]],
@@ -252,7 +253,7 @@ export class PatternBuilder {
         const remaining: number[][] = [];
         for (const tuple of rows) {
           yield { kind: "work", units: 1 };
-          if (mask & (1 << (tuple[relation.cells.indexOf(cell)] - 1))) remaining.push([...tuple]);
+          if (mask & symbolMask(tuple[relation.cells.indexOf(cell)])) remaining.push([...tuple]);
         }
         rows = remaining;
         source = this.add("table-join@1", [source, filter], {
@@ -326,7 +327,7 @@ export class PatternBuilder {
         id: this.view.state.domainFacts[e.cell],
         mask: this.view.state.domains[e.cell],
       };
-      const mask = prior.mask & ~(1 << (e.symbol - 1)),
+      const mask = prior.mask & ~symbolMask(e.symbol),
         id = this.add("domain-restrict@1", [prior.id, effectRoots[i]], {
           kind: "domain",
           cell: e.cell,
@@ -366,7 +367,7 @@ export class PatternBuilder {
       masks: number[],
     ): Generator<{ kind: "work"; units: number }, { id: number; count: number }> {
       const values = masks.map((mask) =>
-        this.view.assembly.problem.symbols.filter((s) => mask & (1 << (s - 1))),
+        this.view.assembly.problem.symbols.filter((s) => mask & symbolMask(s)),
       );
       const volume = values.reduce((n, v) => n * v.length, 1);
       yield { kind: "work", units: 1 };
@@ -374,7 +375,7 @@ export class PatternBuilder {
         const split = values.findIndex((v) => v.length > 1),
           a = [...masks],
           b = [...masks];
-        a[split] = 1 << (values[split][0] - 1);
+        a[split] = symbolMask(values[split][0]);
         b[split] &= ~a[split];
         const left = yield* build.call(this, a),
           right = yield* build.call(this, b),

@@ -39,6 +39,7 @@ import type {
 import type { ReadView } from "../state/types";
 import { checkScope } from "./assumptions";
 import type { TableDefinition } from "./tables";
+import { symbolMask } from "../state/read";
 
 const branchSources = new WeakMap<BranchCertificate, ReadView>();
 const branchNodes = new WeakMap<ProofNode, CheckedNodeAuthority>();
@@ -159,7 +160,7 @@ export function checkedEffectState(
     const identity = `${effect.kind}:${effect.cell}:${effect.symbol}`;
     requireProof(!seen.has(identity), "duplicate-effect");
     seen.add(identity);
-    const bit = 1 << (effect.symbol - 1);
+    const bit = symbolMask(effect.symbol);
     requireProof(
       view.state.values[effect.cell] === 0 && (view.state.domains[effect.cell] & bit) !== 0,
       "given-overwrite-or-unproductive-effect",
@@ -197,7 +198,7 @@ export function checkedEffectState(
       );
       for (const peer of peers) {
         requireProof(values[peer] !== effect.symbol, "duplicate-placement");
-        if ((view.state.domains[peer] & (1 << (effect.symbol - 1))) !== 0)
+        if ((view.state.domains[peer] & symbolMask(effect.symbol)) !== 0)
           requireProof(seen.has(`remove:${peer}:${effect.symbol}`), "missing-peer-effect");
       }
     }

@@ -2,6 +2,7 @@ import type { DeductionProposal, Effect, ProofNode } from "../proof/types";
 import type { ReadView } from "../state/types";
 import type { BentPattern, ShortPath, ShortPattern } from "./pattern-contracts";
 import { clause, requireProof, sameValue } from "../proof/primitives";
+import { houseCells } from "../state/read";
 
 interface LocalTable {
   readonly box: readonly number[];
@@ -225,9 +226,7 @@ class ShortComponentLineage {
   private matchesCover(node: ProofNode, which: number): boolean {
     const support = this.available.get(node.premises[0]);
     if (node.premises.length !== 1 || support?.rule !== "support@1") return false;
-    const scope = this.view.assembly.allDifferent.find(
-      (h) => h.id === this.path.strongHouses[which],
-    )!.cells;
+    const scope = houseCells(this.view, this.path.strongHouses[which]);
     const source = this.view.facts.get(support.premises[0]);
     return (
       source?.openAssumptions.length === 0 &&

@@ -7,6 +7,7 @@ import {
   requireFields,
   SpecializedAdmission,
 } from "./specialized-lineage";
+import { symbolMask } from "../state/read";
 
 const juniorKeys = [
   "orientation",
@@ -159,7 +160,7 @@ class ExocetAdmission extends SpecializedAdmission {
         requireProof(
           node.rule === "table-project@1" &&
             sameValue(node.premises, [c.local]) &&
-            e.targets.some((t: number) => this.domain(t) === 1 << (e.symbol - 1)),
+            e.targets.some((t: number) => this.domain(t) === symbolMask(e.symbol)),
           "substituted-junior-domain-count",
         );
         continue;

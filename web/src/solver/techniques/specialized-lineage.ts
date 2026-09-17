@@ -1,6 +1,7 @@
 import type { ReadView } from "../state/types";
 import type { DeductionProposal, ProofNode } from "../proof/types";
 import { clause, requireProof, sameValue } from "../proof/primitives";
+import { symbolMask } from "../state/read";
 
 export const requireFields = (p: object, keys: string[]) =>
   requireProof(p && sameValue(Object.keys(p).sort(), keys.sort()), "invalid-specialized-fields");
@@ -39,7 +40,7 @@ export class SpecializedAdmission {
     return this.view.state.domains[c];
   }
   symbols(c: number): number[] {
-    return this.view.assembly.problem.symbols.filter((s) => this.domain(c) & (1 << (s - 1)));
+    return this.view.assembly.problem.symbols.filter((s) => this.domain(c) & symbolMask(s));
   }
   peer(a: number, b: number): boolean {
     return (
@@ -78,7 +79,7 @@ export class SpecializedAdmission {
           n.conclusion,
           clause(
             cells
-              .filter((c) => this.domain(c) & (1 << (symbol - 1)))
+              .filter((c) => this.domain(c) & symbolMask(symbol))
               .map((cell) => ({ cell, symbol, positive: true })),
           ),
         ),
@@ -169,7 +170,7 @@ export class SpecializedAdmission {
         return required.reduce((mask, root) => {
           const c = this.node(root).conclusion;
           requireProof(c.kind === "literal", "invalid-specialized-domain");
-          return mask & (1 << (c.value.symbol - 1));
+          return mask & symbolMask(c.value.symbol);
         }, this.domain(cell));
       });
     this.local(id, cells, scopes, sources, masks);

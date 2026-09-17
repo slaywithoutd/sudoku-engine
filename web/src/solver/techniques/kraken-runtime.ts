@@ -7,6 +7,7 @@ import { ForcingGraph, forcingDescriptor } from "./forcing-runtime";
 import { forcingProofFits, signedKey, symbols } from "./forcing-proof";
 import { krakenFishShapes } from "./fish";
 import { compileKraken } from "./kraken";
+import { houseCells } from "../state/read";
 
 /** Fair C07/C08 size cursors consume scalar implication reachability recipes. */
 export function* discoverKraken(view: ReadView, context: DiscoveryContext): Discovery {
@@ -90,18 +91,8 @@ export function* discoverKraken(view: ReadView, context: DiscoveryContext): Disc
         }));
         const incidence = view.assembly.problem.cells.map(
           (c) =>
-            fish.covers.reduce(
-              (sum, id) =>
-                sum +
-                Number(view.assembly.allDifferent.find((h) => h.id === id)!.cells.includes(c)),
-              0,
-            ) -
-            fish.bases.reduce(
-              (sum, id) =>
-                sum +
-                Number(view.assembly.allDifferent.find((h) => h.id === id)!.cells.includes(c)),
-              0,
-            ),
+            fish.covers.reduce((sum, id) => sum + Number(houseCells(view, id).includes(c)), 0) -
+            fish.bases.reduce((sum, id) => sum + Number(houseCells(view, id).includes(c)), 0),
         );
         const scratch = context.workspace.reserve(1, 4000000);
         let session: HypotheticalSession | undefined;

@@ -18,6 +18,7 @@ import {
   type AlsProjection,
   type BlossomPattern,
 } from "./als-certificate";
+import { classicHouseEqualTo, symbolMask } from "../state/read";
 
 const projection = (set: number, a: number, b: number): AlsProjection => ({
   set,
@@ -44,9 +45,7 @@ export class AlsSearch {
       yield { kind: "work", units: 1 };
       const source = this.view.facts.get(entry.recipe.source)!.proposition;
       if (source.kind !== "all-different") continue;
-      const house = this.view.assembly.allDifferent.find(
-        (h) => h.cells.length === 9 && h.cells.join() === source.cells.join(),
-      );
+      const house = classicHouseEqualTo(this.view, source.cells);
       if (!house || seen.has(entry.cells.join())) continue;
       this.graph.lease.grow(1, 1024 + entry.cells.length * entry.symbols.length * 64);
       seen.add(entry.cells.join());
@@ -113,7 +112,7 @@ export class AlsSearch {
     const effects: Effect[] = [];
     for (const cell of this.view.assembly.problem.cells) {
       yield { kind: "work", units: 1 };
-      if (this.view.state.values[cell] || !(this.view.state.domains[cell] & (1 << (symbol - 1))))
+      if (this.view.state.values[cell] || !(this.view.state.domains[cell] & symbolMask(symbol)))
         continue;
       let valid = true;
       for (const l of witnesses) {
@@ -244,7 +243,7 @@ export class AlsSearch {
       for (const stem of this.view.assembly.problem.cells) {
         yield { kind: "work", units: 1 };
         const symbols = this.view.assembly.problem.symbols.filter(
-          (s) => this.view.state.domains[stem] & (1 << (s - 1)),
+          (s) => this.view.state.domains[stem] & symbolMask(s),
         );
         if (this.view.state.values[stem] || symbols.length !== size) continue;
         for (const z of this.view.assembly.problem.symbols.filter((s) => !symbols.includes(s))) {
@@ -273,7 +272,7 @@ export class AlsSearch {
           // product so unproductive petal combinations do not hide other stem sizes.
           for (const cell of this.view.assembly.problem.cells) {
             yield { kind: "work", units: 1 };
-            if (this.view.state.values[cell] || !(this.view.state.domains[cell] & (1 << (z - 1))))
+            if (this.view.state.values[cell] || !(this.view.state.domains[cell] & symbolMask(z)))
               continue;
             const local: number[][] = choices.map(() => []);
             for (let i = 0; i < choices.length; i++)

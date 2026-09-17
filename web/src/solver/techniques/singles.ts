@@ -1,6 +1,7 @@
 import { CertificateBuilder, literal } from "../proof/builder";
 import type { ReadView } from "../state/types";
 import type { Discovery } from "./types";
+import { hasSingleCandidate, symbolMask } from "../state/read";
 
 /** One canonical cursor over cells. Every alias has its own validated presentation. */
 export class NakedSingles {
@@ -8,7 +9,7 @@ export class NakedSingles {
     for (const cell of view.assembly.problem.cells) {
       yield { kind: "work", units: 1 };
       const mask = view.state.domains[cell];
-      if (view.state.values[cell] || !mask || mask & (mask - 1)) continue;
+      if (view.state.values[cell] || !hasSingleCandidate(mask)) continue;
       const symbol = Math.log2(mask) + 1;
       const houses = view.assembly.allDifferent.filter(
         (h) =>
@@ -48,7 +49,7 @@ export class HiddenSingles {
     for (const cover of view.assembly.covers) {
       yield { kind: "work", units: 1 };
       const cells = cover.cells.filter(
-        (cell) => (view.state.domains[cell] & (1 << (cover.symbol - 1))) !== 0,
+        (cell) => (view.state.domains[cell] & symbolMask(cover.symbol)) !== 0,
       );
       if (cells.length !== 1 || view.state.values[cells[0]]) continue;
       const builder = new CertificateBuilder(view),

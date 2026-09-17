@@ -2,6 +2,7 @@ import { canonicalProblem } from "./problem";
 import type { EngineProblem, ConstraintInstance } from "./problem";
 import type { Assembly } from "./rules/types";
 import type { Literal } from "./state/types";
+import { hasSingleCandidate, symbolMask } from "./state/read";
 
 export interface ExactStats {
   readonly nodes: number;
@@ -250,12 +251,12 @@ class ExactSearchSession {
       let single = -1;
       for (const cell of problem.cells) {
         let mask = full;
-        for (const peer of peers[cell]) if (values[peer] !== 0) mask &= ~(1 << (values[peer] - 1));
-        if (values[cell] !== 0) mask &= 1 << (values[cell] - 1);
+        for (const peer of peers[cell]) if (values[peer] !== 0) mask &= ~symbolMask(values[peer]);
+        if (values[cell] !== 0) mask &= symbolMask(values[cell]);
         masks[cell] = mask;
         yield this.work();
         if (mask === 0) return null;
-        if (values[cell] === 0 && (mask & (mask - 1)) === 0 && single < 0) single = cell;
+        if (values[cell] === 0 && hasSingleCandidate(mask) && single < 0) single = cell;
       }
       if (single >= 0) {
         values[single] = Math.log2(masks[single]) + 1;
@@ -266,9 +267,7 @@ class ExactSearchSession {
       for (const house of houses)
         if (house.cells.length === problem.symbols.length) {
           for (const symbol of problem.symbols) {
-            const supports = house.cells.filter(
-              (cell) => (masks[cell] & (1 << (symbol - 1))) !== 0,
-            );
+            const supports = house.cells.filter((cell) => (masks[cell] & symbolMask(symbol)) !== 0);
             yield this.work();
             if (supports.length === 0) return null;
             if (supports.length === 1 && values[supports[0]] === 0 && !hidden)
@@ -299,7 +298,7 @@ class ExactSearchSession {
       for (const cell of problem.cells) {
         if (frame.values[cell] !== 0) continue;
         const count = problem.symbols.filter(
-          (symbol) => (masks[cell] & (1 << (symbol - 1))) !== 0,
+          (symbol) => (masks[cell] & symbolMask(symbol)) !== 0,
         ).length;
         if (count < size) {
           selected = cell;
@@ -336,7 +335,7 @@ class ExactSearchSession {
       } else {
         for (let index = problem.symbols.length - 1; index >= 0; index--) {
           const symbol = problem.symbols[index];
-          if ((masks[selected] & (1 << (symbol - 1))) === 0) continue;
+          if ((masks[selected] & symbolMask(symbol)) === 0) continue;
           const values = [...frame.values];
           values[selected] = symbol;
           this.frontier.push({

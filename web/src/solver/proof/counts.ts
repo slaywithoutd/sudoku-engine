@@ -7,6 +7,7 @@ import {
   validLiteral,
 } from "./primitives";
 import type { CheckContext, CheckedInference, PrimitiveInput, Proposition } from "./types";
+import { symbolMask } from "../state/read";
 
 /** Scope reduction preserves exclusion only; it never establishes existence. */
 export class AllDifferentSubsetStrategy {
@@ -52,7 +53,7 @@ export class SupportStrategy {
     requireProof(cover?.kind === "cover", "expected-cover");
     const domains = provedDomains(sources, cover.cells);
     const cells = cover.cells.filter(
-      (cell) => (domains.get(cell)! & (1 << (cover.symbol - 1))) !== 0,
+      (cell) => (domains.get(cell)! & symbolMask(cover.symbol)) !== 0,
     );
     requireProof(
       sameValue(input.conclusion, { kind: "cover", symbol: cover.symbol, cells }),
@@ -75,7 +76,7 @@ export class HallStrategy {
     );
     const mask = domains.reduce((mask, d) => mask | d!.mask, 0);
     const size = context.view.assembly.problem.symbols.filter(
-      (symbol) => mask & (1 << (symbol - 1)),
+      (symbol) => mask & symbolMask(symbol),
     ).length;
     const claim = input.conclusion;
     const valid =
@@ -88,7 +89,7 @@ export class HallStrategy {
           !claim.value.positive &&
           scope.cells.includes(claim.value.cell) &&
           !domains.some((d) => d!.cell === claim.value.cell) &&
-          (mask & (1 << (claim.value.symbol - 1))) !== 0;
+          (mask & symbolMask(claim.value.symbol)) !== 0;
     requireProof(valid, "invalid-hall-conclusion");
     return derived(input, context);
   }
@@ -120,7 +121,7 @@ function countDomains(
   for (const [cell, coefficient] of coefficients)
     if (coefficient < 0)
       requireProof(
-        domains.has(cell) && !(domains.get(cell)! & (1 << (symbol - 1))),
+        domains.has(cell) && !(domains.get(cell)! & symbolMask(symbol)),
         "uncovered-count-incidence",
       );
 }

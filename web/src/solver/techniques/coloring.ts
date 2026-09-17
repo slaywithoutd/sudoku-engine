@@ -12,6 +12,7 @@ import {
   type ChainWork,
   type StrongSource,
 } from "./chains-certificate";
+import { classicHouseContaining, symbolMask } from "../state/read";
 
 export interface ColorEdge {
   ends: [Literal, Literal];
@@ -60,13 +61,7 @@ export class Coloring implements PatternStrategy {
       } else {
         const p = view.facts.get(cover.recipe.source)!.proposition;
         if (p.kind !== "cover") continue;
-        const house =
-          view.assembly.allDifferent.find(
-            (h) => h.cells.length === 9 && h.cells.join() === p.cells.join(),
-          ) ??
-          view.assembly.allDifferent.find(
-            (h) => h.cells.length === 9 && p.cells.every((c) => h.cells.includes(c)),
-          );
+        const house = classicHouseContaining(view, p.cells);
         if (!house) continue;
         source =
           house.cells.join() === p.cells.join()
@@ -178,7 +173,7 @@ export class Coloring implements PatternStrategy {
     for (const cell of view.assembly.problem.cells)
       for (const symbol of view.assembly.problem.symbols) {
         yield { kind: "work", units: 1 };
-        if (view.state.values[cell] || !(view.state.domains[cell] & (1 << (symbol - 1)))) continue;
+        if (view.state.values[cell] || !(view.state.domains[cell] & symbolMask(symbol))) continue;
         const target = candidate(cell, symbol),
           witnesses: Literal[] = [];
         let valid = true;

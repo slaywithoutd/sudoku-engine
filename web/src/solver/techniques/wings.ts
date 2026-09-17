@@ -8,6 +8,7 @@ import {
   type PatternGraph,
   type PatternStrategy,
 } from "./pattern-runtime";
+import { classicHouseEqualTo, symbolMask } from "../state/read";
 
 /** Pivot joins and identical-pair bridges are separate named constructions. */
 export class Wings implements PatternStrategy {
@@ -42,7 +43,7 @@ export class Wings implements PatternStrategy {
           for (const target of cells) {
             yield { kind: "work" as const, units: 1 };
             if (
-              view.state.domains[target] & (1 << (z - 1)) &&
+              view.state.domains[target] & symbolMask(z) &&
               occurrences.every((c) => c !== target && graph.has(pos(c, z), pos(target, z)))
             )
               effects.push({ kind: "remove", cell: target, symbol: z });
@@ -71,9 +72,7 @@ export class Wings implements PatternStrategy {
               continue;
             const source = view.facts.get(cover.recipe.source)!.proposition;
             if (source.kind !== "cover") continue;
-            const house = view.assembly.allDifferent.find(
-              (h) => h.cells.length === 9 && h.cells.join() === source.cells.join(),
-            );
+            const house = classicHouseEqualTo(view, source.cells);
             if (!house) continue;
             const z = digits(view, a).find((s) => s !== x)!;
             for (const [b, c] of [cover.literals, [...cover.literals].reverse()]) {
@@ -90,7 +89,7 @@ export class Wings implements PatternStrategy {
                 if (
                   target !== a &&
                   target !== d &&
-                  view.state.domains[target] & (1 << (z - 1)) &&
+                  view.state.domains[target] & symbolMask(z) &&
                   graph.has(pos(a, z), pos(target, z)) &&
                   graph.has(pos(d, z), pos(target, z))
                 )

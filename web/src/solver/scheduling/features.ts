@@ -2,6 +2,7 @@ import type { CheckedStep } from "../proof/types";
 import { isCheckedStep, checkedStepBytes } from "../proof/checker";
 import type { ReadView } from "../state/types";
 import { compareText } from "./ledger";
+import { hasSingleCandidate, symbolMask } from "../state/read";
 
 export function canonicalProof(step: CheckedStep): string {
   if (!isCheckedStep(step)) throw Error("inauthentic-checked-step");
@@ -41,17 +42,16 @@ export function stepFeatures(step: CheckedStep, view: ReadView): StepFeatures {
       removals.add(`${effect.cell}:${effect.symbol}`);
       domains.set(
         effect.cell,
-        (domains.get(effect.cell) ?? view.state.domains[effect.cell]) & ~(1 << (effect.symbol - 1)),
+        (domains.get(effect.cell) ?? view.state.domains[effect.cell]) & ~symbolMask(effect.symbol),
       );
     }
   }
-  const single = (mask: number) => mask !== 0 && (mask & (mask - 1)) === 0;
   const newSingles = [...domains].filter(
     ([cell, mask]) =>
       !placements.has(cell) &&
       !view.state.values[cell] &&
-      !single(view.state.domains[cell]) &&
-      single(mask),
+      !hasSingleCandidate(view.state.domains[cell]) &&
+      hasSingleCandidate(mask),
   ).length;
   const nodes = step.proposal.proof.nodes;
   return {

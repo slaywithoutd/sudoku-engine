@@ -1,5 +1,6 @@
 import { derived, domainAssertion, requireProof, sameValue, validLiteral } from "./primitives";
 import type { CheckContext, CheckedInference, PrimitiveInput } from "./types";
+import { symbolMask } from "../state/read";
 
 /** Extended Subset Principle, with exact per-symbol independent occupancy.
  * A forced candidate restricts only its own cell and explicitly cited peers.
@@ -60,7 +61,7 @@ export class SubsetCountChecker {
       }),
     );
     requireProof(
-      domains.get(p.target.cell)! & (1 << (p.target.symbol - 1)),
+      domains.get(p.target.cell)! & symbolMask(p.target.symbol),
       "absent-subset-count-target",
     );
     const scopes = sources.slice(1 + local.length).map((n) => n.conclusion);
@@ -82,7 +83,7 @@ export class SubsetCountChecker {
       return s.cells;
     });
     const union = p.cells.reduce((mask, c) => mask | domains.get(c)!, 0),
-      symbols = context.view.assembly.problem.symbols.filter((s) => union & (1 << (s - 1)));
+      symbols = context.view.assembly.problem.symbols.filter((s) => union & symbolMask(s));
     requireProof(
       symbols.length >= 1 &&
         symbols.length <= 9 &&
@@ -95,9 +96,9 @@ export class SubsetCountChecker {
     requireProof((context.workspaceRemaining ?? 0) >= 4096, "subset-count-workspace-limit");
     const masks = p.cells.map((c) =>
       c === p.target.cell
-        ? 1 << (p.target.symbol - 1)
+        ? symbolMask(p.target.symbol)
         : groups.some((g) => g.includes(c) && g.includes(p.target.cell))
-          ? domains.get(c)! & ~(1 << (p.target.symbol - 1))
+          ? domains.get(c)! & ~symbolMask(p.target.symbol)
           : domains.get(c)!,
     );
     for (let digit = 0; digit < symbols.length; digit++) {
@@ -110,7 +111,7 @@ export class SubsetCountChecker {
           if (subset & (1 << i)) {
             yield 1;
             size++;
-            if (!(masks[i] & (1 << (symbols[digit] - 1)))) {
+            if (!(masks[i] & symbolMask(symbols[digit]))) {
               valid = false;
               break;
             }

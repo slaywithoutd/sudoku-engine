@@ -3,6 +3,7 @@ import type { DeductionProposal, ProofNode } from "../proof/types";
 import { clause, literals, requireProof, sameValue } from "../proof/primitives";
 import { ChainSources, projectedSource } from "./chains-grammar";
 import type { SetPattern, SdcPattern, AlignedPattern, CountPattern } from "./set-contracts";
+import { findHouse, symbolMask } from "../state/read";
 
 const fields = (v: object, names: string[]) =>
   requireProof(v && sameValue(Object.keys(v).sort(), names.sort()), "invalid-set-fields");
@@ -26,7 +27,7 @@ class SetAdmission {
   }
   symbols(cells: number[]): number[] {
     const union = cells.reduce((m, c) => m | this.view.state.domains[c], 0);
-    return this.view.assembly.problem.symbols.filter((s) => union & (1 << (s - 1)));
+    return this.view.assembly.problem.symbols.filter((s) => union & symbolMask(s));
   }
   cells(cells: number[], min: number, max: number): void {
     requireProof(
@@ -80,7 +81,7 @@ class SetAdmission {
       scopes.forEach((scope, i) => {
         const subset = this.available.get(node.premises[cells.length + i]),
           source = subset && this.view.facts.get(subset.premises[0]);
-        const house = this.view.assembly.allDifferent.find((h) => h.id === scope.house);
+        const house = findHouse(this.view, scope.house);
         requireProof(
           subset?.rule === "all-different-subset@1" &&
             subset.premises.length === 1 &&
@@ -152,8 +153,8 @@ class SetAdmission {
     this.cells(p.intersection, 2, 3);
     this.cells(p.lineSide, 1, 4);
     this.cells(p.boxSide, 1, 4);
-    const line = this.view.assembly.allDifferent.find((h) => h.id === p.line),
-      box = this.view.assembly.allDifferent.find((h) => h.id === p.box);
+    const line = findHouse(this.view, p.line),
+      box = findHouse(this.view, p.box);
     requireProof(
       line &&
         box &&
@@ -212,7 +213,7 @@ class SetAdmission {
         other = route.sector === "line" ? b : a,
         house = route.sector === "line" ? line : box;
       const local = sorted([...p.intersection, ...side]),
-        occurrences = local.filter((c) => this.view.state.domains[c] & (1 << (e.symbol - 1)));
+        occurrences = local.filter((c) => this.view.state.domains[c] & symbolMask(e.symbol));
       requireProof(
         house.cells.includes(e.cell) &&
           !local.includes(e.cell) &&
@@ -284,7 +285,7 @@ class SetAdmission {
       this.table(a.table, a.cells, [a]);
     });
     const alternatives = p.domains.map((mask) =>
-        this.view.assembly.problem.symbols.filter((s) => mask & (1 << (s - 1))),
+        this.view.assembly.problem.symbols.filter((s) => mask & symbolMask(s)),
       ),
       volume = alternatives.reduce((n, xs) => n * xs.length, 1);
     requireProof(
@@ -359,7 +360,7 @@ class SetAdmission {
               (l) =>
                 l.positive &&
                 a.cells.includes(l.cell) &&
-                this.view.state.domains[l.cell] & (1 << (l.symbol - 1)),
+                this.view.state.domains[l.cell] & symbolMask(l.symbol),
             ),
           "invalid-aligned-blocked-candidates",
         );
@@ -409,7 +410,7 @@ class SetAdmission {
             n.conclusion,
             clause(
               this.view.assembly.problem.symbols
-                .filter((s) => this.view.state.domains[cell] & (1 << (s - 1)))
+                .filter((s) => this.view.state.domains[cell] & symbolMask(s))
                 .map((s) => positive(cell, s)),
             ),
           ),
@@ -466,7 +467,7 @@ class SetAdmission {
     );
     p.scopes.forEach((scope) => {
       fields(scope, ["house", "cells", "root"]);
-      const house = this.view.assembly.allDifferent.find((h) => h.id === scope.house),
+      const house = findHouse(this.view, scope.house),
         node = this.available.get(scope.root),
         fact = node && this.view.facts.get(node.premises[0]);
       requireProof(

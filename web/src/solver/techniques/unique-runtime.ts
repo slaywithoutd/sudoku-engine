@@ -11,6 +11,7 @@ import { buildImplications, type ImplicationIndex } from "../indexes/implication
 import { IndexInterrupted, type WorkspaceReservation } from "../indexes/workspace";
 import { ForcingGraph } from "./forcing-runtime";
 import { forcingProofFits, opposite, signedKey, type ForcingLink } from "./forcing-proof";
+import { houseCells } from "../state/read";
 type Work = { kind: "work"; units: number };
 
 /** Per-invocation graph traversal; authority and solutions never enter recipes. */
@@ -108,9 +109,7 @@ function* effects(view: ReadView, g: UniqueGeometry): Generator<Effect> {
               ) &&
               core.includes(symbol) &&
               symbol !== g.strongSymbol &&
-              g.strongHouses.every((id) =>
-                view.assembly.allDifferent.find((h) => h.id === id)!.cells.includes(cell),
-              );
+              g.strongHouses.every((id) => houseCells(view, id).includes(cell));
           if (allowed) yield { kind, cell, symbol };
         }
 }

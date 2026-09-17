@@ -1,12 +1,13 @@
 import type { ReadView } from "../state/types";
 import { uniqueCombinations, uniqueGeometry, type UniqueGeometryCursor } from "./unique-rectangles";
+import { symbolMask } from "../state/read";
 
 /** Increasing even length; smallest cell first; reverse traversals are canonicalized. */
 export class UniqueLoops {
   *geometries(view: ReadView): UniqueGeometryCursor {
     for (let length = 4; length <= 12; length += 2)
       for (const core of uniqueCombinations(view.assembly.problem.symbols, 2)) {
-        const mask = core.reduce((m, s) => m | (1 << (s - 1)), 0),
+        const mask = core.reduce((m, s) => m | symbolMask(s), 0),
           candidates = view.assembly.problem.cells.filter(
             (c) => !view.state.values[c] && (view.state.domains[c] & mask) === mask,
           );

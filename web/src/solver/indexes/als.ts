@@ -12,6 +12,7 @@ import {
   work,
 } from "./workspace";
 import type { IndexEntry, IndexEvent, WorkspaceReservation } from "./workspace";
+import { symbolMask } from "../state/read";
 
 export interface AlsEntry extends IndexEntry {
   readonly cells: readonly number[];
@@ -121,7 +122,7 @@ export class AlsIndex extends OwnedIndex<AlsEntry> {
             if (
               tuple[p.cells.indexOf(x)] === symbol &&
               tuple[p.cells.indexOf(y)] === symbol &&
-              p.cells.every((c, i) => view.state.domains[c] & (1 << (tuple[i] - 1)))
+              p.cells.every((c, i) => view.state.domains[c] & symbolMask(tuple[i]))
             ) {
               compatible = true;
               break;
@@ -165,7 +166,7 @@ export function* buildAls(
         }
         const cells = selection.cells;
         const mask = cells.reduce((mask, c) => mask | view.state.domains[c], 0);
-        const symbols = view.assembly.problem.symbols.filter((s) => mask & (1 << (s - 1)));
+        const symbols = view.assembly.problem.symbols.filter((s) => mask & symbolMask(s));
         if (symbols.length !== cells.length + 1) continue;
         reserveRecord(reservation, 2 + 2 * cells.length + symbols.length * (cells.length + 1));
         const entry = freezeRecord({
@@ -174,7 +175,7 @@ export function* buildAls(
           symbols,
           occurrences: symbols.map((symbol) => ({
             symbol,
-            cells: cells.filter((c) => view.state.domains[c] & (1 << (symbol - 1))),
+            cells: cells.filter((c) => view.state.domains[c] & symbolMask(symbol)),
           })),
           recipe: { kind: "als-domains" as const, source: fact.id },
         });

@@ -24,6 +24,7 @@ import {
   verifyBranch,
   checkUsage,
 } from "../proof/checker";
+import { symbolMask } from "./read";
 
 // Authority belongs to the exact frozen publication, never a state-shaped
 // wrapper whose property accessors or Proxy traps can change after admission.
@@ -206,7 +207,7 @@ class CandidateOwner {
       placed: Literal[] = [];
     for (const cell of edited.cells) {
       for (const symbol of this.view.assembly.problem.symbols)
-        if ((before.domains[cell] & ~state.domains[cell] & (1 << (symbol - 1))) !== 0)
+        if ((before.domains[cell] & ~state.domains[cell] & symbolMask(symbol)) !== 0)
           removed.push(Object.freeze({ cell, symbol, positive: false }));
       if (state.values[cell] !== before.values[cell])
         placed.push(Object.freeze({ cell, symbol: state.values[cell], positive: true }));
@@ -494,10 +495,10 @@ export class HypotheticalSession {
       view.assembly.problem.cells.includes(value.cell) &&
         view.assembly.problem.symbols.includes(value.symbol) &&
         !view.state.values[value.cell] &&
-        view.state.domains[value.cell] & (1 << (value.symbol - 1)),
+        view.state.domains[value.cell] & symbolMask(value.symbol),
       "nonlive-branch-assumption",
     );
-    const bit = 1 << (value.symbol - 1),
+    const bit = symbolMask(value.symbol),
       mask = value.positive
         ? view.state.domains[value.cell] & bit
         : view.state.domains[value.cell] & ~bit;
@@ -765,7 +766,7 @@ export function initialize(input: Assembly, branch: BranchId): ReadView {
     values,
     domains: Object.freeze(
       values.map((value) =>
-        value === 0 ? 2 ** assembly.problem.symbols.length - 1 : 1 << (value - 1),
+        value === 0 ? 2 ** assembly.problem.symbols.length - 1 : symbolMask(value),
       ),
     ),
     domainFacts: Object.freeze(domainFacts),
@@ -868,7 +869,7 @@ export function acceptedStepChanges(
     placed: Literal[] = [];
   for (const cell of cells) {
     for (const symbol of before.assembly.problem.symbols)
-      if (before.state.domains[cell] & ~after.state.domains[cell] & (1 << (symbol - 1)))
+      if (before.state.domains[cell] & ~after.state.domains[cell] & symbolMask(symbol))
         removed.push({ cell, symbol, positive: false });
     if (before.state.values[cell] !== after.state.values[cell])
       placed.push({ cell, symbol: after.state.values[cell], positive: true });

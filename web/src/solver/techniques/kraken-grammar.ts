@@ -6,6 +6,7 @@ import { validateFishGeometry } from "./fish-grammar";
 import { ForcingLineage, checkForcingRoots } from "./forcing-grammar";
 import type { KrakenPlan } from "./kraken";
 import type { PathCertificate } from "./forcing-proof";
+import { houseCells } from "../state/read";
 
 /** Fish geometry and chain grammar independently meet at each exact fin root. */
 export function checkKrakenPattern(
@@ -83,7 +84,7 @@ export function checkKrakenPattern(
     );
   }
   const source = (h: string, symbol?: number) => {
-    const cells = view.assembly.allDifferent.find((s) => s.id === h)!.cells;
+    const cells = houseCells(view, h);
     const f = matchingFacts(
       view,
       symbol === undefined ? { kind: "all-different", cells } : { kind: "cover", cells, symbol },

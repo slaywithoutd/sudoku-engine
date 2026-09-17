@@ -2,6 +2,7 @@ import type { CheckContext, CheckedInference, PrimitiveInput } from "./types";
 import type { Proposition } from "../state/types";
 import { clause, derived, domainAssertion, requireProof, sameValue } from "./primitives";
 import { uniqueAuthorityEvidenceId, uniqueAuthorityMatches } from "../conditional";
+import { symbolMask } from "../state/read";
 
 /** All current domains and original givens/rules are explicit conjunction leaves. */
 export interface UniqueTransform {
@@ -12,7 +13,7 @@ export interface UniqueTransform {
   readonly evidenceId: string;
 }
 const symbols = (mask: number): number[] =>
-  Array.from({ length: 9 }, (_, i) => i + 1).filter((s) => mask & (1 << (s - 1)));
+  Array.from({ length: 9 }, (_, i) => i + 1).filter((s) => mask & symbolMask(s));
 
 /**
  * Checks a universal alternate-completion mapping, never an exact solution.
@@ -85,7 +86,8 @@ export class UniqueTransformChecker {
       } else requireProof(false, "unique-premise-kind");
     }
     // Original positive facts may serve both as a current singleton and given root.
-    for (const [cell, value] of givens) if (!domains.has(cell)) domains.set(cell, 1 << (value - 1));
+    for (const [cell, value] of givens)
+      if (!domains.has(cell)) domains.set(cell, symbolMask(value));
     requireProof(
       domains.size === problem.cells.length &&
         problem.cells.every((c) => domains.get(c) === context.view.state.domains[c]) &&
@@ -119,7 +121,7 @@ export class UniqueTransformChecker {
       for (const rule of affected)
         for (const symbol of problem.symbols) {
           yield 1;
-          const occurrences = rule.cells.filter((c) => (core.get(c) ?? 0) & (1 << (symbol - 1)));
+          const occurrences = rule.cells.filter((c) => (core.get(c) ?? 0) & symbolMask(symbol));
           // Each selected cell has two values; every selected house-symbol has
           // two occurrences. Any valid core assignment uses each union symbol
           // once, and complement exchanges its selected occurrence with the other.

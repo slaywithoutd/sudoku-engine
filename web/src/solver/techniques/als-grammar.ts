@@ -3,6 +3,7 @@ import type { Literal, ReadView } from "../state/types";
 import { clause, requireProof, sameValue } from "../proof/primitives";
 import { ChainSources, projectedSource } from "./chains-grammar";
 import type { AlsSet, AlsProjection, AlsPattern, BlossomPattern } from "./als-certificate";
+import { findHouse, symbolMask } from "../state/read";
 
 const fields = (p: object, names: string[]) =>
   requireProof(p && sameValue(Object.keys(p).sort(), names.sort()), "invalid-als-fields");
@@ -25,7 +26,7 @@ class AlsAdmission {
     requireProof(new Set(sets.map((s) => s.cells.join())).size === sets.length, "repeated-als-set");
     for (const set of sets) {
       fields(set, ["cells", "symbols", "house", "occurrences"]);
-      const house = view.assembly.allDifferent.find((h) => h.id === set.house);
+      const house = findHouse(view, set.house);
       requireProof(
         ordered(set.cells) &&
           set.cells.length >= 1 &&
@@ -36,7 +37,7 @@ class AlsAdmission {
         "als-size-or-house",
       );
       const union = set.cells.reduce((mask, c) => mask | view.state.domains[c], 0);
-      const symbols = view.assembly.problem.symbols.filter((s) => union & (1 << (s - 1)));
+      const symbols = view.assembly.problem.symbols.filter((s) => union & symbolMask(s));
       requireProof(
         symbols.length === set.cells.length + 1 &&
           sameValue(symbols, set.symbols) &&
@@ -52,7 +53,7 @@ class AlsAdmission {
         requireProof(
           sameValue(
             set.occurrences[symbol],
-            set.cells.filter((c) => view.state.domains[c] & (1 << (symbol - 1))),
+            set.cells.filter((c) => view.state.domains[c] & symbolMask(symbol)),
           ),
           "missing-als-occurrence",
         );
@@ -249,7 +250,7 @@ export function checkAlsPattern(
       "invalid-blossom-stem",
     );
     const symbols = view.assembly.problem.symbols.filter(
-      (s) => view.state.domains[p.stem] & (1 << (s - 1)),
+      (s) => view.state.domains[p.stem] & symbolMask(s),
     );
     requireProof(
       symbols.length >= 2 &&

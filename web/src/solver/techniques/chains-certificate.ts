@@ -4,6 +4,7 @@ import type { Literal, Proposition, ReadView } from "../state/types";
 import type { DeductionProposal, Effect, Limits } from "../proof/types";
 import { clause, literals } from "../proof/primitives";
 import { PatternBuilder, type PatternGraph } from "./pattern-runtime";
+import { findHouse, symbolMask } from "../state/read";
 
 /** An event means OR of all its members. ALS events deliberately have no group-size cap. */
 export interface ChainEvent {
@@ -95,7 +96,7 @@ export class ChainCertificate extends PatternBuilder {
       const fact = this.view.facts.get(source.source)!.proposition;
       if (fact.kind !== "cover") throw Error("missing-proved-cover");
       const cells = fact.cells.filter(
-        (c) => this.view.state.domains[c] & (1 << (source.symbol - 1)),
+        (c) => this.view.state.domains[c] & symbolMask(source.symbol),
       );
       const support = this.add(
         "support@1",
@@ -108,7 +109,7 @@ export class ChainCertificate extends PatternBuilder {
         clause(cells.map((c) => candidate(c, source.symbol))),
       );
     }
-    const house = this.view.assembly.allDifferent.find((h) => h.id === source.house)!;
+    const house = findHouse(this.view, source.house)!;
     const fact = matchingFacts(this.view, { kind: "all-different", cells: house.cells }).find(
       (f) => !f.openAssumptions.length,
     )!;
@@ -123,13 +124,13 @@ export class ChainCertificate extends PatternBuilder {
     ): Generator<ChainWork, { id: number; count: number }> {
       yield { kind: "work", units: 1 };
       const choices = box.map((mask) =>
-        this.view.assembly.problem.symbols.filter((s) => mask & (1 << (s - 1))),
+        this.view.assembly.problem.symbols.filter((s) => mask & symbolMask(s)),
       );
       if (choices.reduce((n, xs) => n * xs.length, 1) > 256) {
         const at = choices.findIndex((xs) => xs.length > 1),
           left = [...box],
           right = [...box];
-        left[at] = 1 << (choices[at][0] - 1);
+        left[at] = symbolMask(choices[at][0]);
         right[at] &= ~left[at];
         const a = yield* recurse.call(this, left),
           b = yield* recurse.call(this, right),
@@ -251,7 +252,7 @@ export class ChainCertificate extends PatternBuilder {
         id: this.view.state.domainFacts[e.cell],
         mask: this.view.state.domains[e.cell],
       };
-      const mask = e.kind === "place" ? 1 << (e.symbol - 1) : prior.mask & ~(1 << (e.symbol - 1));
+      const mask = e.kind === "place" ? symbolMask(e.symbol) : prior.mask & ~symbolMask(e.symbol);
       domains.set(e.cell, {
         id: this.add("domain-restrict@1", [prior.id, roots[i]], {
           kind: "domain",

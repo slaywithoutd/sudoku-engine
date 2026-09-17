@@ -8,6 +8,7 @@ import type { CheckedStep } from "./proof/types";
 import { canonicalProblem } from "./problem";
 import { EXACT_METHOD, isWitness, exactInitializationReservation } from "./exact";
 import { isAcceptedPath } from "./state/candidates";
+import { symbolMask } from "./state/read";
 
 export type CountProof =
   | {
@@ -225,7 +226,7 @@ function compatible(witness: readonly number[], view: ReadView): boolean {
   return witness.every(
     (symbol, cell) =>
       (view.state.values[cell] === 0 || view.state.values[cell] === symbol) &&
-      (view.state.domains[cell] & (1 << (symbol - 1))) !== 0,
+      (view.state.domains[cell] & symbolMask(symbol)) !== 0,
   );
 }
 function unconditional(accepted: readonly CheckedStep[]): boolean {

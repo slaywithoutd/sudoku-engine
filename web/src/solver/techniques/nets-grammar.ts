@@ -3,6 +3,7 @@ import type { DeductionProposal, ProofNode } from "../proof/types";
 import { domainAssertion, requireProof, sameValue } from "../proof/primitives";
 import { checkForcingRoots } from "./forcing-grammar";
 import type { NetBranchCertificate } from "./nets";
+import { symbolMask } from "../state/read";
 
 /** Bounded net grammar: basic domain/cover/Hall reasoning and scalar resolution.
  * No relation tables, exact primitives, recursive solver calls or caller-issued facts.
@@ -132,7 +133,7 @@ export function checkNetPattern(
             d &&
             domain!.scope.length &&
             view.assembly.problem.symbols.filter(
-              (symbol) => view.state.domains[d.cell] & (1 << (symbol - 1)),
+              (symbol) => view.state.domains[d.cell] & symbolMask(symbol),
             ).length > 2
           )
             dynamic = true;
@@ -140,7 +141,7 @@ export function checkNetPattern(
             const base = nodes.get(domain.premises[0])!.conclusion;
             if (
               base.kind === "cover" &&
-              base.cells.filter((cell) => view.state.domains[cell] & (1 << (base.symbol - 1)))
+              base.cells.filter((cell) => view.state.domains[cell] & symbolMask(base.symbol))
                 .length > 2 &&
               domain.premises.slice(1).some((id) => nodes.get(id)!.scope.length > 0)
             )

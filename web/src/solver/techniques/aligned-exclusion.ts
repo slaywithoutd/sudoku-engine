@@ -6,6 +6,7 @@ import { candidate, type ChainWork } from "./chains-certificate";
 import { assignments, combinations, setDigits } from "./set-certificate";
 import { setDescriptor, type SetCursor } from "./set-runtime";
 import { SubsetCountingSearch } from "./subset-counting";
+import { symbolMask } from "../state/read";
 
 /** Only an explicitly empty <=5-cell auxiliary matching rejects an assignment.
  * Equal symbols in nonpeer selected cells are permitted. */
@@ -43,7 +44,7 @@ export class AlignedExclusionSearch {
               (s) =>
                 !selected.some((v, j) => this.graph.has(candidate(c, s), candidate(v, tuple[j]))),
             )
-            .reduce((mask, s) => mask | (1 << (s - 1)), 0),
+            .reduce((mask, s) => mask | symbolMask(s), 0),
         );
         let survives = false;
         for (const row of assignments(reduced)) {
@@ -59,7 +60,7 @@ export class AlignedExclusionSearch {
         }
       }
       reasons.push(reason);
-      if (!reason) tuple.forEach((s, i) => (support[i] |= 1 << (s - 1)));
+      if (!reason) tuple.forEach((s, i) => (support[i] |= symbolMask(s)));
     }
     return { reasons, support };
   }

@@ -8,6 +8,7 @@ import {
   type PatternGraph,
   type PatternStrategy,
 } from "./pattern-runtime";
+import { symbolMask } from "../state/read";
 
 /** DFS retains one simple path; every extension is charged, including failures. */
 export class RemotePairs implements PatternStrategy {
@@ -30,7 +31,7 @@ export class RemotePairs implements PatternStrategy {
               !view.state.values[target] &&
               target !== path[0] &&
               target !== path.at(-1) &&
-              view.state.domains[target] & (1 << (symbol - 1)) &&
+              view.state.domains[target] & symbolMask(symbol) &&
               graph.has(pos(path[0], symbol), pos(target, symbol)) &&
               graph.has(pos(path.at(-1)!, symbol), pos(target, symbol))
             )

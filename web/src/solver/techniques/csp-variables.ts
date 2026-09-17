@@ -1,6 +1,7 @@
 import { matchingFacts } from "../state/source-index";
 import type { ReadView, Literal } from "../state/types";
 import { assertOwnedView } from "../state/candidates";
+import { symbolMask } from "../state/read";
 
 /** Candidate identities remain physical occurrences across variable projections. */
 export type Candidate = readonly [number, number];
@@ -48,7 +49,7 @@ export function buildCspVariables(view: ReadView): readonly CspVariable[] {
   for (const cell of view.assembly.problem.cells) {
     if (view.state.values[cell]) continue;
     const alternatives = view.assembly.problem.symbols
-      .filter((s) => view.state.domains[cell] & (1 << (s - 1)))
+      .filter((s) => view.state.domains[cell] & symbolMask(s))
       .map((s) => [cell, s] as Candidate);
     result.push({
       id: `cell:${cell}`,
@@ -64,7 +65,7 @@ export function buildCspVariables(view: ReadView): readonly CspVariable[] {
       );
       if (!source) continue;
       const alternatives = house.cells
-        .filter((c) => view.state.domains[c] & (1 << (symbol - 1)))
+        .filter((c) => view.state.domains[c] & symbolMask(symbol))
         .map((c) => [c, symbol] as Candidate);
       if (alternatives.some((v) => view.state.values[v[0]])) continue;
       result.push({

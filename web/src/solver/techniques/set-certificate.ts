@@ -6,9 +6,10 @@ import { clause, literals } from "../proof/primitives";
 import { ChainCertificate, candidate, type ChainWork } from "./chains-certificate";
 import type { PatternGraph } from "./pattern-runtime";
 import type { SdcPattern, AlignedPattern, CountPattern, SetPattern } from "./set-contracts";
+import { findHouse, symbolMask } from "../state/read";
 
 export const setDigits = (mask: number) =>
-  Array.from({ length: 9 }, (_, i) => i + 1).filter((s) => mask & (1 << (s - 1)));
+  Array.from({ length: 9 }, (_, i) => i + 1).filter((s) => mask & symbolMask(s));
 export const setUnion = (view: ReadView, cells: number[]) =>
   setDigits(cells.reduce((m, c) => m | view.state.domains[c], 0));
 export function* combinations(
@@ -59,7 +60,7 @@ export class SetCertificate {
       constraints: number[] = [];
     for (const scope of scopes) {
       yield { kind: "work", units: 1 };
-      const house = this.view.assembly.allDifferent.find((h) => h.id === scope.house)!;
+      const house = findHouse(this.view, scope.house)!;
       const source = matchingFacts(this.view, { kind: "all-different", cells: house.cells }).find(
         (f) => !f.openAssumptions.length,
       );
@@ -77,7 +78,7 @@ export class SetCertificate {
         const at = choices.findIndex((xs) => xs.length > 1),
           left = [...box],
           right = [...box];
-        left[at] = 1 << (choices[at][0] - 1);
+        left[at] = symbolMask(choices[at][0]);
         right[at] &= ~left[at];
         const a = yield* build(left),
           c = yield* build(right),
@@ -233,7 +234,7 @@ export class SetCertificate {
     const b = this.algebra;
     for (const scope of p.scopes) {
       yield { kind: "work", units: 1 };
-      const house = this.view.assembly.allDifferent.find((h) => h.id === scope.house)!;
+      const house = findHouse(this.view, scope.house)!;
       const fact = matchingFacts(this.view, { kind: "all-different", cells: house.cells }).find(
         (f) => !f.openAssumptions.length,
       );

@@ -3,6 +3,7 @@ import type { Effect } from "../proof/types";
 import type { LocalSet, SdcPattern } from "./set-contracts";
 import { combinations, setUnion } from "./set-certificate";
 import { setDescriptor, type SetCursor } from "./set-runtime";
+import { symbolMask } from "../state/read";
 
 /** Extended two-sector allocation. Outside-V symbols are counted separately on
  * each side, even when equal; a V-symbol shared by the sides is forbidden. */
@@ -104,12 +105,12 @@ export class SueDeCoqSearch {
                     if (
                       local.includes(cell) ||
                       view.state.values[cell] ||
-                      !(view.state.domains[cell] & (1 << (symbol - 1))) ||
+                      !(view.state.domains[cell] & symbolMask(symbol)) ||
                       effects.some((e) => e.cell === cell && e.symbol === symbol)
                     )
                       continue;
                     const occurrences = local.filter(
-                      (c) => view.state.domains[c] & (1 << (symbol - 1)),
+                      (c) => view.state.domains[c] & symbolMask(symbol),
                     );
                     if (!occurrences.length) continue;
                     effects.push({ kind: "remove", cell, symbol });

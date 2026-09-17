@@ -14,6 +14,7 @@ import {
   type SpecializedWork,
   type SpecializedStrategy,
 } from "./specialized-runtime";
+import { symbolMask } from "../state/read";
 
 export interface FireworkComponent {
   readonly intersection: number;
@@ -97,7 +98,7 @@ export function* compileFireworks(
             id: view.state.domainFacts[cell],
             mask: view.state.domains[cell],
           },
-          mask = prior.mask & (1 << (symbol - 1));
+          mask = prior.mask & symbolMask(symbol);
         domains.set(cell, {
           id: b.add("domain-restrict@1", [prior.id, id], { kind: "domain", cell, mask }),
           mask,

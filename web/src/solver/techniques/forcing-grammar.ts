@@ -3,12 +3,13 @@ import type { ReadView, Literal, Proposition } from "../state/types";
 import { clause, requireProof, sameValue } from "../proof/primitives";
 import type { ForcingPlan, ForcingCertificate } from "./forcing";
 import type { ForcingLink, PathCertificate } from "./forcing-proof";
+import { findHouse, symbolMask } from "../state/read";
 
 const literal = (v: Literal): Proposition => ({ kind: "literal", value: v });
 const complement = (v: Literal): Literal => ({ ...v, positive: !v.positive });
 const candidates = (view: ReadView, c: number): Literal[] =>
   view.assembly.problem.symbols
-    .filter((s) => view.state.domains[c] & (1 << (s - 1)))
+    .filter((s) => view.state.domains[c] & symbolMask(s))
     .map((symbol) => ({ cell: c, symbol, positive: true }));
 
 /** Independent path recognizer: geometry + exact current source lineage. */
@@ -33,7 +34,7 @@ export class ForcingLineage {
   }
   house(id: number, house: string, symbol: number): void {
     const n = this.node(id),
-      h = this.view.assembly.allDifferent.find((h) => h.id === house);
+      h = findHouse(this.view, house);
     requireProof(
       h && n.rule === "cover-clause@1" && n.premises.length === 1,
       "forcing-house-cover",
@@ -52,7 +53,7 @@ export class ForcingLineage {
           n.conclusion,
           clause(
             h.cells
-              .filter((c) => this.view.state.domains[c] & (1 << (symbol - 1)))
+              .filter((c) => this.view.state.domains[c] & symbolMask(symbol))
               .map((cell) => ({ cell, symbol, positive: true })),
           ),
         ),
@@ -89,7 +90,7 @@ export class ForcingLineage {
         );
       else {
         requireProof(r.kind === "scope-conflict", "forcing-edge-kind");
-        const h = this.view.assembly.allDifferent.find((h) => h.id === r.house),
+        const h = findHouse(this.view, r.house),
           f = this.view.facts.get(n.premises[0]);
         requireProof(
           h &&
@@ -200,10 +201,10 @@ export function checkForcingPattern(
     alternatives = candidates(view, p.cover.cell!);
     l.cell(c.cover!, p.cover.cell!);
   } else if (p.kind === "unit") {
-    const h = view.assembly.allDifferent.find((h) => h.id === p.cover.house);
+    const h = findHouse(view, p.cover.house);
     requireProof(h, "forcing-unit");
     alternatives = h.cells
-      .filter((cell) => view.state.domains[cell] & (1 << (p.cover.symbol! - 1)))
+      .filter((cell) => view.state.domains[cell] & symbolMask(p.cover.symbol!))
       .map((cell) => ({ cell, symbol: p.cover.symbol!, positive: true }));
     l.house(c.cover!, p.cover.house!, p.cover.symbol!);
   } else {

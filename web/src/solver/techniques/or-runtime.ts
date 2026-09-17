@@ -20,6 +20,7 @@ import {
 } from "./generalized-runtime";
 import { buildCspVariables, cspVariableReservation } from "./csp-variables";
 import type { GeneralizedGrammar } from "./generalized-chains";
+import { symbolMask } from "../state/read";
 
 type OrEvent =
   | { kind: "work"; units: number }
@@ -67,7 +68,7 @@ function* forcingPlans(
       for (const cell of view.assembly.problem.cells)
         if (!view.state.values[cell])
           for (const symbol of view.assembly.problem.symbols)
-            if (view.state.domains[cell] & (1 << (symbol - 1)))
+            if (view.state.domains[cell] & symbolMask(symbol))
               for (const positive of [false, true]) {
                 yield { kind: "work", units: 1 };
                 const result = { cell, symbol, positive };

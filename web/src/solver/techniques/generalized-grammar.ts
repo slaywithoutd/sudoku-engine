@@ -9,6 +9,7 @@ import type {
   GeneralizedPosition,
   ExclusionProof,
 } from "./generalized-chains";
+import { findHouse, symbolMask } from "../state/read";
 
 const lit = (v: Candidate, positive = true): Literal => ({
   cell: v[0],
@@ -94,16 +95,16 @@ export class GeneralizedLineage {
           "generalized-cell",
         );
         values = this.view.assembly.problem.symbols
-          .filter((s) => this.view.state.domains[c] & (1 << (s - 1)))
+          .filter((s) => this.view.state.domains[c] & symbolMask(s))
           .map((s) => [c, s]);
         this.lineage.cell(cover, c);
       } else {
         const match = /^(.*):symbol:(\d+)$/.exec(position.variable);
-        const house = this.view.assembly.allDifferent.find((h) => h.id === match?.[1]);
+        const house = findHouse(this.view, match?.[1]);
         requireProof(match && house, "generalized-variable");
         const symbol = Number(match[2]);
         values = house.cells
-          .filter((c) => this.view.state.domains[c] & (1 << (symbol - 1)))
+          .filter((c) => this.view.state.domains[c] & symbolMask(symbol))
           .map((c) => [c, symbol]);
         this.lineage.house(cover, house.id, symbol);
       }

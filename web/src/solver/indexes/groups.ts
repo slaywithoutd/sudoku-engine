@@ -11,6 +11,7 @@ import {
   work,
 } from "./workspace";
 import type { IndexEntry, IndexEvent } from "./workspace";
+import { symbolMask } from "../state/read";
 
 export interface GroupEntry extends IndexEntry {
   readonly symbol: number;
@@ -45,7 +46,7 @@ export function* buildGroups(
       if (p.kind !== "all-different") continue;
       for (const symbol of view.assembly.problem.symbols) {
         yield* work(workspace);
-        const available = p.cells.filter((c) => view.state.domains[c] & (1 << (symbol - 1)));
+        const available = p.cells.filter((c) => view.state.domains[c] & symbolMask(symbol));
         for (const selection of combinations(available, 3, workspace)) {
           if (selection.kind === "work") {
             yield selection;

@@ -19,6 +19,7 @@ import { checkFireworksPattern } from "./fireworks-grammar";
 import { checkOrPattern } from "./or-grammar";
 import { checkTemplatePattern } from "../proof/template-cover";
 import { checkUniquePattern } from "./unique-grammar";
+import { findHouse, symbolMask } from "../state/read";
 
 function fields(p: Record<string, unknown>, names: string[]): void {
   requireProof(sameValue(Object.keys(p).sort(), names.sort()), "invalid-technique-pattern");
@@ -36,7 +37,7 @@ function placement(view: ReadView, cell: number, symbol: number): Effect[] {
     view.assembly.allDifferent.filter((h) => h.cells.includes(cell)).flatMap((h) => h.cells),
   );
   for (const peer of peers)
-    if (peer !== cell && !view.state.values[peer] && view.state.domains[peer] & (1 << (symbol - 1)))
+    if (peer !== cell && !view.state.values[peer] && view.state.domains[peer] & symbolMask(symbol))
       result.push({ kind: "remove", cell: peer, symbol });
   return result;
 }
@@ -184,11 +185,11 @@ export function checkTechniqueGrammar(
     );
     if (proposal.technique === "c01@1") {
       fields(p, ["kind", "alias", "cell", "symbol", "house"]);
-      requireProof(p.kind === "single" && domains[cell] === 1 << (symbol - 1), "invalid-single");
+      requireProof(p.kind === "single" && domains[cell] === symbolMask(symbol), "invalid-single");
       if (p.alias === "Naked Single") requireProof(p.house === null, "invalid-single-alias");
       else {
         requireProof(p.alias === "Full House" || p.alias === "Last Digit", "unknown-alias");
-        const house = view.assembly.allDifferent.find((h) => h.id === p.house);
+        const house = findHouse(view, p.house);
         requireProof(
           house &&
             house.cells.length === view.assembly.problem.symbols.length &&
@@ -205,7 +206,7 @@ export function checkTechniqueGrammar(
           p.alias === "Hidden Single" &&
           cover?.symbol === symbol &&
           sameValue(
-            cover.cells.filter((c) => (domains[c] & (1 << (symbol - 1))) !== 0),
+            cover.cells.filter((c) => (domains[c] & symbolMask(symbol)) !== 0),
             [cell],
           ),
         "invalid-hidden-single",
@@ -234,7 +235,7 @@ export function checkTechniqueGrammar(
   } else if (proposal.technique === "c03@1") {
     fields(p, ["kind", "alias", "cover", "group", "symbol", "cells"]);
     const cover = view.assembly.covers.find((c) => c.id === p.cover),
-      group = view.assembly.allDifferent.find((h) => h.id === p.group);
+      group = findHouse(view, p.group);
     sourceCells = numbers(p.cells);
     symbol = Number(p.symbol);
     requireProof(
@@ -254,7 +255,7 @@ export function checkTechniqueGrammar(
         sourceCells.every((c) => intersection.includes(c)) &&
         sameValue(
           sourceCells,
-          cover.cells.filter((c) => domains[c] & (1 << (symbol - 1))),
+          cover.cells.filter((c) => domains[c] & symbolMask(symbol)),
         ),
       "invalid-intersection-support",
     );
@@ -274,8 +275,7 @@ export function checkTechniqueGrammar(
       );
     const expected = group.cells
       .filter(
-        (c) =>
-          !cover.cells.includes(c) && !view.state.values[c] && domains[c] & (1 << (symbol - 1)),
+        (c) => !cover.cells.includes(c) && !view.state.values[c] && domains[c] & symbolMask(symbol),
       )
       .map((cell) => ({ kind: "remove" as const, cell, symbol }));
     requireProof(
@@ -297,7 +297,7 @@ export function checkTechniqueGrammar(
         digits.every((d) => view.assembly.problem.symbols.includes(d)),
       "subset-out-of-profile",
     );
-    const mask = digits.reduce((m, d) => m | (1 << (d - 1)), 0);
+    const mask = digits.reduce((m, d) => m | symbolMask(d), 0);
     const houseIds = locked ? p.houses : [p.house];
     requireProof(
       Array.isArray(houseIds) &&
@@ -305,7 +305,7 @@ export function checkTechniqueGrammar(
         new Set(houseIds).size === houseIds.length,
       "invalid-subset-houses",
     );
-    const houses = houseIds.map((id) => view.assembly.allDifferent.find((h) => h.id === id));
+    const houses = houseIds.map((id) => findHouse(view, id));
     requireProof(
       houses.every((h) => h && cells.every((c) => h.cells.includes(c))),
       "invalid-subset-houses",
@@ -356,7 +356,7 @@ export function checkTechniqueGrammar(
               (d) =>
                 view.assembly.covers.some(
                   (c) => c.symbol === d && sameValue(c.cells, house!.cells),
-                ) && house!.cells.some((c) => domains[c] & (1 << (d - 1))),
+                ) && house!.cells.some((c) => domains[c] & symbolMask(d)),
             ) &&
             sameValue(
               house!.cells.filter((c) => domains[c] & mask),
@@ -369,7 +369,7 @@ export function checkTechniqueGrammar(
       allowedHall.push({ house: house!.cells, cells: selected });
       const union = selected.reduce((m, c) => m | domains[c], 0);
       requireProof(
-        view.assembly.problem.symbols.filter((d) => union & (1 << (d - 1))).length ===
+        view.assembly.problem.symbols.filter((d) => union & symbolMask(d)).length ===
           selected.length,
         "invalid-subset-hall",
       );
@@ -378,7 +378,7 @@ export function checkTechniqueGrammar(
         : house!.cells.filter((c) => !cells.includes(c) && !view.state.values[c]);
       const local = targets.flatMap((cell) =>
         view.assembly.problem.symbols
-          .filter((d) => domains[cell] & union & (1 << (d - 1)))
+          .filter((d) => domains[cell] & union & symbolMask(d))
           .map((symbol) => ({ kind: "remove" as const, cell, symbol })),
       );
       requireProof(local.length > 0, "unproductive-subset");

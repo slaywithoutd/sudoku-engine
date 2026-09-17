@@ -2,6 +2,7 @@ import { sourceMaximumId, matchingFacts } from "../state/source-index";
 import type { Json } from "../problem";
 import type { ReadView, Proposition, Literal } from "../state/types";
 import type { DeductionProposal, Effect, ProofNode } from "./types";
+import { symbolMask } from "../state/read";
 
 /** Elementary untrusted syntax helpers; they never issue proof authority. */
 export function literal(cell: number, symbol: number, positive: boolean): Proposition {
@@ -83,7 +84,7 @@ export class CertificateBuilder {
         for (const peer of scope.cells)
           if (peer !== cell && !peers.has(peer)) peers.set(peer, scope.cells);
     for (const [peer, scope] of [...peers].sort(([a], [b]) => a - b))
-      if (!this.view.state.values[peer] && this.view.state.domains[peer] & (1 << (symbol - 1)))
+      if (!this.view.state.values[peer] && this.view.state.domains[peer] & symbolMask(symbol))
         this.peer(root, cell, peer, symbol, scope);
   }
   support(symbol: number, cells: readonly number[]): number {
@@ -96,7 +97,7 @@ export class CertificateBuilder {
       {
         kind: "cover",
         symbol,
-        cells: cells.filter((cell) => (this.view.state.domains[cell] & (1 << (symbol - 1))) !== 0),
+        cells: cells.filter((cell) => (this.view.state.domains[cell] & symbolMask(symbol)) !== 0),
       },
     );
   }
@@ -114,7 +115,7 @@ export class CertificateBuilder {
         id: this.view.state.domainFacts[effect.cell],
         mask: this.view.state.domains[effect.cell],
       };
-      const bit = 1 << (effect.symbol - 1),
+      const bit = symbolMask(effect.symbol),
         mask = effect.kind === "place" ? prior.mask & bit : prior.mask & ~bit;
       domains.set(effect.cell, {
         id: this.add("domain-restrict@1", [prior.id, root], {

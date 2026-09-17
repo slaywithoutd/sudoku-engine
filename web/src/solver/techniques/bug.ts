@@ -5,6 +5,7 @@ import {
   uniqueSymbols,
   type UniqueGeometryCursor,
 } from "./unique-rectangles";
+import { symbolMask } from "../state/read";
 
 /** Complete residual-core enumeration, with explicit extra occurrence accounting. */
 export class Bug {
@@ -29,7 +30,7 @@ export class Bug {
         for (const h of view.assembly.allDifferent)
           for (const symbol of view.assembly.problem.symbols) {
             const count = cells.filter(
-              (c, i) => h.cells.includes(c) && masks[i] & (1 << (symbol - 1)),
+              (c, i) => h.cells.includes(c) && masks[i] & symbolMask(symbol),
             ).length;
             if (count !== 0 && count !== 2) return;
           }
@@ -41,14 +42,14 @@ export class Bug {
       if (nextExtras > maximum) return;
       for (const pair of uniqueCombinations(values, 2)) {
         yield { kind: "work", units: 1 };
-        masks.push(pair.reduce((m, s) => m | (1 << (s - 1)), 0));
+        masks.push(pair.reduce((m, s) => m | symbolMask(s), 0));
         if (
           !view.assembly.allDifferent.some((h) =>
             pair.some(
               (symbol) =>
                 cells
                   .slice(0, index + 1)
-                  .filter((c, i) => h.cells.includes(c) && masks[i] & (1 << (symbol - 1))).length >
+                  .filter((c, i) => h.cells.includes(c) && masks[i] & symbolMask(symbol)).length >
                 2,
             ),
           )
