@@ -43,6 +43,8 @@ import eyeSvg from "lucide-static/icons/eye.svg?raw";
 import sendSvg from "lucide-static/icons/send.svg?raw";
 import usersSvg from "lucide-static/icons/users.svg?raw";
 import boxSelectSvg from "lucide-static/icons/box-select.svg?raw";
+import panelLeftCloseSvg from "lucide-static/icons/panel-left-close.svg?raw";
+import panelLeftOpenSvg from "lucide-static/icons/panel-left-open.svg?raw";
 
 /** Custom, hand-drawn glyphs: no lucide icon depicts this app's own conventions. */
 const CUSTOM = {
@@ -89,6 +91,8 @@ const LUCIDE = {
   send: sendSvg,
   users: usersSvg,
   boxSelect: boxSelectSvg,
+  sidebarClose: panelLeftCloseSvg,
+  sidebarOpen: panelLeftOpenSvg,
 } as const;
 export type IconName = keyof typeof CUSTOM | keyof typeof LUCIDE;
 

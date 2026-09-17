@@ -11,7 +11,9 @@ import { mountSolver } from "../ui/solver";
 import { mountHelp } from "../ui/help";
 import { el, button } from "../ui/dom";
 import { icon, type IconName } from "../ui/icons";
-import { exitFullscreen, fullscreenButton } from "../ui/game";
+import { fullscreenButton, isFullscreen, toggleFullscreen } from "../ui/game";
+import { comboFromEvent, ignoredTarget } from "../ui/input";
+import { updateSetting } from "../ui/settings-sections";
 import { downloadBackup } from "../ui/backup";
 import logoUrl from "../assets/notpron.png";
 export function mountApplication(
@@ -72,14 +74,48 @@ export function mountApplication(
     }),
     backup = button("Export work", () => downloadBackup(services));
   saveArea.append(status, retry, backup, error);
-  sidebar.append(brand, nav, saveArea);
-  // Lives outside any single screen so it works everywhere, including the
-  // sidebar-less focus mode it toggles.
-  const fullscreen = fullscreenButton();
-  fullscreen.classList.add("global-fullscreen");
-  root.append(sidebar, main, fullscreen);
+  // App-level controls: they live in the sidebar, outside any single screen,
+  // so they behave the same everywhere and survive navigation.
+  const tools = el("div", undefined, "sidebar-tools"),
+    sidebarToggle = button("", () => setSidebarCollapsed(!controller.snapshot().settings.sidebarCollapsed), "sidebar-toggle"),
+    fullscreen = fullscreenButton("sidebar-fullscreen");
+  tools.append(sidebarToggle, fullscreen);
+  sidebar.append(brand, nav, tools, saveArea);
+  root.append(sidebar, main);
+  // Entering fullscreen minimizes the sidebar to its rail for more board
+  // space; leaving restores it unless the user changed it in between.
+  let autoCollapsed = false;
+  const setSidebarCollapsed = (collapsed: boolean) => {
+    autoCollapsed = false;
+    updateSetting(services, "sidebarCollapsed", collapsed);
+  };
+  const onFocusMode = () => {
+    const collapsed = controller.snapshot().settings.sidebarCollapsed;
+    if (isFullscreen() && !collapsed) {
+      setSidebarCollapsed(true);
+      autoCollapsed = true;
+    } else if (!isFullscreen() && autoCollapsed) {
+      setSidebarCollapsed(false);
+    }
+  };
+  addEventListener("focusmodechange", onFocusMode);
+  // Fullscreen is global, so its shortcut works on every screen.
+  const onKey = (event: KeyboardEvent) => {
+    if (event.defaultPrevented || event.repeat || ignoredTarget(event)) return;
+    const combo = comboFromEvent(event);
+    if (!combo || combo !== controller.snapshot().settings.shortcuts.fullscreen) return;
+    event.preventDefault();
+    toggleFullscreen();
+  };
+  document.addEventListener("keydown", onKey);
   const updateStatus = () => {
-    applyAppearance(controller.snapshot().settings);
+    const settings = controller.snapshot().settings;
+    applyAppearance(settings);
+    const label = settings.sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar";
+    sidebarToggle.replaceChildren(icon(settings.sidebarCollapsed ? "sidebarOpen" : "sidebarClose"), el("span", label));
+    sidebarToggle.setAttribute("aria-label", label);
+    sidebarToggle.setAttribute("aria-expanded", String(!settings.sidebarCollapsed));
+    sidebarToggle.title = label;
     const s = controller.status();
     status.textContent =
       s.kind === "saved"
@@ -98,7 +134,6 @@ export function mountApplication(
     main.replaceChildren();
     const r = parseRoute(location.hash);
     const game = r.screen === "create" || r.screen === "play" || r.screen === "solve";
-    if (!game) exitFullscreen();
     main.classList.toggle("editor-screen", game);
     for (const item of navItems) {
       if (item.screen === r.screen)
@@ -145,6 +180,8 @@ export function mountApplication(
     dispose();
     window.removeEventListener("hashchange", render);
     window.removeEventListener("beforeunload", beforeUnload);
+    removeEventListener("focusmodechange", onFocusMode);
+    document.removeEventListener("keydown", onKey);
     repository.close();
   };
 }
@@ -161,4 +198,5 @@ export function applyAppearance(settings: LibraryData["settings"]): void {
   root.contrast = settings.highContrast ? "high" : "normal";
   root.patterns = String(settings.colorPatterns);
   root.motion = settings.reduceMotion ? "reduce" : "auto";
+  root.sidebar = settings.sidebarCollapsed ? "collapsed" : "expanded";
 }

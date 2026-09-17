@@ -40,6 +40,7 @@ export function defaultSettings(): Settings {
     showNoteConflicts: false,
     keypadHidden: false,
     keypadCollapsed: false,
+    sidebarCollapsed: false,
     invertKeypad: false,
     showLabels: false,
     highlightPeers: true,

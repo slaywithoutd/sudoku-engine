@@ -13,11 +13,15 @@ export interface KeypadOptions {
   /** Restores the full panel, also clearing "Hide keypad" if that was set. */
   onExpand: () => void;
   onAutofill?: () => void;
+  /** Toggles multi-select mode (plain clicks and arrows add to the selection). */
+  onMultiSelect?: () => void;
 }
 export interface KeypadView {
   node: HTMLElement;
   update(state: EditorState, settings: Settings, completed: ReadonlySet<Digit>): void;
   setDisabled(disabled: boolean): void;
+  /** Reflects whether multi-select mode is on. */
+  setMultiSelect(active: boolean): void;
   destroy(): void;
 }
 export const COLOR_NAMES = ["Red", "Orange", "Yellow", "Green", "Blue", "Purple"];
@@ -32,7 +36,8 @@ const TOOL_ITEMS = [
 export function mountKeypad(container: HTMLElement, options: KeypadOptions): KeypadView {
   let settings = options.settings,
     tool: Tool = "value",
-    disabled = false;
+    disabled = false,
+    multiSelectActive = false;
   const play = options.mode === "play";
   const node = keepsSelection(el("section", undefined, "keypad-panel"));
   node.setAttribute("aria-label", "Keypad");
@@ -92,6 +97,19 @@ export function mountKeypad(container: HTMLElement, options: KeypadOptions): Key
     autofill.title = "Fill corner notes from row, column and box constraints";
     actions.append(autofill);
   }
+  let multiSelect: HTMLButtonElement | undefined;
+  if (options.onMultiSelect) {
+    multiSelect = labeledButton("boxSelect", "Multi-select", options.onMultiSelect, "multi-select");
+    actions.append(multiSelect);
+  }
+  const syncMultiSelect = () => {
+    if (!multiSelect) return;
+    const combo = comboLabel(settings.shortcuts.multiSelect),
+      label = `Multi-select mode${multiSelectActive ? " (on)" : ""}`;
+    multiSelect.setAttribute("aria-pressed", String(multiSelectActive));
+    multiSelect.setAttribute("aria-label", label);
+    multiSelect.title = combo ? `${label} — ${combo}, or Ctrl+click a cell` : `${label} — Ctrl+click a cell`;
+  };
   body.append(digits, colors, actions);
   node.append(header, body, rail);
   container.append(node);
@@ -132,9 +150,14 @@ export function mountKeypad(container: HTMLElement, options: KeypadOptions): Key
       shortcutTitle(redo, "Redo", "redo");
       shortcutTitle(erase, "Erase", "erase");
       if (autofill) shortcutTitle(autofill, "Fill corner notes from row, column and box constraints", "autofill");
+      syncMultiSelect();
     },
     setDisabled(value) {
       disabled = value;
+    },
+    setMultiSelect(active) {
+      multiSelectActive = active;
+      syncMultiSelect();
     },
     destroy() {
       node.remove();

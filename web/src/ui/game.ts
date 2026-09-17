@@ -100,7 +100,12 @@ export async function copyText(text: string): Promise<boolean> {
   }
 }
 
-/** Fullscreen focus mode: real fullscreen where available, CSS focus mode everywhere. */
+/**
+ * Application-wide fullscreen: real browser fullscreen of the whole document
+ * where available, the `focus-mode` class everywhere. Navigating between
+ * screens never changes it; only the user (control, shortcut or the
+ * browser's own exit) does.
+ */
 export function toggleFullscreen(): void {
   const root = document.documentElement;
   if (root.classList.contains("focus-mode")) {
@@ -108,29 +113,25 @@ export function toggleFullscreen(): void {
     if (document.fullscreenElement) void document.exitFullscreen().catch(() => {});
   } else {
     root.classList.add("focus-mode");
-    if (document.fullscreenEnabled) void root.requestFullscreen().catch(() => {});
+    if (document.fullscreenEnabled && !document.fullscreenElement) void root.requestFullscreen().catch(() => {});
   }
   dispatchEvent(new Event("focusmodechange"));
 }
-/** Top-bar toggle that keeps its icon and name in sync with focus mode. */
-export function fullscreenButton(): HTMLButtonElement {
-  const node = button("", () => toggleFullscreen(), "icon-button");
+/** Labeled toggle that keeps its icon and name in sync with focus mode. */
+export function fullscreenButton(className = ""): HTMLButtonElement {
+  const node = button("", () => toggleFullscreen(), className);
   const sync = () => {
-    const on = isFullscreen();
-    node.replaceChildren(icon(on ? "shrink" : "expand"));
-    node.setAttribute("aria-label", on ? "Exit fullscreen" : "Fullscreen");
-    node.title = node.getAttribute("aria-label")!;
-    if (!node.isConnected && node.dataset.mounted) removeEventListener("focusmodechange", sync);
-    if (node.isConnected) node.dataset.mounted = "";
+    const on = isFullscreen(),
+      label = on ? "Exit fullscreen" : "Fullscreen";
+    node.replaceChildren(icon(on ? "shrink" : "expand"), el("span", label));
+    node.setAttribute("aria-label", label);
+    node.title = label;
   };
   addEventListener("focusmodechange", sync);
   sync();
   return node;
 }
 export const isFullscreen = () => document.documentElement.classList.contains("focus-mode");
-export function exitFullscreen(): void {
-  if (isFullscreen()) toggleFullscreen();
-}
 // Escape or the browser UI can leave fullscreen; keep focus mode in sync.
 document.addEventListener("fullscreenchange", () => {
   if (!document.fullscreenElement && isFullscreen()) {
