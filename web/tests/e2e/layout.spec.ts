@@ -68,6 +68,13 @@ test("one layout system fits the board, keypad and Multi-select at every proport
       await page.setViewportSize(size);
       const label = `${size.width}x${size.height}${fullscreen ? " fullscreen" : ""}`;
       await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), label).toBe(true);
+      // Let the grid's column transition finish before measuring.
+      await expect.poll(async () => {
+        const before = await page.locator(".board").boundingBox();
+        await page.waitForTimeout(250);
+        const after = await page.locator(".board").boundingBox();
+        return before!.width === after!.width && before!.y === after!.y;
+      }, label).toBe(true);
       const main = (await page.locator("main").boundingBox())!;
       const board = (await page.locator(".board").boundingBox())!;
       const keypad = (await page.locator(".keypad-panel").boundingBox())!;
