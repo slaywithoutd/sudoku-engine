@@ -102,6 +102,31 @@ test("note warnings, labels, seen cells and completed digits follow their settin
   expect(seven.y).toBeLessThan(one.y);
 });
 
+test("a persistent cell color survives hover and composes with seen-cell/selection highlighting", async ({ page }) => {
+  await playString(page, PUZZLE);
+  await cell(page, 5).click();
+  await page.keyboard.press("v"); // toolColor shortcut
+  await page.keyboard.press("1"); // color 1
+  const background = (i: number) => cell(page, i).evaluate((el) => getComputedStyle(el).backgroundColor);
+  const colored = await background(5);
+  expect(colored).not.toBe("rgba(0, 0, 0, 0)");
+  // The bug this guards against set the cell's own background to
+  // transparent on hover, erasing the color outright; the cell is still
+  // selected here, so hovering it must not change its look at all.
+  await cell(page, 5).hover();
+  await expect.poll(() => background(5)).toBe(colored);
+  // Selecting a different cell in the same row makes cell 5 a "seen" peer
+  // instead of the selection itself. The peer tint blends with the color
+  // (a different shade is expected) but must not erase it: it should stay
+  // visibly distinct from an uncolored peer's background.
+  await cell(page, 6).click();
+  await expect(cell(page, 5)).toHaveClass(/peer/);
+  await expect(cell(page, 4)).toHaveClass(/peer/);
+  const [coloredPeerBg, plainPeerBg] = await Promise.all([background(5), background(4)]);
+  expect(coloredPeerBg).not.toBe("rgba(0, 0, 0, 0)");
+  expect(coloredPeerBg).not.toBe(plainPeerBg);
+});
+
 test("export game, copy puzzle and fullscreen are available from the game chrome", async ({ page, context }) => {
   await context.grantPermissions(["clipboard-read", "clipboard-write"]);
   await playString(page, PUZZLE);
