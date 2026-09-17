@@ -44,9 +44,9 @@ export class AlsIndex extends OwnedIndex<AlsEntry> {
    * retain rccSteps cursors across their work quanta. The callback must charge
    * run work and may interrupt by throwing. False is never cancellation.
    */
-  rcc(a: AlsEntry, b: AlsEntry, symbol: number, charge: (units: number) => void): boolean {
+  rcc(left: AlsEntry, right: AlsEntry, symbol: number, charge: (units: number) => void): boolean {
     if (typeof charge !== "function") throw Error("missing-index-work-charge");
-    for (const event of this.rccSteps(a, b, symbol)) {
+    for (const event of this.rccSteps(left, right, symbol)) {
       if (event.kind === "work") charge(event.units);
       else if (event.kind === "interrupted") throw new IndexInterrupted(event.reason);
       else return event.value;
@@ -62,13 +62,13 @@ export class AlsIndex extends OwnedIndex<AlsEntry> {
    * with itself). Other overlap is preserved in the exact member lists; named
    * consumers must still validate their overlap/effect/table grammar.
    */
-  *rccSteps(a: AlsEntry, b: AlsEntry, symbol: number): Generator<IndexEvent<boolean>> {
+  *rccSteps(left: AlsEntry, right: AlsEntry, symbol: number): Generator<IndexEvent<boolean>> {
     this.source;
-    if (!this.#members.has(a) || !this.#members.has(b)) throw Error("foreign-als-entry");
+    if (!this.#members.has(left) || !this.#members.has(right)) throw Error("foreign-als-entry");
     let scratch: WorkspaceReservation | undefined;
     try {
       scratch = this.workspace.reserve(0, 4096);
-      const value = yield* this.query(a, b, symbol);
+      const value = yield* this.query(left, right, symbol);
       this.workspace.checkpoint();
       scratch.dispose();
       yield { kind: "ready", value };
@@ -86,14 +86,14 @@ export class AlsIndex extends OwnedIndex<AlsEntry> {
     this.source; // A suspended query cannot resume from a disposed parent lease.
   }
   private *query(
-    a: AlsEntry,
-    b: AlsEntry,
+    first: AlsEntry,
+    second: AlsEntry,
     symbol: number,
   ): Generator<{ kind: "work"; units: number }, boolean> {
     const view = this.source;
     yield* this.tick();
-    const left = a.occurrences.find((o) => o.symbol === symbol),
-      right = b.occurrences.find((o) => o.symbol === symbol);
+    const left = first.occurrences.find((occurrence) => occurrence.symbol === symbol),
+      right = second.occurrences.find((occurrence) => occurrence.symbol === symbol);
     if (!left || !right) return false;
     for (const x of left.cells)
       for (const y of right.cells) {
@@ -105,24 +105,24 @@ export class AlsIndex extends OwnedIndex<AlsEntry> {
             yield* this.tick();
             continue;
           }
-          const p = event.fact.proposition;
+          const proposition = event.fact.proposition;
           if (
-            (p.kind !== "all-different" && p.kind !== "relation") ||
-            !p.cells.includes(x) ||
-            !p.cells.includes(y)
+            (proposition.kind !== "all-different" && proposition.kind !== "relation") ||
+            !proposition.cells.includes(x) ||
+            !proposition.cells.includes(y)
           )
             continue;
-          if (p.kind === "all-different") {
+          if (proposition.kind === "all-different") {
             conflict = true;
             break;
           }
           let compatible = false;
-          for (const tuple of p.tuples) {
+          for (const tuple of proposition.tuples) {
             yield* this.tick();
             if (
-              tuple[p.cells.indexOf(x)] === symbol &&
-              tuple[p.cells.indexOf(y)] === symbol &&
-              p.cells.every((c, i) => view.state.domains[c] & symbolMask(tuple[i]))
+              tuple[proposition.cells.indexOf(x)] === symbol &&
+              tuple[proposition.cells.indexOf(y)] === symbol &&
+              proposition.cells.every((cell, i) => view.state.domains[cell] & symbolMask(tuple[i]))
             ) {
               compatible = true;
               break;
@@ -156,26 +156,28 @@ export function* buildAls(
         continue;
       }
       const fact = event.fact,
-        p = fact.proposition;
-      if (p.kind !== "all-different") continue;
-      const available = p.cells.filter((c) => !view.state.values[c] && view.state.domains[c] !== 0);
+        proposition = fact.proposition;
+      if (proposition.kind !== "all-different") continue;
+      const available = proposition.cells.filter(
+        (cell) => !view.state.values[cell] && view.state.domains[cell] !== 0,
+      );
       for (const selection of combinations(available, 5, workspace)) {
         if (selection.kind === "work") {
           yield selection;
           continue;
         }
         const cells = selection.cells;
-        const mask = cells.reduce((mask, c) => mask | view.state.domains[c], 0);
-        const symbols = view.assembly.problem.symbols.filter((s) => mask & symbolMask(s));
+        const mask = cells.reduce((mask, cell) => mask | view.state.domains[cell], 0);
+        const symbols = view.assembly.problem.symbols.filter((symbol) => mask & symbolMask(symbol));
         if (symbols.length !== cells.length + 1) continue;
         reserveRecord(reservation, 2 + 2 * cells.length + symbols.length * (cells.length + 1));
         const entry = freezeRecord({
-          ...evidence(view, [fact.id, ...cells.map((c) => view.state.domainFacts[c])]),
+          ...evidence(view, [fact.id, ...cells.map((cell) => view.state.domainFacts[cell])]),
           cells,
           symbols,
           occurrences: symbols.map((symbol) => ({
             symbol,
-            cells: cells.filter((c) => view.state.domains[c] & symbolMask(symbol)),
+            cells: cells.filter((cell) => view.state.domains[cell] & symbolMask(symbol)),
           })),
           recipe: { kind: "als-domains" as const, source: fact.id },
         });

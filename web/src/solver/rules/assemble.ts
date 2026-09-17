@@ -1,5 +1,6 @@
 import { canonicalJson, canonicalProblem, ProblemInputError } from "../problem";
 import { primitiveRegistry } from "../proof/primitives";
+import { defined, unverified, type Unverified } from "../invariants";
 import type { CellId, ConstraintId, ConstraintInstance, EngineProblem, Json } from "../problem";
 import type {
   AllDifferent,
@@ -72,7 +73,7 @@ function failure(issues: readonly RuleIssue[]): AssemblyResult {
   return Object.freeze({ ok: false, issues: Object.freeze([...issues]) });
 }
 
-function hasRuleMethods(value: RuleModule): boolean {
+function hasRuleMethods(value: object): boolean {
   return [
     "normalize",
     "validate",
@@ -80,7 +81,7 @@ function hasRuleMethods(value: RuleModule): boolean {
     "capabilities",
     "propagate",
     "checkPrimitive",
-  ].every((name) => typeof (value as unknown as Record<string, unknown>)[name] === "function");
+  ].every((name) => typeof (value as Record<string, unknown>)[name] === "function");
 }
 
 /** Resolves rule strategies independently of caller registration order. */
@@ -92,12 +93,13 @@ export class RuleRegistry {
     const entries = new Map<string, RuleModule>();
     const issues: RuleIssue[] = [];
     for (const module of modules) {
+      const claim = unverified(module);
       if (
-        module === null ||
-        typeof module !== "object" ||
-        typeof module.type !== "string" ||
-        !VERSION_ID.test(module.type) ||
-        !hasRuleMethods(module)
+        claim === null ||
+        typeof claim !== "object" ||
+        typeof claim.type !== "string" ||
+        !VERSION_ID.test(claim.type) ||
+        !hasRuleMethods(claim)
       ) {
         issues.push(
           issue("invalid-rule-module", "$registry", "registry contains an incomplete rule module"),
@@ -189,28 +191,36 @@ function isDenseArray(value: unknown): value is readonly unknown[] {
   return Reflect.ownKeys(value).every((key) => {
     if (key === "length") return true;
     if (typeof key !== "string" || !/^(0|[1-9]\d*)$/.test(key)) return false;
-    const descriptor = Object.getOwnPropertyDescriptor(value, key)!;
+    const descriptor = defined(Object.getOwnPropertyDescriptor(value, key), "own-property");
     return Number(key) < value.length && descriptor.enumerable && "value" in descriptor;
   });
 }
 
-function validCells(cells: readonly CellId[], problem: EngineProblem): boolean {
+function validCells(cells: unknown, problem: EngineProblem): boolean {
   return (
     isDenseArray(cells) &&
     cells.length > 0 &&
-    cells.every((cell) => Number.isSafeInteger(cell) && problem.cells.includes(cell)) &&
+    cells.every(
+      (cell) =>
+        typeof cell === "number" && Number.isSafeInteger(cell) && problem.cells.includes(cell),
+    ) &&
     new Set(cells).size === cells.length
   );
 }
 
-function validPremise(premise: FactId, expected: FactId): boolean {
+function validPremise(premise: unknown, expected: FactId): boolean {
   return Number.isSafeInteger(premise) && premise === expected;
+}
+
+function isSymbol(symbol: unknown, problem: EngineProblem): boolean {
+  return typeof symbol === "number" && problem.symbols.includes(symbol);
 }
 
 function capabilityIssue(rule: ConstraintInstance, message: string): RuleIssue {
   return issue("invalid-capability", rule.id, message);
 }
 
+/** Checks each capability list; ids are registered as they are seen so duplicates fail. */
 function validateCapabilities(
   rule: ConstraintInstance,
   problem: EngineProblem,
@@ -218,14 +228,14 @@ function validateCapabilities(
   capabilities: RuleCapabilities,
   usedIds: Set<string>,
 ): readonly RuleIssue[] {
-  const issues: RuleIssue[] = [];
+  const claimed = unverified(capabilities);
   if (
-    capabilities === null ||
-    typeof capabilities !== "object" ||
-    !isDenseArray(capabilities.allDifferent) ||
-    !isDenseArray(capabilities.covers) ||
-    !isDenseArray(capabilities.relations) ||
-    !isDenseArray(capabilities.primitiveIds)
+    claimed === null ||
+    typeof claimed !== "object" ||
+    !isDenseArray(claimed.allDifferent) ||
+    !isDenseArray(claimed.covers) ||
+    !isDenseArray(claimed.relations) ||
+    !isDenseArray(claimed.primitiveIds)
   )
     return [capabilityIssue(rule, "capability result is incomplete")];
 
@@ -234,7 +244,8 @@ function validateCapabilities(
     usedIds.add(id);
     return true;
   };
-  for (const capability of capabilities.allDifferent) {
+  const issues: RuleIssue[] = [];
+  for (const capability of claimed.allDifferent) {
     if (
       !registerId(capability?.id) ||
       !validCells(capability?.cells, problem) ||
@@ -242,50 +253,59 @@ function validateCapabilities(
     )
       issues.push(capabilityIssue(rule, "all-different capability is malformed or duplicated"));
   }
-  for (const capability of capabilities.covers) {
+  for (const capability of claimed.covers) {
     if (
       !registerId(capability?.id) ||
-      !problem.symbols.includes(capability?.symbol) ||
+      !isSymbol(capability?.symbol, problem) ||
       !validCells(capability?.cells, problem) ||
       !validPremise(capability?.premise, expectedPremise)
     )
       issues.push(capabilityIssue(rule, "cover capability is malformed or duplicated"));
   }
-  for (const capability of capabilities.relations) {
-    const tuplesValid =
-      isDenseArray(capability?.tuples) &&
-      capability.tuples.every(
-        (tuple: readonly number[]) =>
-          isDenseArray(tuple) &&
-          tuple.length === capability.cells.length &&
-          tuple.every((symbol) => problem.symbols.includes(symbol)),
-      );
+  for (const capability of claimed.relations) {
     if (
       !registerId(capability?.id) ||
       !validCells(capability?.cells, problem) ||
-      !tuplesValid ||
+      !validTuples(capability, problem) ||
       !validPremise(capability?.premise, expectedPremise)
     )
       issues.push(capabilityIssue(rule, "relation capability is malformed or duplicated"));
   }
-  if (
-    capabilities.primitiveIds.some(
-      (primitive, index) =>
-        typeof primitive !== "string" ||
-        !VERSION_ID.test(primitive) ||
-        capabilities.primitiveIds.indexOf(primitive) !== index,
-    )
-  )
-    issues.push(capabilityIssue(rule, "primitive IDs must be unique versioned identifiers"));
-  else if (capabilities.primitiveIds.some((id) => !primitiveRegistry.has(id)))
-    issues.push(
-      issue(
-        "unsupported-primitive",
-        rule.id,
-        `no checker is registered for primitive ${capabilities.primitiveIds.find((id) => !primitiveRegistry.has(id))}`,
-      ),
-    );
+  issues.push(...primitiveIdIssues(rule, capabilities.primitiveIds));
   return issues;
+}
+
+/** Every tuple is a dense array of problem symbols, one per relation cell. */
+function validTuples(capability: Unverified<Relation>, problem: EngineProblem): boolean {
+  return (
+    isDenseArray(capability?.tuples) &&
+    capability.tuples.every(
+      (tuple) =>
+        isDenseArray(tuple) &&
+        tuple.length === (capability.cells as readonly unknown[]).length &&
+        tuple.every((symbol) => isSymbol(symbol, problem)),
+    )
+  );
+}
+
+function primitiveIdIssues(rule: ConstraintInstance, ids: readonly string[]): RuleIssue[] {
+  const malformed = ids.some(
+    (primitive, index) =>
+      typeof primitive !== "string" ||
+      !VERSION_ID.test(primitive) ||
+      ids.indexOf(primitive) !== index,
+  );
+  if (malformed)
+    return [capabilityIssue(rule, "primitive IDs must be unique versioned identifiers")];
+  const unsupported = ids.find((id) => !primitiveRegistry.has(id));
+  if (unsupported === undefined) return [];
+  return [
+    issue(
+      "unsupported-primitive",
+      rule.id,
+      `no checker is registered for primitive ${unsupported}`,
+    ),
+  ];
 }
 
 function freezeAllDifferent(capability: AllDifferent): AllDifferent {
@@ -323,11 +343,12 @@ export class CapabilityAssembler {
 
   assemble(input: EngineProblem): AssemblyResult {
     if (this.registry.issues.length > 0) return failure(this.registry.issues);
+    const claim = unverified(input);
     if (
-      input === null ||
-      typeof input !== "object" ||
-      !Object.hasOwn(input, "key") ||
-      typeof input.key !== "string"
+      claim === null ||
+      typeof claim !== "object" ||
+      !Object.hasOwn(claim, "key") ||
+      typeof claim.key !== "string"
     )
       return failure([issue("missing-key", "$problem", "engine problem requires a canonical key")]);
     let canonical: EngineProblem;
@@ -338,60 +359,11 @@ export class CapabilityAssembler {
     }
     const normalized = normalizeRules(canonical, this.registry);
     if (!("schema" in normalized)) return normalized;
-
-    const validationIssues: RuleIssue[] = [];
-    for (const rule of normalized.constraints) {
-      const module = this.registry.get(rule.type)!;
-      try {
-        validationIssues.push(...module.validate(normalized, rule));
-      } catch (error) {
-        validationIssues.push(
-          issue(
-            "rule-validation-failed",
-            rule.id,
-            error instanceof Error ? error.message : "rule validation failed",
-          ),
-        );
-      }
-    }
+    const validationIssues = this.#validateRules(normalized);
     if (validationIssues.length > 0) return failure(validationIssues);
-
-    const roots = bootstrapRoots(normalized);
-    const modules: [ConstraintId, RuleModule][] = [];
-    const allDifferent: AllDifferent[] = [];
-    const covers: Cover[] = [];
-    const relations: Relation[] = [];
-    const usedCapabilityIds = new Set<string>();
-    const capabilityIssues: RuleIssue[] = [];
-    for (const rule of normalized.constraints) {
-      const module = this.registry.get(rule.type)!;
-      modules.push([rule.id, module]);
-      try {
-        const capabilities = module.capabilities(rule, { problem: normalized, roots });
-        const issues = validateCapabilities(
-          rule,
-          normalized,
-          roots.get(rule.id)!,
-          capabilities,
-          usedCapabilityIds,
-        );
-        capabilityIssues.push(...issues);
-        if (issues.length === 0) {
-          allDifferent.push(...capabilities.allDifferent.map(freezeAllDifferent));
-          covers.push(...capabilities.covers.map(freezeCover));
-          relations.push(...capabilities.relations.map(freezeRelation));
-        }
-      } catch (error) {
-        capabilityIssues.push(
-          capabilityIssue(
-            rule,
-            error instanceof Error ? error.message : "capability assembly failed",
-          ),
-        );
-      }
-    }
-    if (capabilityIssues.length > 0) return failure(capabilityIssues);
-
+    const collected = this.#collectCapabilities(normalized);
+    if (collected.issues.length > 0) return failure(collected.issues);
+    const { modules, allDifferent, covers, relations } = collected;
     allDifferent.sort((left, right) => compareText(left.id, right.id));
     covers.sort((left, right) => compareText(left.id, right.id));
     relations.sort((left, right) => compareText(left.id, right.id));
@@ -413,6 +385,73 @@ export class CapabilityAssembler {
       }),
     });
   }
+  /** Every rule module validates its own instances; a throwing module is an issue, not a crash. */
+  #validateRules(normalized: EngineProblem): RuleIssue[] {
+    const validationIssues: RuleIssue[] = [];
+    for (const rule of normalized.constraints) {
+      const module = defined(this.registry.get(rule.type), "rule-module");
+      try {
+        validationIssues.push(...module.validate(normalized, rule));
+      } catch (error) {
+        validationIssues.push(
+          issue(
+            "rule-validation-failed",
+            rule.id,
+            error instanceof Error ? error.message : "rule validation failed",
+          ),
+        );
+      }
+    }
+    return validationIssues;
+  }
+  /** Frozen capabilities of every rule, or the issues that reject the assembly. */
+  #collectCapabilities(normalized: EngineProblem): CollectedCapabilities {
+    const roots = bootstrapRoots(normalized);
+    const collected: CollectedCapabilities = {
+      modules: [],
+      allDifferent: [],
+      covers: [],
+      relations: [],
+      issues: [],
+    };
+    const usedCapabilityIds = new Set<string>();
+    for (const rule of normalized.constraints) {
+      const module = defined(this.registry.get(rule.type), "rule-module");
+      collected.modules.push([rule.id, module]);
+      try {
+        const capabilities = module.capabilities(rule, { problem: normalized, roots });
+        const issues = validateCapabilities(
+          rule,
+          normalized,
+          defined(roots.get(rule.id), "rule-root"),
+          capabilities,
+          usedCapabilityIds,
+        );
+        collected.issues.push(...issues);
+        if (issues.length === 0) {
+          collected.allDifferent.push(...capabilities.allDifferent.map(freezeAllDifferent));
+          collected.covers.push(...capabilities.covers.map(freezeCover));
+          collected.relations.push(...capabilities.relations.map(freezeRelation));
+        }
+      } catch (error) {
+        collected.issues.push(
+          capabilityIssue(
+            rule,
+            error instanceof Error ? error.message : "capability assembly failed",
+          ),
+        );
+      }
+    }
+    return collected;
+  }
+}
+
+interface CollectedCapabilities {
+  readonly modules: [ConstraintId, RuleModule][];
+  readonly allDifferent: AllDifferent[];
+  readonly covers: Cover[];
+  readonly relations: Relation[];
+  readonly issues: RuleIssue[];
 }
 
 /** Approved functional entry point over the cohesive registry/assembler objects. */

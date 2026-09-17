@@ -17,16 +17,16 @@ export interface SourceWork {
 }
 const prepared = new WeakMap<ReadView, SourceIndex[]>();
 function key(value: unknown): string {
-  const ordered = (v: unknown): unknown =>
-    Array.isArray(v)
-      ? v.map(ordered)
-      : v && typeof v === "object"
+  const ordered = (node: unknown): unknown =>
+    Array.isArray(node)
+      ? node.map(ordered)
+      : node && typeof node === "object"
         ? Object.fromEntries(
-            Object.keys(v)
+            Object.keys(node)
               .sort()
-              .map((k) => [k, ordered((v as Record<string, unknown>)[k])]),
+              .map((k) => [k, ordered((node as Record<string, unknown>)[k])]),
           )
-        : v;
+        : node;
   return JSON.stringify(ordered(value));
 }
 /** Exact immutable fact identities, in publication order; no deduction authority is issued. */
@@ -39,51 +39,55 @@ export class SourceIndex {
   #maximum = -1;
   #active = true;
   readonly #level: "facts" | "complete";
-  #pair(a: Literal, b: Literal): string {
-    const x = a.cell * 9 + a.symbol - 1,
-      y = b.cell * 9 + b.symbol - 1;
+  #pair(left: Literal, right: Literal): string {
+    const x = left.cell * 9 + left.symbol - 1,
+      y = right.cell * 9 + right.symbol - 1;
     return x < y ? `${x}:${y}` : `${y}:${x}`;
   }
-  conflictSource(a: Literal, b: Literal): Fact | undefined {
+  conflictSource(left: Literal, right: Literal): Fact | undefined {
     this.assertActive();
     if (this.#level !== "complete") throw Error("incomplete-conflict-sources");
-    return this.#conflicts.get(this.#pair(a, b));
+    return this.#conflicts.get(this.#pair(left, right));
   }
-  scopePair(a: number, b: number): Fact | undefined {
+  scopePair(left: number, right: number): Fact | undefined {
     this.assertActive();
     if (this.#level !== "complete") throw Error("incomplete-conflict-sources");
-    return this.#scopePairs.get(a < b ? `${a}:${b}` : `${b}:${a}`);
+    return this.#scopePairs.get(left < right ? `${left}:${right}` : `${right}:${left}`);
   }
   *#incidence(
     fact: Fact,
     workspace: IndexWorkspace,
   ): Generator<{ kind: "work"; units: number }, void, void> {
-    const p = fact.proposition;
-    if (fact.openAssumptions.length || (p.kind !== "all-different" && p.kind !== "relation"))
+    const proposition = fact.proposition;
+    if (
+      fact.openAssumptions.length ||
+      (proposition.kind !== "all-different" && proposition.kind !== "relation")
+    )
       return;
     // Indexed values remain actual source facts. Pair projections use current
     // domains and preserve the first eligible fact in exact publication order.
-    for (let i = 0; i < p.cells.length; i++)
-      for (let j = i + 1; j < p.cells.length; j++) {
+    for (let i = 0; i < proposition.cells.length; i++)
+      for (let j = i + 1; j < proposition.cells.length; j++) {
         workspace.checkpoint();
         yield { kind: "work", units: 1 };
-        const a = p.cells[i],
-          b = p.cells[j],
-          pair = a < b ? `${a}:${b}` : `${b}:${a}`;
-        if (p.kind === "all-different" && !this.#scopePairs.has(pair)) {
+        const left = proposition.cells[i],
+          right = proposition.cells[j],
+          pair = left < right ? `${left}:${right}` : `${right}:${left}`;
+        if (proposition.kind === "all-different" && !this.#scopePairs.has(pair)) {
           this.#lease.grow(1, 128);
           this.#scopePairs.set(pair, fact);
         }
         const allowed = new Set<string>();
         const temporary = workspace.reserve(0, 4096);
         try {
-          if (p.kind === "relation")
-            for (const tuple of p.tuples) {
+          if (proposition.kind === "relation")
+            for (const tuple of proposition.tuples) {
               let live = true;
-              for (let k = 0; k < p.cells.length; k++) {
+              for (let k = 0; k < proposition.cells.length; k++) {
                 workspace.checkpoint();
                 yield { kind: "work", units: 1 };
-                if (!(this.#source.state.domains[p.cells[k]] & symbolMask(tuple[k]))) live = false;
+                if (!(this.#source.state.domains[proposition.cells[k]] & symbolMask(tuple[k])))
+                  live = false;
               }
               if (live) allowed.add(`${tuple[i]}:${tuple[j]}`);
             }
@@ -91,10 +95,11 @@ export class SourceIndex {
             for (const y of this.#source.assembly.problem.symbols) {
               workspace.checkpoint();
               yield { kind: "work", units: 1 };
-              if (p.kind === "all-different" ? x !== y : allowed.has(`${x}:${y}`)) continue;
+              if (proposition.kind === "all-different" ? x !== y : allowed.has(`${x}:${y}`))
+                continue;
               const identity = this.#pair(
-                { cell: a, symbol: x, positive: true },
-                { cell: b, symbol: y, positive: true },
+                { cell: left, symbol: x, positive: true },
+                { cell: right, symbol: y, positive: true },
               );
               if (!this.#conflicts.has(identity)) {
                 this.#lease.grow(1, 128);
@@ -192,12 +197,12 @@ export class SourceIndex {
     );
     const identity = key(encoded.value);
     this.#maximum = Math.max(this.#maximum, fact.id);
-    const p = fact.proposition;
+    const proposition = fact.proposition;
     if (
-      p.kind === "rule" ||
-      (p.kind === "literal" &&
-        p.value.positive &&
-        this.#source.assembly.problem.givens[p.value.cell] === p.value.symbol)
+      proposition.kind === "rule" ||
+      (proposition.kind === "literal" &&
+        proposition.value.positive &&
+        this.#source.assembly.problem.givens[proposition.value.cell] === proposition.value.symbol)
     )
       this.#originalSources.push(fact);
     const list = this.#byProposition.get(identity) ?? [];
@@ -265,13 +270,13 @@ export function matchingFacts(view: ReadView, proposition: Proposition): readonl
   const index = preparedSources(view);
   return index
     ? index.matching(proposition)
-    : [...view.facts.values()].filter((f) => key(f.proposition) === key(proposition));
+    : [...view.facts.values()].filter((fact) => key(fact.proposition) === key(proposition));
 }
 export function sourceFacts(view: ReadView, kind: Proposition["kind"]): readonly Fact[] {
   const index = preparedSources(view);
   return index
     ? index.kind(kind)
-    : [...view.facts.values()].filter((f) => f.proposition.kind === kind);
+    : [...view.facts.values()].filter((fact) => fact.proposition.kind === kind);
 }
 
 /** Ordered source IDs for unique-transform's all-original-rules/clues pack. */
@@ -280,10 +285,11 @@ export function uniqueSourceFacts(view: ReadView): readonly Fact[] {
   return index
     ? index.originalSources()
     : [...view.facts.values()].filter(
-        (f) =>
-          f.proposition.kind === "rule" ||
-          (f.proposition.kind === "literal" &&
-            f.proposition.value.positive &&
-            view.assembly.problem.givens[f.proposition.value.cell] === f.proposition.value.symbol),
+        (fact) =>
+          fact.proposition.kind === "rule" ||
+          (fact.proposition.kind === "literal" &&
+            fact.proposition.value.positive &&
+            view.assembly.problem.givens[fact.proposition.value.cell] ===
+              fact.proposition.value.symbol),
       );
 }

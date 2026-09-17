@@ -1,4 +1,4 @@
-import type { Literal, ReadView } from "../state/types";
+import type { Fact, Literal, Proposition, ReadView } from "../state/types";
 import {
   buildIndex,
   evidence,
@@ -38,10 +38,10 @@ export interface ImplicationEdge extends IndexEntry {
   readonly recipe: ImplicationRecipe;
 }
 const candidate = (cell: number, symbol: number): Literal => ({ cell, symbol, positive: true });
-function pairKey(a: Literal, b: Literal): string {
-  return a.cell < b.cell || (a.cell === b.cell && a.symbol < b.symbol)
-    ? `${a.cell}:${a.symbol}/${b.cell}:${b.symbol}`
-    : `${b.cell}:${b.symbol}/${a.cell}:${a.symbol}`;
+function pairKey(left: Literal, right: Literal): string {
+  return left.cell < right.cell || (left.cell === right.cell && left.symbol < right.symbol)
+    ? `${left.cell}:${left.symbol}/${right.cell}:${right.symbol}`
+    : `${right.cell}:${right.symbol}/${left.cell}:${left.symbol}`;
 }
 
 export class ImplicationIndex extends OwnedIndex<CoverEntry | ImplicationEdge> {
@@ -73,18 +73,18 @@ export class ImplicationIndex extends OwnedIndex<CoverEntry | ImplicationEdge> {
     return this.#edges;
   }
   /** Strong means an exhaustive positive pair; weak means a negative pair. */
-  strong(a: Literal, b: Literal): boolean {
-    return this.has("strong", a, b);
+  strong(left: Literal, right: Literal): boolean {
+    return this.has("strong", left, right);
   }
-  weak(a: Literal, b: Literal): boolean {
-    return this.has("weak", a, b);
+  weak(left: Literal, right: Literal): boolean {
+    return this.has("weak", left, right);
   }
-  private has(kind: "weak" | "strong", a: Literal, b: Literal): boolean {
+  private has(kind: "weak" | "strong", left: Literal, right: Literal): boolean {
     this.source;
     return (
-      a.positive === true &&
-      b.positive === true &&
-      (kind === "weak" ? this.#weak : this.#strong).has(pairKey(a, b))
+      left.positive === true &&
+      right.positive === true &&
+      (kind === "weak" ? this.#weak : this.#strong).has(pairKey(left, right))
     );
   }
   override dispose(): void {
@@ -102,117 +102,163 @@ export function* buildImplications(
   workspace: IndexWorkspace,
 ): Generator<IndexEvent<ImplicationIndex>> {
   yield* buildIndex(view, workspace, function* (reservation: WorkspaceReservation) {
-    const entries: (CoverEntry | ImplicationEdge)[] = [];
-    const covers: CoverEntry[] = [],
-      edges: ImplicationEdge[] = [],
-      weak = new Set<string>(),
-      strong = new Set<string>();
-    const symbols = (cell: number) =>
-      view.assembly.problem.symbols.filter((s) => view.state.domains[cell] & symbolMask(s));
-    const edge = (
-      kind: "weak" | "strong",
-      a: Literal,
-      b: Literal,
-      premises: number[],
-      recipe: ImplicationRecipe,
-    ) => {
-      reserveRecord(reservation, 5 + premises.length);
-      const entry = freezeRecord({
-        ...evidence(view, premises),
-        kind,
-        literals: [a, b] as [Literal, Literal],
-        recipe,
-      });
-      entries.push(entry);
-      edges.push(entry);
-      (kind === "weak" ? weak : strong).add(pairKey(a, b));
-    };
-    const cover = (literals: Literal[], premises: number[], recipe: ImplicationRecipe) => {
-      reserveRecord(reservation, 1 + literals.length + premises.length);
-      const entry = freezeRecord({
-        ...evidence(view, premises),
-        kind: "cover" as const,
-        literals,
-        recipe,
-      });
-      entries.push(entry);
-      covers.push(entry);
-      if (literals.length === 2) edge("strong", literals[0], literals[1], premises, recipe);
-    };
-    for (const cell of view.assembly.problem.cells) {
-      yield* work(workspace);
-      const values = symbols(cell),
-        source = view.state.domainFacts[cell];
-      cover(
-        values.map((s) => candidate(cell, s)),
-        [source],
-        { kind: "cell-cover", source },
-      );
-      for (let i = 0; i < values.length; i++)
-        for (let j = i + 1; j < values.length; j++) {
-          yield* work(workspace);
-          edge("weak", candidate(cell, values[i]), candidate(cell, values[j]), [source], {
-            kind: "cell-conflict",
-            source,
-          });
-        }
-    }
+    const collector = new ImplicationCollector(view, workspace, reservation);
+    for (const cell of view.assembly.problem.cells) yield* collector.cellRecords(cell);
     for (const event of provedSources(view, workspace)) {
       if (event.kind === "work") {
         yield event;
         continue;
       }
-      const fact = event.fact,
-        p = fact.proposition;
-      if (p.kind === "cover") {
-        yield* work(workspace);
-        cover(
-          p.cells
-            .filter((c) => view.state.domains[c] & symbolMask(p.symbol))
-            .map((c) => candidate(c, p.symbol)),
-          [fact.id, ...p.cells.map((c) => view.state.domainFacts[c])],
-          { kind: "house-cover", source: fact.id },
-        );
+      yield* collector.sourceRecords(event.fact);
+    }
+    return collector.finish();
+  });
+}
+
+/** Accumulates cover and edge records in publication order under one reservation. */
+class ImplicationCollector {
+  readonly #entries: (CoverEntry | ImplicationEdge)[] = [];
+  readonly #covers: CoverEntry[] = [];
+  readonly #edges: ImplicationEdge[] = [];
+  readonly #weak = new Set<string>();
+  readonly #strong = new Set<string>();
+  constructor(
+    readonly view: ReadView,
+    readonly workspace: IndexWorkspace,
+    readonly reservation: WorkspaceReservation,
+  ) {}
+  /** Symbols still open in the cell. */
+  symbols(cell: number): number[] {
+    return this.view.assembly.problem.symbols.filter(
+      (symbol) => this.view.state.domains[cell] & symbolMask(symbol),
+    );
+  }
+  edge(
+    kind: "weak" | "strong",
+    from: Literal,
+    to: Literal,
+    premises: number[],
+    recipe: ImplicationRecipe,
+  ): void {
+    reserveRecord(this.reservation, 5 + premises.length);
+    const entry = freezeRecord({
+      ...evidence(this.view, premises),
+      kind,
+      literals: [from, to] as [Literal, Literal],
+      recipe,
+    });
+    this.#entries.push(entry);
+    this.#edges.push(entry);
+    (kind === "weak" ? this.#weak : this.#strong).add(pairKey(from, to));
+  }
+  cover(literals: Literal[], premises: number[], recipe: ImplicationRecipe): void {
+    reserveRecord(this.reservation, 1 + literals.length + premises.length);
+    const entry = freezeRecord({
+      ...evidence(this.view, premises),
+      kind: "cover" as const,
+      literals,
+      recipe,
+    });
+    this.#entries.push(entry);
+    this.#covers.push(entry);
+    if (literals.length === 2) this.edge("strong", literals[0], literals[1], premises, recipe);
+  }
+  /** The cell's own cover and the weak links between its candidates. */
+  *cellRecords(cell: number): Generator<{ kind: "work"; units: number }> {
+    yield* work(this.workspace);
+    const values = this.symbols(cell),
+      source = this.view.state.domainFacts[cell];
+    this.cover(
+      values.map((symbol) => candidate(cell, symbol)),
+      [source],
+      { kind: "cell-cover", source },
+    );
+    for (let i = 0; i < values.length; i++)
+      for (let j = i + 1; j < values.length; j++) {
+        yield* work(this.workspace);
+        this.edge("weak", candidate(cell, values[i]), candidate(cell, values[j]), [source], {
+          kind: "cell-conflict",
+          source,
+        });
       }
-      if (p.kind !== "all-different" && p.kind !== "relation") continue;
-      const cells = [...p.cells].sort((a, b) => a - b);
-      for (let i = 0; i < cells.length; i++)
-        for (let j = i + 1; j < cells.length; j++) {
-          yield* work(workspace);
-          for (const a of symbols(cells[i]))
-            for (const b of symbols(cells[j])) {
-              yield* work(workspace);
-              if (p.kind === "all-different") {
-                if (a === b)
-                  edge("weak", candidate(cells[i], a), candidate(cells[j], b), [fact.id], {
+  }
+  /** House covers, then scope or relation conflicts for every cell pair of the source. */
+  *sourceRecords(fact: Fact): Generator<{ kind: "work"; units: number }> {
+    const view = this.view,
+      proposition = fact.proposition;
+    if (proposition.kind === "cover") {
+      yield* work(this.workspace);
+      this.cover(
+        proposition.cells
+          .filter((cell) => view.state.domains[cell] & symbolMask(proposition.symbol))
+          .map((cell) => candidate(cell, proposition.symbol)),
+        [fact.id, ...proposition.cells.map((cell) => view.state.domainFacts[cell])],
+        { kind: "house-cover", source: fact.id },
+      );
+    }
+    if (proposition.kind !== "all-different" && proposition.kind !== "relation") return;
+    const cells = [...proposition.cells].sort((left, right) => left - right);
+    for (let i = 0; i < cells.length; i++)
+      for (let j = i + 1; j < cells.length; j++) {
+        yield* work(this.workspace);
+        for (const left of this.symbols(cells[i]))
+          for (const right of this.symbols(cells[j])) {
+            yield* work(this.workspace);
+            if (proposition.kind === "all-different") {
+              if (left === right)
+                this.edge(
+                  "weak",
+                  candidate(cells[i], left),
+                  candidate(cells[j], right),
+                  [fact.id],
+                  {
                     kind: "scope-conflict",
                     source: fact.id,
-                  });
-              } else {
-                let compatible = false;
-                for (const tuple of p.tuples) {
-                  yield* work(workspace);
-                  if (
-                    tuple[p.cells.indexOf(cells[i])] === a &&
-                    tuple[p.cells.indexOf(cells[j])] === b &&
-                    p.cells.every((c, k) => view.state.domains[c] & symbolMask(tuple[k]))
-                  ) {
-                    compatible = true;
-                    break;
-                  }
-                }
-                if (!compatible)
-                  edge(
-                    "weak",
-                    candidate(cells[i], a),
-                    candidate(cells[j], b),
-                    [fact.id, ...p.cells.map((c) => view.state.domainFacts[c])],
-                    { kind: "relation-conflict", source: fact.id },
-                  );
-              }
-            }
-        }
+                  },
+                );
+            } else
+              yield* this.relationConflict(fact, proposition, [cells[i], left], [cells[j], right]);
+          }
+      }
+  }
+  /** A weak link when no live tuple of the relation holds both candidates. */
+  *relationConflict(
+    fact: Fact,
+    relation: Extract<Proposition, { kind: "relation" }>,
+    [firstCell, firstSymbol]: readonly [number, number],
+    [secondCell, secondSymbol]: readonly [number, number],
+  ): Generator<{ kind: "work"; units: number }> {
+    const view = this.view;
+    let compatible = false;
+    for (const tuple of relation.tuples) {
+      yield* work(this.workspace);
+      if (
+        tuple[relation.cells.indexOf(firstCell)] === firstSymbol &&
+        tuple[relation.cells.indexOf(secondCell)] === secondSymbol &&
+        relation.cells.every((cell, k) => view.state.domains[cell] & symbolMask(tuple[k]))
+      ) {
+        compatible = true;
+        break;
+      }
     }
-    return new ImplicationIndex(view, entries, reservation, covers, edges, weak, strong);
-  });
+    if (!compatible)
+      this.edge(
+        "weak",
+        candidate(firstCell, firstSymbol),
+        candidate(secondCell, secondSymbol),
+        [fact.id, ...relation.cells.map((cell) => view.state.domainFacts[cell])],
+        { kind: "relation-conflict", source: fact.id },
+      );
+  }
+  finish(): ImplicationIndex {
+    return new ImplicationIndex(
+      this.view,
+      this.#entries,
+      this.reservation,
+      this.#covers,
+      this.#edges,
+      this.#weak,
+      this.#strong,
+    );
+  }
 }

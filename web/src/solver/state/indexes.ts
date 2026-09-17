@@ -49,7 +49,7 @@ export class CandidateIndexes {
     const affected = changed && new Set(changed.flatMap((cell) => this.#incidence[cell].covers));
     this.#supports = new ImmutableMap(
       [...assembly.covers]
-        .sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0))
+        .sort((left, right) => (left.id < right.id ? -1 : left.id > right.id ? 1 : 0))
         .map((cover) => {
           const old = previous && previous.#supports.get(cover.id);
           const cells =
@@ -58,7 +58,7 @@ export class CandidateIndexes {
               : Object.freeze(
                   cover.cells
                     .filter((cell) => (state.domains[cell] & symbolMask(cover.symbol)) !== 0)
-                    .sort((a, b) => a - b),
+                    .sort((left, right) => left - right),
                 );
           return [cover.id, cells] as const;
         }),

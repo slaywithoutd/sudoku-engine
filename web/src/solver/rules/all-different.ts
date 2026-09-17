@@ -112,13 +112,13 @@ export class AllDifferentRule implements RuleModule {
         if (seen.has(`${cell}:${symbol}`)) continue;
         seen.add(`${cell}:${symbol}`);
         const fact = [...view.facts.values()].find(
-          (f) =>
-            f.proposition.kind === "literal" &&
-            f.proposition.value.positive &&
-            f.proposition.value.cell === source &&
-            f.proposition.value.symbol === symbol &&
-            !f.conditional &&
-            !f.openAssumptions.length,
+          (candidate) =>
+            candidate.proposition.kind === "literal" &&
+            candidate.proposition.value.positive &&
+            candidate.proposition.value.cell === source &&
+            candidate.proposition.value.symbol === symbol &&
+            !candidate.conditional &&
+            !candidate.openAssumptions.length,
         );
         if (!fact) throw Error("missing-value-evidence");
         builder.peer(fact.root, source, cell, symbol, rule.cells);

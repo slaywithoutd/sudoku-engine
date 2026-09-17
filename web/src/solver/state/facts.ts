@@ -1,9 +1,11 @@
 import { canonicalProblem } from "../problem";
-import type { BranchId } from "../problem";
+import type { BranchId, EngineProblem } from "../problem";
+import type { StateKey } from "../snapshot";
 import type { Assembly, FactId, NodeId } from "../rules/types";
 import type { CheckContext, ProofNode } from "../proof/types";
 import { assertM2RootAssemblyBounds, primitiveRegistry, requireProof } from "../proof/primitives";
 import type { Fact, Proposition } from "./types";
+import { defined } from "../invariants";
 
 /** Encapsulation matters: freezing a Map alone does not prevent set/delete. */
 export class ImmutableMap<K, V> implements ReadonlyMap<K, V> {
@@ -81,71 +83,15 @@ export function createRoots(
     "invalid-root-state",
   );
   const state = Object.freeze({ problemKey: problem.key, branch, revision: 0 });
-  const facts = new Map<FactId, Fact>();
-  const nodes = new Map<NodeId, ProofNode>();
-  const context: CheckContext = {
-    view: {
-      assembly,
-      state: { key: state, values: problem.givens, domains: [], domainFacts: [] },
-      facts,
-      supports: () => [],
-    },
-    retained: nodes,
-    policy: "unconditional",
-    uniqueEvidenceId: null,
-    // Root primitives do not spend/check budgets themselves. The generator
-    // charges every retained initialization node before accepting a proposal.
-    limits: {
-      timeMs: 0,
-      workUnits: 0,
-      exactNodes: 0,
-      stepNodes: 0,
-      runNodes: 0,
-      proofBytes: 0,
-      stepBytes: 0,
-      batchBytes: 0,
-      inFlightBatches: 0,
-      workspaceBytes: 0,
-    },
-  };
-  const add = (
-    rule: string,
-    conclusion: Proposition,
-    premises: readonly number[] = [],
-    parameters = {},
-  ) => {
-    const node: ProofNode = Object.freeze({
-      id: facts.size,
-      rule,
-      conclusion,
-      premises: Object.freeze([...premises]),
-      parameters: Object.freeze(parameters),
-      scope: Object.freeze([]),
-    });
-    const checked = primitiveRegistry.check(node, context);
-    rootPremises.set(node, Object.freeze(node.premises.map((id) => nodes.get(id)!)));
-    const fact: Fact = Object.freeze({
-      id: node.id,
-      root: node.id,
-      state,
-      proposition: checked.conclusion,
-      openAssumptions: checked.openAssumptions,
-      conditional: checked.conditional,
-      rules: checked.rules,
-    });
-    nodes.set(node.id, node);
-    facts.set(fact.id, fact);
-    factNodes.set(fact, node);
-    originalNodes.set(node, fact);
-  };
+  const roots = new RootBuilder(assembly, problem, state);
   for (const cell of problem.cells)
-    add(
+    roots.add(
       "domain-axiom@1",
       Object.freeze({ kind: "domain", cell, mask: 2 ** problem.symbols.length - 1 }),
     );
   for (const cell of problem.cells)
     if (problem.givens[cell] !== 0)
-      add(
+      roots.add(
         "given@1",
         Object.freeze({
           kind: "literal",
@@ -154,70 +100,154 @@ export function createRoots(
       );
   const ruleHandles = new Map<string, number>();
   for (const rule of problem.constraints) {
-    ruleHandles.set(rule.id, facts.size);
-    add("rule-instance@1", Object.freeze({ kind: "rule", constraintId: rule.id }));
+    ruleHandles.set(rule.id, roots.size);
+    roots.add("rule-instance@1", Object.freeze({ kind: "rule", constraintId: rule.id }));
   }
-  const constraintFor = (premise: number) => {
-    const node = nodes.get(premise);
-    requireProof(node?.conclusion.kind === "rule", "invalid-capability-premise");
-    requireProof(
-      ruleHandles.get(node.conclusion.constraintId) === premise,
-      "invalid-capability-premise",
-    );
-    return node.conclusion.constraintId;
-  };
-  const canonicalCapabilities = <T extends { id: string }>(capabilities: readonly T[]): T[] => {
-    requireProof(
-      new Set(capabilities.map((capability) => capability.id)).size === capabilities.length,
-      "duplicate-capability-id",
-    );
-    return [...capabilities].sort((left, right) =>
-      left.id < right.id ? -1 : left.id > right.id ? 1 : 0,
-    );
-  };
-  for (const capability of canonicalCapabilities(assembly.allDifferent)) {
-    const constraintId = constraintFor(capability.premise);
-    requireProof(capability.id === constraintId, "invalid-capability-id");
-    add(
-      "all-different@1",
-      Object.freeze({ kind: "all-different", cells: Object.freeze([...capability.cells]) }),
-      [capability.premise],
-      { constraintId },
-    );
+  roots.addCapabilities(assembly, ruleHandles);
+  return roots.finish();
+}
+
+/** Root primitives do not spend/check budgets themselves. The generator
+ * charges every retained initialization node before accepting a proposal. */
+const ROOT_LIMITS = Object.freeze({
+  timeMs: 0,
+  workUnits: 0,
+  exactNodes: 0,
+  stepNodes: 0,
+  runNodes: 0,
+  proofBytes: 0,
+  stepBytes: 0,
+  batchBytes: 0,
+  inFlightBatches: 0,
+  workspaceBytes: 0,
+});
+
+/** Checks and registers each root node in id order; ids are the running fact count. */
+class RootBuilder {
+  readonly #facts = new Map<FactId, Fact>();
+  readonly #nodes = new Map<NodeId, ProofNode>();
+  readonly #context: CheckContext;
+  constructor(
+    assembly: Assembly,
+    problem: EngineProblem,
+    readonly state: StateKey,
+  ) {
+    this.#context = {
+      view: {
+        assembly,
+        state: { key: state, values: problem.givens, domains: [], domainFacts: [] },
+        facts: this.#facts,
+        supports: () => [],
+      },
+      retained: this.#nodes,
+      policy: "unconditional",
+      uniqueEvidenceId: null,
+      limits: ROOT_LIMITS,
+    };
   }
-  for (const capability of canonicalCapabilities(assembly.covers)) {
-    const constraintId = constraintFor(capability.premise);
-    requireProof(
-      capability.id === `${constraintId}:symbol:${capability.symbol}`,
-      "invalid-capability-id",
-    );
-    add(
-      "cover@1",
-      Object.freeze({
-        kind: "cover",
-        symbol: capability.symbol,
-        cells: Object.freeze([...capability.cells]),
-      }),
-      [capability.premise],
-      { constraintId },
-    );
+  get size(): number {
+    return this.#facts.size;
   }
-  for (const capability of canonicalCapabilities(assembly.relations)) {
-    const constraintId = constraintFor(capability.premise);
-    requireProof(capability.id === `${constraintId}:relation`, "invalid-capability-id");
-    add(
-      "relation@1",
-      Object.freeze({
-        kind: "relation",
-        cells: Object.freeze([...capability.cells]),
-        tuples: Object.freeze(capability.tuples.map((tuple) => Object.freeze([...tuple]))),
-      }),
-      [capability.premise],
-      { constraintId },
+  add(
+    rule: string,
+    conclusion: Proposition,
+    premises: readonly number[] = [],
+    parameters = {},
+  ): void {
+    const node: ProofNode = Object.freeze({
+      id: this.#facts.size,
+      rule,
+      conclusion,
+      premises: Object.freeze([...premises]),
+      parameters: Object.freeze(parameters),
+      scope: Object.freeze([]),
+    });
+    const checked = primitiveRegistry.check(node, this.#context);
+    rootPremises.set(
+      node,
+      Object.freeze(node.premises.map((id) => defined(this.#nodes.get(id), "node"))),
     );
+    const fact: Fact = Object.freeze({
+      id: node.id,
+      root: node.id,
+      state: this.state,
+      proposition: checked.conclusion,
+      openAssumptions: checked.openAssumptions,
+      conditional: checked.conditional,
+      rules: checked.rules,
+    });
+    this.#nodes.set(node.id, node);
+    this.#facts.set(fact.id, fact);
+    factNodes.set(fact, node);
+    originalNodes.set(node, fact);
   }
-  for (const node of nodes.values()) rootCounts.set(node, facts.size);
-  return new ImmutableMap(facts);
+  /** Capabilities follow their rule premise and are added in canonical id order. */
+  addCapabilities(assembly: Assembly, ruleHandles: ReadonlyMap<string, number>): void {
+    const constraintFor = (premise: number) => {
+      const node = this.#nodes.get(premise);
+      requireProof(node?.conclusion.kind === "rule", "invalid-capability-premise");
+      requireProof(
+        ruleHandles.get(node.conclusion.constraintId) === premise,
+        "invalid-capability-premise",
+      );
+      return node.conclusion.constraintId;
+    };
+    for (const capability of canonicalCapabilities(assembly.allDifferent)) {
+      const constraintId = constraintFor(capability.premise);
+      requireProof(capability.id === constraintId, "invalid-capability-id");
+      this.add(
+        "all-different@1",
+        Object.freeze({ kind: "all-different", cells: Object.freeze([...capability.cells]) }),
+        [capability.premise],
+        { constraintId },
+      );
+    }
+    for (const capability of canonicalCapabilities(assembly.covers)) {
+      const constraintId = constraintFor(capability.premise);
+      requireProof(
+        capability.id === `${constraintId}:symbol:${capability.symbol}`,
+        "invalid-capability-id",
+      );
+      this.add(
+        "cover@1",
+        Object.freeze({
+          kind: "cover",
+          symbol: capability.symbol,
+          cells: Object.freeze([...capability.cells]),
+        }),
+        [capability.premise],
+        { constraintId },
+      );
+    }
+    for (const capability of canonicalCapabilities(assembly.relations)) {
+      const constraintId = constraintFor(capability.premise);
+      requireProof(capability.id === `${constraintId}:relation`, "invalid-capability-id");
+      this.add(
+        "relation@1",
+        Object.freeze({
+          kind: "relation",
+          cells: Object.freeze([...capability.cells]),
+          tuples: Object.freeze(capability.tuples.map((tuple) => Object.freeze([...tuple]))),
+        }),
+        [capability.premise],
+        { constraintId },
+      );
+    }
+  }
+  finish(): ReadonlyMap<FactId, Fact> {
+    for (const node of this.#nodes.values()) rootCounts.set(node, this.#facts.size);
+    return new ImmutableMap(this.#facts);
+  }
+}
+
+function canonicalCapabilities<T extends { id: string }>(capabilities: readonly T[]): T[] {
+  requireProof(
+    new Set(capabilities.map((capability) => capability.id)).size === capabilities.length,
+    "duplicate-capability-id",
+  );
+  return [...capabilities].sort((left, right) =>
+    left.id < right.id ? -1 : left.id > right.id ? 1 : 0,
+  );
 }
 
 /** Confined branch publication; implemented beside the private candidate owner. */

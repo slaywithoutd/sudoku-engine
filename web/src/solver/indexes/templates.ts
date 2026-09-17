@@ -132,8 +132,8 @@ export function* buildTemplates(
         // A placed occurrence in this row must be selected even if callers
         // have not yet run its peer exclusions.
         let anotherAnchor = false;
-        for (let c = row * 9; c < row * 9 + 9; c++) {
-          if (view.state.values[c] === symbol && c !== cell) anotherAnchor = true;
+        for (let other = row * 9; other < row * 9 + 9; other++) {
+          if (view.state.values[other] === symbol && other !== cell) anotherAnchor = true;
         }
         if (!anotherAnchor)
           yield* extend(row + 1, columns | (1 << column), boxes | (1 << box), code * 9 + column);

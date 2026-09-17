@@ -42,11 +42,13 @@ export function* buildGroups(
         continue;
       }
       const fact = event.fact,
-        p = fact.proposition;
-      if (p.kind !== "all-different") continue;
+        proposition = fact.proposition;
+      if (proposition.kind !== "all-different") continue;
       for (const symbol of view.assembly.problem.symbols) {
         yield* work(workspace);
-        const available = p.cells.filter((c) => view.state.domains[c] & symbolMask(symbol));
+        const available = proposition.cells.filter(
+          (cell) => view.state.domains[cell] & symbolMask(symbol),
+        );
         for (const selection of combinations(available, 3, workspace)) {
           if (selection.kind === "work") {
             yield selection;
@@ -56,7 +58,7 @@ export function* buildGroups(
           reserveRecord(reservation, 1 + 3 * cells.length);
           entries.push(
             freezeRecord({
-              ...evidence(view, [fact.id, ...cells.map((c) => view.state.domainFacts[c])]),
+              ...evidence(view, [fact.id, ...cells.map((cell) => view.state.domainFacts[cell])]),
               symbol,
               cells,
               members: cells.map((cell) => ({ cell, symbol, positive: true })),

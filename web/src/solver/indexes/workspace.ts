@@ -3,6 +3,7 @@ import type { FactId } from "../rules/types";
 import type { Fact, ReadView } from "../state/types";
 import type { StateKey } from "../snapshot";
 import type { Watch } from "../state/events";
+import { defined } from "../invariants";
 
 export type IndexInterruption = "cancelled" | "workspace-entry-limit" | "workspace-byte-limit";
 export type IndexEvent<T> =
@@ -95,7 +96,7 @@ export interface IndexEntry {
 }
 const watches: readonly Watch[] = Object.freeze([Object.freeze({ kind: "all" as const })]);
 export function evidence(view: ReadView, premises: readonly FactId[]): IndexEntry {
-  const premiseFacts = Object.freeze(premises.map((id) => view.facts.get(id)!));
+  const premiseFacts = Object.freeze(premises.map((id) => defined(view.facts.get(id), "fact")));
   return {
     state: view.state.key,
     premises: Object.freeze([...premises]),
