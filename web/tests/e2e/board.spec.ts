@@ -164,3 +164,13 @@ test("keypad collapses to a small expand arrow next to the board and defaults to
   const seven = (await page.getByRole("button", { name: "Number 7", exact: true }).boundingBox())!;
   expect(one.y).toBeLessThan(seven.y);
 });
+
+test("the collapsed keypad rail is never clipped by its container", async ({ page }) => {
+  await page.getByRole("button", { name: "Collapse keypad", exact: true }).click();
+  // Let the .game grid's column-width transition settle before measuring.
+  await page.waitForTimeout(300);
+  const rail = page.getByRole("button", { name: "Show keypad", exact: true });
+  const railBox = (await rail.boundingBox())!;
+  const sideBox = (await page.locator(".game-side").boundingBox())!;
+  expect(railBox.x).toBeGreaterThanOrEqual(sideBox.x - 0.5);
+  expect(railBox.x + railBox.width).toBeLessThanOrEqual(sideBox.x + sideBox.width + 0.5);
