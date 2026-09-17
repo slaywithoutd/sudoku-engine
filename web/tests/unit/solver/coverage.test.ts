@@ -6,7 +6,7 @@ import { getTechniques, assembleTechniqueJobs } from "../../../src/solver/techni
 import { fixtureCase, fixtureView } from "../../solver/acceptance";
 
 test("preserves exact UTF8 matrix bounds for every catalogue row", () => {
-  const source=readFileSync(new URL("../../../../docs/superpowers/specs/2026-09-12-m2-technique-coverage.md",import.meta.url),"utf8");
+  const source=readFileSync(new URL("../../../../docs/history/superpowers/specs/2026-09-12-m2-technique-coverage.md",import.meta.url),"utf8");
   const rows=source.split(/\r?\n/).filter(line=>/^\| [CU]\d\d/.test(line));
   expect(rows).toHaveLength(38);
   for(const line of rows){
