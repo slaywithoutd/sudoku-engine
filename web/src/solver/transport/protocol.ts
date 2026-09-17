@@ -41,30 +41,31 @@ function object(value: unknown): Record<string, unknown> {
   return value as Record<string, unknown>;
 }
 function validKey(value: unknown): value is RunKey {
-  const v = object(value);
+  const item = object(value);
   return (
-    runFields.every((field) => Object.hasOwn(v, field)) &&
-    typeof v.requestId === "string" &&
-    typeof v.snapshotId === "string" &&
-    typeof v.problemKey === "string" &&
-    typeof v.optionsKey === "string" &&
-    Number.isSafeInteger(v.inputRevision) &&
-    (v.operation === "primary" || v.operation === "conditional") &&
-    (v.mode === "explain" || v.mode === "analyze")
+    runFields.every((field) => Object.hasOwn(item, field)) &&
+    typeof item.requestId === "string" &&
+    typeof item.snapshotId === "string" &&
+    typeof item.problemKey === "string" &&
+    typeof item.optionsKey === "string" &&
+    Number.isSafeInteger(item.inputRevision) &&
+    (item.operation === "primary" || item.operation === "conditional") &&
+    (item.mode === "explain" || item.mode === "analyze")
   );
 }
 export function decodeMessage(value: unknown): WorkerMessage {
-  const v = object(value);
+  const item = object(value);
   if (
-    v.protocol !== 2 ||
-    typeof v.seq !== "number" ||
-    !Number.isSafeInteger(v.seq) ||
-    v.seq < 1 ||
-    typeof v.type !== "string" ||
-    !validKey(v.key)
+    item.protocol !== 2 ||
+    typeof item.seq !== "number" ||
+    !Number.isSafeInteger(item.seq) ||
+    item.seq < 1 ||
+    typeof item.type !== "string" ||
+    !validKey(item.key)
   )
     throw Error("protocol-envelope");
-  if (v.type === "proof-chunk" && !(v.bytes instanceof Uint8Array)) throw Error("protocol-chunk");
-  return v as WorkerMessage;
+  if (item.type === "proof-chunk" && !(item.bytes instanceof Uint8Array))
+    throw Error("protocol-chunk");
+  return item as WorkerMessage;
 }
 export type { Limits };

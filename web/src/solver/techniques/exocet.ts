@@ -283,7 +283,9 @@ export class ExocetSearch implements SpecializedStrategy {
                       if (!chosen)
                         for (const pair of choose(scopes, 2)) {
                           yield specializedWork;
-                          if (occurrences.every((cell) => pair.some((s) => s.includes(cell)))) {
+                          if (
+                            occurrences.every((cell) => pair.some((digit) => digit.includes(cell)))
+                          ) {
                             chosen = pair;
                             break;
                           }
@@ -291,7 +293,7 @@ export class ExocetSearch implements SpecializedStrategy {
                       if (!chosen) break;
                       covers.push({
                         symbol,
-                        houses: chosen.map((s) => houses.id(s)),
+                        houses: chosen.map((digit) => houses.id(digit)),
                         occurrences,
                         assignedOccurrences,
                       });

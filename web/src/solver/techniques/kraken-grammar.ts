@@ -75,11 +75,11 @@ export function checkKrakenPattern(
       }),
       "kraken-fin-result",
     );
-    const d = lineage.node(certificate.fins[i].domain);
+    const step = lineage.node(certificate.fins[i].domain);
     requireProof(
-      d.rule === "domain-restrict@1" &&
-        sameValue(d.scope, scope) &&
-        sameValue(d.premises, [view.state.domainFacts[fin.fin], certificate.fins[i].path.end]),
+      step.rule === "domain-restrict@1" &&
+        sameValue(step.scope, scope) &&
+        sameValue(step.premises, [view.state.domainFacts[fin.fin], certificate.fins[i].path.end]),
       "kraken-fin-domain",
     );
   }

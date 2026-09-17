@@ -27,17 +27,17 @@ export interface TridagonPlan {
  * Cartesian combination; the positive guardians remain an OR, never an XOR. */
 export function* compileTridagon(
   view: ReadView,
-  p: TridagonPlan,
+  shape: TridagonPlan,
   lease?: WorkspaceReservation,
 ): Generator<SpecializedWork, DeductionProposal | null> {
   const proof = new SpecializedProof(view, lease),
     permutations: number[][][] = [],
     rejections: number[][] = [];
-  for (const group of p.triples) {
+  for (const group of shape.triples) {
     const rows: number[][] = [];
     for (const row of product(
       group.map((cell) =>
-        p.coreSymbols.filter((symbol) => view.state.domains[cell] & bitOf(symbol)),
+        shape.coreSymbols.filter((symbol) => view.state.domains[cell] & bitOf(symbol)),
       ),
     )) {
       yield specializedWork;
@@ -46,7 +46,7 @@ export function* compileTridagon(
     if (!rows.length) return null;
     permutations.push(rows);
   }
-  const all = p.triples.flat(),
+  const all = shape.triples.flat(),
     indexes = permutations.map((rows) => rows.map((_, i) => i));
   for (const selected of product(indexes)) {
     yield specializedWork;
@@ -63,7 +63,7 @@ export function* compileTridagon(
     lease?.grow(0, 32);
   }
   const locals: LocalRelation[] = [];
-  for (const triple of p.triples) locals.push(yield* proof.local(triple, [triple]));
+  for (const triple of shape.triples) locals.push(yield* proof.local(triple, [triple]));
   let table = locals[0];
   const joins: number[] = [];
   for (const next of locals.slice(1)) {
@@ -71,10 +71,10 @@ export function* compileTridagon(
     joins.push(table.id);
   }
   if (!table.rows.length) return null;
-  const conclusion = clause(p.guardians.map((group) => ({ ...group, positive: true }))),
+  const conclusion = clause(shape.guardians.map((group) => ({ ...group, positive: true }))),
     theorem = proof.project(table, conclusion);
   const pattern = {
-    ...p,
+    ...shape,
     certificate: {
       permutations,
       rejections,
@@ -84,8 +84,8 @@ export function* compileTridagon(
       theorem,
     },
   };
-  if (p.guardians.length === 1)
-    return proof.wire.finish("c32@1", pattern, { kind: "place", ...p.guardians[0] }, theorem);
+  if (shape.guardians.length === 1)
+    return proof.wire.finish("c32@1", pattern, { kind: "place", ...shape.guardians[0] }, theorem);
   return proof.wire.bundle("c32@1", pattern, [], [theorem]);
 }
 /** Canonical box rectangles and core symbol triples; actual current domains

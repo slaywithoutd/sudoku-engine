@@ -122,9 +122,9 @@ export function* checkColoringPatternSteps(
       sources.strong(edge.source, edge.ends, edge.roots[0]);
       sources.weak(edge.roots[1], ...edge.ends);
       edge.roots.forEach((id) => edgeRoots.add(id));
-      for (const [literal, b] of [edge.ends, [...edge.ends].reverse()]) {
+      for (const [literal, other] of [edge.ends, [...edge.ends].reverse()]) {
         const xs = adjacency.get(key(literal)) ?? [];
-        xs.push(key(b));
+        xs.push(key(other));
         adjacency.set(key(literal), xs);
       }
     }
@@ -176,12 +176,13 @@ export function* checkColoringPatternSteps(
         prepared
           ? !prepared.scopePair(cells[0], cells[1])
           : !sourceFacts(view, "all-different").some(
-              (f) =>
-                !f.openAssumptions.length &&
-                f.proposition.kind === "all-different" &&
+              (candidate) =>
+                !candidate.openAssumptions.length &&
+                candidate.proposition.kind === "all-different" &&
                 cells.every(
                   (cell) =>
-                    f.proposition.kind === "all-different" && f.proposition.cells.includes(cell),
+                    candidate.proposition.kind === "all-different" &&
+                    candidate.proposition.cells.includes(cell),
                 ),
             )
       )
@@ -280,7 +281,7 @@ export function* checkColoringPatternSteps(
     ): void => {
       if (depth === pattern.components.length) {
         const branch = defined(
-            pattern.branches.find((b) => sameValue(b.colors, colors)),
+            pattern.branches.find((other) => sameValue(other.colors, colors)),
             "branche",
           ),
           proof = branch.proofs[i];

@@ -15,7 +15,7 @@ export class NakedSingles {
         (house) =>
           house.cells.length === view.assembly.problem.symbols.length &&
           house.cells.includes(cell) &&
-          house.cells.filter((c) => !view.state.values[c]).length === 1,
+          house.cells.filter((other) => !view.state.values[other]).length === 1,
       );
       const aliases = [
         { alias: "Naked Single", house: null as string | null },

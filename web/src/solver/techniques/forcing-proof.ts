@@ -83,7 +83,9 @@ export class ForcingProof {
     return id;
   }
   fact(proposition: Proposition): number {
-    const fact = matchingFacts(this.view, proposition).find((f) => !f.openAssumptions.length);
+    const fact = matchingFacts(this.view, proposition).find(
+      (candidate) => !candidate.openAssumptions.length,
+    );
     if (!fact) throw Error("missing-forcing-premise");
     return fact.id;
   }
@@ -184,13 +186,15 @@ export class ForcingProof {
         );
         effects.push({ kind: "remove", cell, symbol: effect.symbol });
       }
-    for (const [i, e] of effects.entries()) {
+    for (const [i, item] of effects.entries()) {
       const mask =
-        e.kind === "place" ? bit(e.symbol) : this.view.state.domains[e.cell] & ~bit(e.symbol);
+        item.kind === "place"
+          ? bit(item.symbol)
+          : this.view.state.domains[item.cell] & ~bit(item.symbol);
       roots.push(
-        this.add("domain-restrict@1", [this.view.state.domainFacts[e.cell], roots[i]], {
+        this.add("domain-restrict@1", [this.view.state.domainFacts[item.cell], roots[i]], {
           kind: "domain",
-          cell: e.cell,
+          cell: item.cell,
           mask,
         }),
       );

@@ -207,20 +207,22 @@ export function checkTechniqueGrammar(
         requireProof(
           house &&
             house.cells.length === view.assembly.problem.symbols.length &&
-            house.cells.filter((c) => !view.state.values[c]).length === 1 &&
+            house.cells.filter((other) => !view.state.values[other]).length === 1 &&
             house.cells.includes(cell),
           "invalid-single-alias",
         );
       }
     } else {
       fields(pattern, ["kind", "alias", "cover", "cell", "symbol"]);
-      const cover = view.assembly.covers.find((c) => c.id === pattern.cover);
+      const cover = view.assembly.covers.find(
+        (candidateCover) => candidateCover.id === pattern.cover,
+      );
       requireProof(
         pattern.kind === "hidden-single" &&
           pattern.alias === "Hidden Single" &&
           cover?.symbol === symbol &&
           sameValue(
-            cover.cells.filter((c) => (domains[c] & symbolMask(symbol)) !== 0),
+            cover.cells.filter((other) => (domains[other] & symbolMask(symbol)) !== 0),
             [cell],
           ),
         "invalid-hidden-single",
@@ -248,7 +250,9 @@ export function checkTechniqueGrammar(
     }
   } else if (proposal.technique === "c03@1") {
     fields(pattern, ["kind", "alias", "cover", "group", "symbol", "cells"]);
-    const cover = view.assembly.covers.find((c) => c.id === pattern.cover),
+    const cover = view.assembly.covers.find(
+        (candidateCover) => candidateCover.id === pattern.cover,
+      ),
       group = findHouse(view, pattern.group);
     sourceCells = numbers(pattern.cells);
     symbol = Number(pattern.symbol);
@@ -317,7 +321,7 @@ export function checkTechniqueGrammar(
         digits.every((digit) => view.assembly.problem.symbols.includes(digit)),
       "subset-out-of-profile",
     );
-    const mask = digits.reduce((m, digit) => m | symbolMask(digit), 0);
+    const mask = digits.reduce((bits, digit) => bits | symbolMask(digit), 0);
     const houseIds = locked ? pattern.houses : [pattern.house];
     requireProof(
       Array.isArray(houseIds) &&
@@ -388,14 +392,14 @@ export function checkTechniqueGrammar(
         );
       else
         requireProof(
-          cells.reduce((m, cell) => m | domains[cell], 0) === mask,
+          cells.reduce((bits, cell) => bits | domains[cell], 0) === mask,
           "invalid-naked-subset",
         );
       const selected = hidden
         ? defined(house, "house").cells.filter((cell) => !cells.includes(cell))
         : cells;
       allowedHall.push({ house: defined(house, "house").cells, cells: selected });
-      const union = selected.reduce((m, cell) => m | domains[cell], 0);
+      const union = selected.reduce((bits, cell) => bits | domains[cell], 0);
       requireProof(
         view.assembly.problem.symbols.filter((digit) => union & symbolMask(digit)).length ===
           selected.length,
@@ -438,7 +442,8 @@ export function checkTechniqueGrammar(
     const proposition = node.conclusion;
     if (node.rule === "domain-restrict@1") {
       requireProof(
-        proposition.kind === "domain" && proposal.effects.some((e) => e.cell === proposition.cell),
+        proposition.kind === "domain" &&
+          proposal.effects.some((effect) => effect.cell === proposition.cell),
         "outside-domain-closure",
       );
       const base = domainAssertion(premises[0]?.conclusion),
@@ -448,10 +453,10 @@ export function checkTechniqueGrammar(
           base.cell === proposition.cell &&
           conclusion?.kind === "literal" &&
           proposal.effects.some(
-            (e) =>
-              e.cell === conclusion.value.cell &&
-              e.symbol === conclusion.value.symbol &&
-              (e.kind === "place") === conclusion.value.positive,
+            (effect) =>
+              effect.cell === conclusion.value.cell &&
+              effect.symbol === conclusion.value.symbol &&
+              (effect.kind === "place") === conclusion.value.positive,
           ) &&
           (proposition.mask !== base.mask || conclusion.value.positive),
         "outside-domain-closure",

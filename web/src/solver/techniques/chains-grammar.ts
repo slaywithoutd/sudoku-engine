@@ -31,7 +31,10 @@ function classic(cells: readonly number[]): boolean {
   );
 }
 
-/** Exact source reconstruction. No graph, detector, compiler or caller-supplied validator participates. */
+/**
+ * Exact source reconstruction. No graph, detector, compiler or caller-supplied validator
+ * participates.
+ */
 export class ChainSources {
   constructor(
     readonly view: ReadView,
@@ -283,7 +286,10 @@ function checkEvent(view: ReadView, event: ChainEvent | undefined): void {
   );
 }
 
-/** Named path admission includes every effect root, preventing a valid small proof from decorating a longer path. */
+/**
+ * Named path admission includes every effect root, preventing a valid small proof from decorating a
+ * longer path.
+ */
 export function checkChainPattern(
   proposal: DeductionProposal,
   view: ReadView,
@@ -312,19 +318,21 @@ export function checkChainPattern(
       pattern.vertices.length === pattern.links.length + (pattern.closed ? 0 : 1),
     "chain-out-of-profile",
   );
-  pattern.vertices.forEach((e) => checkEvent(view, e));
+  pattern.vertices.forEach((vertex) => checkEvent(view, vertex));
   requireProof(
-    new Set(pattern.vertices.flatMap((e) => e.members.map(key))).size ===
-      pattern.vertices.reduce((n, e) => n + e.members.length, 0),
+    new Set(pattern.vertices.flatMap((vertex) => vertex.members.map(key))).size ===
+      pattern.vertices.reduce((n, vertex) => n + vertex.members.length, 0),
     "repeated-chain-vertex",
   );
   const visits = new Set(
-      pattern.vertices.filter((e) => e.als).map((e) => defined(e.als, "als").join()),
+      pattern.vertices
+        .filter((vertex) => vertex.als)
+        .map((vertex) => defined(vertex.als, "als").join()),
     ),
-    groups = pattern.vertices.filter((e) => !e.als && e.members.length > 1).length;
+    groups = pattern.vertices.filter((vertex) => !vertex.als && vertex.members.length > 1).length;
   requireProof(visits.size + groups <= 4, "special-node-out-of-profile");
   for (const visit of visits) {
-    const at = pattern.vertices.flatMap((e, i) => (e.als?.join() === visit ? [i] : []));
+    const at = pattern.vertices.flatMap((vertex, i) => (vertex.als?.join() === visit ? [i] : []));
     requireProof(
       at.length === 2 &&
         (at[1] === at[0] + 1 ||
@@ -355,8 +363,8 @@ export function checkChainPattern(
   );
   if (pattern.alias === "X-Chains")
     requireProof(
-      new Set(pattern.vertices.flatMap((e) => e.members.map((literal) => literal.symbol))).size ===
-        1,
+      new Set(pattern.vertices.flatMap((vertex) => vertex.members.map((literal) => literal.symbol)))
+        .size === 1,
       "invalid-x-chain",
     );
   if (pattern.alias === "XY-Chains")
@@ -415,24 +423,25 @@ export function checkChainPattern(
   const sources = new ChainSources(view, available);
   pattern.links.forEach((link, i) => {
     fields(link, ["kind", "source", "roots"]);
-    const a = pattern.vertices[i],
-      b = pattern.vertices[(i + 1) % pattern.vertices.length];
+    const vertex = pattern.vertices[i],
+      next = pattern.vertices[(i + 1) % pattern.vertices.length];
     requireProof(Array.isArray(link.roots), "missing-link-roots");
     if (link.kind === "strong") {
       requireProof(link.roots.length === 1 && link.source !== null, "missing-strong-root");
       if (link.source.kind === "als")
         requireProof(
-          sameValue(a.als, link.source.cells) && sameValue(b.als, link.source.cells),
+          sameValue(vertex.als, link.source.cells) && sameValue(next.als, link.source.cells),
           "unbound-als-source",
         );
-      sources.strong(link.source, [...a.members, ...b.members], link.roots[0]);
+      sources.strong(link.source, [...vertex.members, ...next.members], link.roots[0]);
     } else {
       requireProof(
-        link.source === null && link.roots.length === a.members.length * b.members.length,
+        link.source === null && link.roots.length === vertex.members.length * next.members.length,
         "incomplete-group-weak-link",
       );
       let at = 0;
-      for (const x of a.members) for (const y of b.members) sources.weak(link.roots[at++], x, y);
+      for (const x of vertex.members)
+        for (const y of next.members) sources.weak(link.roots[at++], x, y);
     }
   });
   requireProof(
@@ -471,8 +480,8 @@ export function checkChainPattern(
       );
     }
     const conflicts = new Set(
-      ends.flatMap((e) =>
-        e.members.map((literal) => JSON.stringify(clause([neg(literal), neg(target)]))),
+      ends.flatMap((vertex) =>
+        vertex.members.map((literal) => JSON.stringify(clause([neg(literal), neg(target)]))),
       ),
     );
     const valid = new Map<number, bigint>();

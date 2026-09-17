@@ -31,7 +31,7 @@ class FishComponentLineage {
       fact = matchingFacts(
         this.view,
         symbol === undefined ? { kind: "all-different", cells } : { kind: "cover", cells, symbol },
-      ).find((f) => !f.openAssumptions.length);
+      ).find((candidate) => !candidate.openAssumptions.length);
     requireProof(fact, "fish-unproved-house");
     return fact.id;
   }

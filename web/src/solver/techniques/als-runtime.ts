@@ -65,15 +65,15 @@ export class AlsSearch {
         left.cells.join().localeCompare(right.cells.join()),
     );
   }
-  private *rcc(a: number, b: number, symbol: number): Generator<ChainWork, boolean> {
+  private *rcc(first: number, second: number, symbol: number): Generator<ChainWork, boolean> {
     yield { kind: "work", units: 1 };
-    const key = `${Math.min(a, b)}/${Math.max(a, b)}/${symbol}`,
+    const key = `${Math.min(first, second)}/${Math.max(first, second)}/${symbol}`,
       prior = this.#rcc.get(key);
     if (prior !== undefined) return prior;
     let valid = true;
     // The record is sparse: a symbol absent from the set has no entry.
-    const left = this.sets[a].occurrences[symbol] as number[] | undefined,
-      right = this.sets[b].occurrences[symbol] as number[] | undefined;
+    const left = this.sets[first].occurrences[symbol] as number[] | undefined,
+      right = this.sets[second].occurrences[symbol] as number[] | undefined;
     if (!left || !right) valid = false;
     else
       outer: for (const x of left)
@@ -192,7 +192,7 @@ export class AlsSearch {
               pattern = { ...base, rccs };
             for (let side = 0; side < 2; side++)
               for (const symbol of sets[side].symbols.filter(
-                (s) => !rccs.some((row) => row.symbol === s),
+                (digit) => !rccs.some((row) => row.symbol === digit),
               ))
                 yield* this.effects(pattern, symbol, "locked", [0, 1], side);
             for (let i = 0; i < 2; i++)

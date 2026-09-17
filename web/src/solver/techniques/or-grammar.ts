@@ -44,7 +44,7 @@ export function checkOrPattern(
       scope = [proof.assumption],
       key = JSON.stringify(branch.assumption);
     requireProof(
-      !seen.has(key) && alternatives.some((a) => sameValue(a, branch.assumption)),
+      !seen.has(key) && alternatives.some((literal) => sameValue(literal, branch.assumption)),
       "or-case-identity",
     );
     seen.add(key);

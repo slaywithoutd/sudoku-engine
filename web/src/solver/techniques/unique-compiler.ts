@@ -136,7 +136,7 @@ export function compileUnique(
       const assumption = proof.add("assume@1", [], proposedClause([opposite(target)]));
       proof.scope = [assumption];
       const proofs = paths(proof, assumption, consequence.paths);
-      const result = proof.add("contradiction@1", [trade, ...proofs.map((p) => p.end)], {
+      const result = proof.add("contradiction@1", [trade, ...proofs.map((path) => path.end)], {
         kind: "false",
       });
       branches.push({ assumption, paths: proofs, result });
@@ -152,7 +152,7 @@ export function compileUnique(
           branch.result === "false"
             ? proof.add(
                 "contradiction@1",
-                proofs.map((p) => p.end),
+                proofs.map((path) => path.end),
                 { kind: "false" },
               )
             : proofs[0].end;
@@ -179,12 +179,12 @@ export function compileUnique(
     const companion = derive(plan.companion.consequence, plan.companion.effect),
       effects = [effect, plan.companion.effect],
       roots = [certificate.root, companion.root];
-    for (const [i, e] of effects.entries())
+    for (const [i, item] of effects.entries())
       roots.push(
-        proof.add("domain-restrict@1", [view.state.domainFacts[e.cell], roots[i]], {
+        proof.add("domain-restrict@1", [view.state.domainFacts[item.cell], roots[i]], {
           kind: "domain",
-          cell: e.cell,
-          mask: view.state.domains[e.cell] & ~symbolMask(e.symbol),
+          cell: item.cell,
+          mask: view.state.domains[item.cell] & ~symbolMask(item.symbol),
         }),
       );
     return proof.bundle(

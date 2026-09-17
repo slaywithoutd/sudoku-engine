@@ -198,11 +198,11 @@ function* overlay(
     }
   const effects: Effect[] = [];
   for (let cell = 0; cell < 81; cell++)
-    for (let s = 0; s < plan.symbols.length; s++) {
+    for (let digit = 0; digit < plan.symbols.length; digit++) {
       yield* work(context.workspace);
-      const symbol = plan.symbols[s],
+      const symbol = plan.symbols[digit],
         bit = symbolMask(symbol);
-      if (!view.state.values[cell] && view.state.domains[cell] & bit && !occurs[s][cell])
+      if (!view.state.values[cell] && view.state.domains[cell] & bit && !occurs[digit][cell])
         effects.push({ kind: "remove", cell, symbol });
     }
   return {
@@ -537,7 +537,7 @@ export function* discoverTemplates(view: ReadView, context: DiscoveryContext): D
 }
 
 const entry = defined(
-  coverageEntries.find((e) => e.id === "C33"),
+  coverageEntries.find((row) => row.id === "C33"),
   "coverageEntry",
 );
 export const templateTechniques: readonly TechniqueDescriptor[] = Object.freeze([

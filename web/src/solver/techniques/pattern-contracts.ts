@@ -91,9 +91,9 @@ function sorted(values: number[]) {
   );
 }
 function house(view: ReadView, id: string) {
-  const h = findHouse(view, id);
-  requireProof(h && h.cells.length === 9, "invalid-pattern-house");
-  return h;
+  const scope = findHouse(view, id);
+  requireProof(scope && scope.cells.length === 9, "invalid-pattern-house");
+  return scope;
 }
 function current(view: ReadView, literal: Literal) {
   return !!(view.state.domains[literal.cell] & symbolMask(literal.symbol));
@@ -154,8 +154,8 @@ function addHouse(
   symbol: number,
   groups: number[][],
 ) {
-  const h = house(view, id),
-    expected = h.cells.filter((cell) => current(view, pos(cell, symbol)));
+  const scope = house(view, id),
+    expected = scope.cells.filter((cell) => current(view, pos(cell, symbol)));
   requireProof(
     sameValue(
       [...groups.flat()].sort((left, right) => left - right),
@@ -164,7 +164,7 @@ function addHouse(
     "nonexhaustive-strong-link",
   );
   const values = expected.map((cell) => pos(cell, symbol));
-  requirements.clauses.push({ source: "house", cells: h.cells, symbol, literals: values });
+  requirements.clauses.push({ source: "house", cells: scope.cells, symbol, literals: values });
   requirements.vocabulary.push(...values);
 }
 function targets(
@@ -245,11 +245,11 @@ export function validateShortPattern(
       "repeated-path-vertex",
     );
     if (er) {
-      const h = house(view, path.strongHouses[0]),
+      const scope = house(view, path.strongHouses[0]),
         intersection = defined(path.emptyIntersection, "emptyIntersection");
       requireProof(
-        h.cells.every((x) => box(x) === box(h.cells[0])) &&
-          h.cells.includes(intersection) &&
+        scope.cells.every((x) => box(x) === box(scope.cells[0])) &&
+          scope.cells.includes(intersection) &&
           !current(view, pos(intersection, path.symbol)) &&
           ((cellA.every((x) => row(x) === row(intersection)) &&
             cellB.every((x) => column(x) === column(intersection))) ||
@@ -561,7 +561,7 @@ export function checkPatternProof(
           ? validateBentPattern(view, pattern as BentPattern, proposal.effects)
           : validateRemotePattern(view, pattern as RemotePattern, proposal.effects);
   const permittedClauses = new Set(
-    requirements.clauses.map((c) => JSON.stringify(clause(c.literals))),
+    requirements.clauses.map((req) => JSON.stringify(clause(req.literals))),
   );
   const seenClauses = new Set<string>(),
     vocabulary = new Set(
@@ -572,8 +572,8 @@ export function checkPatternProof(
     );
   const relationCells = new Set<number>();
   const allowedPairs = requirements.clauses
-    .filter((c) => c.source === "weak")
-    .map((c) => c.literals);
+    .filter((req) => req.source === "weak")
+    .map((req) => req.literals);
   for (const id of proposal.proof.imports) {
     const fact = view.facts.get(id);
     requireProof(fact && fact.openAssumptions.length === 0, "invalid-pattern-import");
@@ -605,10 +605,10 @@ export function checkPatternProof(
         requireProof(
           premises[0]?.rule === "support@1" ||
             requirements.clauses.some(
-              (c) =>
-                c.source === "cell" &&
-                node.premises[0] === view.state.domainFacts[defined(c.cells, "cells")[0]] &&
-                sameValue(proposition, clause(c.literals)),
+              (req) =>
+                req.source === "cell" &&
+                node.premises[0] === view.state.domainFacts[defined(req.cells, "cells")[0]] &&
+                sameValue(proposition, clause(req.literals)),
             ),
           "outside-pattern-domain",
         );
@@ -617,10 +617,10 @@ export function checkPatternProof(
       requireProof(
         source?.kind === "cover" &&
           requirements.clauses.some(
-            (c) =>
-              c.source === "house" &&
-              c.symbol === source.symbol &&
-              sameValue(c.cells, source.cells),
+            (req) =>
+              req.source === "house" &&
+              req.symbol === source.symbol &&
+              sameValue(req.cells, source.cells),
           ) &&
           sameValue(
             node.premises.slice(1),
@@ -702,9 +702,12 @@ export function checkPatternProof(
   }
   // A named label cannot hide an unrelated inference: every designated cell/house
   // cover must occur, and effects must be reached from these elementary clauses.
-  for (const c of requirements.clauses.filter((c) => c.source !== "weak"))
+  for (const req of requirements.clauses.filter((item) => item.source !== "weak"))
     if (!requirements.table)
-      requireProof(seenClauses.has(JSON.stringify(clause(c.literals))), "missing-pattern-premise");
+      requireProof(
+        seenClauses.has(JSON.stringify(clause(req.literals))),
+        "missing-pattern-premise",
+      );
   if (requirements.table) requireBentEffectLineage(proposal, view, available, requirements.table);
   if (proposal.technique === "c10@1" && (pattern as ShortPattern).alias === "Dual Empty Rectangle")
     requireDualRootLineage(proposal, view, available, pattern as ShortPattern);

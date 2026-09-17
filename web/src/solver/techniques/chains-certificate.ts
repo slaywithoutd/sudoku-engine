@@ -39,8 +39,8 @@ export const candidate = (cell: number, symbol: number): Literal => ({
   positive: true,
 });
 export const literalKey = (literal: Literal): string => `${literal.cell}:${literal.symbol}`;
-export const eventKey = (e: ChainEvent): string =>
-  `${e.als ? `als:${e.als.join()}:` : ""}${e.members.map(literalKey).join("/")}`;
+export const eventKey = (vertex: ChainEvent): string =>
+  `${vertex.als ? `als:${vertex.als.join()}:` : ""}${vertex.members.map(literalKey).join("/")}`;
 export type ChainWork = { kind: "work"; units: number };
 
 /** Match the checker's wire caps before a detector publishes an inadmissible proposal. */
@@ -113,7 +113,7 @@ export class ChainCertificate extends PatternBuilder {
     const house = defined(findHouse(this.view, source.house), "findHouse");
     const fact = defined(
       matchingFacts(this.view, { kind: "all-different", cells: house.cells }).find(
-        (f) => !f.openAssumptions.length,
+        (entry) => !entry.openAssumptions.length,
       ),
       "find",
     );
@@ -136,11 +136,11 @@ export class ChainCertificate extends PatternBuilder {
           right = [...box];
         left[at] = symbolMask(choices[at][0]);
         right[at] &= ~left[at];
-        const a = yield* recurse.call(this, left),
-          b = yield* recurse.call(this, right),
-          count = a.count + b.count;
+        const first = yield* recurse.call(this, left),
+          second = yield* recurse.call(this, right),
+          count = first.count + second.count;
         return {
-          id: this.add("table-union@1", [a.id, b.id], {
+          id: this.add("table-union@1", [first.id, second.id], {
             kind: "table",
             cells: source.cells,
             count,
@@ -214,7 +214,8 @@ export class ChainCertificate extends PatternBuilder {
           if (
             terms.some((literal) =>
               terms.some(
-                (r) => literalKey(r) === literalKey(literal) && r.positive !== literal.positive,
+                (other) =>
+                  literalKey(other) === literalKey(literal) && other.positive !== literal.positive,
               ),
             )
           )
@@ -270,7 +271,9 @@ export class ChainCertificate extends PatternBuilder {
     });
   }
 
-  /** Domain closure honors positive placements; prune only algebra branches unused by any result. */
+  /**
+   * Domain closure honors positive placements; prune only algebra branches unused by any result.
+   */
   close(technique: string, pattern: Json, effects: Effect[], roots: number[]): DeductionProposal {
     const domains = new Map<number, { id: number; mask: number }>();
     effects.forEach((effect, i) => {

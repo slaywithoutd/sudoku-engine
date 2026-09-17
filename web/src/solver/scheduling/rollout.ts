@@ -168,7 +168,8 @@ export function* rolloutCandidates(
                   charge(event.units);
                   yield event;
                 } else if (event.kind === "proposal") {
-                  // Producer remains paused until independent checking consumes its borrowed proposal.
+                  // Producer remains paused until independent checking consumes its borrowed
+                  // proposal.
                   const lease = context.workspace.reserve(
                     1,
                     context.limits.stepBytes * 3 + retainedProof(session.view).size * 128,

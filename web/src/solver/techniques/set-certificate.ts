@@ -84,11 +84,11 @@ export class SetCertificate {
           right = [...box];
         left[at] = symbolMask(choices[at][0]);
         right[at] &= ~left[at];
-        const a = yield* build(left),
+        const first = yield* build(left),
           rightTable = yield* build(right),
-          count = a.count + rightTable.count;
+          count = first.count + rightTable.count;
         return {
-          id: certificate.add("table-union@1", [a.id, rightTable.id], {
+          id: certificate.add("table-union@1", [first.id, rightTable.id], {
             kind: "table",
             cells,
             count,
@@ -201,8 +201,8 @@ export class SetCertificate {
       for (const cell of auxiliary.cells)
         for (const symbol of setDigits(this.view.state.domains[cell])) {
           yield { kind: "work", units: 1 };
-          const selected = pattern.selected.findIndex((c, i) =>
-            this.graph.has(candidate(cell, symbol), candidate(c, tuple[i])),
+          const selected = pattern.selected.findIndex((other, i) =>
+            this.graph.has(candidate(cell, symbol), candidate(other, tuple[i])),
           );
           if (selected >= 0) blocked.push({ literal: candidate(cell, symbol), selected });
         }
@@ -277,7 +277,7 @@ export class SetCertificate {
       yield { kind: "work", units: 1 };
       const house = defined(findHouse(this.view, scope.house), "findHouse");
       const fact = matchingFacts(this.view, { kind: "all-different", cells: house.cells }).find(
-        (f) => !f.openAssumptions.length,
+        (entry) => !entry.openAssumptions.length,
       );
       if (!fact) throw Error("missing-set-source");
       scope.root = certificate.add("all-different-subset@1", [fact.id], {

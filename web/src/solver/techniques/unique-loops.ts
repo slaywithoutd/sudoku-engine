@@ -8,7 +8,7 @@ export class UniqueLoops {
   *geometries(view: ReadView): UniqueGeometryCursor {
     for (let length = 4; length <= 12; length += 2)
       for (const core of uniqueCombinations(view.assembly.problem.symbols, 2)) {
-        const mask = core.reduce((m, symbol) => m | symbolMask(symbol), 0),
+        const mask = core.reduce((bits, symbol) => bits | symbolMask(symbol), 0),
           candidates = view.assembly.problem.cells.filter(
             (cell) => !view.state.values[cell] && (view.state.domains[cell] & mask) === mask,
           );

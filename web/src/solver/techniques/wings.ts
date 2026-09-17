@@ -125,14 +125,14 @@ export class Wings implements PatternStrategy {
       }
   }
   *compile(view: ReadView, graph: PatternGraph, pattern: Json, effects: Effect[]) {
-    const p = pattern as unknown as WingPattern,
+    const shape = pattern as unknown as WingPattern,
       builder = new PatternBuilder(view, graph);
     let root: number;
-    if ("endpoints" in p) {
-      const [cellA, cellD] = p.endpoints,
-        [cellC, cellE] = p.bridge,
-        x = p.bridgeSymbol,
-        zDigit = p.eliminationSymbol;
+    if ("endpoints" in shape) {
+      const [cellA, cellD] = shape.endpoints,
+        [cellC, cellE] = shape.bridge,
+        x = shape.bridgeSymbol,
+        zDigit = shape.eliminationSymbol;
       root = yield* builder.path(
         [
           [pos(cellA, zDigit)],
@@ -142,15 +142,15 @@ export class Wings implements PatternStrategy {
           [pos(cellD, x)],
           [pos(cellD, zDigit)],
         ],
-        [builder.cell(cellA), builder.house(p.cover, x), builder.cell(cellD)],
+        [builder.cell(cellA), builder.house(shape.cover, x), builder.cell(cellD)],
       );
     } else {
-      root = builder.cell(p.pivot);
-      for (const [i, symbol] of [p.x, p.y].entries()) {
-        const wing = builder.cell(p.wings[i]),
-          weak = yield* builder.weak(pos(p.pivot, symbol), pos(p.wings[i], symbol));
-        const implication = builder.resolve(wing, weak, pos(p.wings[i], symbol));
-        root = builder.resolve(root, implication, pos(p.pivot, symbol));
+      root = builder.cell(shape.pivot);
+      for (const [i, symbol] of [shape.x, shape.y].entries()) {
+        const wing = builder.cell(shape.wings[i]),
+          weak = yield* builder.weak(pos(shape.pivot, symbol), pos(shape.wings[i], symbol));
+        const implication = builder.resolve(wing, weak, pos(shape.wings[i], symbol));
+        root = builder.resolve(root, implication, pos(shape.pivot, symbol));
       }
     }
     const roots: number[] = [];

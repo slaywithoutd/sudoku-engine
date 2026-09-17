@@ -271,12 +271,12 @@ export class PatternBuilder {
     }
     return this.add("table-project@1", [source], conclusion);
   }
-  resolve(a: number, b: number, pivot: Literal): number {
-    const left = literals(defined(this.values.get(a), "value")),
-      right = literals(defined(this.values.get(b), "value"));
+  resolve(first: number, second: number, pivot: Literal): number {
+    const left = literals(defined(this.values.get(first), "value")),
+      right = literals(defined(this.values.get(second), "value"));
     return this.add(
       "resolution@1",
-      [a, b],
+      [first, second],
       clause([
         ...left.filter(
           (literal) =>
@@ -389,12 +389,12 @@ export class PatternBuilder {
       yield { kind: "work", units: 1 };
       if (volume > 256) {
         const split = values.findIndex((value) => value.length > 1),
-          a = [...masks],
-          b = [...masks];
-        a[split] = symbolMask(values[split][0]);
-        b[split] &= ~a[split];
-        const left = yield* build.call(this, a),
-          right = yield* build.call(this, b),
+          first = [...masks],
+          second = [...masks];
+        first[split] = symbolMask(values[split][0]);
+        second[split] &= ~first[split];
+        const left = yield* build.call(this, first),
+          right = yield* build.call(this, second),
           count = left.count + right.count;
         return {
           id: this.add("table-union@1", [left.id, right.id], {

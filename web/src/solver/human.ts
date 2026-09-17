@@ -117,7 +117,8 @@ export function* humanSteps(
         accepted.push(proposal.step);
         selection.advance(next);
         view = next;
-        // A filled grid satisfying every rule is solved; rescanning the whole profile cannot add information.
+        // A filled grid satisfying every rule is solved; rescanning the whole profile cannot add
+        // information.
         if (isWitness(view.assembly.problem, view.assembly, view.state.values)) {
           yield {
             kind: "logical-stop",

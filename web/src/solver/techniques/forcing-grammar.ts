@@ -6,8 +6,8 @@ import type { ForcingLink, PathCertificate } from "./forcing-proof";
 import { findHouse, symbolMask } from "../state/read";
 import { claimed, defined } from "../invariants";
 
-const literal = (v: Literal): Proposition => ({ kind: "literal", value: v });
-const complement = (v: Literal): Literal => ({ ...v, positive: !v.positive });
+const literal = (other: Literal): Proposition => ({ kind: "literal", value: other });
+const complement = (other: Literal): Literal => ({ ...other, positive: !other.positive });
 const candidates = (view: ReadView, cell: number): Literal[] =>
   view.assembly.problem.symbols
     .filter((symbol) => view.state.domains[cell] & symbolMask(symbol))
@@ -35,9 +35,9 @@ export class ForcingLineage {
   }
   house(id: number, house: string, symbol: number): void {
     const n = this.node(id),
-      h = findHouse(this.view, house);
+      scope = findHouse(this.view, house);
     requireProof(
-      h && n.rule === "cover-clause@1" && n.premises.length === 1,
+      scope && n.rule === "cover-clause@1" && n.premises.length === 1,
       "forcing-house-cover",
     );
     const support = this.node(n.premises[0]),
@@ -45,15 +45,15 @@ export class ForcingLineage {
     requireProof(
       support.rule === "support@1" &&
         source &&
-        sameValue(source.proposition, { kind: "cover", cells: h.cells, symbol }) &&
+        sameValue(source.proposition, { kind: "cover", cells: scope.cells, symbol }) &&
         sameValue(
           support.premises.slice(1),
-          h.cells.map((cell) => this.view.state.domainFacts[cell]),
+          scope.cells.map((cell) => this.view.state.domainFacts[cell]),
         ) &&
         sameValue(
           n.conclusion,
           clause(
-            h.cells
+            scope.cells
               .filter((cell) => this.view.state.domains[cell] & symbolMask(symbol))
               .map((cell) => ({ cell, symbol, positive: true })),
           ),
@@ -168,7 +168,7 @@ export function checkForcingPattern(
 ): void {
   const pattern = proposal.pattern as unknown as ForcingPlan & { certificate?: ForcingCertificate },
     cert = pattern.certificate,
-    l = new ForcingLineage(view, nodes);
+    lineage = new ForcingLineage(view, nodes);
   requireProof(
     cert &&
       ["digit", "cell", "unit", "nishio"].includes(pattern.kind) &&
@@ -200,7 +200,7 @@ export function checkForcingPattern(
   let alternatives: Literal[];
   if (pattern.kind === "cell") {
     alternatives = candidates(view, defined(pattern.cover.cell, "cell"));
-    l.cell(defined(cert.cover, "cover"), defined(pattern.cover.cell, "cell"));
+    lineage.cell(defined(cert.cover, "cover"), defined(pattern.cover.cell, "cell"));
   } else if (pattern.kind === "unit") {
     const house = findHouse(view, pattern.cover.house);
     requireProof(house, "forcing-unit");
@@ -209,7 +209,7 @@ export function checkForcingPattern(
         (cell) => view.state.domains[cell] & symbolMask(defined(pattern.cover.symbol, "symbol")),
       )
       .map((cell) => ({ cell, symbol: defined(pattern.cover.symbol, "symbol"), positive: true }));
-    l.house(
+    lineage.house(
       defined(cert.cover, "cover"),
       defined(pattern.cover.house, "house"),
       defined(pattern.cover.symbol, "symbol"),
@@ -217,28 +217,32 @@ export function checkForcingPattern(
   } else {
     const left = pattern.cover.candidate;
     requireProof(
-      left && left.positive && candidates(view, left.cell).some((v) => sameValue(left, v)),
+      left &&
+        left.positive &&
+        candidates(view, left.cell).some((candidate) => sameValue(left, candidate)),
       "forcing-candidate",
     );
     alternatives = pattern.kind === "nishio" ? [left] : [left, complement(left)];
     if (pattern.kind === "nishio") requireProof(cert.cover === null, "nishio-cover");
     else {
-      let node = l.node(defined(cert.cover, "cover"));
+      let node = lineage.node(defined(cert.cover, "cover"));
       requireProof(sameValue(node.conclusion, clause(alternatives)), "forcing-candidate-cover");
-      const remaining = candidates(view, left.cell).filter((v) => v.symbol !== left.symbol);
+      const remaining = candidates(view, left.cell).filter(
+        (candidate) => candidate.symbol !== left.symbol,
+      );
       for (const value of [...remaining].reverse()) {
         requireProof(
           node.rule === "resolution@1" && node.premises.length === 2 && node.scope.length === 0,
           "forcing-case-cover-lineage",
         );
-        l.edge(node.premises[1], {
+        lineage.edge(node.premises[1], {
           from: value,
           to: complement(left),
           reason: { kind: "cell-conflict", cell: left.cell },
         });
-        node = l.node(node.premises[0]);
+        node = lineage.node(node.premises[0]);
       }
-      l.cell(node.id, left.cell);
+      lineage.cell(node.id, left.cell);
     }
   }
   const sort = (left: Literal, right: Literal) =>
@@ -256,13 +260,13 @@ export function checkForcingPattern(
   const seen = new Set<string>();
   for (const [i, right] of pattern.branches.entries()) {
     const certificate = cert.branches[i],
-      node = l.node(certificate.assumption),
-      result = l.node(certificate.result),
+      node = lineage.node(certificate.assumption),
+      result = lineage.node(certificate.result),
       scope = [node.id],
       key = JSON.stringify(right.assumption);
     requireProof(
       !seen.has(key) &&
-        alternatives.some((v) => sameValue(v, right.assumption)) &&
+        alternatives.some((candidate) => sameValue(candidate, right.assumption)) &&
         node.rule === "assume@1" &&
         node.scope.length === 0 &&
         sameValue(node.conclusion, literal(right.assumption)),
@@ -276,7 +280,7 @@ export function checkForcingPattern(
       "forcing-branch-bound",
     );
     right.paths.forEach((path, j) =>
-      l.path(node.id, path, certificate.paths[j], scope, pattern.kind === "nishio"),
+      lineage.path(node.id, path, certificate.paths[j], scope, pattern.kind === "nishio"),
     );
     if (right.result === "false")
       requireProof(
@@ -284,7 +288,7 @@ export function checkForcingPattern(
           sameValue(result.scope, scope) &&
           sameValue(
             result.premises,
-            certificate.paths.map((p) => p.end),
+            certificate.paths.map((path) => path.end),
           ),
         "forcing-contradiction-lineage",
       );
@@ -295,7 +299,7 @@ export function checkForcingPattern(
         "forcing-result-lineage",
       );
   }
-  const root = l.node(cert.root),
+  const root = lineage.node(cert.root),
     effect =
       pattern.mode === "cache"
         ? {

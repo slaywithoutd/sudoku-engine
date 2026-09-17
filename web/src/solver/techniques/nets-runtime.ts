@@ -236,12 +236,15 @@ class NetSearch {
       localAssumption = -1;
     try {
       const before = session.view;
-      for (const e of session.assume(value, this.context.limits)) {
-        if (e.kind === "work") yield e;
-        else if (e.kind === "branch-checked") {
-          localAssumption = e.certificate.proposal.proof.nodes[0].id;
-          assumption = defined(this.dag.append(before, e.certificate).get(localAssumption), "get");
-        } else localFailure(e.code);
+      for (const vertex of session.assume(value, this.context.limits)) {
+        if (vertex.kind === "work") yield vertex;
+        else if (vertex.kind === "branch-checked") {
+          localAssumption = vertex.certificate.proposal.proof.nodes[0].id;
+          assumption = defined(
+            this.dag.append(before, vertex.certificate).get(localAssumption),
+            "get",
+          );
+        } else localFailure(vertex.code);
       }
       for (let round = 0; round < 810; round++) {
         let selected: DeductionProposal | undefined;
@@ -263,10 +266,10 @@ class NetSearch {
         if (!selected) break;
         const before = session.view;
         let checked: BranchCertificate | undefined;
-        for (const e of session.check(selected, this.context.limits)) {
-          if (e.kind === "work") yield e;
-          else if (e.kind === "branch-checked") checked = e.certificate;
-          else localFailure(e.code);
+        for (const vertex of session.check(selected, this.context.limits)) {
+          if (vertex.kind === "work") yield vertex;
+          else if (vertex.kind === "branch-checked") checked = vertex.certificate;
+          else localFailure(vertex.code);
         }
         if (!checked) return;
         const map = this.dag.append(before, checked);
@@ -315,7 +318,7 @@ class NetSearch {
           proof.scope = branchScope(view).map((id) => this.dag.node(view, id));
           const result = proof.add(
             "cases@1",
-            [cover, ...children.flatMap((c) => [c.assumption, c.result])],
+            [cover, ...children.flatMap((child) => [child.assumption, child.result])],
             { kind: "false" },
           );
           return { assumption, result, cover, children };

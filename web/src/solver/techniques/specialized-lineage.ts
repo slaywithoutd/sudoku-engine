@@ -204,13 +204,21 @@ export class SpecializedAdmission {
   }
   joinPeers(id: number, left: number, right: number, extra: readonly number[] = []): void {
     const proposition = this.node(left).conclusion,
-      b = this.node(right).conclusion,
+      claim = this.node(right).conclusion,
       n = this.node(id, "table-join-filter@1");
-    requireProof(proposition.kind === "table" && b.kind === "table", "invalid-specialized-join");
+    requireProof(
+      proposition.kind === "table" && claim.kind === "table",
+      "invalid-specialized-join",
+    );
     const pairs: number[][] = [];
     for (const x of proposition.cells)
-      for (const y of b.cells)
-        if (x !== y && this.peer(x, y) && !proposition.cells.includes(y) && !b.cells.includes(x))
+      for (const y of claim.cells)
+        if (
+          x !== y &&
+          this.peer(x, y) &&
+          !proposition.cells.includes(y) &&
+          !claim.cells.includes(x)
+        )
           pairs.push([x, y]);
     requireProof(
       n.premises.length === 2 + pairs.length + extra.length &&

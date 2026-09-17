@@ -101,10 +101,10 @@ export class ChainSearch {
     }
     if (this.family !== "scalar")
       for (const house of this.view.assembly.allDifferent)
-        for (const b of this.view.assembly.allDifferent) {
+        for (const scope of this.view.assembly.allDifferent) {
           yield { kind: "work", units: 1 };
-          if (house.id >= b.id) continue;
-          const cells = house.cells.filter((cell) => b.cells.includes(cell));
+          if (house.id >= scope.id) continue;
+          const cells = house.cells.filter((cell) => scope.cells.includes(cell));
           if (cells.length !== 3) continue;
           for (const symbol of this.view.assembly.problem.symbols) {
             yield { kind: "work", units: 1 };
@@ -257,7 +257,11 @@ export class ChainSearch {
           )
             continue;
           const target = candidate(cell, symbol);
-          if (ends.every((e) => e.members.every((literal) => this.graph.has(literal, target)))) {
+          if (
+            ends.every((vertex) =>
+              vertex.members.every((literal) => this.graph.has(literal, target)),
+            )
+          ) {
             effects.push({ kind: "remove", cell, symbol });
             cuts.push(cut);
           }
@@ -302,8 +306,8 @@ export class ChainSearch {
       yield { kind: "work", units: 1 };
       if (links.length === length) {
         const vertices = path.map((id) => this.events[id]);
-        const hasAls = vertices.some((e) => e.als),
-          hasGroup = vertices.some((e) => !e.als && e.members.length > 1);
+        const hasAls = vertices.some((vertex) => vertex.als),
+          hasGroup = vertices.some((vertex) => !vertex.als && vertex.members.length > 1);
         if (
           (this.family === "group" && (!hasGroup || hasAls)) ||
           (this.family === "als" && !hasAls)
@@ -311,9 +315,11 @@ export class ChainSearch {
           return;
         // An ALS event can only occur as the paired ends of its own strong transition.
         for (const cells of new Set(
-          vertices.filter((e) => e.als).map((e) => defined(e.als, "als").join()),
+          vertices
+            .filter((vertex) => vertex.als)
+            .map((vertex) => defined(vertex.als, "als").join()),
         ))
-          if (vertices.filter((e) => e.als?.join() === cells).length !== 2) return;
+          if (vertices.filter((vertex) => vertex.als?.join() === cells).length !== 2) return;
         const polarity =
           closed && links[0].kind === defined(links.at(-1), "link").kind
             ? first === "strong"
@@ -323,8 +329,9 @@ export class ChainSearch {
         const aliases = !loops
           ? [
               "AICs",
-              ...(new Set(vertices.flatMap((e) => e.members.map((literal) => literal.symbol)))
-                .size === 1
+              ...(new Set(
+                vertices.flatMap((vertex) => vertex.members.map((literal) => literal.symbol)),
+              ).size === 1
                 ? ["X-Chains"]
                 : []),
               ...(links.every((link) => link.kind === "weak" || link.source?.kind === "cell")
@@ -394,7 +401,9 @@ export class ChainSearch {
   }
 }
 
-/** Each independent search space gets one deterministic turn; all own leases close on every exit. */
+/**
+ * Each independent search space gets one deterministic turn; all own leases close on every exit.
+ */
 export function chainDescriptor(id: "C16" | "C17"): TechniqueDescriptor {
   const entry = defined(
     coverageEntries.find((entry) => entry.id === id),

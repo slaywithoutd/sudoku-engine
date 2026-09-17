@@ -128,19 +128,19 @@ export function checkNetPattern(
     if (node.rule === "resolution@1") {
       const sources = node.premises.map((id) => defined(nodes.get(id), "node"));
       if (sources.every((n) => depends(n.id) && n.rule !== "assume@1")) fanIn = true;
-      for (const s of sources)
+      for (const step of sources)
         if (
-          s.rule === "cover-clause@1" &&
-          s.conclusion.kind === "clause" &&
-          s.conclusion.alternatives.length === 2
+          step.rule === "cover-clause@1" &&
+          step.conclusion.kind === "clause" &&
+          step.conclusion.alternatives.length === 2
         ) {
-          const domain = nodes.get(s.premises[0]);
-          const d = domain && domainAssertion(domain.conclusion);
+          const domain = nodes.get(step.premises[0]);
+          const assertion = domain && domainAssertion(domain.conclusion);
           if (
-            d &&
+            assertion &&
             defined(domain, "domain").scope.length &&
             view.assembly.problem.symbols.filter(
-              (symbol) => view.state.domains[d.cell] & symbolMask(symbol),
+              (symbol) => view.state.domains[assertion.cell] & symbolMask(symbol),
             ).length > 2
           )
             dynamic = true;
@@ -158,7 +158,7 @@ export function checkNetPattern(
             requireProof(
               domain?.rule === "support@1"
                 ? domain.premises.slice(1).every((id) => view.state.domainFacts.includes(id))
-                : !!d && s.premises[0] === view.state.domainFacts[d.cell],
+                : !!assertion && step.premises[0] === view.state.domainFacts[assertion.cell],
               "static-rebuilt-link",
             );
         }

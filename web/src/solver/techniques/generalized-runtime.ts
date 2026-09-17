@@ -44,10 +44,10 @@ export class GeneralizedRun {
     let session: HypotheticalSession | undefined;
     try {
       session = new HypotheticalSession(view, "generalized", this.context.workspace);
-      for (const e of session.assume(candidateLiteral(plan.target), this.context.limits)) {
+      for (const vertex of session.assume(candidateLiteral(plan.target), this.context.limits)) {
         this.tick();
-        if (e.kind === "work") yield e;
-        else if (e.kind === "rejected") throw Error(e.code);
+        if (vertex.kind === "work") yield vertex;
+        else if (vertex.kind === "rejected") throw Error(vertex.code);
       }
       const proposal = compileGeneralized(view, plan, lease);
       this.tick();
@@ -276,7 +276,7 @@ export class GeneralizedSearch {
             !terminal &&
             survivors.every((candidate) => withConflict(consequence ?? target, [candidate]));
         const enoughGroup = grammar !== "g-whip" || groups > 0 || survivors.length > 1;
-        const enoughOr = grammar !== "inserted-or-whip" || next.some((p) => p.role === "or");
+        const enoughOr = grammar !== "inserted-or-whip" || next.some((part) => part.role === "or");
         if (terminal || endpoint) {
           if (next.length === length && enoughGroup && enoughOr) {
             const plan: GeneralizedPlan = {
@@ -359,7 +359,7 @@ export function generalizedDescriptor(
   discover: TechniqueDescriptor["discover"],
 ): TechniqueDescriptor {
   const entry = defined(
-    coverageEntries.find((e) => e.id === family),
+    coverageEntries.find((row) => row.id === family),
     "coverageEntry",
   );
   return {

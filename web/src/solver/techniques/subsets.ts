@@ -45,7 +45,7 @@ export class Subsets {
           yield { kind: "work", units: 1 };
           if (digits.some((digit) => house.cells.some((cell) => view.state.values[cell] === digit)))
             continue;
-          const mask = digits.reduce((m, digit) => m | symbolMask(digit), 0);
+          const mask = digits.reduce((bits, digit) => bits | symbolMask(digit), 0);
           const cells = house.cells.filter((cell) => view.state.domains[cell] & mask);
           if (
             cells.length !== size ||
@@ -67,7 +67,7 @@ export class Subsets {
     form: "naked" | "hidden",
   ): Discovery {
     const selected = form === "naked" ? cells : house.cells.filter((cell) => !cells.includes(cell));
-    const mask = selected.reduce((m, cell) => m | view.state.domains[cell], 0);
+    const mask = selected.reduce((bits, cell) => bits | view.state.domains[cell], 0);
     if (symbols(view, mask).length !== selected.length) return;
     const targets =
       form === "naked"

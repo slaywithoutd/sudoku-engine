@@ -271,7 +271,7 @@ export class Coloring implements PatternStrategy {
         );
         let root: number;
         if (branch.conflict) {
-          const [literal, c] = branch.conflict;
+          const [literal, other] = branch.conflict;
           root = certificate.resolve(
             defined(mapped.get(branch.roots[0]), "mapped"),
             defined(known.get(literalKey(literal)), "known"),
@@ -280,8 +280,8 @@ export class Coloring implements PatternStrategy {
               positive: false,
             },
           );
-          root = certificate.resolve(root, defined(known.get(literalKey(c)), "known"), {
-            ...c,
+          root = certificate.resolve(root, defined(known.get(literalKey(other)), "known"), {
+            ...other,
             positive: false,
           });
         } else {
@@ -300,7 +300,7 @@ export class Coloring implements PatternStrategy {
         cover = defined(mapped.get(edge.roots[0]), "mapped"),
         branches: number[] = [];
       for (const representative of [...edge.ends].sort(
-        (literal, c) => literal.cell - c.cell || literal.symbol - c.symbol,
+        (literal, other) => literal.cell - other.cell || literal.symbol - other.symbol,
       )) {
         yield { kind: "work", units: 1 };
         const assumption = certificate.add("assume@1", [], clause([representative]));

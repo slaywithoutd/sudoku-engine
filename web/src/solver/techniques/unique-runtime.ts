@@ -87,7 +87,7 @@ function* effects(view: ReadView, geometry: UniqueGeometry): Generator<Effect> {
               kind === "remove" &&
               !geometry.cells.includes(cell) &&
               symbol === geometry.guardians[0].symbol &&
-              roofs.every((c) => peers(c, cell));
+              roofs.every((other) => peers(other, cell));
           if (geometry.kind === "type3")
             allowed =
               kind === "remove" &&
@@ -110,10 +110,10 @@ function* effects(view: ReadView, geometry: UniqueGeometry): Generator<Effect> {
               kind === "remove" &&
               geometry.cells.includes(cell) &&
               geometry.cells.some(
-                (c) =>
-                  Math.floor(c / 9) !== Math.floor(cell / 9) &&
-                  c % 9 !== cell % 9 &&
-                  view.state.domains[c] === geometry.coreMasks[0],
+                (other) =>
+                  Math.floor(other / 9) !== Math.floor(cell / 9) &&
+                  other % 9 !== cell % 9 &&
+                  view.state.domains[other] === geometry.coreMasks[0],
               ) &&
               core.includes(symbol) &&
               symbol !== geometry.strongSymbol &&
@@ -251,15 +251,15 @@ export function* discoverUnique(
                   consequence: { kind: "denial", paths: paths as ForcingLink[][] },
                 };
             }
-            if (!plan && results.every((r) => r.falsePaths || r.paths.has(signedKey(target))))
+            if (!plan && results.every((row) => row.falsePaths || row.paths.has(signedKey(target))))
               plan = {
                 geometry: geometry,
                 consequence: {
                   kind: "cases",
-                  branches: results.map((r) => ({
-                    assumption: r.assumption,
-                    result: r.falsePaths ? "false" : target,
-                    paths: r.falsePaths ?? [defined(r.paths.get(signedKey(target)), "path")],
+                  branches: results.map((row) => ({
+                    assumption: row.assumption,
+                    result: row.falsePaths ? "false" : target,
+                    paths: row.falsePaths ?? [defined(row.paths.get(signedKey(target)), "path")],
                   })),
                 },
               };
@@ -275,8 +275,9 @@ export function* discoverUnique(
             if (geometry.kind === "type6") {
               const cell = defined(
                   geometry.cells.find(
-                    (c) =>
-                      c !== effect.cell && geometry.guardians.some((literal) => literal.cell === c),
+                    (other) =>
+                      other !== effect.cell &&
+                      geometry.guardians.some((literal) => literal.cell === other),
                   ),
                   "cell",
                 ),
@@ -387,7 +388,7 @@ export function* discoverUnique(
 
 function descriptor(family: UniqueGeometry["row"]): TechniqueDescriptor {
   const entry = defined(
-      coverageEntries.find((e) => e.id === family),
+      coverageEntries.find((row) => row.id === family),
       "coverageEntry",
     ),
     tradeCells = family === "U01" ? 4 : family === "U02" ? 6 : family === "U03" ? 12 : 81;

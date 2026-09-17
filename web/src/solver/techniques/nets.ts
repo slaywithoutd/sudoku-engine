@@ -119,7 +119,7 @@ class NetDomains {
             [this.roots[cell]],
             proposedClause(
               proof.view.assembly.problem.symbols
-                .filter((s) => this.masks[cell] & bit(s))
+                .filter((digit) => this.masks[cell] & bit(digit))
                 .map((symbol) => ({ cell, symbol, positive: true })),
             ),
           );
@@ -167,12 +167,12 @@ class NetDomains {
             );
           } else if (step.kind === "locked") {
             root = defined(source, "source");
-            for (const [i, c] of step.supports.entries()) {
+            for (const [i, other] of step.supports.entries()) {
               const weak = proof.add(
                 "weak-link@1",
                 [proof.fact({ kind: "all-different", cells: proof.house(step.otherHouse) })],
                 proposedClause([
-                  { cell: c, symbol: digit, positive: false },
+                  { cell: other, symbol: digit, positive: false },
                   { cell, symbol: digit, positive: false },
                 ]),
               );
@@ -192,7 +192,7 @@ class NetDomains {
               "hall@1",
               [
                 proof.fact({ kind: "all-different", cells: proof.house(step.house) }),
-                ...step.cells.map((c) => this.roots[c]),
+                ...step.cells.map((other) => this.roots[other]),
               ],
               proposedClause([{ cell, symbol: digit, positive: false }]),
             );
@@ -244,9 +244,13 @@ export function compileNet(view: ReadView, plan: NetPlan): DeductionProposal {
       children.push({ assumption: left, result, children: [], cover: null });
     }
     proof.scope = [assumption];
-    result = proof.add("cases@1", [cover, ...children.flatMap((c) => [c.assumption, c.result])], {
-      kind: "false",
-    });
+    result = proof.add(
+      "cases@1",
+      [cover, ...children.flatMap((child) => [child.assumption, child.result])],
+      {
+        kind: "false",
+      },
+    );
   } else
     result = proof.add(
       "contradiction@1",

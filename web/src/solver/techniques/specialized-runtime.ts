@@ -196,11 +196,11 @@ export class SpecializedProof {
         left[i] = bitOf(choices[i][0]);
         right[i] &= ~left[i];
         const relation = yield* build.call(this, left),
-          b = yield* build.call(this, right);
-        this.lease?.grow(0, (relation.rows.length + b.rows.length) * 16);
-        return this.table("table-union@1", [relation.id, b.id], ordered, [
+          rightTable = yield* build.call(this, right);
+        this.lease?.grow(0, (relation.rows.length + rightTable.rows.length) * 16);
+        return this.table("table-union@1", [relation.id, rightTable.id], ordered, [
           ...relation.rows,
-          ...b.rows,
+          ...rightTable.rows,
         ]);
       }
       const rows: number[][] = [];
@@ -234,24 +234,30 @@ export class SpecializedProof {
   }
 
   *join(
-    a: LocalRelation,
-    b: LocalRelation,
+    first: LocalRelation,
+    second: LocalRelation,
     filters: readonly number[] = [],
   ): Generator<SpecializedWork, LocalRelation> {
-    const cells = sortedCells([...a.cells, ...b.cells]),
-      shared = a.cells.filter((cell) => b.cells.includes(cell)),
+    const cells = sortedCells([...first.cells, ...second.cells]),
+      shared = first.cells.filter((cell) => second.cells.includes(cell)),
       rows: number[][] = [];
     const constraints = filters.map(
       (id) =>
         this.nodes.find((n) => n.id === id)?.conclusion ?? this.view.facts.get(id)?.proposition,
     );
-    for (const left of a.rows)
-      for (const right of b.rows) {
+    for (const left of first.rows)
+      for (const right of second.rows) {
         yield specializedWork;
-        if (!shared.every((cell) => left[a.cells.indexOf(cell)] === right[b.cells.indexOf(cell)]))
+        if (
+          !shared.every(
+            (cell) => left[first.cells.indexOf(cell)] === right[second.cells.indexOf(cell)],
+          )
+        )
           continue;
         const row = cells.map((cell) =>
-          a.cells.includes(cell) ? left[a.cells.indexOf(cell)] : right[b.cells.indexOf(cell)],
+          first.cells.includes(cell)
+            ? left[first.cells.indexOf(cell)]
+            : right[second.cells.indexOf(cell)],
         );
         if (
           !constraints.every((proposition) =>
@@ -269,7 +275,7 @@ export class SpecializedProof {
         this.lease?.grow(1, 64 + cells.length * 16);
         rows.push(row);
       }
-    return this.table("table-join-filter@1", [a.id, b.id, ...filters], cells, rows);
+    return this.table("table-join-filter@1", [first.id, second.id, ...filters], cells, rows);
   }
   *joinPeers(
     left: LocalRelation,

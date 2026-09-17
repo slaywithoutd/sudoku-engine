@@ -192,7 +192,8 @@ export async function runSolver(
             frontierEmpty: true as const,
           };
           const witness = count.kind === "unknown" ? count.witnesses[0] : undefined;
-          // An exhausted root with no witness proves zero solutions, not a witness-less unique claim.
+          // An exhausted root with no witness proves zero solutions, not a witness-less unique
+          // claim.
           count = mergeEvidence(
             count,
             witness

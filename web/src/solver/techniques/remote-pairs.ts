@@ -79,16 +79,16 @@ export class RemotePairs implements PatternStrategy {
     for (const cell of bi) yield* walk([cell], digits(view, cell));
   }
   *compile(view: ReadView, graph: PatternGraph, pattern: Json, effects: Effect[]) {
-    const p = pattern as unknown as RemotePattern,
+    const shape = pattern as unknown as RemotePattern,
       builder = new PatternBuilder(view, graph),
-      strong = p.cells.map((cell) => builder.cell(cell)),
+      strong = shape.cells.map((cell) => builder.cell(cell)),
       roots: number[] = [];
     const endpoints = new Map<number, number>();
-    for (const symbol of p.symbols) {
+    for (const symbol of shape.symbols) {
       if (!effects.some((effect) => effect.symbol === symbol)) continue;
-      const vertices = p.cells.flatMap((cell, i) => [
-        [pos(cell, p.symbols[(p.symbols.indexOf(symbol) + i) % 2])],
-        [pos(cell, p.symbols[(p.symbols.indexOf(symbol) + i + 1) % 2])],
+      const vertices = shape.cells.flatMap((cell, i) => [
+        [pos(cell, shape.symbols[(shape.symbols.indexOf(symbol) + i) % 2])],
+        [pos(cell, shape.symbols[(shape.symbols.indexOf(symbol) + i + 1) % 2])],
       ]);
       endpoints.set(symbol, yield* builder.path(vertices, strong));
     }

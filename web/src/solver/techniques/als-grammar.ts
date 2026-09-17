@@ -91,12 +91,12 @@ class AlsAdmission {
   }
   weak(roots: number[], pairs: [Literal, Literal][]): void {
     requireProof(Array.isArray(roots) && roots.length === pairs.length, "incomplete-als-conflicts");
-    pairs.forEach(([literal, b], i) => {
+    pairs.forEach(([literal, other], i) => {
       requireProof(
-        literal.cell !== b.cell || literal.symbol !== b.symbol,
+        literal.cell !== other.cell || literal.symbol !== other.symbol,
         "overlap-in-rcc-or-visibility",
       );
-      this.sources.weak(roots[i], literal, b);
+      this.sources.weak(roots[i], literal, other);
     });
   }
   /** Only selected conjunction projections and resolution carry named lineage. */
@@ -143,10 +143,10 @@ export function checkAlsPattern(
     "unproductive-als",
   );
   const check = new AlsAdmission(proposal, view, available, pattern.sets);
-  const expectedOverlaps = pattern.sets.flatMap((a, left) =>
-    pattern.sets.flatMap((b, right) =>
+  const expectedOverlaps = pattern.sets.flatMap((first, left) =>
+    pattern.sets.flatMap((second, right) =>
       left < right
-        ? [{ left, right, cells: a.cells.filter((cell) => b.cells.includes(cell)) }]
+        ? [{ left, right, cells: first.cells.filter((cell) => second.cells.includes(cell)) }]
         : [],
     ),
   );
@@ -232,7 +232,7 @@ export function checkAlsPattern(
         sameValue(route.rccs, edges) && route.projections.length === expected.length,
         "incomplete-als-route",
       );
-      expected.forEach((e, j) => check.projection(route.projections[j], e.set, e.symbols));
+      expected.forEach((item, j) => check.projection(route.projections[j], item.set, item.symbols));
       witnesses = [
         ...new Map(
           witnesses.map((literal) => [literal.cell + ":" + literal.symbol, literal]),

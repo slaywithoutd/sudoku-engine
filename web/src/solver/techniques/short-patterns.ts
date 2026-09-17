@@ -52,10 +52,10 @@ export class ShortPatterns implements PatternStrategy {
         for (const empty of house.cells) {
           yield { kind: "work", units: 1 };
           if (cells.includes(empty)) continue;
-          const a = cells.filter((cell) => row(cell) === row(empty)),
+          const first = cells.filter((cell) => row(cell) === row(empty)),
             right = cells.filter((cell) => column(cell) === column(empty));
-          if (a.length && right.length && a.length + right.length === cells.length)
-            arms.push({ a, b: right, empty }, { a: right, b: a, empty });
+          if (first.length && right.length && first.length + right.length === cells.length)
+            arms.push({ a: first, b: right, empty }, { a: right, b: first, empty });
         }
       for (const arm of arms)
         for (const right of graph.index.covers) {
@@ -71,12 +71,12 @@ export class ShortPatterns implements PatternStrategy {
           const rh = classicHouseEqualTo(view, rs.cells);
           if (!rh || rh.id === house.id) continue;
           if (arm.empty !== undefined && orientation(rh.cells) === "box") continue;
-          for (const [literal, d] of [right.literals, [...right.literals].reverse()]) {
+          for (const [literal, other] of [right.literals, [...right.literals].reverse()]) {
             yield { kind: "work", units: 1 };
-            const all = [...arm.a, ...arm.b, literal.cell, d.cell];
+            const all = [...arm.a, ...arm.b, literal.cell, other.cell];
             if (
               new Set(all).size !== all.length ||
-              !arm.b.every((b) => graph.has(pos(b, symbol), literal))
+              !arm.b.every((second) => graph.has(pos(second, symbol), literal))
             )
               continue;
             const effects: Effect[] = [];
@@ -85,7 +85,7 @@ export class ShortPatterns implements PatternStrategy {
               if (
                 !view.state.values[target] &&
                 view.state.domains[target] & symbolMask(symbol) &&
-                [...arm.a, d.cell].every(
+                [...arm.a, other.cell].every(
                   (cell) => cell !== target && graph.has(pos(cell, symbol), pos(target, symbol)),
                 )
               )
@@ -94,7 +94,7 @@ export class ShortPatterns implements PatternStrategy {
             if (!effects.length) continue;
             const path: ShortPath = {
               symbol,
-              vertices: [arm.a, arm.b, [literal.cell], [d.cell]],
+              vertices: [arm.a, arm.b, [literal.cell], [other.cell]],
               strongHouses: [house.id, rh.id],
               ...(arm.empty === undefined ? {} : { emptyIntersection: arm.empty }),
             };
@@ -162,10 +162,10 @@ export class ShortPatterns implements PatternStrategy {
     }
   }
   *compile(view: ReadView, graph: PatternGraph, pattern: Json, effects: Effect[]) {
-    const p = pattern as unknown as ShortPattern,
+    const shape = pattern as unknown as ShortPattern,
       builder = new PatternBuilder(view, graph),
       roots = new Map<string, number>();
-    for (const path of p.paths) {
+    for (const path of shape.paths) {
       const root = yield* builder.path(
         path.vertices.map((group) => group.map((cell) => pos(cell, path.symbol))),
         path.strongHouses.map((house) => builder.house(house, path.symbol)),

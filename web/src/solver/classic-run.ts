@@ -31,7 +31,10 @@ export type ClassicSolveEvent =
       readonly name: string;
       readonly effects: readonly Effect[];
       readonly values: readonly number[];
-      /** Candidate bitmasks (bit n-1 = digit n) before the step, and the cells its pattern reasons about. */
+      /**
+       * Candidate bitmasks (bit n-1 = digit n) before the step, and the cells its pattern reasons
+       * about.
+       */
       readonly candidates: readonly number[];
       readonly cells: readonly number[];
     }
@@ -49,7 +52,10 @@ export type ClassicSolveEvent =
     };
 
 const PROFILE = "classic-expanded@1";
-/** Interactive ceilings for one classic 9x9 run; the exact phase inherits what the logical phase leaves. */
+/**
+ * Interactive ceilings for one classic 9x9 run; the exact phase inherits what the logical phase
+ * leaves.
+ */
 export const CLASSIC_SOLVE_LIMITS: Readonly<Limits> = Object.freeze({
   timeMs: 60_000,
   workUnits: 60_000_000,
@@ -124,14 +130,17 @@ export function patternCells(pattern: unknown): number[] {
     for (const [key, value] of Object.entries(x as Record<string, unknown>)) {
       if (key === "cell" && isCell(value)) found.add(value);
       else if (key === "cells" && Array.isArray(value))
-        value.forEach((v) => isCell(v) && found.add(v));
+        value.forEach((item) => isCell(item) && found.add(item));
       else walk(value, depth + 1);
     }
   };
   walk(pattern, 0);
   return [...found].sort((left, right) => left - right);
 }
-/** Independent exact count for a 9x9 grid (used for correctness marks), bounded by the precount share. */
+/**
+ * Independent exact count for a 9x9 grid (used for correctness marks), bounded by the precount
+ * share.
+ */
 export function countClassic(
   givens: readonly number[],
   clock: { now(): number },
@@ -159,7 +168,8 @@ function solutionOf(count: CountEvidence): readonly number[] | null {
 
 /**
  * Composes the existing M2 pipeline for one 9x9 classic grid:
- * normalizeClassic -> assemble -> initialize -> logical phase (auto-accepted) -> independent exact count.
+ * normalizeClassic -> assemble -> initialize -> logical phase (auto-accepted) ->
+ * independent exact count.
  * Throws ProblemInputError for malformed givens; reports rule conflicts as an "error" result.
  */
 export async function solveClassic(
@@ -295,7 +305,8 @@ export async function solveClassic(
             ports.emit({ kind: "progress", phase: event.phase ?? "human", workUnits: work });
           }
         } else if (event.kind === "proposal" && event.step) {
-          // The step is committed by `accept` after this publish resolves; flush its board on the next event.
+          // The step is committed by `accept` after this publish resolves; flush its board on the
+          // next event.
           if (pending) emitStep(pending);
           steps++;
           pending = {

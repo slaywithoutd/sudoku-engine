@@ -31,7 +31,7 @@ export class ForcingGraph {
       yield { kind: "work", units: 1 };
       const recipe = edge.recipe;
       if (recipe.kind === "relation-conflict") continue;
-      const [literal, b] = edge.literals;
+      const [literal, other] = edge.literals;
       let reason: ForcingReason;
       if (recipe.kind === "cell-conflict" || recipe.kind === "cell-cover")
         reason = { kind: recipe.kind, cell: literal.cell };
@@ -43,8 +43,8 @@ export class ForcingGraph {
         reason = { kind: recipe.kind, house: house.id, symbol: literal.symbol };
       }
       for (const [x, y] of [
-        [literal, b],
-        [b, literal],
+        [literal, other],
+        [other, literal],
       ]) {
         const from = edge.kind === "weak" ? x : opposite(x),
           to = edge.kind === "weak" ? opposite(y) : y,
@@ -219,10 +219,10 @@ export function* discoverForcing(view: ReadView, context: DiscoveryContext): Dis
         for (const assumption of split.alternatives) {
           const session = new HypotheticalSession(view, "forcing", context.workspace);
           try {
-            for (const e of session.assume(assumption, context.limits)) {
+            for (const vertex of session.assume(assumption, context.limits)) {
               tick();
-              if (e.kind === "work") yield e;
-              else if (e.kind === "rejected") throw Error(e.code);
+              if (vertex.kind === "work") yield vertex;
+              else if (vertex.kind === "rejected") throw Error(vertex.code);
             }
             const cursor = graph.paths(assumption, split.kind === "nishio");
             let next = cursor.next();

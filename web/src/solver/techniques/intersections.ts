@@ -63,7 +63,7 @@ export class LockedCandidates {
                 proposedClause([
                   ...cells
                     .slice(index + 1)
-                    .map((c) => ({ cell: c, symbol: cover.symbol, positive: true })),
+                    .map((other) => ({ cell: other, symbol: cover.symbol, positive: true })),
                   { cell, symbol: cover.symbol, positive: false },
                 ]),
               );

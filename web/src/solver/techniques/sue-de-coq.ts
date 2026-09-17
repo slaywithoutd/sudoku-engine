@@ -68,16 +68,20 @@ export class SueDeCoqSearch {
               set.cells.some((cell) => intersection.includes(cell))
             )
               continue;
-            for (const b of this.sets) {
+            for (const candidate of this.sets) {
               yield { kind: "work", units: 1 };
               if (
-                b.house !== box.id ||
-                b.cells.length !== boxSize ||
-                b.cells.some((cell) => intersection.includes(cell) || set.cells.includes(cell)) ||
-                !sdcAllocation(view, intersection, set, b)
+                candidate.house !== box.id ||
+                candidate.cells.length !== boxSize ||
+                candidate.cells.some(
+                  (cell) => intersection.includes(cell) || set.cells.includes(cell),
+                ) ||
+                !sdcAllocation(view, intersection, set, candidate)
               )
                 continue;
-              const cells = [...intersection, ...set.cells, ...b.cells].sort((x, y) => x - y),
+              const cells = [...intersection, ...set.cells, ...candidate.cells].sort(
+                  (x, y) => x - y,
+                ),
                 value = setUnion(view, intersection);
               const pattern: SdcPattern = {
                 kind: "sdc",
@@ -86,15 +90,15 @@ export class SueDeCoqSearch {
                 box: box.id,
                 intersection,
                 lineSide: set.cells,
-                boxSide: b.cells,
+                boxSide: candidate.cells,
                 domains: cells.map((cell) => view.state.domains[cell]),
                 table: -1,
                 routes: [],
               };
               const effects: Effect[] = [];
               for (const sector of ["line", "box"] as const) {
-                const own = sector === "line" ? set : b,
-                  other = sector === "line" ? b : set,
+                const own = sector === "line" ? set : candidate,
+                  other = sector === "line" ? candidate : set,
                   house = sector === "line" ? line : box;
                 const local = [...intersection, ...own.cells].sort((x, y) => x - y);
                 const symbols = [
@@ -114,7 +118,7 @@ export class SueDeCoqSearch {
                     )
                       continue;
                     const occurrences = local.filter(
-                      (c) => view.state.domains[c] & symbolMask(symbol),
+                      (peer) => view.state.domains[peer] & symbolMask(symbol),
                     );
                     if (!occurrences.length) continue;
                     effects.push({ kind: "remove", cell, symbol });

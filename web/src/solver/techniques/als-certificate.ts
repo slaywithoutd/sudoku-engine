@@ -73,10 +73,10 @@ export type AlsCandidate = {
 export const alsMembers = (sets: AlsSet[], set: number, symbol: number): Literal[] =>
   sets[set].occurrences[symbol].map((cell) => candidate(cell, symbol));
 export const alsOverlaps = (sets: AlsSet[]): AlsOverlap[] =>
-  sets.flatMap((a, left) =>
-    sets.flatMap((b, right) =>
+  sets.flatMap((first, left) =>
+    sets.flatMap((second, right) =>
       left < right
-        ? [{ left, right, cells: a.cells.filter((cell) => b.cells.includes(cell)) }]
+        ? [{ left, right, cells: first.cells.filter((cell) => second.cells.includes(cell)) }]
         : [],
     ),
   );
@@ -123,8 +123,8 @@ export class AlsCertificate {
       for (const edge of pattern.rccs) {
         edge.roots = [];
         for (const literal of alsMembers(pattern.sets, edge.left, edge.symbol))
-          for (const c of alsMembers(pattern.sets, edge.right, edge.symbol))
-            edge.roots.push(yield* certificate.weak(literal, c));
+          for (const other of alsMembers(pattern.sets, edge.right, edge.symbol))
+            edge.roots.push(yield* certificate.weak(literal, other));
       }
       for (const [i, route] of pattern.routes.entries()) {
         for (const projection of route.projections)

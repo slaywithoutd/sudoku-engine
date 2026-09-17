@@ -90,7 +90,7 @@ export class UniqueRectangles {
     for (const rows of uniqueCombinations(coordinates, 2))
       for (const cols of uniqueCombinations(coordinates, 2)) {
         yield { kind: "work", units: 1 };
-        const cells = rows.flatMap((r) => cols.map((cell) => r * 9 + cell));
+        const cells = rows.flatMap((rowIndex) => cols.map((cell) => rowIndex * 9 + cell));
         if (
           new Set(cells.map(box)).size !== 2 ||
           cells.some((cell) => view.assembly.problem.givens[cell])
@@ -98,7 +98,7 @@ export class UniqueRectangles {
           continue;
         for (const core of uniqueCombinations(view.assembly.problem.symbols, 2)) {
           yield { kind: "work", units: 1 };
-          const mask = core.reduce((m, symbol) => m | symbolMask(symbol), 0),
+          const mask = core.reduce((bits, symbol) => bits | symbolMask(symbol), 0),
             avoidable = kind.startsWith("avoidable");
           if (
             cells.some((cell) =>
@@ -144,7 +144,7 @@ export class UniqueRectangles {
             yield { kind: "geometry", geometry: geometry };
           if (kind === "type3" && adjacent) {
             const extras = [...new Set(geometry.guardians.map((literal) => literal.symbol))],
-              extraMask = extras.reduce((m, symbol) => m | symbolMask(symbol), 0);
+              extraMask = extras.reduce((bits, symbol) => bits | symbolMask(symbol), 0);
             if (extras.length < 2 || extras.length > 4) continue;
             for (const house of view.assembly.allDifferent)
               if (roofs.every((cell) => house.cells.includes(cell))) {
@@ -210,11 +210,15 @@ export class UniqueRectangles {
                   ),
                 )) {
                   const lines = houses.filter((house) => house.cells.includes(floor));
-                  for (const house of lines.filter((h) => new Set(h.cells.map(row)).size === 1))
-                    for (const b of lines.filter((h) => new Set(h.cells.map(col)).size === 1))
+                  for (const house of lines.filter(
+                    (scope) => new Set(scope.cells.map(row)).size === 1,
+                  ))
+                    for (const scope of lines.filter(
+                      (line) => new Set(line.cells.map(col)).size === 1,
+                    ))
                       yield {
                         kind: "geometry",
-                        geometry: { ...geometry, strongSymbol, strongHouses: [house.id, b.id] },
+                        geometry: { ...geometry, strongSymbol, strongHouses: [house.id, scope.id] },
                       };
                 }
             }
@@ -228,8 +232,8 @@ export class UniqueRectangles {
         yield { kind: "work", units: 1 };
         const cells = (
           orientation === "rows"
-            ? left.flatMap((r) => right.map((cell) => 9 * r + cell))
-            : right.flatMap((r) => left.map((cell) => 9 * r + cell))
+            ? left.flatMap((rowIndex) => right.map((cell) => 9 * rowIndex + cell))
+            : right.flatMap((rowIndex) => left.map((cell) => 9 * rowIndex + cell))
         ).sort((x, y) => x - y);
         if (
           new Set(cells.map(box)).size !== 3 ||
@@ -239,7 +243,7 @@ export class UniqueRectangles {
         const common = cells.reduce((mask, cell) => mask & view.state.domains[cell], 511);
         for (const core of uniqueCombinations(uniqueSymbols(common), 3)) {
           yield { kind: "work", units: 1 };
-          const mask = core.reduce((m, symbol) => m | symbolMask(symbol), 0),
+          const mask = core.reduce((bits, symbol) => bits | symbolMask(symbol), 0),
             geometry = uniqueGeometry(
               view,
               "U02",

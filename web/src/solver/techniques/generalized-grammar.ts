@@ -95,23 +95,23 @@ export class GeneralizedLineage {
     } else {
       const cellMatch = /^cell:(\d+)$/.exec(position.variable);
       if (cellMatch) {
-        const c = Number(cellMatch[1]);
+        const cell = Number(cellMatch[1]);
         requireProof(
-          this.view.assembly.problem.cells.includes(c) && !this.view.state.values[c],
+          this.view.assembly.problem.cells.includes(cell) && !this.view.state.values[cell],
           "generalized-cell",
         );
         values = this.view.assembly.problem.symbols
-          .filter((symbol) => this.view.state.domains[c] & symbolMask(symbol))
-          .map((symbol) => [c, symbol]);
-        this.lineage.cell(cover, c);
+          .filter((symbol) => this.view.state.domains[cell] & symbolMask(symbol))
+          .map((symbol) => [cell, symbol]);
+        this.lineage.cell(cover, cell);
       } else {
         const match = /^(.*):symbol:(\d+)$/.exec(position.variable);
         const house = findHouse(this.view, match?.[1]);
         requireProof(match && house, "generalized-variable");
         const symbol = Number(match[2]);
         values = house.cells
-          .filter((c) => this.view.state.domains[c] & symbolMask(symbol))
-          .map((c) => [c, symbol]);
+          .filter((cell) => this.view.state.domains[cell] & symbolMask(symbol))
+          .map((cell) => [cell, symbol]);
         this.lineage.house(cover, house.id, symbol);
       }
       requireProof(this.node(cover).scope.length === 0, "generalized-cover-scope");

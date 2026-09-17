@@ -533,7 +533,7 @@ function checkUniqueOne(
         key = JSON.stringify(branch.assumption);
       requireProof(
         !seen.has(key) &&
-          geometry.guardians.some((v) => sameValue(v, branch.assumption)) &&
+          geometry.guardians.some((literal) => sameValue(literal, branch.assumption)) &&
           node.rule === "assume@1" &&
           !node.scope.length &&
           sameValue(node.conclusion, clause([branch.assumption])),
@@ -543,7 +543,7 @@ function checkUniqueOne(
       requireProof(
         branch.paths.length === (branch.result === "false" ? 2 : 1) &&
           certificate.paths.length === branch.paths.length &&
-          new Set(certificate.paths.flatMap((p) => p.links)).size <= 24,
+          new Set(certificate.paths.flatMap((path) => path.links)).size <= 24,
         "unique-case-bound",
       );
       branch.paths.forEach((path, j) =>
@@ -554,7 +554,7 @@ function checkUniqueOne(
           result.rule === "contradiction@1" &&
             sameValue(
               result.premises,
-              certificate.paths.map((p) => p.end),
+              certificate.paths.map((path) => path.end),
             ),
           "unique-case-contradiction",
         );
@@ -580,7 +580,8 @@ function checkUniqueOne(
       "unique-cases-lineage",
     );
   }
-  // Claimed strong houses and virtual auxiliaries must participate in this root's actual derivation.
+  // Claimed strong houses and virtual auxiliaries must participate in this root's actual
+  // derivation.
   const ancestors = new Set<number>(),
     stack = [cert.root];
   while (stack.length) {

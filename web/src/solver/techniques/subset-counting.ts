@@ -25,14 +25,18 @@ export function* countCapacities(
         : view.state.domains[cell] & symbolMask(symbol) &&
           !(
             symbol === target.symbol &&
-            scopes.some((s) => s.cells.includes(cell) && s.cells.includes(target.cell))
+            scopes.some((scope) => scope.cells.includes(cell) && scope.cells.includes(target.cell))
           ),
     );
     let maximum = 0;
     search: for (let size = possible.length; size >= 1; size--)
       for (const occupancy of combinations(possible, size)) {
         yield { kind: "work", units: 1 };
-        if (scopes.every((s) => s.cells.filter((cell) => occupancy.includes(cell)).length <= 1)) {
+        if (
+          scopes.every(
+            (scope) => scope.cells.filter((cell) => occupancy.includes(cell)).length <= 1,
+          )
+        ) {
           maximum = size;
           break search;
         }
@@ -78,10 +82,10 @@ export class SubsetCountingSearch {
         for (const symbol of setDigits(view.state.domains[cell]))
           for (const cells of combinations(pool, cellCount)) {
             yield { kind: "work", units: 1 };
-            if (withSingletons && cells.every((c) => !view.state.values[c])) continue;
+            if (withSingletons && cells.every((other) => !view.state.values[other])) continue;
             const local = [...new Set([...cells, cell])],
               available = houses.filter(
-                (house) => house.cells.filter((c) => local.includes(c)).length >= 2,
+                (house) => house.cells.filter((other) => local.includes(other)).length >= 2,
               );
             for (const indexes of combinations(
               available.map((_, i) => i),
@@ -90,7 +94,7 @@ export class SubsetCountingSearch {
               yield { kind: "work", units: 1 };
               const scopes: CountScope[] = indexes.map((i) => ({
                 house: available[i].id,
-                cells: available[i].cells.filter((c) => local.includes(c)),
+                cells: available[i].cells.filter((other) => local.includes(other)),
                 root: -1,
               }));
               if (new Set(scopes.map((scope) => scope.cells.join())).size !== scopes.length)
@@ -103,7 +107,7 @@ export class SubsetCountingSearch {
                 cells,
                 domains: local
                   .sort((left, right) => left - right)
-                  .map((c) => view.state.domains[c]),
+                  .map((other) => view.state.domains[other]),
                 symbols: setUnion(view, cells),
                 scopes,
                 target: { cell, symbol },

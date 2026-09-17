@@ -196,14 +196,16 @@ export class FireworksSearch implements SpecializedStrategy {
             candidates(view, left).filter(
               (symbol) =>
                 defined(houses.rows[Math.floor(left / 9)], "rows").every(
-                  (q) =>
-                    boxOf(q) === boxOf(left) ||
-                    q === right ||
-                    !candidates(view, q).includes(symbol),
+                  (another) =>
+                    boxOf(another) === boxOf(left) ||
+                    another === right ||
+                    !candidates(view, another).includes(symbol),
                 ) &&
                 defined(houses.columns[left % 9], "columns").every(
-                  (q) =>
-                    boxOf(q) === boxOf(left) || q === cell || !candidates(view, q).includes(symbol),
+                  (another) =>
+                    boxOf(another) === boxOf(left) ||
+                    another === cell ||
+                    !candidates(view, another).includes(symbol),
                 ),
             );
           const symbols = valid(x, y, zDigit);

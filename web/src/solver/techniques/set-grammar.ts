@@ -388,12 +388,12 @@ class SetAdmission {
             this.charge(1);
             return (
               ["weak-link@1", "table-project@1"].includes(x.rule) &&
-              candidates.some((c) =>
+              candidates.some((other) =>
                 sameValue(
                   x.conclusion,
                   clause([
                     { ...literal, positive: false },
-                    { ...c, positive: false },
+                    { ...other, positive: false },
                   ]),
                 ),
               )

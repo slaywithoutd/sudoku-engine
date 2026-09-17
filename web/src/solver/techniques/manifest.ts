@@ -7960,7 +7960,7 @@ export function validateCoverage(entries: readonly CoverageEntry[]): readonly st
   if (entries.length !== 38 || new Set(entries.map((entry) => entry.id)).size !== 38)
     errors.add("missing-coverage-row");
   for (const entry of entries) {
-    const known = coverageEntries.find((e) => e.id === entry.id);
+    const known = coverageEntries.find((row) => row.id === entry.id);
     if (
       !known ||
       entry.aliases.length !== known.aliases.length ||

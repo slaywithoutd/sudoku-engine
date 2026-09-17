@@ -158,7 +158,9 @@ export function getTechniques(profile: VersionId): readonly TechniqueDescriptor[
       );
 }
 
-/** Catalogue visibility is distinct from runtime readiness; partial M2 cannot stall successfully. */
+/**
+ * Catalogue visibility is distinct from runtime readiness; partial M2 cannot stall successfully.
+ */
 export function profileReadiness(profile: VersionId): {
   readonly ready: boolean;
   readonly missing: readonly string[];

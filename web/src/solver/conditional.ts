@@ -505,7 +505,8 @@ export class ConditionalOperation {
     };
     const finish = async () => {
       if (!active || !granted || !captured || completed || replaying) return;
-      replaying = true; // Lock before the first task-yield: port events cannot start a second replay.
+      // Lock before the first task-yield: port events cannot start a second replay.
+      replaying = true;
       let cursor: Generator<CheckEvent, void, void> | undefined;
       try {
         charge(1);
