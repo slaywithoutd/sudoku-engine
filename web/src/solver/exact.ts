@@ -3,6 +3,7 @@ import type { EngineProblem, ConstraintInstance } from "./problem";
 import type { Assembly } from "./rules/types";
 import type { Literal } from "./state/types";
 import { hasSingleCandidate, symbolMask } from "./state/read";
+import { defined } from "./invariants";
 
 export interface ExactStats {
   readonly nodes: number;
@@ -101,7 +102,10 @@ function inputSize(problem: EngineProblem): {
     const keys = Reflect.ownKeys(parameters);
     requireInput(keys.length <= 16, "exact-parameter-limit");
     for (const key of keys) {
-      const descriptor = Object.getOwnPropertyDescriptor(parameters, key)!;
+      const descriptor = defined(
+        Object.getOwnPropertyDescriptor(parameters, key),
+        "getOwnPropertyDescriptor",
+      );
       requireInput(
         typeof key === "string" &&
           key.length <= 64 &&
@@ -196,7 +200,7 @@ class OriginalSemantics {
             .flatMap((rule) => rule.cells)
             .filter((peer) => peer !== cell),
         ),
-      ].sort((a, b) => a - b),
+      ].sort((left, right) => left - right),
     );
   }
   validValues(values: unknown): values is readonly number[] {
@@ -284,7 +288,7 @@ class ExactSearchSession {
     yield Object.freeze({ kind: "work", units: this.reservation.workUnits, stats: this.stats() });
     const { problem, checks } = this.semantics;
     while (this.frontier.length > 0) {
-      const frame = this.frontier.pop()!;
+      const frame = defined(this.frontier.pop(), "frontier");
       this.nodes++;
       this.maxDepth = Math.max(this.maxDepth, frame.decisions.length);
       yield this.work();

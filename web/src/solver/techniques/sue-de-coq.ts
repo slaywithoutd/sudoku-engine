@@ -13,20 +13,20 @@ export function sdcAllocation(
   line: LocalSet,
   box: LocalSet,
 ): boolean {
-  const v = setUnion(view, intersection),
-    a = line.symbols,
-    b = box.symbols;
+  const value = setUnion(view, intersection),
+    left = line.symbols,
+    right = box.symbols;
   return (
-    v.length >= intersection.length + 2 &&
-    a.length === line.cells.length + 1 &&
-    b.length === box.cells.length + 1 &&
-    new Set([...v, ...a, ...b]).size <= 9 &&
-    !v.some((s) => a.includes(s) && b.includes(s)) &&
+    value.length >= intersection.length + 2 &&
+    left.length === line.cells.length + 1 &&
+    right.length === box.cells.length + 1 &&
+    new Set([...value, ...left, ...right]).size <= 9 &&
+    !value.some((symbol) => left.includes(symbol) && right.includes(symbol)) &&
     line.cells.length + box.cells.length ===
-      v.length -
+      value.length -
         intersection.length +
-        a.filter((s) => !v.includes(s)).length +
-        b.filter((s) => !v.includes(s)).length
+        left.filter((symbol) => !value.includes(symbol)).length +
+        right.filter((symbol) => !value.includes(symbol)).length
   );
 }
 
@@ -38,33 +38,34 @@ export class SueDeCoqSearch {
   *patterns(intersectionSize: number, lineSize: number, boxSize: number): SetCursor {
     const view = this.view;
     const lines = view.assembly.allDifferent.filter(
-      (h) =>
-        h.cells.length === 9 &&
-        (new Set(h.cells.map((c) => Math.floor(c / 9))).size === 1 ||
-          new Set(h.cells.map((c) => c % 9)).size === 1),
+      (house) =>
+        house.cells.length === 9 &&
+        (new Set(house.cells.map((cell) => Math.floor(cell / 9))).size === 1 ||
+          new Set(house.cells.map((cell) => cell % 9)).size === 1),
     );
     const boxes = view.assembly.allDifferent.filter(
-      (h) =>
-        h.cells.length === 9 &&
-        new Set(h.cells.map((c) => Math.floor(c / 27) * 3 + Math.floor((c % 9) / 3))).size === 1,
+      (house) =>
+        house.cells.length === 9 &&
+        new Set(house.cells.map((cell) => Math.floor(cell / 27) * 3 + Math.floor((cell % 9) / 3)))
+          .size === 1,
     );
     for (const line of lines)
       for (const box of boxes) {
         yield { kind: "work", units: 1 };
-        const geometric = line.cells.filter((c) => box.cells.includes(c));
+        const geometric = line.cells.filter((cell) => box.cells.includes(cell));
         if (geometric.length !== 3) continue;
         for (const intersection of combinations(
-          geometric.filter((c) => !view.state.values[c]),
+          geometric.filter((cell) => !view.state.values[cell]),
           intersectionSize,
         )) {
           yield { kind: "work", units: 1 };
           if (setUnion(view, intersection).length < intersectionSize + 2) continue;
-          for (const a of this.sets) {
+          for (const set of this.sets) {
             yield { kind: "work", units: 1 };
             if (
-              a.house !== line.id ||
-              a.cells.length !== lineSize ||
-              a.cells.some((c) => intersection.includes(c))
+              set.house !== line.id ||
+              set.cells.length !== lineSize ||
+              set.cells.some((cell) => intersection.includes(cell))
             )
               continue;
             for (const b of this.sets) {
@@ -72,32 +73,35 @@ export class SueDeCoqSearch {
               if (
                 b.house !== box.id ||
                 b.cells.length !== boxSize ||
-                b.cells.some((c) => intersection.includes(c) || a.cells.includes(c)) ||
-                !sdcAllocation(view, intersection, a, b)
+                b.cells.some((cell) => intersection.includes(cell) || set.cells.includes(cell)) ||
+                !sdcAllocation(view, intersection, set, b)
               )
                 continue;
-              const cells = [...intersection, ...a.cells, ...b.cells].sort((x, y) => x - y),
-                v = setUnion(view, intersection);
-              const p: SdcPattern = {
+              const cells = [...intersection, ...set.cells, ...b.cells].sort((x, y) => x - y),
+                value = setUnion(view, intersection);
+              const pattern: SdcPattern = {
                 kind: "sdc",
                 alias: "Sue de Coq",
                 line: line.id,
                 box: box.id,
                 intersection,
-                lineSide: a.cells,
+                lineSide: set.cells,
                 boxSide: b.cells,
-                domains: cells.map((c) => view.state.domains[c]),
+                domains: cells.map((cell) => view.state.domains[cell]),
                 table: -1,
                 routes: [],
               };
               const effects: Effect[] = [];
               for (const sector of ["line", "box"] as const) {
-                const own = sector === "line" ? a : b,
-                  other = sector === "line" ? b : a,
+                const own = sector === "line" ? set : b,
+                  other = sector === "line" ? b : set,
                   house = sector === "line" ? line : box;
                 const local = [...intersection, ...own.cells].sort((x, y) => x - y);
                 const symbols = [
-                  ...new Set([...own.symbols, ...v.filter((s) => !other.symbols.includes(s))]),
+                  ...new Set([
+                    ...own.symbols,
+                    ...value.filter((symbol) => !other.symbols.includes(symbol)),
+                  ]),
                 ].sort((x, y) => x - y);
                 for (const cell of house.cells)
                   for (const symbol of symbols) {
@@ -106,7 +110,7 @@ export class SueDeCoqSearch {
                       local.includes(cell) ||
                       view.state.values[cell] ||
                       !(view.state.domains[cell] & symbolMask(symbol)) ||
-                      effects.some((e) => e.cell === cell && e.symbol === symbol)
+                      effects.some((effect) => effect.cell === cell && effect.symbol === symbol)
                     )
                       continue;
                     const occurrences = local.filter(
@@ -114,7 +118,7 @@ export class SueDeCoqSearch {
                     );
                     if (!occurrences.length) continue;
                     effects.push({ kind: "remove", cell, symbol });
-                    p.routes.push({
+                    pattern.routes.push({
                       sector,
                       occurrences,
                       projection: -1,
@@ -123,7 +127,7 @@ export class SueDeCoqSearch {
                     });
                   }
               }
-              if (effects.length) yield { kind: "candidate", pattern: p, effects };
+              if (effects.length) yield { kind: "candidate", pattern: pattern, effects };
             }
           }
         }
@@ -133,8 +137,10 @@ export class SueDeCoqSearch {
 export const sueDeCoqTechniques = Object.freeze([
   setDescriptor("C20", (view, _graph, sets) => {
     const search = new SueDeCoqSearch(view, sets);
-    return [2, 3].flatMap((c) =>
-      [1, 2, 3, 4].flatMap((a) => [1, 2, 3, 4].map((b) => search.patterns(c, a, b))),
+    return [2, 3].flatMap((cell) =>
+      [1, 2, 3, 4].flatMap((left) =>
+        [1, 2, 3, 4].map((right) => search.patterns(cell, left, right)),
+      ),
     );
   }),
 ]);

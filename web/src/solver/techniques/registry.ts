@@ -29,6 +29,7 @@ import { fireworksTechniques } from "./fireworks";
 import { orTechniques } from "./or-runtime";
 import { templateTechniques } from "./templates";
 import { uniqueTechniques } from "./unique-runtime";
+import { defined } from "../invariants";
 
 const detectors = new Map<
   string,
@@ -110,7 +111,7 @@ const advanced = [
 const descriptors: readonly TechniqueDescriptor[] = Object.freeze(
   coverageEntries.map(
     (entry) =>
-      advanced.find((d) => d.id === entry.version) ??
+      advanced.find((descriptor) => descriptor.id === entry.version) ??
       Object.freeze({
         id: entry.version,
         aliases: entry.aliases,
@@ -152,7 +153,9 @@ export function getTechniques(profile: VersionId): readonly TechniqueDescriptor[
     throw Error("unknown-profile");
   return profile === "classic-conditional@1"
     ? descriptors
-    : Object.freeze(descriptors.filter((d) => d.assumptionPolicy !== "unique-only"));
+    : Object.freeze(
+        descriptors.filter((descriptor) => descriptor.assumptionPolicy !== "unique-only"),
+      );
 }
 
 /** Catalogue visibility is distinct from runtime readiness; partial M2 cannot stall successfully. */
@@ -163,11 +166,11 @@ export function profileReadiness(profile: VersionId): {
   getTechniques(profile);
   const missing = coverageEntries
     .filter(
-      (e) =>
-        (profile === "classic-conditional@1" || e.assumptionPolicy !== "unique-only") &&
-        e.status !== "independently-verified",
+      (entry) =>
+        (profile === "classic-conditional@1" || entry.assumptionPolicy !== "unique-only") &&
+        entry.status !== "independently-verified",
     )
-    .map((e) => e.id);
+    .map((entry) => entry.id);
   return Object.freeze({ ready: missing.length === 0, missing: Object.freeze(missing) });
 }
 
@@ -184,7 +187,7 @@ export function assembleTechniqueJobs(assembly: Assembly, profile: VersionId) {
           id: "rule-propagation@1",
           scopeKey: rule.id,
           discover: (view: ReadView): Discovery =>
-            assembly.modules.get(rule.id)!.propagate(view, rule),
+            defined(assembly.modules.get(rule.id), "module").propagate(view, rule),
         }),
       ),
     ),

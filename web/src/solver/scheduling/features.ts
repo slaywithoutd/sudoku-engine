@@ -6,16 +6,16 @@ import { hasSingleCandidate, symbolMask } from "../state/read";
 
 export function canonicalProof(step: CheckedStep): string {
   if (!isCheckedStep(step)) throw Error("inauthentic-checked-step");
-  const order = (v: unknown): unknown =>
-    Array.isArray(v)
-      ? v.map(order)
-      : v && typeof v === "object"
+  const order = (value: unknown): unknown =>
+    Array.isArray(value)
+      ? value.map(order)
+      : value && typeof value === "object"
         ? Object.fromEntries(
-            Object.keys(v)
+            Object.keys(value)
               .sort()
-              .map((k) => [k, order((v as Record<string, unknown>)[k])]),
+              .map((k) => [k, order((value as Record<string, unknown>)[k])]),
           )
-        : v;
+        : value;
   return JSON.stringify(order(step.proposal));
 }
 export interface StepFeatures {
@@ -65,18 +65,21 @@ export function stepFeatures(step: CheckedStep, view: ReadView): StepFeatures {
     nodeCount: nodes.length,
     effects: JSON.stringify(
       [...step.proposal.effects].sort(
-        (a, b) => a.cell - b.cell || a.symbol - b.symbol || compareText(a.kind, b.kind),
+        (left, right) =>
+          left.cell - right.cell ||
+          left.symbol - right.symbol ||
+          compareText(left.kind, right.kind),
       ),
     ),
     proof: canonicalProof(step),
   };
 }
-export function compareFeatures(a: StepFeatures, b: StepFeatures): number {
+export function compareFeatures(left: StepFeatures, right: StepFeatures): number {
   return (
-    a.assumptionDepth - b.assumptionDepth ||
-    a.branchCount - b.branchCount ||
-    a.linkCount - b.linkCount ||
-    a.nodeCount - b.nodeCount
+    left.assumptionDepth - right.assumptionDepth ||
+    left.branchCount - right.branchCount ||
+    left.linkCount - right.linkCount ||
+    left.nodeCount - right.nodeCount
   );
 }
 

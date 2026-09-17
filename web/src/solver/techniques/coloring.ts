@@ -13,6 +13,7 @@ import {
   type StrongSource,
 } from "./chains-certificate";
 import { classicHouseContaining, symbolMask } from "../state/read";
+import { defined } from "../invariants";
 
 export interface ColorEdge {
   ends: [Literal, Literal];
@@ -50,7 +51,7 @@ export class Coloring implements PatternStrategy {
       yield { kind: "work", units: 1 };
       if (
         cover.literals.length !== 2 ||
-        cover.literals.some((l) => view.state.values[l.cell]) ||
+        cover.literals.some((literal) => view.state.values[literal.cell]) ||
         !graph.has(cover.literals[0], cover.literals[1])
       )
         continue;
@@ -59,18 +60,18 @@ export class Coloring implements PatternStrategy {
         if (!this.medusa) continue;
         source = { kind: "cell", cell: cover.literals[0].cell };
       } else {
-        const p = view.facts.get(cover.recipe.source)!.proposition;
-        if (p.kind !== "cover") continue;
-        const house = classicHouseContaining(view, p.cells);
+        const proposition = defined(view.facts.get(cover.recipe.source), "fact").proposition;
+        if (proposition.kind !== "cover") continue;
+        const house = classicHouseContaining(view, proposition.cells);
         if (!house) continue;
         source =
-          house.cells.join() === p.cells.join()
-            ? { kind: "house", house: house.id, symbol: p.symbol }
+          house.cells.join() === proposition.cells.join()
+            ? { kind: "house", house: house.id, symbol: proposition.symbol }
             : {
                 kind: "proved-cover",
                 source: cover.recipe.source,
                 house: house.id,
-                symbol: p.symbol,
+                symbol: proposition.symbol,
               };
       }
       const edge: ColorEdge = {
@@ -80,18 +81,20 @@ export class Coloring implements PatternStrategy {
       };
       if (
         edges.some(
-          (e) => JSON.stringify([e.ends, e.source]) === JSON.stringify([edge.ends, source]),
+          (colorEdge) =>
+            JSON.stringify([colorEdge.ends, colorEdge.source]) ===
+            JSON.stringify([edge.ends, source]),
         )
       )
         continue;
       graph.lease.grow(1, 1024);
       edges.push(edge);
-      for (const l of edge.ends) {
-        const key = literalKey(l),
+      for (const literal of edge.ends) {
+        const key = literalKey(literal),
           local = adjacency.get(key) ?? [];
         local.push(edge);
         adjacency.set(key, local);
-        literals.set(key, l);
+        literals.set(key, literal);
       }
     }
     const seen = new Set<string>(),
@@ -104,24 +107,32 @@ export class Coloring implements PatternStrategy {
         selected = new Set<ColorEdge>();
       let valid = true;
       for (let i = 0; i < queue.length; i++) {
-        const a = queue[i];
-        seen.add(a);
-        for (const edge of adjacency.get(a)!) {
+        const left = queue[i];
+        seen.add(left);
+        for (const edge of defined(adjacency.get(left), "adjacency")) {
           yield { kind: "work", units: 1 };
           selected.add(edge);
-          const b = literalKey(edge.ends.find((l) => literalKey(l) !== a)!);
-          if (colors.has(b)) {
-            if (colors.get(b) === colors.get(a)) valid = false;
+          const right = literalKey(
+            defined(
+              edge.ends.find((literal) => literalKey(literal) !== left),
+              "end",
+            ),
+          );
+          if (colors.has(right)) {
+            if (colors.get(right) === colors.get(left)) valid = false;
           } else {
-            colors.set(b, 1 - colors.get(a)!);
-            queue.push(b);
+            colors.set(right, 1 - defined(colors.get(left), "color"));
+            queue.push(right);
           }
         }
       }
       if (!valid) continue;
       const component: ColorComponent = { colors: [[], []], edges: [...selected] };
-      for (const [key, color] of colors) component.colors[color].push(literals.get(key)!);
-      component.colors.forEach((xs) => xs.sort((a, b) => a.cell - b.cell || a.symbol - b.symbol));
+      for (const [key, color] of colors)
+        component.colors[color].push(defined(literals.get(key), "literal"));
+      component.colors.forEach((xs) =>
+        xs.sort((left, right) => left.cell - right.cell || left.symbol - right.symbol),
+      );
       components.push(component);
     }
     const singles = function* (this: Coloring): Generator<ChainWork | ColorCandidate> {
@@ -145,7 +156,7 @@ export class Coloring implements PatternStrategy {
           else yield next.value;
         }
     } finally {
-      cursors.forEach((c) => c.return(undefined));
+      cursors.forEach((cursor) => cursor.return(undefined));
     }
   }
   private *candidates(
@@ -156,7 +167,7 @@ export class Coloring implements PatternStrategy {
     const branches: ColorBranch[] = [];
     for (let mask = 0; mask < 1 << components.length; mask++) {
       const colors = components.map((_, i) => (mask >> (components.length - i - 1)) & 1),
-        assigned = components.flatMap((c, i) => c.colors[colors[i]]);
+        assigned = components.flatMap((component, i) => component.colors[colors[i]]);
       let conflict: [Literal, Literal] | null = null;
       for (let i = 0; i < assigned.length && !conflict; i++)
         for (let j = i + 1; j < assigned.length; j++) {
@@ -168,7 +179,7 @@ export class Coloring implements PatternStrategy {
         }
       branches.push({ colors, conflict, witnesses: [], roots: [], proofs: [] });
     }
-    if (branches.every((b) => b.conflict)) return;
+    if (branches.every((branch) => branch.conflict)) return;
     const effects: Effect[] = [];
     for (const cell of view.assembly.problem.cells)
       for (const symbol of view.assembly.problem.symbols) {
@@ -183,8 +194,8 @@ export class Coloring implements PatternStrategy {
             continue;
           }
           const witness = components
-            .flatMap((c, i) => c.colors[branch.colors[i]])
-            .find((l) => graph.has(l, target));
+            .flatMap((component, i) => component.colors[branch.colors[i]])
+            .find((literal) => graph.has(literal, target));
           if (!witness) {
             valid = false;
             break;
@@ -193,12 +204,12 @@ export class Coloring implements PatternStrategy {
         }
         if (!valid) continue;
         effects.push({ kind: "remove", cell, symbol });
-        branches.forEach((b, i) => {
-          if (!b.conflict) b.witnesses.push(witnesses[i]);
+        branches.forEach((branch, i) => {
+          if (!branch.conflict) branch.witnesses.push(witnesses[i]);
         });
       }
     if (!effects.length) return;
-    const conflict = branches.find((b) => b.conflict)?.conflict;
+    const conflict = branches.find((branch) => branch.conflict)?.conflict;
     const form =
       components.length === 2
         ? "multi"
@@ -220,23 +231,28 @@ export class Coloring implements PatternStrategy {
       };
   }
   *compile(view: ReadView, graph: PatternGraph, input: Json, effects: Effect[]) {
-    const p = structuredClone(input) as unknown as ColoringPattern,
-      b = new ChainCertificate(view, graph),
+    const pattern = structuredClone(input) as unknown as ColoringPattern,
+      certificate = new ChainCertificate(view, graph),
       sourceIds: number[] = [];
-    for (const component of p.components)
+    for (const component of pattern.components)
       for (const edge of component.edges) {
-        edge.roots = [yield* b.strong(edge.source, edge.ends), yield* b.weak(...edge.ends)];
+        edge.roots = [
+          yield* certificate.strong(edge.source, edge.ends),
+          yield* certificate.weak(...edge.ends),
+        ];
         sourceIds.push(...edge.roots);
       }
-    for (const branch of p.branches) {
+    for (const branch of pattern.branches) {
       branch.roots = [];
-      if (branch.conflict) branch.roots.push(yield* b.weak(...branch.conflict));
+      if (branch.conflict) branch.roots.push(yield* certificate.weak(...branch.conflict));
       else
         for (const [i, witness] of branch.witnesses.entries())
-          branch.roots.push(yield* b.weak(witness, candidate(effects[i].cell, effects[i].symbol)));
+          branch.roots.push(
+            yield* certificate.weak(witness, candidate(effects[i].cell, effects[i].symbol)),
+          );
       sourceIds.push(...branch.roots);
     }
-    const packaged = b.package(sourceIds),
+    const packaged = certificate.package(sourceIds),
       mapped = new Map(sourceIds.map((id, i) => [id, packaged[i]])),
       roots: number[] = [];
     // Explicit two/four leaves are primitive cases, not metadata decorating a smaller proof.
@@ -248,37 +264,47 @@ export class Coloring implements PatternStrategy {
     ): Generator<ChainWork, number> {
       const effect = effects[effectIndex],
         target = clause([{ cell: effect.cell, symbol: effect.symbol, positive: false }]);
-      if (depth === p.components.length) {
-        const branch = p.branches.find((x) => x.colors.join() === colors.join())!;
+      if (depth === pattern.components.length) {
+        const branch = defined(
+          pattern.branches.find((x) => x.colors.join() === colors.join()),
+          "branche",
+        );
         let root: number;
         if (branch.conflict) {
-          const [a, c] = branch.conflict;
-          root = b.resolve(mapped.get(branch.roots[0])!, known.get(literalKey(a))!, {
-            ...a,
+          const [literal, c] = branch.conflict;
+          root = certificate.resolve(
+            defined(mapped.get(branch.roots[0]), "mapped"),
+            defined(known.get(literalKey(literal)), "known"),
+            {
+              ...literal,
+              positive: false,
+            },
+          );
+          root = certificate.resolve(root, defined(known.get(literalKey(c)), "known"), {
+            ...c,
             positive: false,
           });
-          root = b.resolve(root, known.get(literalKey(c))!, { ...c, positive: false });
         } else {
           const witness = branch.witnesses[effectIndex];
-          root = b.resolve(
-            mapped.get(branch.roots[effectIndex])!,
-            known.get(literalKey(witness))!,
+          root = certificate.resolve(
+            defined(mapped.get(branch.roots[effectIndex]), "mapped"),
+            defined(known.get(literalKey(witness)), "known"),
             { ...witness, positive: false },
           );
         }
-        branch.proofs[effectIndex] = { assumptions: [...b.scope], root };
+        branch.proofs[effectIndex] = { assumptions: [...certificate.scope], root };
         return root;
       }
-      const component = p.components[depth],
+      const component = pattern.components[depth],
         edge = component.edges[0],
-        cover = mapped.get(edge.roots[0])!,
+        cover = defined(mapped.get(edge.roots[0]), "mapped"),
         branches: number[] = [];
       for (const representative of [...edge.ends].sort(
-        (a, c) => a.cell - c.cell || a.symbol - c.symbol,
+        (literal, c) => literal.cell - c.cell || literal.symbol - c.symbol,
       )) {
         yield { kind: "work", units: 1 };
-        const assumption = b.add("assume@1", [], clause([representative]));
-        b.scope.push(assumption);
+        const assumption = certificate.add("assume@1", [], clause([representative]));
+        certificate.scope.push(assumption);
         const local = new Map(known),
           queue = [representative],
           values = new Map<string, boolean>([[literalKey(representative), true]]);
@@ -287,14 +313,17 @@ export class Coloring implements PatternStrategy {
           for (const link of component.edges) {
             yield { kind: "work", units: 1 };
             const current = queue[at];
-            if (!link.ends.some((l) => literalKey(l) === literalKey(current))) continue;
-            const next = link.ends.find((l) => literalKey(l) !== literalKey(current))!,
+            if (!link.ends.some((literal) => literalKey(literal) === literalKey(current))) continue;
+            const next = defined(
+                link.ends.find((literal) => literalKey(literal) !== literalKey(current)),
+                "end",
+              ),
               key = literalKey(next);
             if (values.has(key)) continue;
-            const truth = values.get(literalKey(current))!;
-            const root = b.resolve(
-              mapped.get(link.roots[truth ? 1 : 0])!,
-              local.get(literalKey(current))!,
+            const truth = defined(values.get(literalKey(current)), "value");
+            const root = certificate.resolve(
+              defined(mapped.get(link.roots[truth ? 1 : 0]), "mapped"),
+              defined(local.get(literalKey(current)), "local"),
               { ...current, positive: !truth },
             );
             local.set(key, root);
@@ -302,16 +331,21 @@ export class Coloring implements PatternStrategy {
             queue.push(next);
           }
         const color = component.colors.findIndex((xs) =>
-          xs.some((l) => literalKey(l) === literalKey(representative)),
+          xs.some((literal) => literalKey(literal) === literalKey(representative)),
         );
         const result = yield* prove(effectIndex, depth + 1, [...colors, color], local);
-        b.scope.pop();
+        certificate.scope.pop();
         branches.push(assumption, result);
       }
-      return b.add("cases@1", [cover, ...branches], target);
+      return certificate.add("cases@1", [cover, ...branches], target);
     };
     for (let i = 0; i < effects.length; i++) roots.push(yield* prove(i, 0, [], new Map()));
-    return b.close(this.medusa ? "c15@1" : "c14@1", p as unknown as Json, effects, roots);
+    return certificate.close(
+      this.medusa ? "c15@1" : "c14@1",
+      pattern as unknown as Json,
+      effects,
+      roots,
+    );
   }
 }
 function coloringDescriptor(medusa: boolean): TechniqueDescriptor {

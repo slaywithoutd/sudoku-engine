@@ -9,6 +9,7 @@ import {
   type FishRequirement,
 } from "./fish-grammar";
 import { symbolMask } from "../state/read";
+import { defined } from "../invariants";
 
 const literal = (cell: number, symbol: number, positive: boolean): Proposition => ({
   kind: "literal",
@@ -35,43 +36,49 @@ class FishComponentLineage {
     return fact.id;
   }
   matches(rootId: number, target: number): boolean {
-    const p = this.requirement.pattern,
-      z = p.symbol,
+    const component = this.requirement.pattern,
+      zDigit = component.symbol,
       root = this.nodes.get(rootId);
-    if (!root || !sameValue(root.conclusion, literal(target, z, false)) || root.scope.length)
+    if (!root || !sameValue(root.conclusion, literal(target, zDigit, false)) || root.scope.length)
       return false;
-    let count = root,
+    let count: ProofNode | undefined = root,
       assumption: ProofNode | undefined;
-    if (p.fins.length) {
+    if (component.fins.length) {
       if (root.rule !== "discharge@1" || root.premises.length !== 2) return false;
       assumption = this.nodes.get(root.premises[0]);
       const contradiction = this.nodes.get(root.premises[1]);
       if (
         assumption?.rule !== "assume@1" ||
         assumption.scope.length ||
-        !sameValue(assumption.conclusion, literal(target, z, true)) ||
+        !sameValue(assumption.conclusion, literal(target, zDigit, true)) ||
         contradiction?.rule !== "contradiction@1" ||
         !sameValue(contradiction.premises[0], assumption.id) ||
         contradiction.premises.length !== 2
       )
         return false;
-      count = this.nodes.get(contradiction.premises[1])!;
+      count = this.nodes.get(contradiction.premises[1]);
     }
     const scope = assumption ? [assumption.id] : [];
     if (
       count?.rule !== "cover-count@1" ||
       !sameValue(count.scope, scope) ||
-      !sameValue(count.conclusion, literal(target, z, false))
+      !sameValue(count.conclusion, literal(target, zDigit, false))
     )
       return false;
-    const covers = p.bases.map((id) => ({ premise: this.source(id, z), coefficient: 1 })),
-      capacities = p.covers.map((id) => ({ premise: this.source(id), coefficient: 1 }));
-    if (!sameValue(count.parameters, { symbol: z, covers, capacities })) return false;
-    const expected = [...covers.map((e) => e.premise), ...capacities.map((e) => e.premise)];
+    const covers = component.bases.map((id) => ({
+        premise: this.source(id, zDigit),
+        coefficient: 1,
+      })),
+      capacities = component.covers.map((id) => ({ premise: this.source(id), coefficient: 1 }));
+    if (!sameValue(count.parameters, { symbol: zDigit, covers, capacities })) return false;
+    const expected = [
+      ...covers.map((term) => term.premise),
+      ...capacities.map((term) => term.premise),
+    ];
     for (let cell = 0; cell < 81; cell++)
-      if (this.requirement.coefficients[cell] < 0 && !p.fins.includes(cell))
+      if (this.requirement.coefficients[cell] < 0 && !component.fins.includes(cell))
         expected.push(this.view.state.domainFacts[cell]);
-    for (const fin of p.fins) {
+    for (const fin of component.fins) {
       const candidates = count.premises
         .map((id) => this.nodes.get(id))
         .filter(
@@ -81,19 +88,22 @@ class FishComponentLineage {
             sameValue(n.conclusion, {
               kind: "domain",
               cell: fin,
-              mask: this.view.state.domains[fin] & ~symbolMask(z),
+              mask: this.view.state.domains[fin] & ~symbolMask(zDigit),
             }),
         );
       const restricted = candidates.find((n) => {
-        if (n!.premises[0] !== this.view.state.domainFacts[fin] || n!.premises.length !== 2)
+        if (
+          defined(n, "n").premises[0] !== this.view.state.domainFacts[fin] ||
+          defined(n, "n").premises.length !== 2
+        )
           return false;
-        const resolved = this.nodes.get(n!.premises[1]);
+        const resolved = this.nodes.get(defined(n, "n").premises[1]);
         if (
           resolved?.rule !== "resolution@1" ||
           resolved.premises.length !== 2 ||
           resolved.premises[0] !== assumption?.id ||
           !sameValue(resolved.scope, scope) ||
-          !sameValue(resolved.conclusion, literal(fin, z, false))
+          !sameValue(resolved.conclusion, literal(fin, zDigit, false))
         )
           return false;
         const weak = this.nodes.get(resolved.premises[1]),
@@ -108,8 +118,8 @@ class FishComponentLineage {
           sameValue(
             weak.conclusion,
             clause([
-              { cell: fin, symbol: z, positive: false },
-              { cell: target, symbol: z, positive: false },
+              { cell: fin, symbol: zDigit, positive: false },
+              { cell: target, symbol: zDigit, positive: false },
             ]),
           )
         );
@@ -118,8 +128,8 @@ class FishComponentLineage {
       expected.push(restricted.id);
     }
     return sameValue(
-      [...count.premises].sort((a, b) => a - b),
-      expected.sort((a, b) => a - b),
+      [...count.premises].sort((left, right) => left - right),
+      expected.sort((left, right) => left - right),
     );
   }
 }
@@ -159,7 +169,7 @@ export function checkFishPattern(
       "fish-shared-component-root",
     );
   for (const id of proposal.proof.roots) {
-    const node = available.get(id)!;
+    const node = defined(available.get(id), "available");
     if (node.conclusion.kind === "literal" && !node.conclusion.value.positive)
       requireProof(accepted.has(id), "fish-unrelated-effect-root");
     else

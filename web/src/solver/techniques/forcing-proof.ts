@@ -7,12 +7,17 @@ import type { Limits } from "../proof/types";
 import type { ReadView, Literal, Proposition } from "../state/types";
 import { proposedClause } from "../proof/builder";
 import { findHouse, findHouseWithCells, symbolMask } from "../state/read";
+import { defined } from "../invariants";
 
-export const signedKey = (v: Literal): string => `${v.cell}:${v.symbol}:${Number(v.positive)}`;
-export const opposite = (v: Literal): Literal => ({ ...v, positive: !v.positive });
-export const bit = (s: number): number => symbolMask(s);
-export const symbols = (view: ReadView, c: number): number[] =>
-  view.assembly.problem.symbols.filter((s) => view.state.domains[c] & bit(s));
+export const signedKey = (literal: Literal): string =>
+  `${literal.cell}:${literal.symbol}:${Number(literal.positive)}`;
+export const opposite = (literal: Literal): Literal => ({
+  ...literal,
+  positive: !literal.positive,
+});
+export const bit = (symbol: number): number => symbolMask(symbol);
+export const symbols = (view: ReadView, cell: number): number[] =>
+  view.assembly.problem.symbols.filter((symbol) => view.state.domains[cell] & bit(symbol));
 export interface ForcingReason {
   kind: "cell-cover" | "cell-conflict" | "house-cover" | "scope-conflict";
   cell?: number;
@@ -77,15 +82,15 @@ export class ForcingProof {
     });
     return id;
   }
-  fact(p: Proposition): number {
-    const fact = matchingFacts(this.view, p).find((f) => !f.openAssumptions.length);
+  fact(proposition: Proposition): number {
+    const fact = matchingFacts(this.view, proposition).find((f) => !f.openAssumptions.length);
     if (!fact) throw Error("missing-forcing-premise");
     return fact.id;
   }
   house(id: string): readonly number[] {
-    const h = findHouse(this.view, id);
-    if (!h) throw Error("missing-forcing-house");
-    return h.cells;
+    const house = findHouse(this.view, id);
+    if (!house) throw Error("missing-forcing-house");
+    return house.cells;
   }
   cover(cell: number, source = this.view): number {
     return this.add(
@@ -96,12 +101,12 @@ export class ForcingProof {
   }
   houseCover(house: string, symbol: number, source = this.view): number {
     const cells = this.house(house),
-      supports = cells.filter((c) => source.state.domains[c] & bit(symbol));
+      supports = cells.filter((cell) => source.state.domains[cell] & bit(symbol));
     const root = this.add(
       "support@1",
       [
         this.fact({ kind: "cover", cells, symbol }),
-        ...cells.map((c) => source.state.domainFacts[c]),
+        ...cells.map((cell) => source.state.domainFacts[cell]),
       ],
       { kind: "cover", cells: supports, symbol },
     );
@@ -112,19 +117,27 @@ export class ForcingProof {
     );
   }
   edge(link: ForcingLink, view = this.view): number {
-    const r = link.reason;
-    if (r.kind === "cell-cover") return this.cover(r.cell!, view);
-    if (r.kind === "house-cover") return this.houseCover(r.house!, r.symbol!, view);
+    const reason = link.reason;
+    if (reason.kind === "cell-cover") return this.cover(defined(reason.cell, "cell"), view);
+    if (reason.kind === "house-cover")
+      return this.houseCover(
+        defined(reason.house, "house"),
+        defined(reason.symbol, "symbol"),
+        view,
+      );
     const source =
-      r.kind === "cell-conflict"
-        ? view.state.domainFacts[r.cell!]
-        : this.fact({ kind: "all-different", cells: this.house(r.house!) });
+      reason.kind === "cell-conflict"
+        ? view.state.domainFacts[defined(reason.cell, "cell")]
+        : this.fact({ kind: "all-different", cells: this.house(defined(reason.house, "house")) });
     return this.add("weak-link@1", [source], proposedClause([opposite(link.from), link.to]));
   }
   path(assumption: number, path: readonly ForcingLink[], frozen = this.view): PathCertificate {
     let root = assumption;
     if (!path.length) {
-      const proposition = this.nodes.find((n) => n.id === assumption)!.conclusion;
+      const proposition = defined(
+        this.nodes.find((n) => n.id === assumption),
+        "node",
+      ).conclusion;
       const conjunction = this.add("conjunction@1", [assumption], {
         kind: "and",
         terms: [proposition],
@@ -195,7 +208,7 @@ export class ForcingProof {
       reachable = new Set<number>(),
       stack = [...roots];
     while (stack.length) {
-      const id = stack.pop()!;
+      const id = defined(stack.pop(), "stack");
       if (reachable.has(id)) continue;
       reachable.add(id);
       const n = all.get(id);
@@ -208,7 +221,9 @@ export class ForcingProof {
       pattern: pattern as Json,
       proof: {
         state: this.view.state.key,
-        imports: [...reachable].filter((id) => this.view.facts.has(id)).sort((a, b) => a - b),
+        imports: [...reachable]
+          .filter((id) => this.view.facts.has(id))
+          .sort((left, right) => left - right),
         nodes: this.nodes.filter((n) => reachable.has(n.id)),
         roots,
       },

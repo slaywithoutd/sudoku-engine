@@ -19,20 +19,20 @@ export function* countCapacities(
   const symbols = setUnion(view, cells),
     capacities: number[] = [];
   for (const symbol of symbols) {
-    const possible = cells.filter((c) =>
-      c === target.cell
+    const possible = cells.filter((cell) =>
+      cell === target.cell
         ? symbol === target.symbol
-        : view.state.domains[c] & symbolMask(symbol) &&
+        : view.state.domains[cell] & symbolMask(symbol) &&
           !(
             symbol === target.symbol &&
-            scopes.some((s) => s.cells.includes(c) && s.cells.includes(target.cell))
+            scopes.some((s) => s.cells.includes(cell) && s.cells.includes(target.cell))
           ),
     );
     let maximum = 0;
     search: for (let size = possible.length; size >= 1; size--)
       for (const occupancy of combinations(possible, size)) {
         yield { kind: "work", units: 1 };
-        if (scopes.every((s) => s.cells.filter((c) => occupancy.includes(c)).length <= 1)) {
+        if (scopes.every((s) => s.cells.filter((cell) => occupancy.includes(cell)).length <= 1)) {
           maximum = size;
           break search;
         }
@@ -52,10 +52,10 @@ export class SubsetCountingSearch {
   ) {}
   *patterns(cellCount: number, scopeCount: number, withSingletons = false): SetCursor {
     const view = this.view,
-      empty = view.assembly.problem.cells.filter((c) => !view.state.values[c]);
-    const houses = view.assembly.allDifferent.filter((h) =>
-      matchingFacts(view, { kind: "all-different", cells: h.cells }).some(
-        (f) => !f.openAssumptions.length,
+      empty = view.assembly.problem.cells.filter((cell) => !view.state.values[cell]);
+    const houses = view.assembly.allDifferent.filter((house) =>
+      matchingFacts(view, { kind: "all-different", cells: house.cells }).some(
+        (fact) => !fact.openAssumptions.length,
       ),
     );
     const pool = withSingletons ? view.assembly.problem.cells : empty;
@@ -63,9 +63,12 @@ export class SubsetCountingSearch {
     // A consistent singleton assignment witnesses every occupancy simultaneously;
     // no forced current candidate can lower the total capacity below cell count.
     if (
-      view.assembly.problem.cells.every((c) => setDigits(view.state.domains[c]).length === 1) &&
+      view.assembly.problem.cells.every(
+        (cell) => setDigits(view.state.domains[cell]).length === 1,
+      ) &&
       houses.every(
-        (h) => new Set(h.cells.map((c) => view.state.domains[c])).size === h.cells.length,
+        (house) =>
+          new Set(house.cells.map((cell) => view.state.domains[cell])).size === house.cells.length,
       )
     )
       return;
@@ -78,7 +81,7 @@ export class SubsetCountingSearch {
             if (withSingletons && cells.every((c) => !view.state.values[c])) continue;
             const local = [...new Set([...cells, cell])],
               available = houses.filter(
-                (h) => h.cells.filter((c) => local.includes(c)).length >= 2,
+                (house) => house.cells.filter((c) => local.includes(c)).length >= 2,
               );
             for (const indexes of combinations(
               available.map((_, i) => i),
@@ -90,14 +93,17 @@ export class SubsetCountingSearch {
                 cells: available[i].cells.filter((c) => local.includes(c)),
                 root: -1,
               }));
-              if (new Set(scopes.map((s) => s.cells.join())).size !== scopes.length) continue;
+              if (new Set(scopes.map((scope) => scope.cells.join())).size !== scopes.length)
+                continue;
               const capacities = yield* countCapacities(view, cells, scopes, { cell, symbol });
-              if (capacities.reduce((a, b) => a + b, 0) >= cells.length) continue;
-              const p: CountPattern = {
+              if (capacities.reduce((left, right) => left + right, 0) >= cells.length) continue;
+              const pattern: CountPattern = {
                 kind: "count",
                 alias: "Subset counting",
                 cells,
-                domains: local.sort((a, b) => a - b).map((c) => view.state.domains[c]),
+                domains: local
+                  .sort((left, right) => left - right)
+                  .map((c) => view.state.domains[c]),
                 symbols: setUnion(view, cells),
                 scopes,
                 target: { cell, symbol },
@@ -106,7 +112,11 @@ export class SubsetCountingSearch {
                 contradiction: -1,
                 root: -1,
               };
-              yield { kind: "candidate", pattern: p, effects: [{ kind: "remove", cell, symbol }] };
+              yield {
+                kind: "candidate",
+                pattern: pattern,
+                effects: [{ kind: "remove", cell, symbol }],
+              };
             }
           }
     } finally {

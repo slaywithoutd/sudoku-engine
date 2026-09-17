@@ -18,6 +18,7 @@ import { proposedClause } from "../proof/builder";
 import { checkNetPattern } from "./nets-grammar";
 import type { NetBranchCertificate } from "./nets";
 import { findHouse, symbolMask } from "../state/read";
+import { defined } from "../invariants";
 type Work = { kind: "work"; units: number };
 class NetInterrupted extends Error {
   constructor(readonly reason: "time-limit" | "work-limit" | "proof-step-limit") {
@@ -116,7 +117,7 @@ class NetSearch {
         else if (event.kind === "interrupted") throw new IndexInterrupted(event.reason);
         else yield event;
       }
-      yield* graph.prepare(index!);
+      yield* graph.prepare(defined(index, "index"));
       // Previously proved links remain valid. Keep their exact parent-domain
       // sources alongside newly rebuilt links; never silently retarget a cover.
       let originalIndex: ImplicationIndex | undefined;
@@ -127,7 +128,7 @@ class NetSearch {
           else yield event;
         }
         const originalGraph = new ForcingGraph(this.parent, this.context, lease);
-        yield* originalGraph.prepare(originalIndex!);
+        yield* originalGraph.prepare(defined(originalIndex, "originalIndex"));
         for (const [key, arcs] of originalGraph.arcs)
           for (const arc of arcs) {
             yield { kind: "work", units: 1 };
@@ -142,13 +143,14 @@ class NetSearch {
           if (link.reason.origin === "parent") return false;
           if (link.reason.kind === "cell-cover")
             return (
-              view.state.domains[link.reason.cell!] !== this.parent.state.domains[link.reason.cell!]
+              view.state.domains[defined(link.reason.cell, "cell")] !==
+              this.parent.state.domains[defined(link.reason.cell, "cell")]
             );
           if (link.reason.kind !== "house-cover") return false;
-          const house = findHouse(view, link.reason.house)!,
-            bit = symbolMask(link.reason.symbol!);
+          const house = defined(findHouse(view, link.reason.house), "findHouse"),
+            bit = symbolMask(defined(link.reason.symbol, "symbol"));
           return house.cells.some(
-            (c) => (view.state.domains[c] & bit) !== (this.parent.state.domains[c] & bit),
+            (cell) => (view.state.domains[cell] & bit) !== (this.parent.state.domains[cell] & bit),
           );
         }),
         path = paths.get(signedKey(opposite(original)));
@@ -161,7 +163,7 @@ class NetSearch {
       for (const event of session.check(proposal, this.context.limits)) {
         if (event.kind === "work") yield event;
         else if (event.kind === "branch-checked")
-          return this.dag.append(view, event.certificate).get(falseRoot)!;
+          return defined(this.dag.append(view, event.certificate).get(falseRoot), "get");
         else localFailure(event.code);
       }
     } finally {
@@ -182,9 +184,12 @@ class NetSearch {
         else yield event;
       }
       const negatives = certificate.proposal.proof.roots
-        .map((id) => certificate.proposal.proof.nodes.find((n) => n.id === id))
-        .filter((n) => n?.conclusion.kind === "literal" && !n.conclusion.value.positive);
-      for (const edge of index!.edges) {
+        .map((id) => certificate.proposal.proof.nodes.find((node) => node.id === id))
+        .filter(
+          (node): node is ProofNode =>
+            node?.conclusion.kind === "literal" && !node.conclusion.value.positive,
+        );
+      for (const edge of defined(index, "index").edges) {
         yield { kind: "work", units: 1 };
         if (edge.kind !== "strong" || edge.recipe.kind !== "cell-cover") continue;
         const [left, right] = edge.literals,
@@ -192,23 +197,29 @@ class NetSearch {
         if (this.parent.state.domains[cell] === view.state.domains[cell]) continue;
         const find = (value: Literal) =>
           negatives.find(
-            (n) =>
-              n!.conclusion.kind === "literal" &&
-              n!.conclusion.value.cell === value.cell &&
-              n!.conclusion.value.symbol === value.symbol,
+            (node) =>
+              node.conclusion.kind === "literal" &&
+              node.conclusion.value.cell === value.cell &&
+              node.conclusion.value.symbol === value.symbol,
           );
-        const a = find(left),
-          z = find(right);
-        if (!a || !z) continue;
-        const b = this.dag.proof;
-        b.scope = branchScope(view).map((id) => this.dag.node(view, id));
-        const cover = b.add(
+        const leftNegative = find(left),
+          rightNegative = find(right);
+        if (!leftNegative || !rightNegative) continue;
+        const proof = this.dag.proof;
+        proof.scope = branchScope(view).map((id) => this.dag.node(view, id));
+        const cover = proof.add(
           "cover-clause@1",
           [this.dag.node(view, view.state.domainFacts[cell])],
           proposedClause([left, right]),
         );
-        const positive = b.add("resolution@1", [map.get(a.id)!, cover], proposedClause([right]));
-        return b.add("contradiction@1", [positive, map.get(z.id)!], { kind: "false" });
+        const positive = proof.add(
+          "resolution@1",
+          [defined(map.get(leftNegative.id), "map"), cover],
+          proposedClause([right]),
+        );
+        return proof.add("contradiction@1", [positive, defined(map.get(rightNegative.id), "map")], {
+          kind: "false",
+        });
       }
     } finally {
       index?.dispose();
@@ -220,7 +231,7 @@ class NetSearch {
     depth: number,
   ): Generator<Work, NetBranchCertificate | undefined> {
     const session = new HypotheticalSession(parent, "net", this.context.workspace),
-      b = this.dag.proof;
+      proof = this.dag.proof;
     let assumption = -1,
       localAssumption = -1;
     try {
@@ -229,7 +240,7 @@ class NetSearch {
         if (e.kind === "work") yield e;
         else if (e.kind === "branch-checked") {
           localAssumption = e.certificate.proposal.proof.nodes[0].id;
-          assumption = this.dag.append(before, e.certificate).get(localAssumption)!;
+          assumption = defined(this.dag.append(before, e.certificate).get(localAssumption), "get");
         } else localFailure(e.code);
       }
       for (let round = 0; round < 810; round++) {
@@ -237,10 +248,10 @@ class NetSearch {
         for (const detector of basics) {
           const cursor = detector.discover(session.view);
           try {
-            for (const e of cursor) {
-              if (e.kind === "work") yield e;
-              else if (e.kind === "proposal") {
-                selected = e.proposal;
+            for (const next of cursor) {
+              if (next.kind === "work") yield next;
+              else if (next.kind === "proposal") {
+                selected = next.proposal;
                 break;
               }
             }
@@ -260,16 +271,20 @@ class NetSearch {
         if (!checked) return;
         const map = this.dag.append(before, checked);
         const empty = checked.proposal.proof.roots.find((id) => {
-          const p = checked!.proposal.proof.nodes.find((n) => n.id === id)?.conclusion;
-          return p?.kind === "domain" && p.mask === 0;
+          const proposition = defined(checked, "checked").proposal.proof.nodes.find(
+            (n) => n.id === id,
+          )?.conclusion;
+          return proposition?.kind === "domain" && proposition.mask === 0;
         });
         if (empty !== undefined) {
           if (this.mode === "dynamic") {
             const result = yield* this.dynamicConvergence(before, checked, map);
             if (result !== undefined) return { assumption, result, cover: null, children: [] };
           }
-          b.scope = branchScope(before).map((id) => this.dag.node(before, id));
-          const result = b.add("contradiction@1", [map.get(empty)!], { kind: "false" });
+          proof.scope = branchScope(before).map((id) => this.dag.node(before, id));
+          const result = proof.add("contradiction@1", [defined(map.get(empty), "map")], {
+            kind: "false",
+          });
           return { assumption, result, cover: null, children: [] };
         }
         session.publish(checked);
@@ -284,8 +299,8 @@ class NetSearch {
         if (!view.state.values[cell]) {
           const digits = symbols(view, cell);
           if (digits.length < 2 || digits.length > 9) continue;
-          b.scope = branchScope(view).map((id) => this.dag.node(view, id));
-          const cover = b.add(
+          proof.scope = branchScope(view).map((id) => this.dag.node(view, id));
+          const cover = proof.add(
             "cover-clause@1",
             [this.dag.node(view, view.state.domainFacts[cell])],
             proposedClause(digits.map((symbol) => ({ cell, symbol, positive: true }))),
@@ -297,8 +312,8 @@ class NetSearch {
             children.push(child);
           }
           if (children.length !== digits.length) continue;
-          b.scope = branchScope(view).map((id) => this.dag.node(view, id));
-          const result = b.add(
+          proof.scope = branchScope(view).map((id) => this.dag.node(view, id));
+          const result = proof.add(
             "cases@1",
             [cover, ...children.flatMap((c) => [c.assumption, c.result])],
             { kind: "false" },
@@ -312,14 +327,14 @@ class NetSearch {
   *candidate(value: Literal): Generator<Work, DeductionProposal | undefined> {
     const branch = yield* this.branch(this.parent, value, 1);
     if (!branch) return;
-    const b = this.dag.proof;
-    b.scope = [];
-    const root = b.add(
+    const proof = this.dag.proof;
+    proof.scope = [];
+    const root = proof.add(
       "discharge@1",
       [branch.assumption, branch.result],
       proposedClause([opposite(value)]),
     );
-    const proposal = b.finish(
+    const proposal = proof.finish(
       "c23@1",
       {
         kind: "net",

@@ -1,4 +1,5 @@
 import type { AssumptionPolicy } from "../proof/types";
+import { unverified } from "../invariants";
 export type CoverageStatus =
   "catalogued" | "specified" | "implemented" | "independently-verified" | "unsupported";
 export interface CoverageEvidence {
@@ -30,7 +31,7 @@ function freeze(entry: CoverageEntry): CoverageEntry {
     aliases: Object.freeze([...entry.aliases]),
     capabilities: Object.freeze([...entry.capabilities]),
     fixtureIds: Object.freeze([...entry.fixtureIds]),
-    evidence: Object.freeze(entry.evidence.map((e) => Object.freeze({ ...e }))),
+    evidence: Object.freeze(entry.evidence.map((evidence) => Object.freeze({ ...evidence }))),
   });
 }
 /** Complete target catalogue. A specified descriptor is excluded, never exhausted. */
@@ -7956,7 +7957,7 @@ export function coverageEntry(id: string): CoverageEntry {
 /** Build gate: names, versions and evidence are checked against the closed catalogue. */
 export function validateCoverage(entries: readonly CoverageEntry[]): readonly string[] {
   const errors = new Set<string>();
-  if (entries.length !== 38 || new Set(entries.map((e) => e.id)).size !== 38)
+  if (entries.length !== 38 || new Set(entries.map((entry) => entry.id)).size !== 38)
     errors.add("missing-coverage-row");
   for (const entry of entries) {
     const known = coverageEntries.find((e) => e.id === entry.id);
@@ -7989,12 +7990,13 @@ export function validateCoverage(entries: readonly CoverageEntry[]): readonly st
           "independent-oracle",
         ])
           if (
-            !entry.evidence?.some(
-              (e) =>
-                e.kind === kind &&
-                e.alias === alias &&
-                entry.fixtureIds.includes(e.fixtureId) &&
-                e.record,
+            !unverified(entry.evidence)?.some(
+              (evidence) =>
+                evidence?.kind === kind &&
+                evidence.alias === alias &&
+                typeof evidence.fixtureId === "string" &&
+                entry.fixtureIds.includes(evidence.fixtureId) &&
+                !!evidence.record,
             )
           )
             errors.add("missing-independent-evidence");

@@ -92,9 +92,9 @@ export async function captureConditionalPrefix(
     requireProof(Reflect.ownKeys(input).length === bundleCount + 1, "conditional-prefix-array");
     prefixBufferLease = workspace.reserve(1, (bundleCount + 1) * 32 + 128);
     const bundleHashes = new Uint8Array((bundleCount + 1) * 32);
-    for (let b = 0; b < bundleCount; b++) {
+    for (let right = 0; right < bundleCount; right++) {
       checkpoint();
-      const proposal = data(input, String(b));
+      const proposal = data(input, String(right));
       shape(proposal, ["technique", "state", "effects", "proof", "pattern"]);
       const proof = data(proposal, "proof");
       shape(proof, ["state", "nodes", "imports", "roots"]);
@@ -149,7 +149,7 @@ export async function captureConditionalPrefix(
         requireProof(bytes <= limits.proofBytes, "conditional-prefix-byte-limit");
         // Framing includes a header in slot zero, so an empty bundle differs
         // from no bundle, and node/bundle boundaries cannot concatenate away.
-        bundleHashes.set(await hash(framed), (b + 1) * 32);
+        bundleHashes.set(await hash(framed), (right + 1) * 32);
         proposals.push(
           copy
             ? Object.freeze({
@@ -169,8 +169,8 @@ export async function captureConditionalPrefix(
       await hash(encoder.encode(`conditional-prefix@1:${bundleCount}:${nodes}:${bytes}`)),
       0,
     );
-    const digest = Array.from(await hash(bundleHashes), (b) =>
-      b.toString(16).padStart(2, "0"),
+    const digest = Array.from(await hash(bundleHashes), (right) =>
+      right.toString(16).padStart(2, "0"),
     ).join("");
     done = true;
     return Object.freeze({

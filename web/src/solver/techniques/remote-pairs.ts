@@ -9,12 +9,13 @@ import {
   type PatternStrategy,
 } from "./pattern-runtime";
 import { symbolMask } from "../state/read";
+import { defined } from "../invariants";
 
 /** DFS retains one simple path; every extension is charged, including failures. */
 export class RemotePairs implements PatternStrategy {
   *patterns(view: ReadView, graph: PatternGraph) {
     const bi = view.assembly.problem.cells.filter(
-      (c) => !view.state.values[c] && digits(view, c).length === 2,
+      (cell) => !view.state.values[cell] && digits(view, cell).length === 2,
     );
     const walk = function* (
       path: number[],
@@ -22,7 +23,7 @@ export class RemotePairs implements PatternStrategy {
     ): Generator<
       { kind: "work"; units: number } | { kind: "candidate"; pattern: Json; effects: Effect[] }
     > {
-      if (path.length >= 4 && path.length % 2 === 0 && path[0] < path.at(-1)!) {
+      if (path.length >= 4 && path.length % 2 === 0 && path[0] < defined(path.at(-1), "path")) {
         const effects: Effect[] = [];
         for (const target of view.assembly.problem.cells)
           for (const symbol of symbols) {
@@ -33,7 +34,7 @@ export class RemotePairs implements PatternStrategy {
               target !== path.at(-1) &&
               view.state.domains[target] & symbolMask(symbol) &&
               graph.has(pos(path[0], symbol), pos(target, symbol)) &&
-              graph.has(pos(path.at(-1)!, symbol), pos(target, symbol))
+              graph.has(pos(defined(path.at(-1), "path"), symbol), pos(target, symbol))
             )
               effects.push({ kind: "remove", cell: target, symbol });
           }
@@ -47,7 +48,9 @@ export class RemotePairs implements PatternStrategy {
           for (const chute of ["band", "stack"] as const)
             if (
               new Set(
-                path.map((c) => (chute === "band" ? Math.floor(c / 27) : Math.floor((c % 9) / 3))),
+                path.map((cell) =>
+                  chute === "band" ? Math.floor(cell / 27) : Math.floor((cell % 9) / 3),
+                ),
               ).size === 1
             )
               yield {
@@ -63,7 +66,9 @@ export class RemotePairs implements PatternStrategy {
         if (
           path.includes(next) ||
           view.state.domains[next] !== view.state.domains[path[0]] ||
-          !symbols.every((s) => graph.has(pos(path.at(-1)!, s), pos(next, s)))
+          !symbols.every((symbol) =>
+            graph.has(pos(defined(path.at(-1), "path"), symbol), pos(next, symbol)),
+          )
         )
           continue;
         path.push(next);
@@ -75,20 +80,23 @@ export class RemotePairs implements PatternStrategy {
   }
   *compile(view: ReadView, graph: PatternGraph, pattern: Json, effects: Effect[]) {
     const p = pattern as unknown as RemotePattern,
-      b = new PatternBuilder(view, graph),
-      strong = p.cells.map((c) => b.cell(c)),
+      builder = new PatternBuilder(view, graph),
+      strong = p.cells.map((cell) => builder.cell(cell)),
       roots: number[] = [];
     const endpoints = new Map<number, number>();
     for (const symbol of p.symbols) {
-      if (!effects.some((e) => e.symbol === symbol)) continue;
+      if (!effects.some((effect) => effect.symbol === symbol)) continue;
       const vertices = p.cells.flatMap((cell, i) => [
         [pos(cell, p.symbols[(p.symbols.indexOf(symbol) + i) % 2])],
         [pos(cell, p.symbols[(p.symbols.indexOf(symbol) + i + 1) % 2])],
       ]);
-      endpoints.set(symbol, yield* b.path(vertices, strong));
+      endpoints.set(symbol, yield* builder.path(vertices, strong));
     }
-    for (const e of effects) roots.push(yield* b.eliminate(endpoints.get(e.symbol)!, e));
-    return b.finish("c13@1", pattern, effects, roots);
+    for (const effect of effects)
+      roots.push(
+        yield* builder.eliminate(defined(endpoints.get(effect.symbol), "endpoint"), effect),
+      );
+    return builder.finish("c13@1", pattern, effects, roots);
   }
 }
 export const remotePairTechniques = Object.freeze([

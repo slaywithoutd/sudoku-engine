@@ -9,6 +9,7 @@ import { ForcingProof } from "./forcing-proof";
 import { coverageEntries } from "./manifest";
 import { sameValue, domainAssertion } from "../proof/primitives";
 import { symbolMask } from "../state/read";
+import { claimed, defined } from "../invariants";
 
 export interface TemplatePlan {
   readonly mode: "single" | "pair" | "triple" | "incompatibility";
@@ -43,44 +44,50 @@ function operation(view: ReadView, context: DiscoveryContext) {
 }
 function geometry(kind: number, n: number): number[] {
   const cells: number[] = [];
-  for (let c = 0; c < 81; c++)
+  for (let cell = 0; cell < 81; cell++)
     if (
       (kind === 0
-        ? Math.floor(c / 9)
+        ? Math.floor(cell / 9)
         : kind === 1
-          ? c % 9
-          : Math.floor(c / 27) * 3 + Math.floor((c % 9) / 3)) === n
+          ? cell % 9
+          : Math.floor(cell / 27) * 3 + Math.floor((cell % 9) / 3)) === n
     )
-      cells.push(c);
+      cells.push(cell);
   return cells;
 }
-function sourceKey(p: Proposition): string | undefined {
-  if (p.kind === "all-different" && p.cells.length === 9) return `a:${p.cells.join(",")}`;
-  if (p.kind === "cover" && p.cells.length === 9) return `c:${p.symbol}:${p.cells.join(",")}`;
+function sourceKey(proposition: Proposition): string | undefined {
+  if (proposition.kind === "all-different" && proposition.cells.length === 9)
+    return `a:${proposition.cells.join(",")}`;
+  if (proposition.kind === "cover" && proposition.cells.length === 9)
+    return `c:${proposition.symbol}:${proposition.cells.join(",")}`;
   return undefined;
 }
-function planValid(p: TemplatePlan): boolean {
+function planValid(pattern: TemplatePlan): boolean {
   const aliases =
-    p.mode === "single"
+    pattern.mode === "single"
       ? ["Per-digit templates"]
-      : p.mode === "incompatibility"
+      : pattern.mode === "incompatibility"
         ? ["Template incompatibility"]
         : ["Pattern overlay", "POM"];
   return (
-    (p.alias === undefined || aliases.includes(p.alias)) &&
-    Array.isArray(p.symbols) &&
-    p.symbols.length >= 1 &&
-    p.symbols.length <= (p.mode === "incompatibility" ? 9 : 3) &&
-    p.symbols.every(
-      (s, i) => Number.isInteger(s) && s >= 1 && s <= 9 && (!i || s > p.symbols[i - 1]),
+    (pattern.alias === undefined || aliases.includes(pattern.alias)) &&
+    Array.isArray(pattern.symbols) &&
+    pattern.symbols.length >= 1 &&
+    pattern.symbols.length <= (pattern.mode === "incompatibility" ? 9 : 3) &&
+    pattern.symbols.every(
+      (symbol, i) =>
+        Number.isInteger(symbol) &&
+        symbol >= 1 &&
+        symbol <= 9 &&
+        (!i || symbol > pattern.symbols[i - 1]),
     ) &&
-    (p.mode === "single"
-      ? p.symbols.length === 1
-      : p.mode === "pair"
-        ? p.symbols.length === 2
-        : p.mode === "triple"
-          ? p.symbols.length === 3
-          : p.mode === "incompatibility" && p.symbols.length >= 2)
+    (pattern.mode === "single"
+      ? pattern.symbols.length === 1
+      : pattern.mode === "pair"
+        ? pattern.symbols.length === 2
+        : pattern.mode === "triple"
+          ? pattern.symbols.length === 3
+          : claimed(pattern).mode === "incompatibility" && pattern.symbols.length >= 2)
   );
 }
 const chunk = (codes: readonly number[]) => {
@@ -129,40 +136,42 @@ function* overlay(
     }
   }
   const rounds: number[][] = [];
-  const compatible = (a: readonly number[], b: readonly number[]) => !a.some((c, r) => c === b[r]);
+  const compatible = (left: readonly number[], right: readonly number[]) =>
+    !left.some((cell, index) => cell === right[index]);
   if (plan.mode === "pair" || plan.mode === "triple") {
     const seen = rows.map((list) => list.map(() => false));
-    for (const a of active[0])
-      for (const b of active[1])
-        for (let c = 0; c < (plan.mode === "triple" ? rows[2].length : 1); c++) {
+    for (const left of active[0])
+      for (const right of active[1])
+        for (let cell = 0; cell < (plan.mode === "triple" ? rows[2].length : 1); cell++) {
           op.consumeTuple(view);
           tupleTests++;
           yield* work(context.workspace);
           if (
-            compatible(rows[0][a], rows[1][b]) &&
+            compatible(rows[0][left], rows[1][right]) &&
             (plan.mode !== "triple" ||
-              (compatible(rows[0][a], rows[2][c]) && compatible(rows[1][b], rows[2][c])))
+              (compatible(rows[0][left], rows[2][cell]) &&
+                compatible(rows[1][right], rows[2][cell])))
           ) {
-            seen[0][a] = seen[1][b] = true;
-            if (plan.mode === "triple") seen[2][c] = true;
+            seen[0][left] = seen[1][right] = true;
+            if (plan.mode === "triple") seen[2][cell] = true;
           }
         }
-    active = active.map((list, s) => list.filter((i) => seen[s][i]));
+    active = active.map((list, symbol) => list.filter((i) => seen[symbol][i]));
   } else if (plan.mode === "incompatibility") {
     for (;;) {
       const next = active.map(() => [] as number[]);
-      for (let s = 0; s < active.length; s++)
-        for (const i of active[s]) {
+      for (let symbol = 0; symbol < active.length; symbol++)
+        for (const i of active[symbol]) {
           yield* work(context.workspace);
           let keep = true;
-          for (let t = 0; t < active.length; t++)
-            if (t !== s) {
+          for (let other = 0; other < active.length; other++)
+            if (other !== symbol) {
               let partner = false;
-              for (const j of active[t]) {
+              for (const j of active[other]) {
                 op.consumeTuple(view);
                 tupleTests++;
                 yield* work(context.workspace);
-                if (compatible(rows[s][i], rows[t][j])) {
+                if (compatible(rows[symbol][i], rows[other][j])) {
                   partner = true;
                   break;
                 }
@@ -172,9 +181,9 @@ function* overlay(
                 break;
               }
             }
-          if (keep) next[s].push(i);
+          if (keep) next[symbol].push(i);
         }
-      const removed = active.map((list, s) => list.length - next[s].length);
+      const removed = active.map((list, symbol) => list.length - next[symbol].length);
       active = next;
       if (removed.every((n) => !n)) break;
       lease.grow(0, 128);
@@ -182,10 +191,10 @@ function* overlay(
     }
   }
   const occurs = rows.map(() => Array<boolean>(81).fill(false));
-  for (let s = 0; s < active.length; s++)
-    for (const i of active[s]) {
+  for (let symbol = 0; symbol < active.length; symbol++)
+    for (const i of active[symbol]) {
       yield* work(context.workspace);
-      for (const c of rows[s][i]) occurs[s][c] = true;
+      for (const cell of rows[symbol][i]) occurs[symbol][cell] = true;
     }
   const effects: Effect[] = [];
   for (let cell = 0; cell < 81; cell++)
@@ -197,7 +206,7 @@ function* overlay(
         effects.push({ kind: "remove", cell, symbol });
     }
   return {
-    supported: active.map((list, s) => list.map((i) => codes[s][i])),
+    supported: active.map((list, symbol) => list.map((i) => codes[symbol][i])),
     rounds,
     tupleTests,
     effects,
@@ -298,12 +307,12 @@ function* compile(
     const packs = groups.map((ids) =>
       builder.add("conjunction@1", ids, {
         kind: "and",
-        terms: ids.map((id) => prefix.get(id)!.conclusion),
+        terms: ids.map((id) => defined(prefix.get(id), "prefix").conclusion),
       }),
     );
-    const terms: Proposition[] = result.effects.map((e) => ({
+    const terms: Proposition[] = result.effects.map((effect) => ({
       kind: "literal",
-      value: { cell: e.cell, symbol: e.symbol, positive: false },
+      value: { cell: effect.cell, symbol: effect.symbol, positive: false },
     }));
     lease.grow(
       0,
@@ -345,7 +354,7 @@ function* compile(
         mask,
       });
     }
-    roots.push(...[...domains.values()].map((d) => d.root));
+    roots.push(...[...domains.values()].map((domain) => domain.root));
     const alias =
       plan.alias ??
       (plan.mode === "single"
@@ -453,7 +462,7 @@ export function* discoverTemplates(view: ReadView, context: DiscoveryContext): D
       }
     function* plans(mode: TemplatePlan["mode"]): Generator<TemplatePlan> {
       if (mode === "single") {
-        for (let s = 1; s <= 9; s++) yield { mode, symbols: [s] };
+        for (let symbol = 1; symbol <= 9; symbol++) yield { mode, symbols: [symbol] };
         return;
       }
       if (mode === "incompatibility") {
@@ -467,17 +476,19 @@ export function* discoverTemplates(view: ReadView, context: DiscoveryContext): D
             yield chosen;
             return;
           }
-          for (let s = start; s <= 10 - size; s++)
-            yield* combinations(size - 1, s + 1, [...chosen, s]);
+          for (let symbol = start; symbol <= 10 - size; symbol++)
+            yield* combinations(size - 1, symbol + 1, [...chosen, symbol]);
         }
         for (let size = 2; size < 9; size++)
           for (const symbols of combinations(size)) yield { mode, symbols };
         return;
       }
-      for (let a = 1; a <= 9; a++)
-        for (let b = a + 1; b <= 9; b++) {
-          if (mode !== "triple") yield { mode, symbols: [a, b] };
-          if (mode !== "pair") for (let c = b + 1; c <= 9; c++) yield { mode, symbols: [a, b, c] };
+      for (let left = 1; left <= 9; left++)
+        for (let right = left + 1; right <= 9; right++) {
+          if (mode !== "triple") yield { mode, symbols: [left, right] };
+          if (mode !== "pair")
+            for (let cell = right + 1; cell <= 9; cell++)
+              yield { mode, symbols: [left, right, cell] };
         }
     }
     function* job(
@@ -525,7 +536,10 @@ export function* discoverTemplates(view: ReadView, context: DiscoveryContext): D
   }
 }
 
-const entry = coverageEntries.find((e) => e.id === "C33")!;
+const entry = defined(
+  coverageEntries.find((e) => e.id === "C33"),
+  "coverageEntry",
+);
 export const templateTechniques: readonly TechniqueDescriptor[] = Object.freeze([
   Object.freeze({
     id: entry.version,
@@ -561,9 +575,9 @@ export const templateTechniques: readonly TechniqueDescriptor[] = Object.freeze(
       for (let kind = 0; kind < 3; kind++)
         for (let n = 0; n < 9; n++)
           if (!facts.has(`a:${geometry(kind, n).join(",")}`)) valid = false;
-      for (let s = 1; s <= 9; s++)
+      for (let symbol = 1; symbol <= 9; symbol++)
         for (let n = 0; n < 9; n++)
-          if (!facts.has(`c:${s}:${geometry(0, n).join(",")}`)) valid = false;
+          if (!facts.has(`c:${symbol}:${geometry(0, n).join(",")}`)) valid = false;
       return valid
         ? { kind: "yes" as const }
         : {

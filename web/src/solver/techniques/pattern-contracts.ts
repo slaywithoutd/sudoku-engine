@@ -4,6 +4,7 @@ import type { DeductionProposal, Effect, ProofNode } from "../proof/types";
 import { clause, literals, requireProof, sameValue } from "../proof/primitives";
 import { requireBentEffectLineage, requireDualRootLineage } from "./pattern-proof-lineage";
 import { findHouse, symbolMask } from "../state/read";
+import { defined } from "../invariants";
 
 export interface ShortPath {
   symbol: number;
@@ -53,10 +54,10 @@ export interface PatternRequirements {
 export const pos = (cell: number, symbol: number): Literal => ({ cell, symbol, positive: true });
 export const neg = (cell: number, symbol: number): Literal => ({ cell, symbol, positive: false });
 export const digits = (view: ReadView, cell: number) =>
-  view.assembly.problem.symbols.filter((s) => view.state.domains[cell] & symbolMask(s));
-export const row = (c: number) => Math.floor(c / 9),
-  column = (c: number) => c % 9,
-  box = (c: number) => Math.floor(c / 27) * 3 + Math.floor((c % 9) / 3);
+  view.assembly.problem.symbols.filter((symbol) => view.state.domains[cell] & symbolMask(symbol));
+export const row = (cell: number) => Math.floor(cell / 9),
+  column = (cell: number) => cell % 9,
+  box = (cell: number) => Math.floor(cell / 27) * 3 + Math.floor((cell % 9) / 3);
 /** Empty-corner labels do not create another inference with the same vertices and covers. */
 export function shortPathIdentity(view: ReadView, path: ShortPath): string {
   return JSON.stringify({
@@ -65,8 +66,8 @@ export function shortPathIdentity(view: ReadView, path: ShortPath): string {
     strongScopes: path.strongHouses.map((id) => findHouse(view, id)?.cells ?? null),
   });
 }
-function exact(p: object, keys: string[]) {
-  requireProof(sameValue(Object.keys(p).sort(), keys.sort()), "invalid-technique-pattern");
+function exact(pattern: object, keys: string[]) {
+  requireProof(sameValue(Object.keys(pattern).sort(), keys.sort()), "invalid-technique-pattern");
 }
 function distinct(cells: number[], min: number, max: number, view: ReadView) {
   requireProof(
@@ -75,17 +76,17 @@ function distinct(cells: number[], min: number, max: number, view: ReadView) {
       cells.length <= max &&
       new Set(cells).size === cells.length &&
       cells.every(
-        (c) =>
-          Number.isSafeInteger(c) &&
-          view.assembly.problem.cells.includes(c) &&
-          !view.state.values[c],
+        (cell) =>
+          Number.isSafeInteger(cell) &&
+          view.assembly.problem.cells.includes(cell) &&
+          !view.state.values[cell],
       ),
     "pattern-out-of-profile",
   );
 }
 function sorted(values: number[]) {
   requireProof(
-    values.every((v, i) => !i || v > values[i - 1]),
+    values.every((value, i) => !i || value > values[i - 1]),
     "invalid-pattern-order",
   );
 }
@@ -94,103 +95,107 @@ function house(view: ReadView, id: string) {
   requireProof(h && h.cells.length === 9, "invalid-pattern-house");
   return h;
 }
-function current(view: ReadView, l: Literal) {
-  return !!(view.state.domains[l.cell] & symbolMask(l.symbol));
+function current(view: ReadView, literal: Literal) {
+  return !!(view.state.domains[literal.cell] & symbolMask(literal.symbol));
 }
 function requirement(): PatternRequirements {
   return { clauses: [], vocabulary: [], paths: [] };
 }
-export function conflict(view: ReadView, a: Literal, b: Literal): boolean {
-  if (a.cell === b.cell) return a.symbol !== b.symbol;
+export function conflict(view: ReadView, left: Literal, right: Literal): boolean {
+  if (left.cell === right.cell) return left.symbol !== right.symbol;
   const prepared = preparedSources(view, "complete");
-  if (prepared) return !!prepared.conflictSource(a, b);
+  if (prepared) return !!prepared.conflictSource(left, right);
   for (const fact of view.facts.values()) {
     if (fact.openAssumptions.length) continue;
-    const p = fact.proposition;
+    const proposition = fact.proposition;
     if (
-      p.kind === "all-different" &&
-      a.symbol === b.symbol &&
-      p.cells.includes(a.cell) &&
-      p.cells.includes(b.cell)
+      proposition.kind === "all-different" &&
+      left.symbol === right.symbol &&
+      proposition.cells.includes(left.cell) &&
+      proposition.cells.includes(right.cell)
     )
       return true;
     if (
-      p.kind === "relation" &&
-      p.cells.includes(a.cell) &&
-      p.cells.includes(b.cell) &&
-      !p.tuples.some(
+      proposition.kind === "relation" &&
+      proposition.cells.includes(left.cell) &&
+      proposition.cells.includes(right.cell) &&
+      !proposition.tuples.some(
         (tuple) =>
-          tuple[p.cells.indexOf(a.cell)] === a.symbol &&
-          tuple[p.cells.indexOf(b.cell)] === b.symbol &&
-          p.cells.every((c, i) => view.state.domains[c] & symbolMask(tuple[i])),
+          tuple[proposition.cells.indexOf(left.cell)] === left.symbol &&
+          tuple[proposition.cells.indexOf(right.cell)] === right.symbol &&
+          proposition.cells.every((cell, i) => view.state.domains[cell] & symbolMask(tuple[i])),
       )
     )
       return true;
   }
   return false;
 }
-function addWeak(r: PatternRequirements, view: ReadView, a: Literal, b: Literal) {
-  requireProof(conflict(view, a, b), "missing-pattern-conflict");
-  requireProof(a.cell !== b.cell || a.symbol !== b.symbol, "self-conflict");
-  r.clauses.push({
+function addWeak(requirements: PatternRequirements, view: ReadView, left: Literal, right: Literal) {
+  requireProof(conflict(view, left, right), "missing-pattern-conflict");
+  requireProof(left.cell !== right.cell || left.symbol !== right.symbol, "self-conflict");
+  requirements.clauses.push({
     source: "weak",
     literals: [
-      { ...a, positive: false },
-      { ...b, positive: false },
+      { ...left, positive: false },
+      { ...right, positive: false },
     ],
   });
-  r.vocabulary.push(a, b);
+  requirements.vocabulary.push(left, right);
 }
-function addCell(r: PatternRequirements, view: ReadView, cell: number) {
-  const values = digits(view, cell).map((s) => pos(cell, s));
-  r.clauses.push({ source: "cell", cells: [cell], literals: values });
-  r.vocabulary.push(...values);
+function addCell(requirements: PatternRequirements, view: ReadView, cell: number) {
+  const values = digits(view, cell).map((symbol) => pos(cell, symbol));
+  requirements.clauses.push({ source: "cell", cells: [cell], literals: values });
+  requirements.vocabulary.push(...values);
 }
 function addHouse(
-  r: PatternRequirements,
+  requirements: PatternRequirements,
   view: ReadView,
   id: string,
   symbol: number,
   groups: number[][],
 ) {
   const h = house(view, id),
-    expected = h.cells.filter((c) => current(view, pos(c, symbol)));
+    expected = h.cells.filter((cell) => current(view, pos(cell, symbol)));
   requireProof(
     sameValue(
-      [...groups.flat()].sort((a, b) => a - b),
+      [...groups.flat()].sort((left, right) => left - right),
       expected,
     ),
     "nonexhaustive-strong-link",
   );
-  const values = expected.map((c) => pos(c, symbol));
-  r.clauses.push({ source: "house", cells: h.cells, symbol, literals: values });
-  r.vocabulary.push(...values);
+  const values = expected.map((cell) => pos(cell, symbol));
+  requirements.clauses.push({ source: "house", cells: h.cells, symbol, literals: values });
+  requirements.vocabulary.push(...values);
 }
 function targets(
-  r: PatternRequirements,
+  requirements: PatternRequirements,
   view: ReadView,
   effects: readonly Effect[],
   occurrences: Literal[],
 ) {
   requireProof(effects.length > 0, "unproductive-pattern");
-  for (const e of effects) {
+  for (const effect of effects) {
     requireProof(
-      e.kind === "remove" &&
-        !view.state.values[e.cell] &&
-        current(view, pos(e.cell, e.symbol)) &&
-        occurrences.every((l) => l.symbol === e.symbol && l.cell !== e.cell),
+      effect.kind === "remove" &&
+        !view.state.values[effect.cell] &&
+        current(view, pos(effect.cell, effect.symbol)) &&
+        occurrences.every(
+          (literal) => literal.symbol === effect.symbol && literal.cell !== effect.cell,
+        ),
       "invalid-pattern-effect",
     );
-    occurrences.forEach((l) => addWeak(r, view, l, pos(e.cell, e.symbol)));
+    occurrences.forEach((literal) =>
+      addWeak(requirements, view, literal, pos(effect.cell, effect.symbol)),
+    );
   }
 }
 /** C10 counts three internal links. ER arm membership is exhaustive, not a guessed group. */
 export function validateShortPattern(
   view: ReadView,
-  p: ShortPattern,
+  pattern: ShortPattern,
   effects: readonly Effect[],
 ): PatternRequirements {
-  exact(p, ["alias", "paths"]);
+  exact(pattern, ["alias", "paths"]);
   requireProof(
     [
       "Turbot Fish",
@@ -198,22 +203,24 @@ export function validateShortPattern(
       "Two-String Kite",
       "Empty Rectangle",
       "Dual Empty Rectangle",
-    ].includes(p.alias),
+    ].includes(pattern.alias),
     "unknown-alias",
   );
   requireProof(
-    Array.isArray(p.paths) && p.paths.length === (p.alias === "Dual Empty Rectangle" ? 2 : 1),
+    Array.isArray(pattern.paths) &&
+      pattern.paths.length === (pattern.alias === "Dual Empty Rectangle" ? 2 : 1),
     "invalid-short-paths",
   );
   requireProof(
-    new Set(p.paths.map((path) => shortPathIdentity(view, path))).size === p.paths.length,
+    new Set(pattern.paths.map((path) => shortPathIdentity(view, path))).size ===
+      pattern.paths.length,
     "duplicate-short-root",
   );
-  const r = requirement(),
+  const requirements = requirement(),
     paths: Literal[][][] = [];
   const covered = new Set<string>();
-  for (const path of p.paths) {
-    const er = p.alias.includes("Empty Rectangle");
+  for (const path of pattern.paths) {
+    const er = pattern.alias.includes("Empty Rectangle");
     exact(
       path,
       er
@@ -228,10 +235,10 @@ export function validateShortPattern(
         view.assembly.problem.symbols.includes(path.symbol),
       "invalid-short-path",
     );
-    const [a, b, c, d] = path.vertices;
-    path.vertices.forEach((v) => {
-      distinct(v, 1, er ? 3 : 1, view);
-      sorted(v);
+    const [cellA, cellB, cellC, cellD] = path.vertices;
+    path.vertices.forEach((value) => {
+      distinct(value, 1, er ? 3 : 1, view);
+      sorted(value);
     });
     requireProof(
       new Set(path.vertices.flat()).size === path.vertices.flat().length,
@@ -239,17 +246,17 @@ export function validateShortPattern(
     );
     if (er) {
       const h = house(view, path.strongHouses[0]),
-        intersection = path.emptyIntersection!;
+        intersection = defined(path.emptyIntersection, "emptyIntersection");
       requireProof(
         h.cells.every((x) => box(x) === box(h.cells[0])) &&
           h.cells.includes(intersection) &&
           !current(view, pos(intersection, path.symbol)) &&
-          ((a.every((x) => row(x) === row(intersection)) &&
-            b.every((x) => column(x) === column(intersection))) ||
-            (b.every((x) => row(x) === row(intersection)) &&
-              a.every((x) => column(x) === column(intersection)))) &&
-          c.length === 1 &&
-          d.length === 1,
+          ((cellA.every((x) => row(x) === row(intersection)) &&
+            cellB.every((x) => column(x) === column(intersection))) ||
+            (cellB.every((x) => row(x) === row(intersection)) &&
+              cellA.every((x) => column(x) === column(intersection)))) &&
+          cellC.length === 1 &&
+          cellD.length === 1,
         "invalid-empty-rectangle",
       );
     }
@@ -262,241 +269,276 @@ export function validateShortPattern(
           ? "column"
           : "box";
     if (er) requireProof(orientation(h1.cells) !== "box", "invalid-empty-rectangle-line");
-    if (p.alias === "Skyscraper")
+    if (pattern.alias === "Skyscraper")
       requireProof(
         orientation(h0.cells) !== "box" && orientation(h0.cells) === orientation(h1.cells),
         "invalid-skyscraper",
       );
-    if (p.alias === "Two-String Kite")
+    if (pattern.alias === "Two-String Kite")
       requireProof(
         new Set([orientation(h0.cells), orientation(h1.cells)]).size === 2 &&
           orientation(h0.cells) !== "box" &&
           orientation(h1.cells) !== "box" &&
-          box(b[0]) === box(c[0]),
+          box(cellB[0]) === box(cellC[0]),
         "invalid-kite",
       );
-    addHouse(r, view, path.strongHouses[0], path.symbol, [a, b]);
-    addHouse(r, view, path.strongHouses[1], path.symbol, [c, d]);
-    b.forEach((x) => c.forEach((y) => addWeak(r, view, pos(x, path.symbol), pos(y, path.symbol))));
+    addHouse(requirements, view, path.strongHouses[0], path.symbol, [cellA, cellB]);
+    addHouse(requirements, view, path.strongHouses[1], path.symbol, [cellC, cellD]);
+    cellB.forEach((x) =>
+      cellC.forEach((y) => addWeak(requirements, view, pos(x, path.symbol), pos(y, path.symbol))),
+    );
     const eligible = effects.filter(
-      (e) =>
-        e.symbol === path.symbol &&
-        [...a, ...d].every(
+      (effect) =>
+        effect.symbol === path.symbol &&
+        [...cellA, ...cellD].every(
           (cell) =>
-            cell !== e.cell && conflict(view, pos(cell, path.symbol), pos(e.cell, e.symbol)),
+            cell !== effect.cell &&
+            conflict(view, pos(cell, path.symbol), pos(effect.cell, effect.symbol)),
         ),
     );
     // Each dual path proves its own roots; the proof grammar below requires its premises.
     requireProof(eligible.length > 0, "unproductive-short-root");
-    eligible.forEach((e) => {
+    eligible.forEach((effect) => {
       targets(
-        r,
+        requirements,
         view,
-        [e],
-        [...a, ...d].map((x) => pos(x, path.symbol)),
+        [effect],
+        [...cellA, ...cellD].map((x) => pos(x, path.symbol)),
       );
-      covered.add(`${e.cell}:${e.symbol}`);
+      covered.add(`${effect.cell}:${effect.symbol}`);
     });
-    paths.push(path.vertices.map((g) => g.map((x) => pos(x, path.symbol))));
+    paths.push(path.vertices.map((group) => group.map((x) => pos(x, path.symbol))));
   }
   requireProof(
-    p.paths.every((path) => path.symbol === p.paths[0].symbol) &&
-      effects.every((e) => covered.has(`${e.cell}:${e.symbol}`)),
+    pattern.paths.every((path) => path.symbol === pattern.paths[0].symbol) &&
+      effects.every((effect) => covered.has(`${effect.cell}:${effect.symbol}`)),
     "invalid-short-effects",
   );
-  return { ...r, paths };
+  return { ...requirements, paths };
 }
 export function validateWingPattern(
   view: ReadView,
-  p: WingPattern,
+  pattern: WingPattern,
   effects: readonly Effect[],
 ): PatternRequirements {
-  const r = requirement();
-  if (p.alias === "W-Wing" && "endpoints" in p) {
-    exact(p, ["alias", "endpoints", "bridge", "cover", "bridgeSymbol", "eliminationSymbol"]);
-    distinct([...p.endpoints, ...p.bridge], 4, 4, view);
+  const requirements = requirement();
+  if (pattern.alias === "W-Wing" && "endpoints" in pattern) {
+    exact(pattern, ["alias", "endpoints", "bridge", "cover", "bridgeSymbol", "eliminationSymbol"]);
+    distinct([...pattern.endpoints, ...pattern.bridge], 4, 4, view);
     requireProof(
-      p.endpoints.length === 2 && p.bridge.length === 2 && p.bridgeSymbol !== p.eliminationSymbol,
+      pattern.endpoints.length === 2 &&
+        pattern.bridge.length === 2 &&
+        pattern.bridgeSymbol !== pattern.eliminationSymbol,
       "invalid-w-wing",
     );
-    const [a, d] = p.endpoints,
-      [b, c] = p.bridge,
-      x = p.bridgeSymbol,
-      z = p.eliminationSymbol;
+    const [cellA, cellD] = pattern.endpoints,
+      [cellB, cellC] = pattern.bridge,
+      x = pattern.bridgeSymbol,
+      zDigit = pattern.eliminationSymbol;
     requireProof(
-      p.endpoints.every((cell) =>
+      pattern.endpoints.every((cell) =>
         sameValue(
           digits(view, cell),
-          [x, z].sort((a, b) => a - b),
+          [x, zDigit].sort((left, right) => left - right),
         ),
       ),
       "invalid-wing-domain",
     );
-    p.endpoints.forEach((cell) => addCell(r, view, cell));
-    addHouse(r, view, p.cover, x, [[b], [c]]);
-    addWeak(r, view, pos(a, x), pos(b, x));
-    addWeak(r, view, pos(c, x), pos(d, x));
-    targets(r, view, effects, [pos(a, z), pos(d, z)]);
+    pattern.endpoints.forEach((cell) => addCell(requirements, view, cell));
+    addHouse(requirements, view, pattern.cover, x, [[cellB], [cellC]]);
+    addWeak(requirements, view, pos(cellA, x), pos(cellB, x));
+    addWeak(requirements, view, pos(cellC, x), pos(cellD, x));
+    targets(requirements, view, effects, [pos(cellA, zDigit), pos(cellD, zDigit)]);
     return {
-      ...r,
-      paths: [[[pos(a, z)], [pos(a, x)], [pos(b, x)], [pos(c, x)], [pos(d, x)], [pos(d, z)]]],
+      ...requirements,
+      paths: [
+        [
+          [pos(cellA, zDigit)],
+          [pos(cellA, x)],
+          [pos(cellB, x)],
+          [pos(cellC, x)],
+          [pos(cellD, x)],
+          [pos(cellD, zDigit)],
+        ],
+      ],
     };
   }
-  requireProof("pivot" in p, "invalid-wing-pattern");
-  exact(p, ["alias", "pivot", "wings", "x", "y", "z"]);
+  requireProof("pivot" in pattern, "invalid-wing-pattern");
+  exact(pattern, ["alias", "pivot", "wings", "x", "y", "z"]);
   requireProof(
-    ["XY-Wing", "Y-Wing", "XYZ-Wing"].includes(p.alias) &&
-      new Set([p.x, p.y, p.z]).size === 3 &&
-      p.wings.length === 2,
+    ["XY-Wing", "Y-Wing", "XYZ-Wing"].includes(pattern.alias) &&
+      new Set([pattern.x, pattern.y, pattern.z]).size === 3 &&
+      pattern.wings.length === 2,
     "invalid-wing-pattern",
   );
-  distinct([p.pivot, ...p.wings], 3, 3, view);
-  const pivot = [p.x, p.y, ...(p.alias === "XYZ-Wing" ? [p.z] : [])].sort((a, b) => a - b);
+  distinct([pattern.pivot, ...pattern.wings], 3, 3, view);
+  const pivot = [pattern.x, pattern.y, ...(pattern.alias === "XYZ-Wing" ? [pattern.z] : [])].sort(
+    (left, right) => left - right,
+  );
   requireProof(
-    sameValue(digits(view, p.pivot), pivot) &&
+    sameValue(digits(view, pattern.pivot), pivot) &&
       sameValue(
-        digits(view, p.wings[0]),
-        [p.x, p.z].sort((a, b) => a - b),
+        digits(view, pattern.wings[0]),
+        [pattern.x, pattern.z].sort((left, right) => left - right),
       ) &&
       sameValue(
-        digits(view, p.wings[1]),
-        [p.y, p.z].sort((a, b) => a - b),
+        digits(view, pattern.wings[1]),
+        [pattern.y, pattern.z].sort((left, right) => left - right),
       ),
     "invalid-wing-domain",
   );
-  [p.pivot, ...p.wings].forEach((c) => addCell(r, view, c));
-  addWeak(r, view, pos(p.pivot, p.x), pos(p.wings[0], p.x));
-  addWeak(r, view, pos(p.pivot, p.y), pos(p.wings[1], p.y));
+  [pattern.pivot, ...pattern.wings].forEach((cell) => addCell(requirements, view, cell));
+  addWeak(requirements, view, pos(pattern.pivot, pattern.x), pos(pattern.wings[0], pattern.x));
+  addWeak(requirements, view, pos(pattern.pivot, pattern.y), pos(pattern.wings[1], pattern.y));
   targets(
-    r,
+    requirements,
     view,
     effects,
-    [...p.wings, ...(p.alias === "XYZ-Wing" ? [p.pivot] : [])].map((c) => pos(c, p.z)),
+    [...pattern.wings, ...(pattern.alias === "XYZ-Wing" ? [pattern.pivot] : [])].map((cell) =>
+      pos(cell, pattern.z),
+    ),
   );
-  return r;
+  return requirements;
 }
 export function validateRemotePattern(
   view: ReadView,
-  p: RemotePattern,
+  pattern: RemotePattern,
   effects: readonly Effect[],
 ): PatternRequirements {
-  exact(p, ["alias", "cells", "symbols", "inferenceLinks", "chute"]);
-  distinct(p.cells, 4, 12, view);
+  exact(pattern, ["alias", "cells", "symbols", "inferenceLinks", "chute"]);
+  distinct(pattern.cells, 4, 12, view);
   requireProof(
-    p.cells.length % 2 === 0 &&
-      p.inferenceLinks === 2 * p.cells.length - 1 &&
-      p.inferenceLinks <= 24 &&
-      p.symbols.length === 2 &&
-      p.symbols[0] < p.symbols[1] &&
-      p.cells.every((c) => sameValue(digits(view, c), p.symbols)),
+    pattern.cells.length % 2 === 0 &&
+      pattern.inferenceLinks === 2 * pattern.cells.length - 1 &&
+      pattern.inferenceLinks <= 24 &&
+      pattern.symbols.length === 2 &&
+      pattern.symbols[0] < pattern.symbols[1] &&
+      pattern.cells.every((cell) => sameValue(digits(view, cell), pattern.symbols)),
     "invalid-remote-parity-or-domain",
   );
-  if (p.alias === "Remote Pairs") requireProof(p.chute === null, "invalid-remote-alias");
+  if (pattern.alias === "Remote Pairs")
+    requireProof(pattern.chute === null, "invalid-remote-alias");
   else
     requireProof(
-      p.alias === "Chute Remote Pairs" &&
-        (p.chute === "band" || p.chute === "stack") &&
+      pattern.alias === "Chute Remote Pairs" &&
+        (pattern.chute === "band" || pattern.chute === "stack") &&
         new Set(
-          p.cells.map((c) => (p.chute === "band" ? Math.floor(c / 27) : Math.floor((c % 9) / 3))),
+          pattern.cells.map((cell) =>
+            pattern.chute === "band" ? Math.floor(cell / 27) : Math.floor((cell % 9) / 3),
+          ),
         ).size === 1,
       "invalid-chute",
     );
-  const r = requirement(),
+  const requirements = requirement(),
     paths: Literal[][][] = [];
-  p.cells.forEach((c) => addCell(r, view, c));
-  for (let i = 1; i < p.cells.length; i++)
-    p.symbols.forEach((s) => addWeak(r, view, pos(p.cells[i - 1], s), pos(p.cells[i], s)));
-  for (const symbol of p.symbols) {
-    const local = effects.filter((e) => e.symbol === symbol);
+  pattern.cells.forEach((cell) => addCell(requirements, view, cell));
+  for (let i = 1; i < pattern.cells.length; i++)
+    pattern.symbols.forEach((symbol) =>
+      addWeak(requirements, view, pos(pattern.cells[i - 1], symbol), pos(pattern.cells[i], symbol)),
+    );
+  for (const symbol of pattern.symbols) {
+    const local = effects.filter((effect) => effect.symbol === symbol);
     if (!local.length) continue;
-    targets(r, view, local, [pos(p.cells[0], symbol), pos(p.cells.at(-1)!, symbol)]);
+    targets(requirements, view, local, [
+      pos(pattern.cells[0], symbol),
+      pos(defined(pattern.cells.at(-1), "cell"), symbol),
+    ]);
     paths.push(
-      p.cells.flatMap((cell, i) => [
-        [pos(cell, p.symbols[(p.symbols.indexOf(symbol) + i) % 2])],
-        [pos(cell, p.symbols[(p.symbols.indexOf(symbol) + i + 1) % 2])],
+      pattern.cells.flatMap((cell, i) => [
+        [pos(cell, pattern.symbols[(pattern.symbols.indexOf(symbol) + i) % 2])],
+        [pos(cell, pattern.symbols[(pattern.symbols.indexOf(symbol) + i + 1) % 2])],
       ]),
     );
   }
   requireProof(
-    effects.length > 0 && effects.every((e) => p.symbols.includes(e.symbol)),
+    effects.length > 0 && effects.every((effect) => pattern.symbols.includes(effect.symbol)),
     "invalid-remote-effect",
   );
-  return { ...r, paths };
+  return { ...requirements, paths };
 }
 export function validateBentPattern(
   view: ReadView,
-  p: BentPattern,
+  pattern: BentPattern,
   effects: readonly Effect[],
 ): PatternRequirements {
-  exact(p, ["alias", "cells", "symbols", "nonrestrictedSymbol", "occurrences", "conflicts"]);
-  distinct(p.cells, 4, 6, view);
-  sorted(p.cells);
-  sorted(p.symbols);
+  exact(pattern, ["alias", "cells", "symbols", "nonrestrictedSymbol", "occurrences", "conflicts"]);
+  distinct(pattern.cells, 4, 6, view);
+  sorted(pattern.cells);
+  sorted(pattern.symbols);
   requireProof(
-    p.symbols.length === p.cells.length &&
-      p.alias === (p.cells.length === 4 ? "WXYZ-Wing" : "Bent almost-locked subsets") &&
-      p.cells.every((c) => digits(view, c).length >= 2) &&
+    pattern.symbols.length === pattern.cells.length &&
+      pattern.alias === (pattern.cells.length === 4 ? "WXYZ-Wing" : "Bent almost-locked subsets") &&
+      pattern.cells.every((cell) => digits(view, cell).length >= 2) &&
       sameValue(
-        [...new Set(p.cells.flatMap((c) => digits(view, c)))].sort((a, b) => a - b),
-        p.symbols,
+        [...new Set(pattern.cells.flatMap((cell) => digits(view, cell)))].sort(
+          (left, right) => left - right,
+        ),
+        pattern.symbols,
       ),
     "invalid-bent-size",
   );
   const occurrences = Object.fromEntries(
-    p.symbols.map((s) => [s, p.cells.filter((c) => current(view, pos(c, s)))]),
+    pattern.symbols.map((symbol) => [
+      symbol,
+      pattern.cells.filter((cell) => current(view, pos(cell, symbol))),
+    ]),
   );
   requireProof(
-    sameValue(p.occurrences, occurrences) && p.symbols.includes(p.nonrestrictedSymbol),
+    sameValue(pattern.occurrences, occurrences) &&
+      pattern.symbols.includes(pattern.nonrestrictedSymbol),
     "invalid-bent-occurrences",
   );
   requireProof(
-    Array.isArray(p.conflicts) &&
-      p.conflicts.every(
-        (pair) => pair.length === 2 && pair[0] < pair[1] && pair.every((c) => p.cells.includes(c)),
+    Array.isArray(pattern.conflicts) &&
+      pattern.conflicts.every(
+        (pair) =>
+          pair.length === 2 &&
+          pair[0] < pair[1] &&
+          pair.every((cell) => pattern.cells.includes(cell)),
       ) &&
-      new Set(p.conflicts.map((pair) => pair.join())).size === p.conflicts.length,
+      new Set(pattern.conflicts.map((pair) => pair.join())).size === pattern.conflicts.length,
     "invalid-bent-conflicts",
   );
   const actual: number[][] = [];
-  for (let i = 0; i < p.cells.length; i++)
-    for (let j = i + 1; j < p.cells.length; j++)
+  for (let i = 0; i < pattern.cells.length; i++)
+    for (let j = i + 1; j < pattern.cells.length; j++)
       if (
         sourceFacts(view, "all-different").some(
-          (f) =>
-            !f.openAssumptions.length &&
-            f.proposition.kind === "all-different" &&
-            f.proposition.cells.includes(p.cells[i]) &&
-            f.proposition.cells.includes(p.cells[j]),
+          (fact) =>
+            !fact.openAssumptions.length &&
+            fact.proposition.kind === "all-different" &&
+            fact.proposition.cells.includes(pattern.cells[i]) &&
+            fact.proposition.cells.includes(pattern.cells[j]),
         )
       )
-        actual.push([p.cells[i], p.cells[j]]);
-  requireProof(sameValue(p.conflicts, actual), "incomplete-bent-conflicts");
-  const conflict = (a: number, b: number) =>
-    p.conflicts.some((pair) => pair.includes(a) && pair.includes(b));
-  for (const s of p.symbols) {
-    const occ = occurrences[s],
-      pairs = occ.flatMap((a, i) => occ.slice(i + 1).map((b) => [a, b]));
+        actual.push([pattern.cells[i], pattern.cells[j]]);
+  requireProof(sameValue(pattern.conflicts, actual), "incomplete-bent-conflicts");
+  const conflict = (left: number, right: number) =>
+    pattern.conflicts.some((pair) => pair.includes(left) && pair.includes(right));
+  for (const symbol of pattern.symbols) {
+    const occ = occurrences[symbol],
+      pairs = occ.flatMap((left, i) => occ.slice(i + 1).map((right) => [left, right]));
     requireProof(
-      s === p.nonrestrictedSymbol
-        ? pairs.some(([a, b]) => !conflict(a, b))
-        : pairs.every(([a, b]) => conflict(a, b)),
+      symbol === pattern.nonrestrictedSymbol
+        ? pairs.some(([left, right]) => !conflict(left, right))
+        : pairs.every(([left, right]) => conflict(left, right)),
       "invalid-bent-restriction",
     );
   }
-  const r = requirement();
-  p.cells.forEach((c) => addCell(r, view, c));
-  p.conflicts.forEach(([a, b]) =>
-    p.symbols
-      .filter((s) => current(view, pos(a, s)) && current(view, pos(b, s)))
-      .forEach((s) => addWeak(r, view, pos(a, s), pos(b, s))),
+  const requirements = requirement();
+  pattern.cells.forEach((cell) => addCell(requirements, view, cell));
+  pattern.conflicts.forEach(([left, right]) =>
+    pattern.symbols
+      .filter((symbol) => current(view, pos(left, symbol)) && current(view, pos(right, symbol)))
+      .forEach((symbol) => addWeak(requirements, view, pos(left, symbol), pos(right, symbol))),
   );
   targets(
-    r,
+    requirements,
     view,
     effects,
-    occurrences[p.nonrestrictedSymbol].map((c) => pos(c, p.nonrestrictedSymbol)),
+    occurrences[pattern.nonrestrictedSymbol].map((cell) => pos(cell, pattern.nonrestrictedSymbol)),
   );
-  return { ...r, table: p };
+  return { ...requirements, table: pattern };
 }
 
 /** Independent admission: no detector, registry, builder, index, or exact solver imports. */
@@ -505,69 +547,76 @@ export function checkPatternProof(
   view: ReadView,
   available: ReadonlyMap<number, ProofNode>,
 ): void {
-  const p = proposal.pattern as unknown;
+  const pattern = proposal.pattern as unknown;
   requireProof(
-    p !== null && typeof p === "object" && !Array.isArray(p),
+    pattern !== null && typeof pattern === "object" && !Array.isArray(pattern),
     "invalid-technique-pattern",
   );
-  const r =
+  const requirements =
     proposal.technique === "c10@1"
-      ? validateShortPattern(view, p as ShortPattern, proposal.effects)
+      ? validateShortPattern(view, pattern as ShortPattern, proposal.effects)
       : proposal.technique === "c11@1"
-        ? validateWingPattern(view, p as WingPattern, proposal.effects)
+        ? validateWingPattern(view, pattern as WingPattern, proposal.effects)
         : proposal.technique === "c12@1"
-          ? validateBentPattern(view, p as BentPattern, proposal.effects)
-          : validateRemotePattern(view, p as RemotePattern, proposal.effects);
-  const permittedClauses = new Set(r.clauses.map((c) => JSON.stringify(clause(c.literals))));
+          ? validateBentPattern(view, pattern as BentPattern, proposal.effects)
+          : validateRemotePattern(view, pattern as RemotePattern, proposal.effects);
+  const permittedClauses = new Set(
+    requirements.clauses.map((c) => JSON.stringify(clause(c.literals))),
+  );
   const seenClauses = new Set<string>(),
     vocabulary = new Set(
-      [...r.vocabulary, ...proposal.effects.map((e) => pos(e.cell, e.symbol))].map(
-        (l) => `${l.cell}:${l.symbol}`,
-      ),
+      [
+        ...requirements.vocabulary,
+        ...proposal.effects.map((effect) => pos(effect.cell, effect.symbol)),
+      ].map((literal) => `${literal.cell}:${literal.symbol}`),
     );
   const relationCells = new Set<number>();
-  const allowedPairs = r.clauses.filter((c) => c.source === "weak").map((c) => c.literals);
+  const allowedPairs = requirements.clauses
+    .filter((c) => c.source === "weak")
+    .map((c) => c.literals);
   for (const id of proposal.proof.imports) {
     const fact = view.facts.get(id);
     requireProof(fact && fact.openAssumptions.length === 0, "invalid-pattern-import");
-    const q = fact.proposition;
-    if (q.kind === "relation") {
+    const proposition = fact.proposition;
+    if (proposition.kind === "relation") {
       requireProof(
-        allowedPairs.some((pair) => pair.every((l) => q.cells.includes(l.cell))),
+        allowedPairs.some((pair) =>
+          pair.every((literal) => proposition.cells.includes(literal.cell)),
+        ),
         "outside-relation-grammar",
       );
-      q.cells.forEach((c) => relationCells.add(c));
+      proposition.cells.forEach((cell) => relationCells.add(cell));
     }
   }
-  const tableCells = new Set([...(r.table?.cells ?? []), ...relationCells]);
+  const tableCells = new Set([...(requirements.table?.cells ?? []), ...relationCells]);
   const signatures = new Set<string>();
   for (const node of proposal.proof.nodes) {
     requireProof(node.scope.length === 0, "outside-technique-grammar");
     const sig = JSON.stringify([node.rule, node.premises, node.conclusion, node.parameters]);
     requireProof(!signatures.has(sig), "redundant-technique-work");
     signatures.add(sig);
-    const q = node.conclusion,
-      premises = node.premises.map((id) => available.get(id)!);
+    const proposition = node.conclusion,
+      premises = node.premises.map((id) => defined(available.get(id), "available"));
     if (node.rule === "weak-link@1" || node.rule === "cover-clause@1") {
-      const key = JSON.stringify(q);
+      const key = JSON.stringify(proposition);
       requireProof(permittedClauses.has(key), "outside-pattern-clause");
       seenClauses.add(key);
       if (node.rule === "cover-clause@1")
         requireProof(
           premises[0]?.rule === "support@1" ||
-            r.clauses.some(
+            requirements.clauses.some(
               (c) =>
                 c.source === "cell" &&
-                node.premises[0] === view.state.domainFacts[c.cells![0]] &&
-                sameValue(q, clause(c.literals)),
+                node.premises[0] === view.state.domainFacts[defined(c.cells, "cells")[0]] &&
+                sameValue(proposition, clause(c.literals)),
             ),
           "outside-pattern-domain",
         );
     } else if (node.rule === "support@1") {
-      const source = premises[0]?.conclusion;
+      const source = premises.at(0)?.conclusion;
       requireProof(
         source?.kind === "cover" &&
-          r.clauses.some(
+          requirements.clauses.some(
             (c) =>
               c.source === "house" &&
               c.symbol === source.symbol &&
@@ -575,72 +624,77 @@ export function checkPatternProof(
           ) &&
           sameValue(
             node.premises.slice(1),
-            source.cells.map((c) => view.state.domainFacts[c]),
+            source.cells.map((cell) => view.state.domainFacts[cell]),
           ),
         "outside-pattern-support",
       );
     } else if (node.rule === "resolution@1") {
       requireProof(
-        literals(q).every((l) => vocabulary.has(`${l.cell}:${l.symbol}`)) &&
-          premises.every((n) => !view.facts.has(n.id)),
+        literals(proposition).every((literal) =>
+          vocabulary.has(`${literal.cell}:${literal.symbol}`),
+        ) && premises.every((n) => !view.facts.has(n.id)),
         "outside-pattern-resolution",
       );
     } else if (node.rule === "domain-restrict@1") {
       requireProof(
-        q.kind === "domain" &&
-          proposal.effects.some((e) => e.cell === q.cell) &&
+        proposition.kind === "domain" &&
+          proposal.effects.some((effect) => effect.cell === proposition.cell) &&
           premises[1]?.conclusion.kind === "literal" &&
-          proposal.effects.some((e) =>
-            sameValue(premises[1].conclusion, { kind: "literal", value: neg(e.cell, e.symbol) }),
+          proposal.effects.some((effect) =>
+            sameValue(premises[1].conclusion, {
+              kind: "literal",
+              value: neg(effect.cell, effect.symbol),
+            }),
           ) &&
-          (node.premises[0] === view.state.domainFacts[q.cell] ||
+          (node.premises[0] === view.state.domainFacts[proposition.cell] ||
             premises[0]?.rule === "domain-restrict@1"),
         "outside-domain-closure",
       );
     } else if (node.rule === "all-different-subset@1") {
       requireProof(
-        r.table &&
-          q.kind === "all-different" &&
-          q.cells.length === 2 &&
-          r.table.conflicts.some((pair) => sameValue(pair, q.cells)),
+        requirements.table &&
+          proposition.kind === "all-different" &&
+          proposition.cells.length === 2 &&
+          requirements.table.conflicts.some((pair) => sameValue(pair, proposition.cells)),
         "outside-local-conflict",
       );
     } else if (node.rule === "table-filter@1") {
       const params = node.parameters as { cells: number[]; box: number[] };
       requireProof(
-        q.kind === "table" &&
-          q.cells.every((c) => tableCells.has(c)) &&
-          ((r.table && sameValue(q.cells, r.table.cells)) || q.cells.length === 1) &&
+        proposition.kind === "table" &&
+          proposition.cells.every((cell) => tableCells.has(cell)) &&
+          ((requirements.table && sameValue(proposition.cells, requirements.table.cells)) ||
+            proposition.cells.length === 1) &&
           premises.every((n) =>
             n.conclusion.kind === "all-different"
               ? n.rule === "all-different-subset@1"
               : n.conclusion.kind === "domain" &&
                 node.premises.includes(view.state.domainFacts[n.conclusion.cell]),
           ) &&
-          params.cells.length === q.cells.length,
+          params.cells.length === proposition.cells.length,
         "outside-pattern-table",
       );
     } else if (node.rule === "table-union@1" || node.rule === "table-join@1") {
       requireProof(
-        q.kind === "table" && q.cells.every((c) => tableCells.has(c)),
+        proposition.kind === "table" && proposition.cells.every((cell) => tableCells.has(cell)),
         "outside-pattern-table",
       );
     } else if (node.rule === "table-project@1") {
-      const key = JSON.stringify(q),
+      const key = JSON.stringify(proposition),
         bent =
-          r.table &&
+          requirements.table &&
           clause(
-            r.table.occurrences[r.table.nonrestrictedSymbol].map((c) =>
-              pos(c, r.table!.nonrestrictedSymbol),
+            requirements.table.occurrences[requirements.table.nonrestrictedSymbol].map((cell) =>
+              pos(cell, defined(requirements.table, "table").nonrestrictedSymbol),
             ),
           );
-      if (bent && sameValue(q, bent))
+      if (bent && sameValue(proposition, bent))
         requireProof(
           premises[0]?.conclusion.kind === "table" && premises[0].conclusion.count > 0,
           "empty-local-pattern",
         );
       requireProof(
-        permittedClauses.has(key) || (bent && sameValue(q, bent)),
+        permittedClauses.has(key) || (bent && sameValue(proposition, bent)),
         "outside-pattern-projection",
       );
       seenClauses.add(key);
@@ -648,12 +702,12 @@ export function checkPatternProof(
   }
   // A named label cannot hide an unrelated inference: every designated cell/house
   // cover must occur, and effects must be reached from these elementary clauses.
-  for (const c of r.clauses.filter((c) => c.source !== "weak"))
-    if (!r.table)
+  for (const c of requirements.clauses.filter((c) => c.source !== "weak"))
+    if (!requirements.table)
       requireProof(seenClauses.has(JSON.stringify(clause(c.literals))), "missing-pattern-premise");
-  if (r.table) requireBentEffectLineage(proposal, view, available, r.table);
-  if (proposal.technique === "c10@1" && (p as ShortPattern).alias === "Dual Empty Rectangle")
-    requireDualRootLineage(proposal, view, available, p as ShortPattern);
+  if (requirements.table) requireBentEffectLineage(proposal, view, available, requirements.table);
+  if (proposal.technique === "c10@1" && (pattern as ShortPattern).alias === "Dual Empty Rectangle")
+    requireDualRootLineage(proposal, view, available, pattern as ShortPattern);
   requireProof(
     proposal.proof.nodes.length <= 512 + proposal.effects.length * 160,
     "technique-work-bound",

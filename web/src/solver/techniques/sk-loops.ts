@@ -26,50 +26,50 @@ export interface SkPlan {
 }
 /** Eight disjoint pairs arranged around the four-box rectangle. */
 export function skGeometry(corners: readonly number[]): { groups: number[][]; houses: string[] } {
-  const [a, b, c, d] = corners;
-  const horizontal = (q: number) =>
-    Array.from({ length: 9 }, (_, i) => Math.floor(q / 9) * 9 + i).filter(
-      (x) => boxOf(x) === boxOf(q) && x !== q,
+  const [cornerA, cornerB, cornerC, cornerD] = corners;
+  const horizontal = (cell: number) =>
+    Array.from({ length: 9 }, (_, i) => Math.floor(cell / 9) * 9 + i).filter(
+      (x) => boxOf(x) === boxOf(cell) && x !== cell,
     );
-  const vertical = (q: number) =>
-    Array.from({ length: 9 }, (_, i) => i * 9 + (q % 9)).filter(
-      (x) => boxOf(x) === boxOf(q) && x !== q,
+  const vertical = (cell: number) =>
+    Array.from({ length: 9 }, (_, i) => i * 9 + (cell % 9)).filter(
+      (x) => boxOf(x) === boxOf(cell) && x !== cell,
     );
   return {
     groups: [
-      horizontal(a),
-      horizontal(b),
-      vertical(b),
-      vertical(c),
-      horizontal(c),
-      horizontal(d),
-      vertical(d),
-      vertical(a),
+      horizontal(cornerA),
+      horizontal(cornerB),
+      vertical(cornerB),
+      vertical(cornerC),
+      horizontal(cornerC),
+      horizontal(cornerD),
+      vertical(cornerD),
+      vertical(cornerA),
     ],
     houses: [
-      `row:${Math.floor(a / 9)}`,
-      `box:${boxOf(b)}`,
-      `column:${b % 9}`,
-      `box:${boxOf(c)}`,
-      `row:${Math.floor(c / 9)}`,
-      `box:${boxOf(d)}`,
-      `column:${a % 9}`,
-      `box:${boxOf(a)}`,
+      `row:${Math.floor(cornerA / 9)}`,
+      `box:${boxOf(cornerB)}`,
+      `column:${cornerB % 9}`,
+      `box:${boxOf(cornerC)}`,
+      `row:${Math.floor(cornerC / 9)}`,
+      `box:${boxOf(cornerD)}`,
+      `column:${cornerA % 9}`,
+      `box:${boxOf(cornerA)}`,
     ],
   };
 }
 export function* compileSkLoop(
   view: ReadView,
-  p: SkPlan,
+  pattern: SkPlan,
   lease?: WorkspaceReservation,
 ): Generator<SpecializedWork, DeductionProposal | null> {
-  const b = new SpecializedProof(view, lease),
+  const proof = new SpecializedProof(view, lease),
     locals: LocalRelation[] = [];
-  for (const group of p.groups) locals.push(yield* b.local(group, [group]));
+  for (const group of pattern.groups) locals.push(yield* proof.local(group, [group]));
   const joins: number[] = [];
   let ring = locals[0];
   for (const next of locals.slice(1)) {
-    ring = yield* b.joinPeers(ring, next);
+    ring = yield* proof.joinPeers(ring, next);
     joins.push(ring.id);
   }
   if (!ring.rows.length) return null;
@@ -80,33 +80,35 @@ export function* compileSkLoop(
     roots: number[] = [],
     routes: any[] = [];
   for (let i = 0; i < 8; i++)
-    for (const symbol of p.links[i].symbols) {
-      const cells = sortedCells([...p.groups[i], ...p.groups[(i + 1) % 8]]),
-        house = b.houses.house(p.links[i].house);
-      const targets = house.filter(
-        (c) =>
-          !ring.cells.includes(c) && !view.state.values[c] && view.state.domains[c] & bitOf(symbol),
+    for (const symbol of pattern.links[i].symbols) {
+      const cells = sortedCells([...pattern.groups[i], ...pattern.groups[(i + 1) % 8]]),
+        houseCells = proof.houses.house(pattern.links[i].house);
+      const targets = houseCells.filter(
+        (cell) =>
+          !ring.cells.includes(cell) &&
+          !view.state.values[cell] &&
+          view.state.domains[cell] & bitOf(symbol),
       );
       if (!targets.length) continue;
-      const cover = b.project(
+      const cover = proof.project(
         table,
         clause(cells.map((cell) => ({ cell, symbol, positive: true }))),
       );
       for (const cell of targets) {
-        if (effects.some((e) => e.cell === cell && e.symbol === symbol)) continue;
+        if (effects.some((effect) => effect.cell === cell && effect.symbol === symbol)) continue;
         let root = cover;
         const weak: number[] = [];
         for (const source of cells) {
-          const edge = b.add(
+          const edge = proof.add(
             "weak-link@1",
-            [b.wire.fact({ kind: "all-different", cells: house })],
+            [proof.wire.fact({ kind: "all-different", cells: houseCells })],
             clause([
               { cell: source, symbol, positive: false },
               { cell, symbol, positive: false },
             ]),
           );
           weak.push(edge);
-          root = b.resolve(root, edge, { cell: source, symbol, positive: true });
+          root = proof.resolve(root, edge, { cell: source, symbol, positive: true });
         }
         effects.push({ kind: "remove", cell, symbol });
         roots.push(root);
@@ -114,9 +116,12 @@ export function* compileSkLoop(
       }
     }
   if (!effects.length) return null;
-  return b.finish(
+  return proof.finish(
     "c30@1",
-    { ...p, certificate: { locals: locals.map((t) => t.id), joins, table: table.id, routes } },
+    {
+      ...pattern,
+      certificate: { locals: locals.map((local) => local.id), joins, table: table.id, routes },
+    },
     effects,
     roots,
   );
@@ -125,18 +130,26 @@ export function* compileSkLoop(
  * full tuple closure decides whether those sets really saturate each house. */
 export class SkLoopsSearch implements SpecializedStrategy {
   *plans(view: ReadView) {
-    const h = new ClassicHouses(view);
-    for (const [r, s] of choose([0, 1, 2, 3, 4, 5, 6, 7, 8], 2))
-      for (const [c, d] of choose([0, 1, 2, 3, 4, 5, 6, 7, 8], 2)) {
+    const houses = new ClassicHouses(view);
+    for (const [firstRow, secondRow] of choose([0, 1, 2, 3, 4, 5, 6, 7, 8], 2))
+      for (const [firstColumn, secondColumn] of choose([0, 1, 2, 3, 4, 5, 6, 7, 8], 2)) {
         yield specializedWork;
-        if (Math.floor(r / 3) === Math.floor(s / 3) || Math.floor(c / 3) === Math.floor(d / 3))
-          continue;
-        const corners = [r * 9 + c, r * 9 + d, s * 9 + d, s * 9 + c],
-          g = skGeometry(corners);
         if (
-          g.houses.some((id) => {
+          Math.floor(firstRow / 3) === Math.floor(secondRow / 3) ||
+          Math.floor(firstColumn / 3) === Math.floor(secondColumn / 3)
+        )
+          continue;
+        const corners = [
+            firstRow * 9 + firstColumn,
+            firstRow * 9 + secondColumn,
+            secondRow * 9 + secondColumn,
+            secondRow * 9 + firstColumn,
+          ],
+          group = skGeometry(corners);
+        if (
+          group.houses.some((id) => {
             try {
-              h.house(id);
+              houses.house(id);
               return false;
             } catch {
               return true;
@@ -144,25 +157,27 @@ export class SkLoopsSearch implements SpecializedStrategy {
           })
         )
           continue;
-        const unions = g.groups.map((group) =>
-            sortedCells(group.flatMap((c) => candidates(view, c))),
+        const unions = group.groups.map((group) =>
+            sortedCells(group.flatMap((cell) => candidates(view, cell))),
           ),
-          incidences = unions.reduce((n, u) => n + u.length, 0);
+          incidences = unions.reduce((n, union) => n + union.length, 0);
         if (
-          unions.some((u) => u.length > 6) ||
+          unions.some((union) => union.length > 6) ||
           incidences > 32 ||
-          g.groups.every((g) => g.every((c) => view.state.values[c]))
+          group.groups.every((group) => group.every((cell) => view.state.values[cell]))
         )
           continue;
         // Sixteen cell truths must fit sixteen link capacities. The incidence bound
         // rules out most rectangles before local tuple work; equality requires each
         // listed symbol to occur in both adjacent domain unions.
-        const edgeSymbols = unions.map((u, i) =>
+        const edgeSymbols = unions.map((union, i) =>
           incidences === 32
-            ? u.filter((s) => unions[(i + 1) % 8].includes(s))
-            : sortedCells([...u, ...unions[(i + 1) % 8]]),
+            ? union.filter((symbol) => unions[(i + 1) % 8].includes(symbol))
+            : sortedCells([...union, ...unions[(i + 1) % 8]]),
         );
-        const choices = edgeSymbols.map((u) => [1, 2, 3].flatMap((size) => [...choose(u, size)]));
+        const choices = edgeSymbols.map((union) =>
+          [1, 2, 3].flatMap((size) => [...choose(union, size)]),
+        );
         const walk = function* (
           i: number,
           links: number[][],
@@ -171,7 +186,7 @@ export class SkLoopsSearch implements SpecializedStrategy {
           if (i === 8) {
             if (
               total === 16 &&
-              unions[0].every((s) => links[0].includes(s) || links[7].includes(s))
+              unions[0].every((symbol) => links[0].includes(symbol) || links[7].includes(symbol))
             )
               yield { kind: "links", links };
             return;
@@ -181,7 +196,10 @@ export class SkLoopsSearch implements SpecializedStrategy {
             if (
               total + selected.length + (7 - i) > 16 ||
               total + selected.length + (7 - i) * 3 < 16 ||
-              (i && unions[i].some((s) => !links[i - 1].includes(s) && !selected.includes(s)))
+              (i &&
+                unions[i].some(
+                  (symbol) => !links[i - 1].includes(symbol) && !selected.includes(symbol),
+                ))
             )
               continue;
             yield* walk(i + 1, [...links, selected], total + selected.length);
@@ -197,16 +215,16 @@ export class SkLoopsSearch implements SpecializedStrategy {
             plan: {
               alias: "SK Loops",
               corners,
-              groups: g.groups,
-              links: event.links.map((symbols, i) => ({ house: g.houses[i], symbols })),
+              groups: group.groups,
+              links: event.links.map((symbols, i) => ({ house: group.houses[i], symbols })),
               linkMultiplicity: 16,
             },
           };
         }
       }
   }
-  compile(view: ReadView, p: SkPlan, lease?: WorkspaceReservation) {
-    return compileSkLoop(view, p, lease);
+  compile(view: ReadView, pattern: SkPlan, lease?: WorkspaceReservation) {
+    return compileSkLoop(view, pattern, lease);
   }
 }
 export const skLoopTechniques = Object.freeze([

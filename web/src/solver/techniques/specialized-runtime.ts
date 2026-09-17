@@ -6,13 +6,15 @@ import { IndexInterrupted, type WorkspaceReservation } from "../indexes/workspac
 import { ForcingProof, forcingProofFits } from "./forcing-proof";
 import { clause, literals, sameValue } from "../proof/primitives";
 import { findHouseEqualTo, findHouseWithCells, symbolMask } from "../state/read";
+import { defined } from "../invariants";
 
-export const boxOf = (c: number): number => Math.floor(c / 27) * 3 + Math.floor((c % 9) / 3);
-export const bitOf = (s: number): number => symbolMask(s);
+export const boxOf = (cell: number): number =>
+  Math.floor(cell / 27) * 3 + Math.floor((cell % 9) / 3);
+export const bitOf = (symbol: number): number => symbolMask(symbol);
 export const sortedCells = (cells: readonly number[]): number[] =>
-  [...new Set(cells)].sort((a, b) => a - b);
-export const candidates = (view: ReadView, c: number): number[] =>
-  view.assembly.problem.symbols.filter((s) => view.state.domains[c] & bitOf(s));
+  [...new Set(cells)].sort((left, right) => left - right);
+export const candidates = (view: ReadView, cell: number): number[] =>
+  view.assembly.problem.symbols.filter((symbol) => view.state.domains[cell] & bitOf(symbol));
 export type SpecializedWork = { kind: "work"; units: number };
 export const specializedWork: SpecializedWork = { kind: "work", units: 1 };
 export function* choose<T>(
@@ -51,28 +53,32 @@ export class ClassicHouses {
         ["column", this.columns],
         ["box", this.boxes],
       ] as const) {
-        const cells = Array.from({ length: 81 }, (_, c) => c).filter(
-          (c) => (kind === "row" ? Math.floor(c / 9) : kind === "column" ? c % 9 : boxOf(c)) === i,
+        const cells = Array.from({ length: 81 }, (_, cell) => cell).filter(
+          (cell) =>
+            (kind === "row" ? Math.floor(cell / 9) : kind === "column" ? cell % 9 : boxOf(cell)) ===
+            i,
         );
         list.push(findHouseEqualTo(view, cells)?.cells);
       }
   }
-  peer(a: number, b: number): boolean {
+  peer(left: number, right: number): boolean {
     return (
-      a !== b &&
-      [...this.rows, ...this.columns, ...this.boxes].some((h) => h?.includes(a) && h.includes(b))
+      left !== right &&
+      [...this.rows, ...this.columns, ...this.boxes].some(
+        (scope) => scope?.includes(left) && scope.includes(right),
+      )
     );
   }
-  scope(a: number, b: number): readonly number[] {
+  scope(left: number, right: number): readonly number[] {
     const found = [...this.rows, ...this.columns, ...this.boxes].find(
-      (h) => h?.includes(a) && h.includes(b),
+      (scope) => scope?.includes(left) && scope.includes(right),
     );
     if (!found) throw Error("missing-specialized-scope");
     return found;
   }
   house(id: string): readonly number[] {
     const [kind, n] = id.split(":"),
-      h = (
+      scope = (
         kind === "row"
           ? this.rows
           : kind === "column"
@@ -81,8 +87,8 @@ export class ClassicHouses {
               ? this.boxes
               : []
       )[Number(n)];
-    if (!h) throw Error("missing-specialized-house");
-    return h;
+    if (!scope) throw Error("missing-specialized-house");
+    return scope;
   }
   id(cells: readonly number[]): string {
     for (const [name, list] of [
@@ -90,7 +96,7 @@ export class ClassicHouses {
       ["column", this.columns],
       ["box", this.boxes],
     ] as const) {
-      const i = list.findIndex((h) => sameValue(h, cells));
+      const i = list.findIndex((scope) => sameValue(scope, cells));
       if (i >= 0) return `${name}:${i}`;
     }
     throw Error("missing-specialized-house");
@@ -117,12 +123,12 @@ export class SpecializedProof {
     return this.wire.nodes;
   }
   cover(cells: readonly number[], symbol: number): number {
-    const supports = cells.filter((c) => this.view.state.domains[c] & bitOf(symbol));
+    const supports = cells.filter((cell) => this.view.state.domains[cell] & bitOf(symbol));
     const source = this.add(
       "support@1",
       [
         this.wire.fact({ kind: "cover", cells, symbol }),
-        ...cells.map((c) => this.view.state.domainFacts[c]),
+        ...cells.map((cell) => this.view.state.domainFacts[cell]),
       ],
       { kind: "cover", cells: supports, symbol },
     );
@@ -175,36 +181,47 @@ export class SpecializedProof {
     domains?: ReadonlyMap<number, { id: number; mask: number }>,
   ): Generator<SpecializedWork, LocalRelation> {
     const ordered = sortedCells(cells),
-      sources = scopes.map((g) => this.scope(g));
+      sources = scopes.map((group) => this.scope(group));
     const build = function* (
       this: SpecializedProof,
       masks: number[],
     ): Generator<SpecializedWork, LocalRelation> {
       const choices = masks.map((mask) =>
-        this.view.assembly.problem.symbols.filter((s) => mask & bitOf(s)),
+        this.view.assembly.problem.symbols.filter((symbol) => mask & bitOf(symbol)),
       );
-      if (choices.reduce((n, c) => n * c.length, 1) > 256) {
-        const i = choices.findIndex((v) => v.length > 1),
+      if (choices.reduce((n, choice) => n * choice.length, 1) > 256) {
+        const i = choices.findIndex((value) => value.length > 1),
           left = [...masks],
           right = [...masks];
         left[i] = bitOf(choices[i][0]);
         right[i] &= ~left[i];
-        const a = yield* build.call(this, left),
+        const relation = yield* build.call(this, left),
           b = yield* build.call(this, right);
-        this.lease?.grow(0, (a.rows.length + b.rows.length) * 16);
-        return this.table("table-union@1", [a.id, b.id], ordered, [...a.rows, ...b.rows]);
+        this.lease?.grow(0, (relation.rows.length + b.rows.length) * 16);
+        return this.table("table-union@1", [relation.id, b.id], ordered, [
+          ...relation.rows,
+          ...b.rows,
+        ]);
       }
       const rows: number[][] = [];
       for (const row of product(choices)) {
         yield specializedWork;
-        if (scopes.every((g) => new Set(g.map((c) => row[ordered.indexOf(c)])).size === g.length)) {
+        if (
+          scopes.every(
+            (group) =>
+              new Set(group.map((cell) => row[ordered.indexOf(cell)])).size === group.length,
+          )
+        ) {
           this.lease?.grow(1, 64 + ordered.length * 16);
           rows.push(row);
         }
       }
       return this.table(
         "table-filter@1",
-        [...ordered.map((c) => domains?.get(c)?.id ?? this.view.state.domainFacts[c]), ...sources],
+        [
+          ...ordered.map((cell) => domains?.get(cell)?.id ?? this.view.state.domainFacts[cell]),
+          ...sources,
+        ],
         ordered,
         rows,
         { cells: ordered, box: masks },
@@ -212,7 +229,7 @@ export class SpecializedProof {
     };
     return yield* build.call(
       this,
-      ordered.map((c) => domains?.get(c)?.mask ?? this.view.state.domains[c]),
+      ordered.map((cell) => domains?.get(cell)?.mask ?? this.view.state.domains[cell]),
     );
   }
 
@@ -222,7 +239,7 @@ export class SpecializedProof {
     filters: readonly number[] = [],
   ): Generator<SpecializedWork, LocalRelation> {
     const cells = sortedCells([...a.cells, ...b.cells]),
-      shared = a.cells.filter((c) => b.cells.includes(c)),
+      shared = a.cells.filter((cell) => b.cells.includes(cell)),
       rows: number[][] = [];
     const constraints = filters.map(
       (id) =>
@@ -231,17 +248,20 @@ export class SpecializedProof {
     for (const left of a.rows)
       for (const right of b.rows) {
         yield specializedWork;
-        if (!shared.every((c) => left[a.cells.indexOf(c)] === right[b.cells.indexOf(c)])) continue;
-        const row = cells.map((c) =>
-          a.cells.includes(c) ? left[a.cells.indexOf(c)] : right[b.cells.indexOf(c)],
+        if (!shared.every((cell) => left[a.cells.indexOf(cell)] === right[b.cells.indexOf(cell)]))
+          continue;
+        const row = cells.map((cell) =>
+          a.cells.includes(cell) ? left[a.cells.indexOf(cell)] : right[b.cells.indexOf(cell)],
         );
         if (
-          !constraints.every((p) =>
-            p?.kind === "all-different"
-              ? new Set(p.cells.map((c) => row[cells.indexOf(c)])).size === p.cells.length
-              : p?.kind === "clause" &&
-                p.alternatives.some(
-                  (l) => (row[cells.indexOf(l.cell)] === l.symbol) === l.positive,
+          !constraints.every((proposition) =>
+            proposition?.kind === "all-different"
+              ? new Set(proposition.cells.map((cell) => row[cells.indexOf(cell)])).size ===
+                proposition.cells.length
+              : proposition?.kind === "clause" &&
+                proposition.alternatives.some(
+                  (literal) =>
+                    (row[cells.indexOf(literal.cell)] === literal.symbol) === literal.positive,
                 ),
           )
         )
@@ -252,29 +272,37 @@ export class SpecializedProof {
     return this.table("table-join-filter@1", [a.id, b.id, ...filters], cells, rows);
   }
   *joinPeers(
-    a: LocalRelation,
-    b: LocalRelation,
+    left: LocalRelation,
+    right: LocalRelation,
     extra: readonly number[] = [],
   ): Generator<SpecializedWork, LocalRelation> {
     const pairs: number[] = [];
-    for (const x of a.cells)
-      for (const y of b.cells)
-        if (x !== y && this.houses.peer(x, y) && !a.cells.includes(y) && !b.cells.includes(x))
+    for (const x of left.cells)
+      for (const y of right.cells)
+        if (
+          x !== y &&
+          this.houses.peer(x, y) &&
+          !left.cells.includes(y) &&
+          !right.cells.includes(x)
+        )
           pairs.push(this.scope([x, y]));
-    return yield* this.join(a, b, [...pairs, ...extra]);
+    return yield* this.join(left, right, [...pairs, ...extra]);
   }
   project(table: LocalRelation, claim: Proposition): number {
     return this.add("table-project@1", [table.id], claim);
   }
-  resolve(a: number, b: number, pivot: Literal): number {
+  resolve(left: number, right: number, pivot: Literal): number {
     const get = (id: number) =>
-      this.nodes.find((n) => n.id === id)?.conclusion ?? this.view.facts.get(id)!.proposition;
+      this.nodes.find((n) => n.id === id)?.conclusion ??
+      defined(this.view.facts.get(id), "fact").proposition;
     return this.add(
       "resolution@1",
-      [a, b],
+      [left, right],
       clause([
-        ...literals(get(a)).filter((l) => !sameValue(l, pivot)),
-        ...literals(get(b)).filter((l) => !sameValue(l, { ...pivot, positive: !pivot.positive })),
+        ...literals(get(left)).filter((literal) => !sameValue(literal, pivot)),
+        ...literals(get(right)).filter(
+          (literal) => !sameValue(literal, { ...pivot, positive: !pivot.positive }),
+        ),
       ]),
     );
   }
@@ -286,16 +314,17 @@ export class SpecializedProof {
   ): DeductionProposal {
     const domains = new Map<number, { id: number; mask: number }>(),
       all = [...roots];
-    for (const [i, e] of effects.entries()) {
-      const prior = domains.get(e.cell) ?? {
-        id: this.view.state.domainFacts[e.cell],
-        mask: this.view.state.domains[e.cell],
+    for (const [i, effect] of effects.entries()) {
+      const prior = domains.get(effect.cell) ?? {
+        id: this.view.state.domainFacts[effect.cell],
+        mask: this.view.state.domains[effect.cell],
       };
-      const mask = e.kind === "place" ? bitOf(e.symbol) : prior.mask & ~bitOf(e.symbol);
-      domains.set(e.cell, {
+      const mask =
+        effect.kind === "place" ? bitOf(effect.symbol) : prior.mask & ~bitOf(effect.symbol);
+      domains.set(effect.cell, {
         id: this.add("domain-restrict@1", [prior.id, roots[i]], {
           kind: "domain",
-          cell: e.cell,
+          cell: effect.cell,
           mask,
         }),
         mask,
@@ -334,7 +363,10 @@ export function specializedDescriptor(
   strategy: SpecializedStrategy,
   bounds: readonly [number, number, number, number, number],
 ): TechniqueDescriptor {
-  const row = coverageEntries.find((r) => r.id === rowId)!;
+  const entry = defined(
+    coverageEntries.find((entry) => entry.id === rowId),
+    "coverageEntry",
+  );
   const eligible = (view: ReadView) =>
     view.assembly.problem.cells.length === 81 &&
     view.assembly.problem.symbols.length === 9 &&
@@ -346,11 +378,11 @@ export function specializedDescriptor(
           dependencies: [{ kind: "all" as const }],
         };
   return {
-    id: row.version,
-    aliases: row.aliases,
-    tier: row.tier,
-    requires: row.capabilities,
-    assumptionPolicy: row.assumptionPolicy,
+    id: entry.version,
+    aliases: entry.aliases,
+    tier: entry.tier,
+    requires: entry.capabilities,
+    assumptionPolicy: entry.assumptionPolicy,
     bounds: {
       maxLength: bounds[0],
       maxBranchDepth: bounds[1],
@@ -360,7 +392,7 @@ export function specializedDescriptor(
     },
     eligible,
     watches: () => [{ kind: "all" }],
-    estimate: () => ({ hit: 1, gain: 1, cost: row.tier + 1 }),
+    estimate: () => ({ hit: 1, gain: 1, cost: entry.tier + 1 }),
     *discover(view, context): Discovery {
       const status = eligible(view);
       if (status.kind === "excluded") {
@@ -413,7 +445,7 @@ export function specializedDescriptor(
                   yield { kind: "proposal", proposal: n.value };
                 }
               } finally {
-                job.compilation!.dispose();
+                defined(job.compilation, "compilation").dispose();
                 job.compilation = undefined;
               }
             } else {

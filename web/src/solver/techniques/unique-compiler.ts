@@ -10,6 +10,7 @@ import {
 import { proposedClause } from "../proof/builder";
 import { ForcingProof, opposite, type ForcingLink, type PathCertificate } from "./forcing-proof";
 import { symbolMask } from "../state/read";
+import { defined } from "../invariants";
 
 export interface UniqueGeometry {
   readonly row: "U01" | "U02" | "U03" | "U04" | "U05";
@@ -63,13 +64,13 @@ export interface UniqueCertificate {
 
 /** Shared-path composition within ONE assumption; siblings never share scoped nodes. */
 function paths(
-  b: ForcingProof,
+  proof: ForcingProof,
   assumption: number,
   recipes: readonly (readonly ForcingLink[])[],
 ): PathCertificate[] {
   const shared = new Map<string, { clause: number; root: number }>();
   return recipes.map((path) => {
-    if (!path.length) return b.path(assumption, path);
+    if (!path.length) return proof.path(assumption, path);
     const clauses: number[] = [],
       links: number[] = [];
     let prior = assumption;
@@ -77,8 +78,8 @@ function paths(
       const key = `${prior}:${JSON.stringify(edge)}`;
       let found = shared.get(key);
       if (!found) {
-        const clause = b.edge(edge),
-          root = b.add("resolution@1", [prior, clause], proposedClause([edge.to]));
+        const clause = proof.edge(edge),
+          root = proof.add("resolution@1", [prior, clause], proposedClause([edge.to]));
         found = { clause, root };
         shared.set(key, found);
       }
@@ -99,8 +100,8 @@ export function compileUnique(
   lease?: WorkspaceReservation,
 ): DeductionProposal {
   if (!uniqueAuthorityMatches(authority, view)) throw Error("missing-unique-authority");
-  const b = new ForcingProof(view, lease),
-    g = plan.geometry;
+  const proof = new ForcingProof(view, lease),
+    geometry = plan.geometry;
   const selected = new Set(view.state.domainFacts);
   const originals = uniqueSourceFacts(view);
   if (originals.length > 1105) throw Error("proof-import-limit");
@@ -110,20 +111,20 @@ export function compileUnique(
   for (let n = 0; n < ids.length; n += 32) {
     const group = ids.slice(n, n + 32);
     groups.push(
-      b.add("conjunction@1", group, {
+      proof.add("conjunction@1", group, {
         kind: "and",
-        terms: group.map((id) => view.facts.get(id)!.proposition),
+        terms: group.map((id) => defined(view.facts.get(id), "fact").proposition),
       }),
     );
   }
-  const trade = b.add("unique-transform@1", groups, proposedClause(g.guardians), {
-    cells: g.cells,
-    coreMasks: g.coreMasks,
-    permutation: g.permutation,
-    evidenceId: uniqueAuthorityEvidenceId(authority)!,
+  const trade = proof.add("unique-transform@1", groups, proposedClause(geometry.guardians), {
+    cells: geometry.cells,
+    coreMasks: geometry.coreMasks,
+    permutation: geometry.permutation,
+    evidenceId: defined(uniqueAuthorityEvidenceId(authority), "uniqueAuthorityEvidenceId"),
   });
   const derive = (consequence: UniquePlan["consequence"], effect: Effect): UniqueCertificate => {
-    b.scope = [];
+    proof.scope = [];
     const target: Literal = {
       cell: effect.cell,
       symbol: effect.symbol,
@@ -132,24 +133,24 @@ export function compileUnique(
     let root: number;
     const branches: { assumption: number; paths: PathCertificate[]; result: number }[] = [];
     if (consequence.kind === "denial") {
-      const assumption = b.add("assume@1", [], proposedClause([opposite(target)]));
-      b.scope = [assumption];
-      const proofs = paths(b, assumption, consequence.paths);
-      const result = b.add("contradiction@1", [trade, ...proofs.map((p) => p.end)], {
+      const assumption = proof.add("assume@1", [], proposedClause([opposite(target)]));
+      proof.scope = [assumption];
+      const proofs = paths(proof, assumption, consequence.paths);
+      const result = proof.add("contradiction@1", [trade, ...proofs.map((p) => p.end)], {
         kind: "false",
       });
       branches.push({ assumption, paths: proofs, result });
-      b.scope = [];
-      root = b.add("discharge@1", [assumption, result], proposedClause([target]));
+      proof.scope = [];
+      root = proof.add("discharge@1", [assumption, result], proposedClause([target]));
     } else {
       for (const branch of consequence.branches) {
-        b.scope = [];
-        const assumption = b.add("assume@1", [], proposedClause([branch.assumption]));
-        b.scope = [assumption];
-        const proofs = paths(b, assumption, branch.paths);
+        proof.scope = [];
+        const assumption = proof.add("assume@1", [], proposedClause([branch.assumption]));
+        proof.scope = [assumption];
+        const proofs = paths(proof, assumption, branch.paths);
         const result =
           branch.result === "false"
-            ? b.add(
+            ? proof.add(
                 "contradiction@1",
                 proofs.map((p) => p.end),
                 { kind: "false" },
@@ -157,15 +158,15 @@ export function compileUnique(
             : proofs[0].end;
         branches.push({ assumption, paths: proofs, result });
       }
-      b.scope = [];
+      proof.scope = [];
       const order = consequence.branches
         .map((branch, i) => ({ branch, proof: branches[i] }))
         .sort(
-          (a, b) =>
-            a.branch.assumption.cell - b.branch.assumption.cell ||
-            a.branch.assumption.symbol - b.branch.assumption.symbol,
+          (left, right) =>
+            left.branch.assumption.cell - right.branch.assumption.cell ||
+            left.branch.assumption.symbol - right.branch.assumption.symbol,
         );
-      root = b.add(
+      root = proof.add(
         "cases@1",
         [trade, ...order.flatMap(({ proof }) => [proof.assumption, proof.result])],
         proposedClause([target]),
@@ -180,18 +181,23 @@ export function compileUnique(
       roots = [certificate.root, companion.root];
     for (const [i, e] of effects.entries())
       roots.push(
-        b.add("domain-restrict@1", [view.state.domainFacts[e.cell], roots[i]], {
+        proof.add("domain-restrict@1", [view.state.domainFacts[e.cell], roots[i]], {
           kind: "domain",
           cell: e.cell,
           mask: view.state.domains[e.cell] & ~symbolMask(e.symbol),
         }),
       );
-    return b.bundle(
-      `${g.row.toLowerCase()}@1`,
+    return proof.bundle(
+      `${geometry.row.toLowerCase()}@1`,
       { ...plan, certificate: { ...certificate, companion } },
       effects,
       roots,
     );
   }
-  return b.finish(`${g.row.toLowerCase()}@1`, { ...plan, certificate }, effect, certificate.root);
+  return proof.finish(
+    `${geometry.row.toLowerCase()}@1`,
+    { ...plan, certificate },
+    effect,
+    certificate.root,
+  );
 }

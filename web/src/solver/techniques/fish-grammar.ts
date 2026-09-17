@@ -37,10 +37,10 @@ export const fishNames: Readonly<Record<number, string>> = Object.freeze({
 });
 /** Geometry is reconstructed from real scopes; IDs alone confer no capability. */
 export function fishHouse(view: ReadView, id: string): readonly number[] {
-  const h = findHouse(view, id);
+  const house = findHouse(view, id);
   requireProof(
-    h &&
-      h.cells.length === 9 &&
+    house &&
+      house.cells.length === 9 &&
       view.assembly.problem.cells.length === 81 &&
       view.assembly.problem.symbols.length === 9,
     "fish-classic-scope",
@@ -48,23 +48,26 @@ export function fishHouse(view: ReadView, id: string): readonly number[] {
   const match = /^(row|column|box):([0-8])$/.exec(id);
   requireProof(match, "fish-house-id");
   const n = Number(match[2]),
-    expected = Array.from({ length: 81 }, (_, c) => c).filter((c) =>
+    expected = Array.from({ length: 81 }, (_, cell) => cell).filter((cell) =>
       match[1] === "row"
-        ? Math.floor(c / 9) === n
+        ? Math.floor(cell / 9) === n
         : match[1] === "column"
-          ? c % 9 === n
-          : Math.floor(c / 27) * 3 + Math.floor((c % 9) / 3) === n,
+          ? cell % 9 === n
+          : Math.floor(cell / 27) * 3 + Math.floor((cell % 9) / 3) === n,
     );
-  requireProof(sameValue(h.cells, expected), "fish-house-geometry");
-  return h.cells;
+  requireProof(sameValue(house.cells, expected), "fish-house-geometry");
+  return house.cells;
 }
-export function fishSees(view: ReadView, a: number, b: number): boolean {
+export function fishSees(view: ReadView, left: number, right: number): boolean {
   return (
-    a !== b && view.assembly.allDifferent.some((h) => h.cells.includes(a) && h.cells.includes(b))
+    left !== right &&
+    view.assembly.allDifferent.some(
+      (house) => house.cells.includes(left) && house.cells.includes(right),
+    )
   );
 }
-function fields(p: object, names: string[]) {
-  requireProof(sameValue(Object.keys(p).sort(), names.sort()), "fish-pattern-fields");
+function fields(pattern: object, names: string[]) {
+  requireProof(sameValue(Object.keys(pattern).sort(), names.sort()), "fish-pattern-fields");
 }
 function houseSet(value: readonly string[], size: number): void {
   requireProof(
@@ -79,20 +82,27 @@ export function mixedFishForm(
   covers: readonly string[],
 ): "franken" | "mutant" {
   const kinds = (ids: readonly string[]) => new Set(ids.map((id) => id.split(":")[0])),
-    b = kinds(bases),
-    c = kinds(covers);
+    right = kinds(bases),
+    coverKinds = kinds(covers);
   const oriented = (left: Set<string>, right: Set<string>) =>
     !left.has("column") && !right.has("row");
-  return (b.has("box") || c.has("box")) && (oriented(b, c) || oriented(c, b))
+  return (right.has("box") || coverKinds.has("box")) &&
+    (oriented(right, coverKinds) || oriented(coverKinds, right))
     ? "franken"
     : "mutant";
 }
 /** Independent named predicates plus exact incidence arithmetic, never discovery. */
-export function validateFishGeometry(view: ReadView, p: FishComponent): FishRequirement {
-  requireProof(p && typeof p === "object" && !Array.isArray(p), "fish-component");
-  const simple = ["basic", "finned", "sashimi"].includes(p.form),
+export function validateFishGeometry(
+  view: ReadView,
+  component: FishComponent | undefined,
+): FishRequirement {
+  requireProof(
+    component && typeof component === "object" && !Array.isArray(component),
+    "fish-component",
+  );
+  const simple = ["basic", "finned", "sashimi"].includes(component.form),
     max = simple ? 7 : 4;
-  fields(p, [
+  fields(component, [
     "alias",
     "form",
     "size",
@@ -103,60 +113,64 @@ export function validateFishGeometry(view: ReadView, p: FishComponent): FishRequ
     ...(simple ? [] : ["incidence"]),
   ]);
   requireProof(
-    Number.isSafeInteger(p.size) &&
-      p.size >= 2 &&
-      p.size <= max &&
-      view.assembly.problem.symbols.includes(p.symbol),
+    Number.isSafeInteger(component.size) &&
+      component.size >= 2 &&
+      component.size <= max &&
+      view.assembly.problem.symbols.includes(component.symbol),
     "fish-size-symbol",
   );
-  houseSet(p.bases, p.size);
-  houseSet(p.covers, p.size);
-  const bases = p.bases.map((id) => fishHouse(view, id)),
-    covers = p.covers.map((id) => fishHouse(view, id));
+  houseSet(component.bases, component.size);
+  houseSet(component.covers, component.size);
+  const bases = component.bases.map((id) => fishHouse(view, id)),
+    covers = component.covers.map((id) => fishHouse(view, id));
   requireProof(
     bases.every((cells) =>
-      matchingFacts(view, { kind: "cover", symbol: p.symbol, cells }).some(
-        (f) => !f.openAssumptions.length,
+      matchingFacts(view, { kind: "cover", symbol: component.symbol, cells }).some(
+        (fact) => !fact.openAssumptions.length,
       ),
     ),
     "fish-missing-base-cover",
   );
   const baseCounts = Array(81).fill(0) as number[],
     coverCounts = Array(81).fill(0) as number[];
-  for (const cells of bases) for (const c of cells) baseCounts[c]++;
-  for (const cells of covers) for (const c of cells) coverCounts[c]++;
-  const coefficients = baseCounts.map((b, c) => coverCounts[c] - b),
-    bit = symbolMask(p.symbol);
-  const current = (c: number) => !!(view.state.domains[c] & bit);
-  const fins = baseCounts.flatMap((b, c) =>
-    current(c) && (b > 1 || (b > 0 && coverCounts[c] === 0)) ? [c] : [],
+  for (const cells of bases) for (const cell of cells) baseCounts[cell]++;
+  for (const cells of covers) for (const cell of cells) coverCounts[cell]++;
+  const coefficients = baseCounts.map((right, cell) => coverCounts[cell] - right),
+    bit = symbolMask(component.symbol);
+  const current = (cell: number) => !!(view.state.domains[cell] & bit);
+  const fins = baseCounts.flatMap((right, cell) =>
+    current(cell) && (right > 1 || (right > 0 && coverCounts[cell] === 0)) ? [cell] : [],
   );
-  requireProof(sameValue(p.fins, fins) && fins.length <= 4, "fish-exact-fins");
+  requireProof(sameValue(component.fins, fins) && fins.length <= 4, "fish-exact-fins");
   if (simple) {
-    const b = p.bases[0].split(":")[0],
-      c = p.covers[0].split(":")[0];
+    const right = component.bases[0].split(":")[0],
+      coverKind = component.covers[0].split(":")[0];
     requireProof(
-      ["row", "column"].includes(b) &&
-        ["row", "column"].includes(c) &&
-        b !== c &&
-        p.bases.every((id) => id.startsWith(b + ":")) &&
-        p.covers.every((id) => id.startsWith(c + ":")),
+      ["row", "column"].includes(right) &&
+        ["row", "column"].includes(coverKind) &&
+        right !== coverKind &&
+        component.bases.every((id) => id.startsWith(right + ":")) &&
+        component.covers.every((id) => id.startsWith(coverKind + ":")),
       "fish-parallel-lines",
     );
-    if (p.form === "basic")
-      requireProof(!fins.length && p.alias === fishNames[p.size], "fish-basic-alias");
+    if (component.form === "basic")
+      requireProof(
+        !fins.length && component.alias === fishNames[component.size],
+        "fish-basic-alias",
+      );
     else {
       requireProof(
         fins.length > 0 &&
-          new Set(fins.map((c) => Math.floor(c / 27) * 3 + Math.floor((c % 9) / 3))).size === 1,
+          new Set(fins.map((cell) => Math.floor(cell / 27) * 3 + Math.floor((cell % 9) / 3)))
+            .size === 1,
         "fish-fin-box",
       );
       const sashimi = bases.some(
-        (cells) => cells.filter((c) => current(c) && !fins.includes(c)).length < 2,
+        (cells) => cells.filter((cell) => current(cell) && !fins.includes(cell)).length < 2,
       );
       requireProof(
-        p.form === (sashimi ? "sashimi" : "finned") &&
-          p.alias === (sashimi ? "Sashimi fish" : "Finned fish"),
+        component.form === (sashimi ? "sashimi" : "finned") &&
+          component.alias === (sashimi ? "Sashimi fish" : "Finned fish"),
         "fish-finned-alias",
       );
     }
@@ -164,22 +178,23 @@ export function validateFishGeometry(view: ReadView, p: FishComponent): FishRequ
     // Mutant is the general arbitrary-house grammar. Franken is its more
     // specific box + opposite-line-orientation presentation (D079).
     requireProof(
-      (p.form === "mutant" ||
-        (p.form === "franken" && mixedFishForm(p.bases, p.covers) === "franken")) &&
-        sameValue(p.incidence, coefficients),
+      (component.form === "mutant" ||
+        (component.form === "franken" &&
+          mixedFishForm(component.bases, component.covers) === "franken")) &&
+        sameValue(component.incidence, coefficients),
       "fish-mixed-incidence",
     );
     requireProof(
       [
-        p.form === "franken" ? "Franken fish" : "Mutant fish",
+        component.form === "franken" ? "Franken fish" : "Mutant fish",
         "Endo-fin fish",
         "Cannibalistic fish",
-      ].includes(p.alias),
+      ].includes(component.alias),
       "fish-mixed-alias",
     );
-    if (p.alias === "Endo-fin fish")
+    if (component.alias === "Endo-fin fish")
       requireProof(
-        fins.some((c) => baseCounts[c] > 1),
+        fins.some((cell) => baseCounts[cell] > 1),
         "fish-missing-endofin",
       );
   }
@@ -187,66 +202,73 @@ export function validateFishGeometry(view: ReadView, p: FishComponent): FishRequ
     coefficient > 0 &&
     current(cell) &&
     !view.state.values[cell] &&
-    (p.alias !== "Cannibalistic fish" || baseCounts[cell] > 0)
-      ? [{ kind: "remove" as const, cell, symbol: p.symbol }]
+    (component.alias !== "Cannibalistic fish" || baseCounts[cell] > 0)
+      ? [{ kind: "remove" as const, cell, symbol: component.symbol }]
       : [],
   );
-  return { pattern: p, coefficients, baseCounts, effects };
+  return { pattern: component, coefficients, baseCounts, effects };
 }
 /** Ordinary fish additionally requires direct target-to-fin visibility. */
-export function validateFishComponent(view: ReadView, p: FishComponent): FishRequirement {
-  const geometry = validateFishGeometry(view, p),
-    effects = geometry.effects.filter((e) => p.fins.every((fin) => fishSees(view, e.cell, fin)));
+export function validateFishComponent(view: ReadView, component: FishComponent): FishRequirement {
+  const geometry = validateFishGeometry(view, component),
+    effects = geometry.effects.filter((effect) =>
+      component.fins.every((fin) => fishSees(view, effect.cell, fin)),
+    );
   requireProof(effects.length > 0, "unproductive-fish");
   return { ...geometry, effects };
 }
 export function validateFishPattern(
   view: ReadView,
-  p: FishPattern,
+  pattern: FishPattern,
   technique: string,
   effects: readonly Effect[],
 ): readonly FishRequirement[] {
   let requirements: FishRequirement[];
-  if (p.alias === "Siamese fish") {
-    const pair = p as SiameseFish;
+  if (pattern.alias === "Siamese fish") {
+    const pair = pattern as SiameseFish;
     fields(pair, ["alias", "size", "symbol", "components"]);
     requireProof(
       technique === "c09@1" && Array.isArray(pair.components) && pair.components.length === 2,
       "fish-siamese-pair",
     );
-    requirements = pair.components.map((c) => validateFishComponent(view, c));
-    const [a, b] = pair.components;
+    requirements = pair.components.map((component) => validateFishComponent(view, component));
+    const [left, right] = pair.components;
     requireProof(
-      a.size === pair.size &&
-        b.size === pair.size &&
+      left.size === pair.size &&
+        right.size === pair.size &&
         pair.size <= 4 &&
-        a.symbol === pair.symbol &&
-        b.symbol === pair.symbol &&
-        sameValue(a.bases, b.bases) &&
-        !sameValue(a.covers, b.covers) &&
-        new Set([...a.fins, ...b.fins]).size <= 4,
+        left.symbol === pair.symbol &&
+        right.symbol === pair.symbol &&
+        sameValue(left.bases, right.bases) &&
+        !sameValue(left.covers, right.covers) &&
+        new Set([...left.fins, ...right.fins]).size <= 4,
       "fish-siamese-identity",
     );
   } else {
-    const component = p as FishComponent;
+    const component = pattern as FishComponent;
     requireProof(
       technique === "c06@1"
         ? component.form === "basic"
         : technique === "c07@1"
           ? ["finned", "sashimi"].includes(component.form)
           : technique === "c08@1"
-            ? ["Franken fish", "Mutant fish"].includes(p.alias)
-            : technique === "c09@1" && ["Endo-fin fish", "Cannibalistic fish"].includes(p.alias),
+            ? ["Franken fish", "Mutant fish"].includes(pattern.alias)
+            : technique === "c09@1" &&
+              ["Endo-fin fish", "Cannibalistic fish"].includes(pattern.alias),
       "fish-technique-alias",
     );
     requirements = [validateFishComponent(view, component)];
   }
   const expected = [
-    ...new Map(requirements.flatMap((r) => r.effects).map((e) => [e.cell, e])).values(),
-  ].sort((a, b) => a.cell - b.cell);
+    ...new Map(
+      requirements
+        .flatMap((requirement) => requirement.effects)
+        .map((effect) => [effect.cell, effect]),
+    ).values(),
+  ].sort((left, right) => left.cell - right.cell);
   requireProof(
     sameValue(
-      [...effects].sort((a, b) => a.cell - b.cell),
+      [...effects].sort((left, right) => left.cell - right.cell),
       expected,
     ),
     "fish-exact-effects",

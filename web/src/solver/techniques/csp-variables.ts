@@ -14,14 +14,14 @@ export interface CspVariable {
   readonly house?: string;
   readonly symbol?: number;
 }
-export const candidateLiteral = (v: Candidate, positive = true): Literal => ({
-  cell: v[0],
-  symbol: v[1],
+export const candidateLiteral = (candidate: Candidate, positive = true): Literal => ({
+  cell: candidate[0],
+  symbol: candidate[1],
   positive,
 });
-export const candidateKey = (v: Candidate): string => `${v[0]}:${v[1]}`;
-export const members = (v: Candidate | CandidateSet): CandidateSet =>
-  typeof v[0] === "number" ? [v as Candidate] : (v as CandidateSet);
+export const candidateKey = (candidate: Candidate): string => `${candidate[0]}:${candidate[1]}`;
+export const members = (value: Candidate | CandidateSet): CandidateSet =>
+  typeof value[0] === "number" ? [value as Candidate] : (value as CandidateSet);
 
 /** Upper bound before allocating complete variables and occurrence incidence.
  * General capability assemblies can contain more than the 27 classic houses.
@@ -35,7 +35,7 @@ export function cspVariableReservation(view: ReadView): {
     view.assembly.allDifferent.length * view.assembly.problem.symbols.length;
   const slots =
     view.assembly.problem.cells.length * view.assembly.problem.symbols.length +
-    view.assembly.allDifferent.reduce((n, h) => n + h.cells.length, 0) *
+    view.assembly.allDifferent.reduce((n, house) => n + house.cells.length, 0) *
       view.assembly.problem.symbols.length;
   return { entries: count + slots, bytes: count * 1024 + slots * 512 };
 }
@@ -49,8 +49,8 @@ export function buildCspVariables(view: ReadView): readonly CspVariable[] {
   for (const cell of view.assembly.problem.cells) {
     if (view.state.values[cell]) continue;
     const alternatives = view.assembly.problem.symbols
-      .filter((s) => view.state.domains[cell] & symbolMask(s))
-      .map((s) => [cell, s] as Candidate);
+      .filter((symbol) => view.state.domains[cell] & symbolMask(symbol))
+      .map((symbol) => [cell, symbol] as Candidate);
     result.push({
       id: `cell:${cell}`,
       cell,
@@ -61,30 +61,32 @@ export function buildCspVariables(view: ReadView): readonly CspVariable[] {
   for (const house of view.assembly.allDifferent)
     for (const symbol of view.assembly.problem.symbols) {
       const source = matchingFacts(view, { kind: "cover", symbol, cells: house.cells }).find(
-        (f) => !f.openAssumptions.length,
+        (fact) => !fact.openAssumptions.length,
       );
       if (!source) continue;
       const alternatives = house.cells
-        .filter((c) => view.state.domains[c] & symbolMask(symbol))
-        .map((c) => [c, symbol] as Candidate);
-      if (alternatives.some((v) => view.state.values[v[0]])) continue;
+        .filter((cell) => view.state.domains[cell] & symbolMask(symbol))
+        .map((cell) => [cell, symbol] as Candidate);
+      if (alternatives.some((candidate) => view.state.values[candidate[0]])) continue;
       result.push({
         id: `${house.id}:symbol:${symbol}`,
         house: house.id,
         symbol,
         alternatives,
-        premises: [source.id, ...house.cells.map((c) => view.state.domainFacts[c])],
+        premises: [source.id, ...house.cells.map((cell) => view.state.domainFacts[cell])],
       });
     }
   return result;
 }
 
 /** A geometric conflict is a recipe; the compiler still supplies its true fact. */
-export function candidatesConflict(view: ReadView, a: Candidate, b: Candidate): boolean {
-  return a[0] === b[0]
-    ? a[1] !== b[1]
-    : a[1] === b[1] &&
-        view.assembly.allDifferent.some((h) => h.cells.includes(a[0]) && h.cells.includes(b[0]));
+export function candidatesConflict(view: ReadView, left: Candidate, right: Candidate): boolean {
+  return left[0] === right[0]
+    ? left[1] !== right[1]
+    : left[1] === right[1] &&
+        view.assembly.allDifferent.some(
+          (house) => house.cells.includes(left[0]) && house.cells.includes(right[0]),
+        );
 }
 
 /** Sudoku group geometry is a single digit in one box-line intersection. */
@@ -93,24 +95,26 @@ export function candidateGroup(view: ReadView, values: CandidateSet): boolean {
     values.length < 2 ||
     values.length > 3 ||
     new Set(values.map(candidateKey)).size !== values.length ||
-    new Set(values.map((v) => v[1])).size !== 1
+    new Set(values.map((candidate) => candidate[1])).size !== 1
   )
     return false;
-  const cells = values.map((v) => v[0]);
-  const contains = (h: { cells: readonly number[] }) => cells.every((c) => h.cells.includes(c));
+  const cells = values.map((candidate) => candidate[0]);
+  const contains = (house: { cells: readonly number[] }) =>
+    cells.every((cell) => house.cells.includes(cell));
   return (
     view.assembly.allDifferent.some(
-      (h) =>
-        contains(h) &&
-        h.cells.length === 9 &&
-        new Set(h.cells.map((c) => Math.floor(c / 27) * 3 + Math.floor((c % 9) / 3))).size === 1,
+      (house) =>
+        contains(house) &&
+        house.cells.length === 9 &&
+        new Set(house.cells.map((cell) => Math.floor(cell / 27) * 3 + Math.floor((cell % 9) / 3)))
+          .size === 1,
     ) &&
     view.assembly.allDifferent.some(
-      (h) =>
-        contains(h) &&
-        h.cells.length === 9 &&
-        (new Set(h.cells.map((c) => Math.floor(c / 9))).size === 1 ||
-          new Set(h.cells.map((c) => c % 9)).size === 1),
+      (house) =>
+        contains(house) &&
+        house.cells.length === 9 &&
+        (new Set(house.cells.map((cell) => Math.floor(cell / 9))).size === 1 ||
+          new Set(house.cells.map((cell) => cell % 9)).size === 1),
     )
   );
 }

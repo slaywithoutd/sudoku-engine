@@ -18,7 +18,7 @@ function* combinations(
     yield* combinations(values, size, [...prefix, values[i]], i + 1);
 }
 function symbols(view: ReadView, mask: number) {
-  return view.assembly.problem.symbols.filter((s) => mask & symbolMask(s));
+  return view.assembly.problem.symbols.filter((symbol) => mask & symbolMask(symbol));
 }
 const names: Record<number, string> = { 2: "Pair", 3: "Triple", 4: "Quad" };
 const complements: Record<number, string> = {
@@ -32,23 +32,26 @@ export class Subsets {
   *discover(view: ReadView): Discovery {
     for (const house of view.assembly.allDifferent)
       for (const size of [2, 3, 4]) {
-        const unresolved = house.cells.filter((c) => !view.state.values[c]);
+        const unresolved = house.cells.filter((cell) => !view.state.values[cell]);
         for (const cells of combinations(unresolved, size)) {
           yield { kind: "work", units: 1 };
-          const union = cells.reduce((m, c) => m | view.state.domains[c], 0),
+          const union = cells.reduce((mask, cell) => mask | view.state.domains[cell], 0),
             digits = symbols(view, union);
-          if (digits.length !== size || cells.some((c) => !view.state.domains[c])) continue;
+          if (digits.length !== size || cells.some((cell) => !view.state.domains[cell])) continue;
           yield* this.propose(view, house, cells, digits, "naked");
         }
         if (house.cells.length !== view.assembly.problem.symbols.length) continue;
         for (const digits of combinations(view.assembly.problem.symbols, size)) {
           yield { kind: "work", units: 1 };
-          if (digits.some((d) => house.cells.some((c) => view.state.values[c] === d))) continue;
-          const mask = digits.reduce((m, d) => m | symbolMask(d), 0);
-          const cells = house.cells.filter((c) => view.state.domains[c] & mask);
+          if (digits.some((digit) => house.cells.some((cell) => view.state.values[cell] === digit)))
+            continue;
+          const mask = digits.reduce((m, digit) => m | symbolMask(digit), 0);
+          const cells = house.cells.filter((cell) => view.state.domains[cell] & mask);
           if (
             cells.length !== size ||
-            digits.some((d) => !cells.some((c) => view.state.domains[c] & symbolMask(d)))
+            digits.some(
+              (digit) => !cells.some((cell) => view.state.domains[cell] & symbolMask(digit)),
+            )
           )
             continue;
           yield* this.propose(view, house, cells, digits, "hidden");
@@ -63,12 +66,12 @@ export class Subsets {
     digits: number[],
     form: "naked" | "hidden",
   ): Discovery {
-    const selected = form === "naked" ? cells : house.cells.filter((c) => !cells.includes(c));
-    const mask = selected.reduce((m, c) => m | view.state.domains[c], 0);
+    const selected = form === "naked" ? cells : house.cells.filter((cell) => !cells.includes(cell));
+    const mask = selected.reduce((m, cell) => m | view.state.domains[cell], 0);
     if (symbols(view, mask).length !== selected.length) return;
     const targets =
       form === "naked"
-        ? house.cells.filter((c) => !cells.includes(c) && !view.state.values[c])
+        ? house.cells.filter((cell) => !cells.includes(cell) && !view.state.values[cell])
         : cells;
     const effects = targets.flatMap((cell) =>
       symbols(view, view.state.domains[cell] & mask).map((symbol) => ({
@@ -96,7 +99,7 @@ export class Subsets {
             "hall@1",
             [
               builder.fact({ kind: "all-different", cells: house.cells }),
-              ...selected.map((c) => view.state.domainFacts[c]),
+              ...selected.map((cell) => view.state.domainFacts[cell]),
             ],
             literal(effect.cell, effect.symbol, false),
           ),
@@ -120,23 +123,23 @@ export class Subsets {
 /** Combines separately proved Hall roots for both intersecting houses. */
 export class LockedSubsets {
   *discover(view: ReadView): Discovery {
-    for (const box of view.assembly.allDifferent.filter((h) => h.id.startsWith("box:")))
+    for (const box of view.assembly.allDifferent.filter((house) => house.id.startsWith("box:")))
       for (const line of view.assembly.allDifferent.filter(
-        (h) => h.id.startsWith("row:") || h.id.startsWith("column:"),
+        (house) => house.id.startsWith("row:") || house.id.startsWith("column:"),
       ))
         for (const size of [2, 3])
           for (const cells of combinations(
-            box.cells.filter((c) => line.cells.includes(c) && !view.state.values[c]),
+            box.cells.filter((cell) => line.cells.includes(cell) && !view.state.values[cell]),
             size,
           )) {
             yield { kind: "work", units: 1 };
-            const union = cells.reduce((m, c) => m | view.state.domains[c], 0),
+            const union = cells.reduce((mask, cell) => mask | view.state.domains[cell], 0),
               digits = symbols(view, union);
-            if (digits.length !== size || cells.some((c) => !view.state.domains[c])) continue;
-            const houses = [box, line].sort((a, b) => a.id.localeCompare(b.id));
-            const perHouse = houses.map((h) =>
-              h.cells
-                .filter((c) => !cells.includes(c) && !view.state.values[c])
+            if (digits.length !== size || cells.some((cell) => !view.state.domains[cell])) continue;
+            const houses = [box, line].sort((left, right) => left.id.localeCompare(right.id));
+            const perHouse = houses.map((house) =>
+              house.cells
+                .filter((cell) => !cells.includes(cell) && !view.state.values[cell])
                 .flatMap((cell) =>
                   symbols(view, view.state.domains[cell] & union).map((symbol) => ({
                     kind: "remove" as const,
@@ -145,7 +148,7 @@ export class LockedSubsets {
                   })),
                 ),
             );
-            if (perHouse.some((e) => !e.length)) continue;
+            if (perHouse.some((effect) => !effect.length)) continue;
             const builder = new CertificateBuilder(view);
             for (const [index, effects] of perHouse.entries())
               for (const effect of effects)
@@ -155,7 +158,7 @@ export class LockedSubsets {
                     "hall@1",
                     [
                       builder.fact({ kind: "all-different", cells: houses[index].cells }),
-                      ...cells.map((c) => view.state.domainFacts[c]),
+                      ...cells.map((cell) => view.state.domainFacts[cell]),
                     ],
                     literal(effect.cell, effect.symbol, false),
                   ),
@@ -165,7 +168,7 @@ export class LockedSubsets {
               proposal: builder.finish("c05@1", {
                 kind: "locked-subset",
                 alias: `Locked ${names[size]}`,
-                houses: houses.map((h) => h.id),
+                houses: houses.map((house) => house.id),
                 cells,
                 symbols: digits,
               }),

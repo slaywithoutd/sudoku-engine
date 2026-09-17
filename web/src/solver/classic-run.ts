@@ -12,6 +12,7 @@ import { assembleTechniqueJobs } from "./techniques/registry";
 import { EXACT_METHOD, exactSteps } from "./exact";
 import { runSolver } from "./run";
 import { coverageEntries } from "./techniques/manifest";
+import { defined } from "./invariants";
 
 const techniqueNames = new Map<string, string>([
   ["rule-propagation@1", "Basic elimination"],
@@ -128,7 +129,7 @@ export function patternCells(pattern: unknown): number[] {
     }
   };
   walk(pattern, 0);
-  return [...found].sort((a, b) => a - b);
+  return [...found].sort((left, right) => left - right);
 }
 /** Independent exact count for a 9x9 grid (used for correctness marks), bounded by the precount share. */
 export function countClassic(
@@ -308,7 +309,7 @@ export async function solveClassic(
             emitStep(pending);
             pending = undefined;
           }
-          const count = event.count!;
+          const count = defined(event.count, "count");
           ports.emit({
             kind: "result",
             outcome: event.outcome ?? "error",

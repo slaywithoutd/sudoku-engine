@@ -12,16 +12,16 @@ export class NakedSingles {
       if (view.state.values[cell] || !hasSingleCandidate(mask)) continue;
       const symbol = Math.log2(mask) + 1;
       const houses = view.assembly.allDifferent.filter(
-        (h) =>
-          h.cells.length === view.assembly.problem.symbols.length &&
-          h.cells.includes(cell) &&
-          h.cells.filter((c) => !view.state.values[c]).length === 1,
+        (house) =>
+          house.cells.length === view.assembly.problem.symbols.length &&
+          house.cells.includes(cell) &&
+          house.cells.filter((c) => !view.state.values[c]).length === 1,
       );
       const aliases = [
         { alias: "Naked Single", house: null as string | null },
-        ...houses.flatMap((h) => [
-          { alias: "Full House", house: h.id },
-          { alias: "Last Digit", house: h.id },
+        ...houses.flatMap((house) => [
+          { alias: "Full House", house: house.id },
+          { alias: "Last Digit", house: house.id },
         ]),
       ];
       for (const { alias, house } of aliases) {

@@ -20,21 +20,25 @@ import { checkOrPattern } from "./or-grammar";
 import { checkTemplatePattern } from "../proof/template-cover";
 import { checkUniquePattern } from "./unique-grammar";
 import { findHouse, symbolMask } from "../state/read";
+import { defined } from "../invariants";
 
-function fields(p: Record<string, unknown>, names: string[]): void {
-  requireProof(sameValue(Object.keys(p).sort(), names.sort()), "invalid-technique-pattern");
+function fields(pattern: Record<string, unknown>, names: string[]): void {
+  requireProof(sameValue(Object.keys(pattern).sort(), names.sort()), "invalid-technique-pattern");
 }
 function effectsKey(effects: readonly Effect[]): string {
   return JSON.stringify(
     [...effects].sort(
-      (a, b) => a.cell - b.cell || a.symbol - b.symbol || a.kind.localeCompare(b.kind),
+      (left, right) =>
+        left.cell - right.cell || left.symbol - right.symbol || left.kind.localeCompare(right.kind),
     ),
   );
 }
 function placement(view: ReadView, cell: number, symbol: number): Effect[] {
   const result: Effect[] = [{ kind: "place", cell, symbol }];
   const peers = new Set(
-    view.assembly.allDifferent.filter((h) => h.cells.includes(cell)).flatMap((h) => h.cells),
+    view.assembly.allDifferent
+      .filter((house) => house.cells.includes(cell))
+      .flatMap((house) => house.cells),
   );
   for (const peer of peers)
     if (peer !== cell && !view.state.values[peer] && view.state.domains[peer] & symbolMask(symbol))
@@ -53,11 +57,12 @@ function numbers(value: unknown): number[] {
 function geometry(cells: readonly number[]): "box" | "line" | null {
   if (cells.length !== 9) return null;
   if (
-    new Set(cells.map((c) => Math.floor(c / 9))).size === 1 ||
-    new Set(cells.map((c) => c % 9)).size === 1
+    new Set(cells.map((cell) => Math.floor(cell / 9))).size === 1 ||
+    new Set(cells.map((cell) => cell % 9)).size === 1
   )
     return "line";
-  return new Set(cells.map((c) => Math.floor(c / 27) * 3 + Math.floor((c % 9) / 3))).size === 1
+  return new Set(cells.map((cell) => Math.floor(cell / 27) * 3 + Math.floor((cell % 9) / 3)))
+    .size === 1
     ? "box"
     : null;
 }
@@ -73,7 +78,7 @@ export function checkTechniqueGrammar(
     proposal.pattern && typeof proposal.pattern === "object" && !Array.isArray(proposal.pattern),
     "invalid-technique-pattern",
   );
-  const p = proposal.pattern as Record<string, unknown>,
+  const pattern = proposal.pattern as Record<string, unknown>,
     nodes = proposal.proof.nodes,
     domains = view.state.domains;
   if (["u01@1", "u02@1", "u03@1", "u04@1", "u05@1"].includes(proposal.technique)) {
@@ -156,26 +161,28 @@ export function checkTechniqueGrammar(
     coverCells: readonly number[] | null = null;
   const allowedHall: { house: readonly number[]; cells: readonly number[] }[] = [];
   if (proposal.technique === "rule-propagation@1") {
-    fields(p, ["kind"]);
+    fields(pattern, ["kind"]);
     requireProof(
-      p.kind === "propagation" &&
+      pattern.kind === "propagation" &&
         proposal.effects.length > 0 &&
-        proposal.effects.every((e) => e.kind === "remove"),
+        proposal.effects.every((effect) => effect.kind === "remove"),
       "invalid-maintenance-grammar",
     );
-    sourceCells = view.assembly.problem.cells.filter((c) => view.state.values[c] !== 0);
-    for (const e of proposal.effects)
+    sourceCells = view.assembly.problem.cells.filter((cell) => view.state.values[cell] !== 0);
+    for (const effect of proposal.effects)
       requireProof(
         view.assembly.allDifferent.some(
-          (h) =>
-            h.cells.includes(e.cell) &&
-            h.cells.some((c) => c !== e.cell && view.state.values[c] === e.symbol),
+          (house) =>
+            house.cells.includes(effect.cell) &&
+            house.cells.some(
+              (cell) => cell !== effect.cell && view.state.values[cell] === effect.symbol,
+            ),
         ),
         "invalid-maintenance-effect",
       );
   } else if (proposal.technique === "c01@1" || proposal.technique === "c02@1") {
-    const cell = Number(p.cell);
-    symbol = Number(p.symbol);
+    const cell = Number(pattern.cell);
+    symbol = Number(pattern.symbol);
     sourceCells = [cell];
     requireProof(
       view.assembly.problem.cells.includes(cell) &&
@@ -184,12 +191,19 @@ export function checkTechniqueGrammar(
       "invalid-single",
     );
     if (proposal.technique === "c01@1") {
-      fields(p, ["kind", "alias", "cell", "symbol", "house"]);
-      requireProof(p.kind === "single" && domains[cell] === symbolMask(symbol), "invalid-single");
-      if (p.alias === "Naked Single") requireProof(p.house === null, "invalid-single-alias");
+      fields(pattern, ["kind", "alias", "cell", "symbol", "house"]);
+      requireProof(
+        pattern.kind === "single" && domains[cell] === symbolMask(symbol),
+        "invalid-single",
+      );
+      if (pattern.alias === "Naked Single")
+        requireProof(pattern.house === null, "invalid-single-alias");
       else {
-        requireProof(p.alias === "Full House" || p.alias === "Last Digit", "unknown-alias");
-        const house = findHouse(view, p.house);
+        requireProof(
+          pattern.alias === "Full House" || pattern.alias === "Last Digit",
+          "unknown-alias",
+        );
+        const house = findHouse(view, pattern.house);
         requireProof(
           house &&
             house.cells.length === view.assembly.problem.symbols.length &&
@@ -199,11 +213,11 @@ export function checkTechniqueGrammar(
         );
       }
     } else {
-      fields(p, ["kind", "alias", "cover", "cell", "symbol"]);
-      const cover = view.assembly.covers.find((c) => c.id === p.cover);
+      fields(pattern, ["kind", "alias", "cover", "cell", "symbol"]);
+      const cover = view.assembly.covers.find((c) => c.id === pattern.cover);
       requireProof(
-        p.kind === "hidden-single" &&
-          p.alias === "Hidden Single" &&
+        pattern.kind === "hidden-single" &&
+          pattern.alias === "Hidden Single" &&
           cover?.symbol === symbol &&
           sameValue(
             cover.cells.filter((c) => (domains[c] & symbolMask(symbol)) !== 0),
@@ -233,13 +247,13 @@ export function checkTechniqueGrammar(
       );
     }
   } else if (proposal.technique === "c03@1") {
-    fields(p, ["kind", "alias", "cover", "group", "symbol", "cells"]);
-    const cover = view.assembly.covers.find((c) => c.id === p.cover),
-      group = findHouse(view, p.group);
-    sourceCells = numbers(p.cells);
-    symbol = Number(p.symbol);
+    fields(pattern, ["kind", "alias", "cover", "group", "symbol", "cells"]);
+    const cover = view.assembly.covers.find((c) => c.id === pattern.cover),
+      group = findHouse(view, pattern.group);
+    sourceCells = numbers(pattern.cells);
+    symbol = Number(pattern.symbol);
     requireProof(
-      p.kind === "intersection" &&
+      pattern.kind === "intersection" &&
         cover?.symbol === symbol &&
         group &&
         sourceCells.length >= 2 &&
@@ -247,35 +261,38 @@ export function checkTechniqueGrammar(
       "invalid-intersection",
     );
     coverCells = cover.cells;
-    const intersection = cover.cells.filter((c) => group.cells.includes(c));
+    const intersection = cover.cells.filter((cell) => group.cells.includes(cell));
     requireProof(
       intersection.length > 0 &&
         intersection.length < cover.cells.length &&
         intersection.length < group.cells.length &&
-        sourceCells.every((c) => intersection.includes(c)) &&
+        sourceCells.every((cell) => intersection.includes(cell)) &&
         sameValue(
           sourceCells,
-          cover.cells.filter((c) => domains[c] & symbolMask(symbol)),
+          cover.cells.filter((cell) => domains[cell] & symbolMask(symbol)),
         ),
       "invalid-intersection-support",
     );
     requireProof(
-      ["Locked Candidates", "direct forms", "pointing", "claiming"].includes(String(p.alias)),
+      ["Locked Candidates", "direct forms", "pointing", "claiming"].includes(String(pattern.alias)),
       "unknown-alias",
     );
-    if (p.alias === "pointing")
+    if (pattern.alias === "pointing")
       requireProof(
         geometry(cover.cells) === "box" && geometry(group.cells) === "line",
         "invalid-intersection-alias",
       );
-    if (p.alias === "claiming")
+    if (pattern.alias === "claiming")
       requireProof(
         geometry(cover.cells) === "line" && geometry(group.cells) === "box",
         "invalid-intersection-alias",
       );
     const expected = group.cells
       .filter(
-        (c) => !cover.cells.includes(c) && !view.state.values[c] && domains[c] & symbolMask(symbol),
+        (cell) =>
+          !cover.cells.includes(cell) &&
+          !view.state.values[cell] &&
+          domains[cell] & symbolMask(symbol),
       )
       .map((cell) => ({ kind: "remove" as const, cell, symbol }));
     requireProof(
@@ -283,8 +300,8 @@ export function checkTechniqueGrammar(
       "invalid-intersection-effects",
     );
   } else if (proposal.technique === "c04@1" || proposal.technique === "c05@1") {
-    const cells = numbers(p.cells),
-      digits = numbers(p.symbols),
+    const cells = numbers(pattern.cells),
+      digits = numbers(pattern.symbols),
       size = cells.length;
     const locked = proposal.technique === "c05@1";
     requireProof(
@@ -292,13 +309,16 @@ export function checkTechniqueGrammar(
         size <= (locked ? 3 : 4) &&
         digits.length === size &&
         cells.every(
-          (c) => view.assembly.problem.cells.includes(c) && !view.state.values[c] && domains[c] > 0,
+          (cell) =>
+            view.assembly.problem.cells.includes(cell) &&
+            !view.state.values[cell] &&
+            domains[cell] > 0,
         ) &&
-        digits.every((d) => view.assembly.problem.symbols.includes(d)),
+        digits.every((digit) => view.assembly.problem.symbols.includes(digit)),
       "subset-out-of-profile",
     );
-    const mask = digits.reduce((m, d) => m | symbolMask(d), 0);
-    const houseIds = locked ? p.houses : [p.house];
+    const mask = digits.reduce((m, digit) => m | symbolMask(digit), 0);
+    const houseIds = locked ? pattern.houses : [pattern.house];
     requireProof(
       Array.isArray(houseIds) &&
         houseIds.length === (locked ? 2 : 1) &&
@@ -307,35 +327,35 @@ export function checkTechniqueGrammar(
     );
     const houses = houseIds.map((id) => findHouse(view, id));
     requireProof(
-      houses.every((h) => h && cells.every((c) => h.cells.includes(c))),
+      houses.every((house) => house && cells.every((cell) => house.cells.includes(cell))),
       "invalid-subset-houses",
     );
     const names: Record<number, string> = { 2: "Pair", 3: "Triple", 4: "Quad" };
     if (locked) {
-      fields(p, ["kind", "alias", "houses", "cells", "symbols"]);
+      fields(pattern, ["kind", "alias", "houses", "cells", "symbols"]);
       requireProof(
-        p.kind === "locked-subset" &&
-          p.alias === `Locked ${names[size]}` &&
-          houses.some((h) => geometry(h!.cells) === "box") &&
-          houses.some((h) => geometry(h!.cells) === "line"),
+        pattern.kind === "locked-subset" &&
+          pattern.alias === `Locked ${names[size]}` &&
+          houses.some((house) => geometry(defined(house, "house").cells) === "box") &&
+          houses.some((house) => geometry(defined(house, "house").cells) === "line"),
         "invalid-locked-subset",
       );
     } else {
-      fields(p, ["kind", "alias", "form", "house", "cells", "symbols", "complement"]);
+      fields(pattern, ["kind", "alias", "form", "house", "cells", "symbols", "complement"]);
       requireProof(
-        p.kind === "subset" && (p.form === "naked" || p.form === "hidden"),
+        pattern.kind === "subset" && (pattern.form === "naked" || pattern.form === "hidden"),
         "invalid-subset",
       );
-      if (p.complement === null)
+      if (pattern.complement === null)
         requireProof(
-          p.alias === `${p.form === "naked" ? "Naked" : "Hidden"} ${names[size]}`,
+          pattern.alias === `${pattern.form === "naked" ? "Naked" : "Hidden"} ${names[size]}`,
           "invalid-subset-alias",
         );
       else
         requireProof(
-          houses[0]!.cells.length === 9 &&
-            p.complement === 9 - size &&
-            p.alias ===
+          defined(houses[0], "houses").cells.length === 9 &&
+            pattern.complement === 9 - size &&
+            pattern.alias ===
               (
                 {
                   5: "complementary quintuple",
@@ -348,43 +368,55 @@ export function checkTechniqueGrammar(
     }
     const expected: Effect[] = [];
     for (const house of houses) {
-      const hidden = !locked && p.form === "hidden";
+      const hidden = !locked && pattern.form === "hidden";
       if (hidden)
         requireProof(
-          house!.cells.length === view.assembly.problem.symbols.length &&
+          defined(house, "house").cells.length === view.assembly.problem.symbols.length &&
             digits.every(
-              (d) =>
+              (digit) =>
                 view.assembly.covers.some(
-                  (c) => c.symbol === d && sameValue(c.cells, house!.cells),
-                ) && house!.cells.some((c) => domains[c] & symbolMask(d)),
+                  (cover) =>
+                    cover.symbol === digit && sameValue(cover.cells, defined(house, "house").cells),
+                ) &&
+                defined(house, "house").cells.some((cell) => domains[cell] & symbolMask(digit)),
             ) &&
             sameValue(
-              house!.cells.filter((c) => domains[c] & mask),
+              defined(house, "house").cells.filter((cell) => domains[cell] & mask),
               cells,
             ),
           "invalid-hidden-subset",
         );
-      else requireProof(cells.reduce((m, c) => m | domains[c], 0) === mask, "invalid-naked-subset");
-      const selected = hidden ? house!.cells.filter((c) => !cells.includes(c)) : cells;
-      allowedHall.push({ house: house!.cells, cells: selected });
-      const union = selected.reduce((m, c) => m | domains[c], 0);
+      else
+        requireProof(
+          cells.reduce((m, cell) => m | domains[cell], 0) === mask,
+          "invalid-naked-subset",
+        );
+      const selected = hidden
+        ? defined(house, "house").cells.filter((cell) => !cells.includes(cell))
+        : cells;
+      allowedHall.push({ house: defined(house, "house").cells, cells: selected });
+      const union = selected.reduce((m, cell) => m | domains[cell], 0);
       requireProof(
-        view.assembly.problem.symbols.filter((d) => union & symbolMask(d)).length ===
+        view.assembly.problem.symbols.filter((digit) => union & symbolMask(digit)).length ===
           selected.length,
         "invalid-subset-hall",
       );
       const targets = hidden
         ? cells
-        : house!.cells.filter((c) => !cells.includes(c) && !view.state.values[c]);
+        : defined(house, "house").cells.filter(
+            (cell) => !cells.includes(cell) && !view.state.values[cell],
+          );
       const local = targets.flatMap((cell) =>
         view.assembly.problem.symbols
-          .filter((d) => domains[cell] & union & symbolMask(d))
+          .filter((digit) => domains[cell] & union & symbolMask(digit))
           .map((symbol) => ({ kind: "remove" as const, cell, symbol })),
       );
       requireProof(local.length > 0, "unproductive-subset");
       expected.push(...local);
     }
-    const unique = [...new Map(expected.map((e) => [`${e.cell}:${e.symbol}`, e])).values()];
+    const unique = [
+      ...new Map(expected.map((effect) => [`${effect.cell}:${effect.symbol}`, effect])).values(),
+    ];
     requireProof(effectsKey(unique) === effectsKey(proposal.effects), "invalid-subset-effects");
   } else requireProof(false, "unknown-technique");
 
@@ -402,67 +434,82 @@ export function checkTechniqueGrammar(
     });
     requireProof(!signatures.has(signature), "redundant-technique-work");
     signatures.add(signature);
-    const premises = node.premises.map((id) => available.get(id)!);
-    const c = node.conclusion;
+    const premises = node.premises.map((id) => defined(available.get(id), "available"));
+    const proposition = node.conclusion;
     if (node.rule === "domain-restrict@1") {
       requireProof(
-        c.kind === "domain" && proposal.effects.some((e) => e.cell === c.cell),
+        proposition.kind === "domain" && proposal.effects.some((e) => e.cell === proposition.cell),
         "outside-domain-closure",
       );
       const base = domainAssertion(premises[0]?.conclusion),
-        effect = premises[1]?.conclusion;
+        conclusion = premises.at(1)?.conclusion;
       requireProof(
         base &&
-          base.cell === c.cell &&
-          effect?.kind === "literal" &&
+          base.cell === proposition.cell &&
+          conclusion?.kind === "literal" &&
           proposal.effects.some(
             (e) =>
-              e.cell === effect.value.cell &&
-              e.symbol === effect.value.symbol &&
-              (e.kind === "place") === effect.value.positive,
+              e.cell === conclusion.value.cell &&
+              e.symbol === conclusion.value.symbol &&
+              (e.kind === "place") === conclusion.value.positive,
           ) &&
-          (c.mask !== base.mask || effect.value.positive),
+          (proposition.mask !== base.mask || conclusion.value.positive),
         "outside-domain-closure",
       );
     } else if (node.rule === "weak-link@1") {
-      requireProof(c.kind === "clause" && c.alternatives.length === 2, "outside-peer-grammar");
       requireProof(
-        c.alternatives.some(
-          (a) =>
-            sourceCells.includes(a.cell) &&
-            c.alternatives.some(
-              (b) =>
-                b.cell !== a.cell &&
-                b.symbol === a.symbol &&
+        proposition.kind === "clause" && proposition.alternatives.length === 2,
+        "outside-peer-grammar",
+      );
+      requireProof(
+        proposition.alternatives.some(
+          (left) =>
+            sourceCells.includes(left.cell) &&
+            proposition.alternatives.some(
+              (literal) =>
+                literal.cell !== left.cell &&
+                literal.symbol === left.symbol &&
                 proposal.effects.some(
-                  (e) => e.kind === "remove" && e.cell === b.cell && e.symbol === b.symbol,
+                  (effect) =>
+                    effect.kind === "remove" &&
+                    effect.cell === literal.cell &&
+                    effect.symbol === literal.symbol,
                 ),
             ) &&
-            (proposal.technique !== "rule-propagation@1" || view.state.values[a.cell] === a.symbol),
+            (proposal.technique !== "rule-propagation@1" ||
+              view.state.values[left.cell] === left.symbol),
         ),
         "outside-peer-grammar",
       );
     } else if (node.rule === "resolution@1") {
       const terms =
-        c.kind === "literal"
-          ? [c.value]
-          : c.kind === "clause" && proposal.technique === "c03@1"
-            ? c.alternatives
+        proposition.kind === "literal"
+          ? [proposition.value]
+          : proposition.kind === "clause" && proposal.technique === "c03@1"
+            ? proposition.alternatives
             : [];
       requireProof(
         terms.length > 0 &&
-          terms.every((v) =>
-            v.positive
-              ? sourceCells.includes(v.cell) && v.symbol === symbol
+          terms.every((literal) =>
+            literal.positive
+              ? sourceCells.includes(literal.cell) && literal.symbol === symbol
               : proposal.effects.some(
-                  (e) => e.kind === "remove" && e.cell === v.cell && e.symbol === v.symbol,
+                  (effect) =>
+                    effect.kind === "remove" &&
+                    effect.cell === literal.cell &&
+                    effect.symbol === literal.symbol,
                 ),
           ) &&
-          terms.filter((v) => !v.positive).length === 1,
+          terms.filter((literal) => !literal.positive).length === 1,
         "outside-resolution-grammar",
       );
     } else if (node.rule === "cover-clause@1") {
-      const terms = c.kind === "literal" ? [c.value] : c.kind === "clause" ? c.alternatives : [];
+      const terms =
+        proposition.kind === "literal"
+          ? [proposition.value]
+          : proposition.kind === "clause"
+            ? proposition.alternatives
+            : [];
       requireProof(
         proposal.technique === "rule-propagation@1"
           ? terms.length === 1 &&
@@ -470,7 +517,12 @@ export function checkTechniqueGrammar(
               view.state.values[terms[0].cell] === terms[0].symbol &&
               node.premises[0] === view.state.domainFacts[terms[0].cell]
           : terms.length === sourceCells.length &&
-              terms.every((v) => v.positive && sourceCells.includes(v.cell) && v.symbol === symbol),
+              terms.every(
+                (literal) =>
+                  literal.positive &&
+                  sourceCells.includes(literal.cell) &&
+                  literal.symbol === symbol,
+              ),
         "outside-single-grammar",
       );
       requireProof(
@@ -491,11 +543,11 @@ export function checkTechniqueGrammar(
     } else if (node.rule === "hall@1") {
       requireProof(
         allowedHall.some(
-          (h) =>
-            sameValue(premises[0]?.conclusion, { kind: "all-different", cells: h.house }) &&
+          (house) =>
+            sameValue(premises[0]?.conclusion, { kind: "all-different", cells: house.house }) &&
             sameValue(
               node.premises.slice(1),
-              h.cells.map((cell) => view.state.domainFacts[cell]),
+              house.cells.map((cell) => view.state.domainFacts[cell]),
             ),
         ),
         "outside-hall-grammar",

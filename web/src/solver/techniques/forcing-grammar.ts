@@ -4,13 +4,14 @@ import { clause, requireProof, sameValue } from "../proof/primitives";
 import type { ForcingPlan, ForcingCertificate } from "./forcing";
 import type { ForcingLink, PathCertificate } from "./forcing-proof";
 import { findHouse, symbolMask } from "../state/read";
+import { claimed, defined } from "../invariants";
 
 const literal = (v: Literal): Proposition => ({ kind: "literal", value: v });
 const complement = (v: Literal): Literal => ({ ...v, positive: !v.positive });
-const candidates = (view: ReadView, c: number): Literal[] =>
+const candidates = (view: ReadView, cell: number): Literal[] =>
   view.assembly.problem.symbols
-    .filter((s) => view.state.domains[c] & symbolMask(s))
-    .map((symbol) => ({ cell: c, symbol, positive: true }));
+    .filter((symbol) => view.state.domains[cell] & symbolMask(symbol))
+    .map((symbol) => ({ cell: cell, symbol, positive: true }));
 
 /** Independent path recognizer: geometry + exact current source lineage. */
 export class ForcingLineage {
@@ -47,13 +48,13 @@ export class ForcingLineage {
         sameValue(source.proposition, { kind: "cover", cells: h.cells, symbol }) &&
         sameValue(
           support.premises.slice(1),
-          h.cells.map((c) => this.view.state.domainFacts[c]),
+          h.cells.map((cell) => this.view.state.domainFacts[cell]),
         ) &&
         sameValue(
           n.conclusion,
           clause(
             h.cells
-              .filter((c) => this.view.state.domains[c] & symbolMask(symbol))
+              .filter((cell) => this.view.state.domains[cell] & symbolMask(symbol))
               .map((cell) => ({ cell, symbol, positive: true })),
           ),
         ),
@@ -62,17 +63,17 @@ export class ForcingLineage {
   }
   edge(id: number, link: ForcingLink): void {
     const n = this.node(id),
-      r = link.reason;
+      reason = link.reason;
     requireProof(
       sameValue(n.conclusion, clause([complement(link.from), link.to])),
       "forcing-edge-clause",
     );
-    if (r.kind === "cell-cover") {
+    if (reason.kind === "cell-cover") {
       requireProof(!link.from.positive && link.to.positive, "forcing-edge-sign");
-      this.cell(id, r.cell!);
-    } else if (r.kind === "house-cover") {
+      this.cell(id, defined(reason.cell, "cell"));
+    } else if (reason.kind === "house-cover") {
       requireProof(!link.from.positive && link.to.positive, "forcing-edge-sign");
-      this.house(id, r.house!, r.symbol!);
+      this.house(id, defined(reason.house, "house"), defined(reason.symbol, "symbol"));
     } else {
       requireProof(
         link.from.positive &&
@@ -81,23 +82,23 @@ export class ForcingLineage {
           n.premises.length === 1,
         "forcing-weak-edge",
       );
-      if (r.kind === "cell-conflict")
+      if (reason.kind === "cell-conflict")
         requireProof(
-          n.premises[0] === this.view.state.domainFacts[r.cell!] &&
-            link.from.cell === r.cell &&
-            link.to.cell === r.cell,
+          n.premises[0] === this.view.state.domainFacts[defined(reason.cell, "cell")] &&
+            link.from.cell === reason.cell &&
+            link.to.cell === reason.cell,
           "forcing-cell-conflict",
         );
       else {
-        requireProof(r.kind === "scope-conflict", "forcing-edge-kind");
-        const h = findHouse(this.view, r.house),
-          f = this.view.facts.get(n.premises[0]);
+        requireProof(claimed(reason).kind === "scope-conflict", "forcing-edge-kind");
+        const house = findHouse(this.view, reason.house),
+          fact = this.view.facts.get(n.premises[0]);
         requireProof(
-          h &&
-            f &&
-            sameValue(f.proposition, { kind: "all-different", cells: h.cells }) &&
-            link.from.symbol === r.symbol &&
-            link.to.symbol === r.symbol,
+          house &&
+            fact &&
+            sameValue(fact.proposition, { kind: "all-different", cells: house.cells }) &&
+            link.from.symbol === reason.symbol &&
+            link.to.symbol === reason.symbol,
           "forcing-scope-conflict",
         );
       }
@@ -165,60 +166,66 @@ export function checkForcingPattern(
   view: ReadView,
   nodes: ReadonlyMap<number, ProofNode>,
 ): void {
-  const p = proposal.pattern as unknown as ForcingPlan & { certificate: ForcingCertificate },
-    c = p.certificate,
+  const pattern = proposal.pattern as unknown as ForcingPlan & { certificate?: ForcingCertificate },
+    cert = pattern.certificate,
     l = new ForcingLineage(view, nodes);
   requireProof(
-    c &&
-      ["digit", "cell", "unit", "nishio"].includes(p.kind) &&
-      p.alias ===
+    cert &&
+      ["digit", "cell", "unit", "nishio"].includes(pattern.kind) &&
+      pattern.alias ===
         {
           digit: "Digit forcing chains",
           cell: "Cell forcing chains",
           unit: "Unit forcing chains",
           nishio: "Nishio",
-        }[p.kind],
+        }[pattern.kind],
     "forcing-alias",
   );
-  if (p.mode === "cache")
+  if (pattern.mode === "cache")
     requireProof(
-      p.cacheTarget &&
-        !p.cacheTarget.positive &&
+      pattern.cacheTarget &&
+        !pattern.cacheTarget.positive &&
         proposal.effects.length === 0 &&
-        sameValue(proposal.proof.roots, [c.root]),
+        sameValue(proposal.proof.roots, [cert.root]),
       "forcing-cache-roots",
     );
   else
     requireProof(
-      p.mode === undefined &&
-        p.cacheTarget === undefined &&
+      claimed(pattern).mode === undefined &&
+        pattern.cacheTarget === undefined &&
         proposal.effects.length >= 1 &&
         (proposal.effects[0].kind === "place" || proposal.effects.length === 1),
       "forcing-effects",
     );
   let alternatives: Literal[];
-  if (p.kind === "cell") {
-    alternatives = candidates(view, p.cover.cell!);
-    l.cell(c.cover!, p.cover.cell!);
-  } else if (p.kind === "unit") {
-    const h = findHouse(view, p.cover.house);
-    requireProof(h, "forcing-unit");
-    alternatives = h.cells
-      .filter((cell) => view.state.domains[cell] & symbolMask(p.cover.symbol!))
-      .map((cell) => ({ cell, symbol: p.cover.symbol!, positive: true }));
-    l.house(c.cover!, p.cover.house!, p.cover.symbol!);
+  if (pattern.kind === "cell") {
+    alternatives = candidates(view, defined(pattern.cover.cell, "cell"));
+    l.cell(defined(cert.cover, "cover"), defined(pattern.cover.cell, "cell"));
+  } else if (pattern.kind === "unit") {
+    const house = findHouse(view, pattern.cover.house);
+    requireProof(house, "forcing-unit");
+    alternatives = house.cells
+      .filter(
+        (cell) => view.state.domains[cell] & symbolMask(defined(pattern.cover.symbol, "symbol")),
+      )
+      .map((cell) => ({ cell, symbol: defined(pattern.cover.symbol, "symbol"), positive: true }));
+    l.house(
+      defined(cert.cover, "cover"),
+      defined(pattern.cover.house, "house"),
+      defined(pattern.cover.symbol, "symbol"),
+    );
   } else {
-    const a = p.cover.candidate;
+    const left = pattern.cover.candidate;
     requireProof(
-      a && a.positive && candidates(view, a.cell).some((v) => sameValue(a, v)),
+      left && left.positive && candidates(view, left.cell).some((v) => sameValue(left, v)),
       "forcing-candidate",
     );
-    alternatives = p.kind === "nishio" ? [a] : [a, complement(a)];
-    if (p.kind === "nishio") requireProof(c.cover === null, "nishio-cover");
+    alternatives = pattern.kind === "nishio" ? [left] : [left, complement(left)];
+    if (pattern.kind === "nishio") requireProof(cert.cover === null, "nishio-cover");
     else {
-      let node = l.node(c.cover!);
+      let node = l.node(defined(cert.cover, "cover"));
       requireProof(sameValue(node.conclusion, clause(alternatives)), "forcing-candidate-cover");
-      const remaining = candidates(view, a.cell).filter((v) => v.symbol !== a.symbol);
+      const remaining = candidates(view, left.cell).filter((v) => v.symbol !== left.symbol);
       for (const value of [...remaining].reverse()) {
         requireProof(
           node.rule === "resolution@1" && node.premises.length === 2 && node.scope.length === 0,
@@ -226,50 +233,52 @@ export function checkForcingPattern(
         );
         l.edge(node.premises[1], {
           from: value,
-          to: complement(a),
-          reason: { kind: "cell-conflict", cell: a.cell },
+          to: complement(left),
+          reason: { kind: "cell-conflict", cell: left.cell },
         });
         node = l.node(node.premises[0]);
       }
-      l.cell(node.id, a.cell);
+      l.cell(node.id, left.cell);
     }
   }
-  const sort = (a: Literal, b: Literal) =>
-    a.cell - b.cell || a.symbol - b.symbol || Number(a.positive) - Number(b.positive);
+  const sort = (left: Literal, right: Literal) =>
+    left.cell - right.cell ||
+    left.symbol - right.symbol ||
+    Number(left.positive) - Number(right.positive);
   requireProof(
-    alternatives.length >= (p.kind === "nishio" ? 1 : 2) &&
+    alternatives.length >= (pattern.kind === "nishio" ? 1 : 2) &&
       alternatives.length <= 9 &&
-      sameValue([...p.alternatives].sort(sort), [...alternatives].sort(sort)) &&
-      p.branches.length === alternatives.length &&
-      c.branches.length === alternatives.length,
+      sameValue([...pattern.alternatives].sort(sort), [...alternatives].sort(sort)) &&
+      pattern.branches.length === alternatives.length &&
+      cert.branches.length === alternatives.length,
     "forcing-incomplete-cases",
   );
   const seen = new Set<string>();
-  for (const [i, b] of p.branches.entries()) {
-    const certificate = c.branches[i],
-      a = l.node(certificate.assumption),
+  for (const [i, right] of pattern.branches.entries()) {
+    const certificate = cert.branches[i],
+      node = l.node(certificate.assumption),
       result = l.node(certificate.result),
-      scope = [a.id],
-      key = JSON.stringify(b.assumption);
+      scope = [node.id],
+      key = JSON.stringify(right.assumption);
     requireProof(
       !seen.has(key) &&
-        alternatives.some((v) => sameValue(v, b.assumption)) &&
-        a.rule === "assume@1" &&
-        a.scope.length === 0 &&
-        sameValue(a.conclusion, literal(b.assumption)),
+        alternatives.some((v) => sameValue(v, right.assumption)) &&
+        node.rule === "assume@1" &&
+        node.scope.length === 0 &&
+        sameValue(node.conclusion, literal(right.assumption)),
       "forcing-case-assumption",
     );
     seen.add(key);
     requireProof(
-      b.paths.length === (b.result === "false" ? 2 : 1) &&
-        certificate.paths.length === b.paths.length &&
-        b.paths.reduce((n, path) => n + path.length, 0) <= 24,
+      right.paths.length === (right.result === "false" ? 2 : 1) &&
+        certificate.paths.length === right.paths.length &&
+        right.paths.reduce((n, path) => n + path.length, 0) <= 24,
       "forcing-branch-bound",
     );
-    b.paths.forEach((path, j) =>
-      l.path(a.id, path, certificate.paths[j], scope, p.kind === "nishio"),
+    right.paths.forEach((path, j) =>
+      l.path(node.id, path, certificate.paths[j], scope, pattern.kind === "nishio"),
     );
-    if (b.result === "false")
+    if (right.result === "false")
       requireProof(
         result.rule === "contradiction@1" &&
           sameValue(result.scope, scope) &&
@@ -281,14 +290,19 @@ export function checkForcingPattern(
       );
     else
       requireProof(
-        result.id === certificate.paths[0].end && sameValue(result.conclusion, literal(b.result)),
+        result.id === certificate.paths[0].end &&
+          sameValue(result.conclusion, literal(right.result)),
         "forcing-result-lineage",
       );
   }
-  const root = l.node(c.root),
+  const root = l.node(cert.root),
     effect =
-      p.mode === "cache"
-        ? { kind: "remove", cell: p.cacheTarget!.cell, symbol: p.cacheTarget!.symbol }
+      pattern.mode === "cache"
+        ? {
+            kind: "remove",
+            cell: defined(pattern.cacheTarget, "cacheTarget").cell,
+            symbol: defined(pattern.cacheTarget, "cacheTarget").symbol,
+          }
         : proposal.effects[0];
   requireProof(
     root.scope.length === 0 &&
@@ -298,27 +312,27 @@ export function checkForcingPattern(
       ),
     "forcing-root",
   );
-  if (p.kind === "nishio")
+  if (pattern.kind === "nishio")
     requireProof(
       root.rule === "discharge@1" &&
-        sameValue(root.premises, [c.branches[0].assumption, c.branches[0].result]) &&
-        p.branches[0].result === "false",
+        sameValue(root.premises, [cert.branches[0].assumption, cert.branches[0].result]) &&
+        pattern.branches[0].result === "false",
       "nishio-discharge",
     );
   else {
-    const ordered = p.branches
-      .map((b, i) => ({ a: b.assumption, c: c.branches[i] }))
-      .sort((a, b) => sort(a.a, b.a));
+    const ordered = pattern.branches
+      .map((right, i) => ({ a: right.assumption, c: cert.branches[i] }))
+      .sort((left, right) => sort(left.a, right.a));
     requireProof(
       root.rule === "cases@1" &&
         sameValue(root.premises, [
-          c.cover,
-          ...ordered.flatMap(({ c }) => [c.assumption, c.result]),
+          cert.cover,
+          ...ordered.flatMap(({ c: branch }) => [branch.assumption, branch.result]),
         ]),
       "forcing-cases-lineage",
     );
   }
-  checkForcingRoots(proposal, view, nodes, c.root);
+  checkForcingRoots(proposal, view, nodes, cert.root);
 }
 export function checkForcingRoots(
   proposal: DeductionProposal,
@@ -327,11 +341,11 @@ export function checkForcingRoots(
   root: number,
 ): void {
   requireProof(proposal.proof.roots.includes(root), "forcing-missing-root");
-  const primary = nodes.get(root)!.conclusion,
+  const primary = defined(nodes.get(root), "node").conclusion,
     accepted = new Set([root]);
   if (primary.kind === "literal" && primary.value.positive)
     for (const id of proposal.proof.roots) {
-      const n = nodes.get(id)!;
+      const n = defined(nodes.get(id), "node");
       if (id === root || n.conclusion.kind !== "literal") continue;
       const weak =
         n.premises.length === 2 && n.premises[0] === root ? nodes.get(n.premises[1]) : undefined;
@@ -349,7 +363,7 @@ export function checkForcingRoots(
     }
   for (const id of proposal.proof.roots)
     if (!accepted.has(id)) {
-      const n = nodes.get(id)!;
+      const n = defined(nodes.get(id), "node");
       requireProof(
         n.rule === "domain-restrict@1" &&
           n.scope.length === 0 &&

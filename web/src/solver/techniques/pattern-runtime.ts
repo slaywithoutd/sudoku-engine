@@ -13,6 +13,7 @@ import { IndexInterrupted, type WorkspaceReservation } from "../indexes/workspac
 import { clause, literals } from "../proof/primitives";
 import { pos, neg, type BentPattern } from "./pattern-contracts";
 import { findHouse, symbolMask } from "../state/read";
+import { defined } from "../invariants";
 
 /** Borrowed graph recipes live only under this invocation's shared lease. */
 export class PatternGraph {
@@ -26,14 +27,14 @@ export class PatternGraph {
     readonly context: DiscoveryContext,
     readonly lease: WorkspaceReservation,
   ) {}
-  key(a: Literal, b: Literal) {
-    return [a, b]
-      .map((l) => `${l.cell}:${l.symbol}`)
+  key(left: Literal, right: Literal) {
+    return [left, right]
+      .map((literal) => `${literal.cell}:${literal.symbol}`)
       .sort()
       .join("/");
   }
-  has(a: Literal, b: Literal) {
-    return this.index.weak(a, b);
+  has(left: Literal, right: Literal) {
+    return this.index.weak(left, right);
   }
   *prepare(view: ReadView): Generator<{ kind: "work"; units: number }> {
     for (const [id, fact] of view.facts) {
@@ -56,7 +57,7 @@ export class PatternGraph {
     for (const cover of this.index.covers) {
       this.context.workspace.checkpoint();
       yield { kind: "work", units: 1 };
-      const source = view.facts.get(cover.recipe.source)!.proposition;
+      const source = defined(view.facts.get(cover.recipe.source), "fact").proposition;
       if (cover.recipe.kind !== "house-cover" || source.kind !== "cover") continue;
       const key = `${source.cells.join()}/${source.symbol}`;
       if (!this.covers.has(key)) {
@@ -96,13 +97,16 @@ export function descriptor(
   strategy: PatternStrategy,
   bounds: readonly [number, number, number, number, number],
 ): TechniqueDescriptor {
-  const row = coverageEntries.find((e) => e.id === id)!;
+  const entry = defined(
+    coverageEntries.find((entry) => entry.id === id),
+    "coverageEntry",
+  );
   return Object.freeze({
-    id: row.version,
-    aliases: row.aliases,
-    tier: row.tier,
-    requires: row.capabilities,
-    assumptionPolicy: row.assumptionPolicy,
+    id: entry.version,
+    aliases: entry.aliases,
+    tier: entry.tier,
+    requires: entry.capabilities,
+    assumptionPolicy: entry.assumptionPolicy,
     bounds: Object.freeze({
       maxLength: bounds[0],
       maxBranchDepth: bounds[1],
@@ -112,7 +116,7 @@ export function descriptor(
     }),
     watches: () => [{ kind: "all" as const }],
     eligible: () => ({ kind: "yes" as const }),
-    estimate: () => ({ hit: 1, gain: 1, cost: row.tier + 1 }),
+    estimate: () => ({ hit: 1, gain: 1, cost: entry.tier + 1 }),
     *discover(view: ReadView, context: DiscoveryContext): Discovery {
       let index: ImplicationIndex | undefined, lease: WorkspaceReservation | undefined;
       try {
@@ -138,7 +142,7 @@ export function descriptor(
             const compiler = strategy.compile(view, graph, event.pattern, event.effects);
             let proposal: DeductionProposal;
             try {
-              while (true) {
+              for (;;) {
                 context.workspace.checkpoint();
                 const next = compiler.next();
                 if (next.done) {
@@ -193,7 +197,7 @@ export class PatternBuilder {
     const key = JSON.stringify([rule, premises, conclusion, parameters]),
       old = this.memo.get(key);
     if (old !== undefined) return old;
-    this.graph.compilation!.grow(
+    defined(this.graph.compilation, "compilation").grow(
       1,
       2048 + JSON.stringify(conclusion).length * 4 + premises.length * 16,
     );
@@ -210,40 +214,40 @@ export class PatternBuilder {
       [this.view.state.domainFacts[cell]],
       clause(
         this.view.assembly.problem.symbols
-          .filter((s) => this.view.state.domains[cell] & symbolMask(s))
-          .map((s) => pos(cell, s)),
+          .filter((symbol) => this.view.state.domains[cell] & symbolMask(symbol))
+          .map((symbol) => pos(cell, symbol)),
       ),
     );
   }
   house(id: string, symbol: number): number {
-    const h = findHouse(this.view, id)!;
-    const cover = this.graph.covers.get(`${h.cells.join()}/${symbol}`);
+    const house = defined(findHouse(this.view, id), "findHouse");
+    const cover = this.graph.covers.get(`${house.cells.join()}/${symbol}`);
     if (!cover) throw Error("missing-pattern-cover");
     const source = this.add("support@1", [...cover.premises], {
       kind: "cover",
       symbol,
-      cells: cover.literals.map((l) => l.cell),
+      cells: cover.literals.map((literal) => literal.cell),
     });
     return this.add("cover-clause@1", [source], clause(cover.literals));
   }
-  *weak(a: Literal, b: Literal): Generator<{ kind: "work"; units: number }, number> {
+  *weak(left: Literal, right: Literal): Generator<{ kind: "work"; units: number }, number> {
     yield { kind: "work", units: 1 };
-    const edge = this.graph.weak.get(this.graph.key(a, b));
+    const edge = this.graph.weak.get(this.graph.key(left, right));
     if (!edge) throw Error("missing-pattern-edge");
-    const conclusion = clause([neg(a.cell, a.symbol), neg(b.cell, b.symbol)]);
+    const conclusion = clause([neg(left.cell, left.symbol), neg(right.cell, right.symbol)]);
     if (edge.recipe.kind !== "relation-conflict")
       return this.add("weak-link@1", [...edge.premises], conclusion);
     const cache = `relation:${edge.recipe.source}`;
     let source = this.memo.get(cache);
     if (source === undefined) {
-      const relation = this.view.facts.get(edge.recipe.source)!.proposition;
+      const relation = defined(this.view.facts.get(edge.recipe.source), "fact").proposition;
       if (relation.kind !== "relation") throw Error("missing-relation");
       source = edge.recipe.source;
       let rows = relation.tuples;
       for (const cell of relation.cells) {
         yield { kind: "work", units: 1 };
         const mask = this.view.state.domains[cell],
-          digits = this.view.assembly.problem.symbols.filter((s) => mask & symbolMask(s));
+          digits = this.view.assembly.problem.symbols.filter((symbol) => mask & symbolMask(symbol));
         const filter = this.add(
           "table-filter@1",
           [this.view.state.domainFacts[cell]],
@@ -258,7 +262,7 @@ export class PatternBuilder {
         rows = remaining;
         source = this.add("table-join@1", [source, filter], {
           kind: "table",
-          cells: [...relation.cells].sort((a, b) => a - b),
+          cells: [...relation.cells].sort((left, right) => left - right),
           count: rows.length,
           definition: this.next,
         });
@@ -268,25 +272,33 @@ export class PatternBuilder {
     return this.add("table-project@1", [source], conclusion);
   }
   resolve(a: number, b: number, pivot: Literal): number {
-    const left = literals(this.values.get(a)!),
-      right = literals(this.values.get(b)!);
+    const left = literals(defined(this.values.get(a), "value")),
+      right = literals(defined(this.values.get(b), "value"));
     return this.add(
       "resolution@1",
       [a, b],
       clause([
         ...left.filter(
-          (l) =>
-            !(l.cell === pivot.cell && l.symbol === pivot.symbol && l.positive === pivot.positive),
+          (literal) =>
+            !(
+              literal.cell === pivot.cell &&
+              literal.symbol === pivot.symbol &&
+              literal.positive === pivot.positive
+            ),
         ),
         ...right.filter(
-          (l) =>
-            !(l.cell === pivot.cell && l.symbol === pivot.symbol && l.positive !== pivot.positive),
+          (literal) =>
+            !(
+              literal.cell === pivot.cell &&
+              literal.symbol === pivot.symbol &&
+              literal.positive !== pivot.positive
+            ),
         ),
       ]),
     );
   }
   *eliminate(root: number, target: Effect): Generator<{ kind: "work"; units: number }, number> {
-    for (const occurrence of [...literals(this.values.get(root)!)]) {
+    for (const occurrence of [...literals(defined(this.values.get(root), "value"))]) {
       const weak = yield* this.weak(occurrence, pos(target.cell, target.symbol));
       root = this.resolve(root, weak, occurrence);
     }
@@ -322,18 +334,18 @@ export class PatternBuilder {
     effectRoots: number[],
   ): DeductionProposal {
     const domains = new Map<number, { id: number; mask: number }>();
-    effects.forEach((e, i) => {
-      const prior = domains.get(e.cell) ?? {
-        id: this.view.state.domainFacts[e.cell],
-        mask: this.view.state.domains[e.cell],
+    effects.forEach((effect, i) => {
+      const prior = domains.get(effect.cell) ?? {
+        id: this.view.state.domainFacts[effect.cell],
+        mask: this.view.state.domains[effect.cell],
       };
-      const mask = prior.mask & ~symbolMask(e.symbol),
+      const mask = prior.mask & ~symbolMask(effect.symbol),
         id = this.add("domain-restrict@1", [prior.id, effectRoots[i]], {
           kind: "domain",
-          cell: e.cell,
+          cell: effect.cell,
           mask,
         });
-      domains.set(e.cell, { id, mask });
+      domains.set(effect.cell, { id, mask });
     });
     return {
       technique,
@@ -343,17 +355,21 @@ export class PatternBuilder {
       proof: {
         state: this.view.state.key,
         nodes: this.nodes,
-        imports: [...this.imports].sort((a, b) => a - b),
+        imports: [...this.imports].sort((left, right) => left - right),
         roots: [
-          ...new Set([...effectRoots, ...this.roots, ...[...domains.values()].map((d) => d.id)]),
+          ...new Set([
+            ...effectRoots,
+            ...this.roots,
+            ...[...domains.values()].map((domain) => domain.id),
+          ]),
         ],
       },
     };
   }
   /** Complete partition tree; no leaf exceeds 256 assignment combinations. */
-  *bentTable(p: BentPattern): Generator<{ kind: "work"; units: number }, number> {
+  *bentTable(pattern: BentPattern): Generator<{ kind: "work"; units: number }, number> {
     const scopes: number[] = [];
-    for (const pair of p.conflicts) {
+    for (const pair of pattern.conflicts) {
       yield { kind: "work", units: 1 };
       const source = this.graph.scopes.get(pair.join(":"));
       if (source === undefined) throw Error("missing-local-all-different");
@@ -361,18 +377,18 @@ export class PatternBuilder {
         this.add("all-different-subset@1", [source], { kind: "all-different", cells: pair }),
       );
     }
-    const sources = [...p.cells.map((c) => this.view.state.domainFacts[c]), ...scopes];
+    const sources = [...pattern.cells.map((cell) => this.view.state.domainFacts[cell]), ...scopes];
     const build = function* (
       this: PatternBuilder,
       masks: number[],
     ): Generator<{ kind: "work"; units: number }, { id: number; count: number }> {
       const values = masks.map((mask) =>
-        this.view.assembly.problem.symbols.filter((s) => mask & symbolMask(s)),
+        this.view.assembly.problem.symbols.filter((symbol) => mask & symbolMask(symbol)),
       );
-      const volume = values.reduce((n, v) => n * v.length, 1);
+      const volume = values.reduce((n, value) => n * value.length, 1);
       yield { kind: "work", units: 1 };
       if (volume > 256) {
-        const split = values.findIndex((v) => v.length > 1),
+        const split = values.findIndex((value) => value.length > 1),
           a = [...masks],
           b = [...masks];
         a[split] = symbolMask(values[split][0]);
@@ -383,7 +399,7 @@ export class PatternBuilder {
         return {
           id: this.add("table-union@1", [left.id, right.id], {
             kind: "table",
-            cells: p.cells,
+            cells: pattern.cells,
             count,
             definition: this.next,
           }),
@@ -392,11 +408,16 @@ export class PatternBuilder {
       }
       let count = 0;
       const cursor = values.map(() => 0);
-      let done = values.some((v) => v.length === 0);
+      let done = values.some((value) => value.length === 0);
       while (!done) {
         yield { kind: "work", units: 1 };
-        const tuple = values.map((v, i) => v[cursor[i]]);
-        if (p.conflicts.every(([a, b]) => tuple[p.cells.indexOf(a)] !== tuple[p.cells.indexOf(b)]))
+        const tuple = values.map((value, i) => value[cursor[i]]);
+        if (
+          pattern.conflicts.every(
+            ([left, right]) =>
+              tuple[pattern.cells.indexOf(left)] !== tuple[pattern.cells.indexOf(right)],
+          )
+        )
           count++;
         for (let i = cursor.length - 1; i >= 0; i--) {
           if (++cursor[i] < values[i].length) break;
@@ -408,20 +429,24 @@ export class PatternBuilder {
         id: this.add(
           "table-filter@1",
           sources,
-          { kind: "table", cells: p.cells, count, definition: this.next },
-          { cells: p.cells, box: masks },
+          { kind: "table", cells: pattern.cells, count, definition: this.next },
+          { cells: pattern.cells, box: masks },
         ),
         count,
       };
     };
     const result = yield* build.call(
       this,
-      p.cells.map((c) => this.view.state.domains[c]),
+      pattern.cells.map((cell) => this.view.state.domains[cell]),
     );
     return this.add(
       "table-project@1",
       [result.id],
-      clause(p.occurrences[p.nonrestrictedSymbol].map((c) => pos(c, p.nonrestrictedSymbol))),
+      clause(
+        pattern.occurrences[pattern.nonrestrictedSymbol].map((cell) =>
+          pos(cell, pattern.nonrestrictedSymbol),
+        ),
+      ),
     );
   }
 }

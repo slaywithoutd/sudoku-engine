@@ -25,6 +25,7 @@ import {
   type CapturedConditionalPrefix,
 } from "./conditional-prefix";
 import type { IndexWorkspace, WorkspaceReservation } from "./indexes/workspace";
+import { defined } from "./invariants";
 
 declare const uniqueAuthorityBrand: unique symbol;
 /** An operation-local capability, intentionally carrying no count or solution. */
@@ -65,8 +66,8 @@ export function uniqueAuthorityMatches(
   authority: UniqueAuthority | undefined,
   view: ReadView,
 ): boolean {
-  const r = authority && authorities.get(authority);
-  return !!r && r.ready && uniqueAuthorityOwns(authority, view);
+  const record = authority && authorities.get(authority);
+  return !!record && record.ready && uniqueAuthorityOwns(authority, view);
 }
 
 /** Prefix rechecking is lifetime-bound before uniqueness premises become enabled. */
@@ -74,14 +75,14 @@ export function uniqueAuthorityOwns(
   authority: UniqueAuthority | undefined,
   view: ReadView,
 ): boolean {
-  const r = authority && authorities.get(authority);
+  const record = authority && authorities.get(authority);
   return (
-    !!r &&
-    r.active &&
-    (!r.parent || !!uniqueParentDetails(r.parent)) &&
-    view.state.key.problemKey === r.run.problemKey &&
-    view.state.key.branch === `conditional:${r.run.requestId}` &&
-    hasAcceptedOrigin(r.initial, view)
+    !!record &&
+    record.active &&
+    (!record.parent || !!uniqueParentDetails(record.parent)) &&
+    view.state.key.problemKey === record.run.problemKey &&
+    view.state.key.branch === `conditional:${record.run.requestId}` &&
+    hasAcceptedOrigin(record.initial, view)
   );
 }
 
@@ -89,9 +90,9 @@ export function uniqueAuthorityOwns(
 export function uniqueAuthorityEvidenceId(
   authority: UniqueAuthority | undefined,
 ): string | undefined {
-  const r = authority && authorities.get(authority);
-  return r?.active && r.ready && (!r.parent || uniqueParentDetails(r.parent))
-    ? r.run.parentEvidenceId!
+  const record = authority && authorities.get(authority);
+  return record?.active && record.ready && (!record.parent || uniqueParentDetails(record.parent))
+    ? defined(record.run.parentEvidenceId, "parentEvidenceId")
     : undefined;
 }
 
@@ -100,6 +101,7 @@ function validateRun(run: RunKey, primary: Readonly<RunKey>): void {
     sameValue(Object.keys(run).sort(), Object.keys(primary).sort()),
     "conditional-run-fields",
   );
+  const mode: unknown = run.mode;
   requireProof(
     run.operation === "conditional" &&
       run.profile === "classic-conditional@1" &&
@@ -107,7 +109,7 @@ function validateRun(run: RunKey, primary: Readonly<RunKey>): void {
       run.requestId.length > 0 &&
       run.requestId.length <= 128 &&
       run.requestId !== primary.requestId &&
-      (run.mode === "explain" || run.mode === "analyze") &&
+      (mode === "explain" || mode === "analyze") &&
       typeof run.optionsKey === "string" &&
       run.optionsKey.length > 0,
     "conditional-run-binding",
@@ -170,6 +172,8 @@ export class ConditionalOperation {
   readonly assembly: Assembly;
   readonly #prefix: readonly DeductionProposal[];
   readonly #record: AuthorityRecord;
+  /** False while the constructor still charges initialization before registering. */
+  #registered = false;
   readonly #lease: WorkspaceReservation;
   readonly #workspace: IndexWorkspace;
   readonly #limits: Limits;
@@ -238,9 +242,13 @@ export class ConditionalOperation {
         ready: false,
       };
       authorities.set(this.authority, this.#record);
+      this.#registered = true;
       // Keep the identity binding after disposal so omitted context cannot turn
       // a revoked operation's retained views into ordinary primary owners.
-      originAuthorities.set(acceptedOriginIdentity(this.initialView)!, this.authority);
+      originAuthorities.set(
+        defined(acceptedOriginIdentity(this.initialView), "acceptedOriginIdentity"),
+        this.authority,
+      );
       operations.add(this);
     } catch (error) {
       this.#lease.dispose();
@@ -309,7 +317,7 @@ export class ConditionalOperation {
     });
   }
   charge(units: number): void {
-    if (this.#record) requireProof(this.active, "revoked-unique-authority");
+    if (this.#registered) requireProof(this.active, "revoked-unique-authority");
     this.#workspace.checkpoint();
     requireProof(
       Number.isSafeInteger(units) && units >= 0 && (this.#work += units) <= this.#limits.workUnits,
@@ -382,7 +390,7 @@ export class ConditionalOperation {
             envelope: {
               run: this.run,
               snapshot: this.snapshot,
-              prefix: this.#descriptor!,
+              prefix: defined(this.#descriptor, "descriptor"),
               nonce,
               generation,
             },
@@ -486,6 +494,8 @@ export class ConditionalOperation {
       captured?.lease.dispose();
       metadataLease.dispose();
     };
+    // Read after every await: a port failure may have revoked the bootstrap meanwhile.
+    const stillActive = () => active;
     const fail = (error: unknown) => {
       if (!active) return;
       active = false;
@@ -524,11 +534,11 @@ export class ConditionalOperation {
           if (units >= 256) {
             units = 0;
             await driver.yieldTask();
-            requireProof(active && operation.active, "revoked-unique-authority");
+            requireProof(stillActive() && operation.active, "revoked-unique-authority");
             operation.charge(1);
           }
         }
-        requireProof(active && operation.active, "revoked-unique-authority");
+        requireProof(stillActive() && operation.active, "revoked-unique-authority");
         operation.charge(1);
         completed = true;
         operation.#teardowns.push(() => {
@@ -639,7 +649,8 @@ export class ConditionalOperation {
             requireProof(this.active, "revoked-unique-authority");
             requireProof(
               event.step.consequences.every(
-                (c) => !c.conditional && c.openAssumptions.length === 0,
+                (consequence) =>
+                  !consequence.conditional && consequence.openAssumptions.length === 0,
               ),
               "conditional-prefix-taint",
             );

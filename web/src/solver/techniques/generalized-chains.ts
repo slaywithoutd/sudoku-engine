@@ -5,6 +5,7 @@ import { proposedClause } from "../proof/builder";
 import { ForcingProof } from "./forcing-proof";
 import { candidateLiteral, members, type Candidate, type CandidateSet } from "./csp-variables";
 import { findHouseWithCells } from "../state/read";
+import { defined } from "../invariants";
 
 export type GeneralizedGrammar =
   "bivalue" | "z" | "t" | "whip" | "braid" | "g-whip" | "inserted-or-whip";
@@ -77,31 +78,34 @@ export class GeneralizedProof {
       if (source === undefined) throw Error("missing-proved-or-source");
       return source;
     }
-    const cell = /^cell:(\d+)$/.exec(position.variable),
-      house = /^(.*):symbol:(\d+)$/.exec(position.variable);
-    if (!cell && !house) throw Error("missing-csp-variable");
+    const cellMatch = /^cell:(\d+)$/.exec(position.variable),
+      houseMatch = /^(.*):symbol:(\d+)$/.exec(position.variable);
+    if (!cellMatch && !houseMatch) throw Error("missing-csp-variable");
     const scope = this.builder.scope;
     this.builder.scope = [];
     try {
-      return cell
-        ? this.builder.cover(Number(cell[1]))
-        : this.builder.houseCover(house![1], Number(house![2]));
+      return cellMatch
+        ? this.builder.cover(Number(cellMatch[1]))
+        : this.builder.houseCover(
+            defined(houseMatch, "house")[1],
+            Number(defined(houseMatch, "house")[2]),
+          );
     } finally {
       this.builder.scope = scope;
     }
   }
   exclude(value: Candidate, witness: CandidateSet, root: number): ExclusionProof {
-    const b = this.builder,
+    const proof = this.builder,
       weak: number[] = [],
       reductions: number[] = [];
     let result = root;
     for (const [i, from] of witness.entries()) {
       const house = findHouseWithCells(this.view, from[0], value[0]);
-      const scope = b.scope;
-      b.scope = [];
+      const scope = proof.scope;
+      proof.scope = [];
       let edge: number;
       try {
-        edge = b.edge({
+        edge = proof.edge({
           from: candidateLiteral(from),
           to: candidateLiteral(value, false),
           reason:
@@ -110,14 +114,14 @@ export class GeneralizedProof {
               : { kind: "scope-conflict", house: house?.id, symbol: from[1] },
         });
       } finally {
-        b.scope = scope;
+        proof.scope = scope;
       }
       weak.push(edge);
-      result = b.add(
+      result = proof.add(
         "resolution@1",
         [result, edge],
         proposedClause([
-          ...witness.slice(i + 1).map((v) => candidateLiteral(v)),
+          ...witness.slice(i + 1).map((candidate) => candidateLiteral(candidate)),
           candidateLiteral(value, false),
         ]),
       );
@@ -127,13 +131,15 @@ export class GeneralizedProof {
   }
   /** Compile one lexical target assumption, or an existing OR case assumption. */
   positions(plan: GeneralizedPlan, assumption: number): Omit<GeneralizedCertificate, "root"> {
-    const b = this.builder,
+    const proof = this.builder,
       prior: { values: CandidateSet; root: number }[] = [
         { values: [plan.target], root: assumption },
       ],
       positions: PositionProof[] = [];
     const witnessRoot = (values: CandidateSet) => {
-      const found = prior.find((p) => JSON.stringify(p.values) === JSON.stringify(values));
+      const found = prior.find(
+        (pattern) => JSON.stringify(pattern.values) === JSON.stringify(values),
+      );
       if (!found) throw Error("missing-earlier-right");
       return found.root;
     };
@@ -146,33 +152,39 @@ export class GeneralizedProof {
           ? [
               {
                 literal: position.closingCandidate,
-                conflictWith: position.closingConflict!,
+                conflictWith: defined(position.closingConflict, "closingConflict"),
               },
             ]
           : []),
       ];
-      const exclusions = rejected.map((e) =>
-        this.exclude(e.literal, members(e.conflictWith), witnessRoot(members(e.conflictWith))),
+      const exclusions = rejected.map((rejection) =>
+        this.exclude(
+          rejection.literal,
+          members(rejection.conflictWith),
+          witnessRoot(members(rejection.conflictWith)),
+        ),
       );
       let result = cover;
       const reductions: number[] = [];
       if (position.right === null) {
-        const order = position.alternatives.map((v) =>
-          rejected.findIndex((e) => JSON.stringify(e.literal) === JSON.stringify(v)),
+        const order = position.alternatives.map((candidate) =>
+          rejected.findIndex(
+            (rejection) => JSON.stringify(rejection.literal) === JSON.stringify(candidate),
+          ),
         );
-        result = b.add("contradiction@1", [cover, ...order.map((i) => exclusions[i].result)], {
+        result = proof.add("contradiction@1", [cover, ...order.map((i) => exclusions[i].result)], {
           kind: "false",
         });
       } else {
         let remaining = [...position.alternatives];
         for (const [i, excluded] of [{ literal: position.left }, ...position.excluded].entries()) {
           remaining = remaining.filter(
-            (v) => JSON.stringify(v) !== JSON.stringify(excluded.literal),
+            (candidate) => JSON.stringify(candidate) !== JSON.stringify(excluded.literal),
           );
-          result = b.add(
+          result = proof.add(
             "resolution@1",
             [result, exclusions[i].result],
-            proposedClause(remaining.map((v) => candidateLiteral(v))),
+            proposedClause(remaining.map((candidate) => candidateLiteral(candidate))),
           );
           reductions.push(result);
         }
@@ -180,14 +192,14 @@ export class GeneralizedProof {
       }
       positions.push({ cover, exclusions, reductions, result });
     }
-    let contradiction = positions.at(-1)!.result,
+    let contradiction = defined(positions.at(-1), "position").result,
       closing: ExclusionProof | null = null;
-    if (plan.positions.at(-1)!.right !== null) {
-      const last = prior.at(-1)!;
+    if (defined(plan.positions.at(-1), "position").right !== null) {
+      const last = defined(prior.at(-1), "prior");
       closing = this.exclude(plan.consequence ?? plan.target, last.values, last.root);
       contradiction = plan.consequence
         ? closing.result
-        : b.add("contradiction@1", [assumption, closing.result], {
+        : proof.add("contradiction@1", [assumption, closing.result], {
             kind: "false",
           });
     }
@@ -202,17 +214,17 @@ export function compileGeneralized(
   lease?: WorkspaceReservation,
 ): DeductionProposal {
   const compiler = new GeneralizedProof(view, new ForcingProof(view, lease)),
-    b = compiler.builder;
-  const assumption = b.add("assume@1", [], proposedClause([candidateLiteral(plan.target)]));
-  b.scope = [assumption];
+    proof = compiler.builder;
+  const assumption = proof.add("assume@1", [], proposedClause([candidateLiteral(plan.target)]));
+  proof.scope = [assumption];
   const certificate = compiler.positions(plan, assumption);
-  b.scope = [];
-  const root = b.add(
+  proof.scope = [];
+  const root = proof.add(
     "discharge@1",
     [assumption, certificate.contradiction],
     proposedClause([candidateLiteral(plan.target, false)]),
   );
-  const row =
+  const technique =
     plan.grammar === "inserted-or-whip"
       ? "c28@1"
       : ["bivalue", "z"].includes(plan.grammar)
@@ -221,8 +233,8 @@ export function compileGeneralized(
           ? "c26@1"
           : "c27@1";
   if (plan.mode === "cache")
-    return b.bundle(
-      row,
+    return proof.bundle(
+      technique,
       {
         ...plan,
         alias: plan.alias ?? generalizedAliases[plan.grammar],
@@ -231,8 +243,8 @@ export function compileGeneralized(
       [],
       [root],
     );
-  return b.finish(
-    row,
+  return proof.finish(
+    technique,
     {
       ...plan,
       alias: plan.alias ?? generalizedAliases[plan.grammar],

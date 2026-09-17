@@ -89,10 +89,10 @@ export function* rolloutCandidates(
         usedWork += costs[i];
         return { step, cost: costs[i], key: canonicalProof(step) };
       })
-      .sort((a, b) => compareText(a.key, b.key));
-    const ordered = entries.map((e) => e.step);
+      .sort((left, right) => compareText(left.key, right.key));
+    const ordered = entries.map((entry) => entry.step);
     const cheap = getTechniques("classic-expanded@1").filter(
-      (d) => d.tier <= 1 && /^c0[1-5]@1$/.test(d.id),
+      (descriptor) => descriptor.tier <= 1 && /^c0[1-5]@1$/.test(descriptor.id),
     );
     for (const entry of entries) {
       const first = entry.step,

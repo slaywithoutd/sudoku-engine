@@ -7,6 +7,7 @@ import {
   requireFields,
   SpecializedAdmission,
 } from "./specialized-lineage";
+import { defined } from "../invariants";
 
 /** The checker reconstructs both source covers, every crossing exclusion, each
  * component relation and every effect root without importing FireworksSearch. */
@@ -15,61 +16,72 @@ export function checkFireworksPattern(
   view: ReadView,
   available: ReadonlyMap<number, ProofNode>,
 ): void {
-  const p = proposal.pattern as any,
+  const pattern = proposal.pattern as any,
     a = new SpecializedAdmission(proposal, view, available);
-  requireFields(p, ["alias", "components", "selected", "certificate"]);
+  requireFields(pattern, ["alias", "components", "selected", "certificate"]);
   requireProof(
-    Array.isArray(p.components) &&
-      (p.components.length === 1 || p.components.length === 2) &&
-      orderedNumbers(p.selected) &&
-      p.selected.length === p.components.length + 2,
+    Array.isArray(pattern.components) &&
+      (pattern.components.length === 1 || pattern.components.length === 2) &&
+      orderedNumbers(pattern.selected) &&
+      pattern.selected.length === pattern.components.length + 2,
     "fireworks-geometry-bound",
   );
   requireProof(
-    p.components.length === 1
-      ? ["Fireworks", "Triple Fireworks"].includes(p.alias)
-      : p.alias === "Quadruple Fireworks",
+    pattern.components.length === 1
+      ? ["Fireworks", "Triple Fireworks"].includes(pattern.alias)
+      : pattern.alias === "Quadruple Fireworks",
     "invalid-fireworks-alias",
   );
-  requireFields(p.certificate, ["components", "table"]);
+  requireFields(pattern.certificate, ["components", "table"]);
   requireProof(
-    p.certificate.components.length === p.components.length,
+    pattern.certificate.components.length === pattern.components.length,
     "incomplete-fireworks-components",
   );
   const selected = [
-    ...new Set<number>(p.components.flatMap((c: any) => [c.intersection, c.rowWing, c.columnWing])),
+    ...new Set<number>(
+      pattern.components.flatMap((component: any) => [
+        component.intersection,
+        component.rowWing,
+        component.columnWing,
+      ]),
+    ),
   ].sort((x, y) => x - y);
-  requireProof(sameValue(selected, p.selected), "fireworks-geometry-bound");
-  for (const [i, c] of p.components.entries()) {
-    requireFields(c, ["intersection", "rowWing", "columnWing", "symbols"]);
-    const x = c.intersection,
-      y = c.rowWing,
-      z = c.columnWing,
+  requireProof(sameValue(selected, pattern.selected), "fireworks-geometry-bound");
+  for (const [i, part] of pattern.components.entries()) {
+    requireFields(part, ["intersection", "rowWing", "columnWing", "symbols"]);
+    const x = part.intersection,
+      y = part.rowWing,
+      zDigit = part.columnWing,
       row = a.house("row", Math.floor(x / 9)),
       column = a.house("column", x % 9),
       box = a.house("box", cellBox(x));
     requireProof(
       row.includes(y) &&
-        column.includes(z) &&
+        column.includes(zDigit) &&
         !box.includes(y) &&
-        !box.includes(z) &&
-        new Set([x, y, z]).size === 3 &&
-        [x, y, z].every((q) => !view.state.values[q]) &&
-        orderedNumbers(c.symbols) &&
-        c.symbols.length === (p.components.length === 1 ? 3 : 2) &&
-        c.symbols.every((s: number) => a.symbols(x).includes(s)),
+        !box.includes(zDigit) &&
+        new Set([x, y, zDigit]).size === 3 &&
+        [x, y, zDigit].every((q) => !view.state.values[q]) &&
+        orderedNumbers(part.symbols) &&
+        part.symbols.length === (pattern.components.length === 1 ? 3 : 2) &&
+        part.symbols.every((symbol: number) => a.symbols(x).includes(symbol)),
       "invalid-fireworks-geometry",
     );
-    const component = p.certificate.components[i];
+    const component = pattern.certificate.components[i];
     requireFields(component, ["covers", "local", "identity", "relation"]);
     requireProof(
-      Array.isArray(component.covers) && component.covers.length === c.symbols.length,
+      Array.isArray(component.covers) && component.covers.length === part.symbols.length,
       "incomplete-fireworks-symbols",
     );
-    for (const [j, symbol] of c.symbols.entries()) {
+    for (const [j, symbol] of part.symbols.entries()) {
       requireProof(
-        row.every((q) => box.includes(q) || q === y || !a.symbols(q).includes(symbol)) &&
-          column.every((q) => box.includes(q) || q === z || !a.symbols(q).includes(symbol)),
+        row.every(
+          (other) => box.includes(other) || other === y || !a.symbols(other).includes(symbol),
+        ) &&
+          column.every(
+            (other) =>
+              box.includes(other) || other === zDigit || !a.symbols(other).includes(symbol),
+          ),
         "incomplete-fireworks-outside-support",
       );
       const proof = component.covers[j];
@@ -85,13 +97,13 @@ export function checkFireworksPattern(
         requireFields(route, ["weak", "steps", "root"]);
         const line = index ? column : row,
           cross = index ? row : column,
-          wing = index ? z : y,
-          crossWing = index ? y : z;
+          wing = index ? zDigit : y,
+          crossWing = index ? y : zDigit;
         const expectedPairs = line
-          .filter((q) => q !== x && q !== wing && a.symbols(q).includes(symbol))
+          .filter((other) => other !== x && other !== wing && a.symbols(other).includes(symbol))
           .flatMap((left) =>
             cross
-              .filter((q) => q !== crossWing && a.symbols(q).includes(symbol))
+              .filter((other) => other !== crossWing && a.symbols(other).includes(symbol))
               .map((right) => [left, right]),
           );
         requireProof(
@@ -121,7 +133,7 @@ export function checkFireworksPattern(
         for (const id of route.steps) {
           const n = a.node(id, "resolution@1");
           requireProof(
-            n.premises.every((q) => allowed.has(q)),
+            n.premises.every((premise) => allowed.has(premise)),
             "substituted-fireworks-cover",
           );
           allowed.add(id);
@@ -130,14 +142,17 @@ export function checkFireworksPattern(
           allowed.has(route.root) &&
             literals(a.node(route.root).conclusion).length >= 1 &&
             literals(a.node(route.root).conclusion).every(
-              (l) => l.positive && l.symbol === symbol && [x, y, z].includes(l.cell),
+              (literal) =>
+                literal.positive &&
+                literal.symbol === symbol &&
+                [x, y, zDigit].includes(literal.cell),
             ),
           "substituted-fireworks-cover",
         );
         const seen = new Set<number>(),
           pending = [route.root];
         while (pending.length) {
-          const id = pending.pop()!;
+          const id = defined(pending.pop(), "pending");
           if (seen.has(id)) continue;
           seen.add(id);
           if (allowed.has(id)) pending.push(...a.node(id).premises);
@@ -151,14 +166,16 @@ export function checkFireworksPattern(
         );
       }
     }
-    const cells = [x, y, z].sort((x, y) => x - y),
-      roots: number[] = component.covers.flatMap((v: any) => v.routes.map((r: any) => r.root));
+    const cells = [x, y, zDigit].sort((x, y) => x - y),
+      roots: number[] = component.covers.flatMap((value: any) =>
+        value.routes.map((route: any) => route.root),
+      );
     a.restrictedLocal(
       component.local,
       cells,
       [
         [x, y],
-        [x, z],
+        [x, zDigit],
       ],
       roots,
     );
@@ -170,30 +187,30 @@ export function checkFireworksPattern(
       roots.filter((id) => a.node(id).conclusion.kind === "clause"),
     );
   }
-  if (p.components.length === 2) {
-    const [c, d] = p.components;
+  if (pattern.components.length === 2) {
+    const [first, second] = pattern.components;
     requireProof(
-      c.rowWing === d.columnWing &&
-        c.columnWing === d.rowWing &&
-        c.intersection !== d.intersection &&
-        c.symbols.every((s: number) => !d.symbols.includes(s)),
+      first.rowWing === second.columnWing &&
+        first.columnWing === second.rowWing &&
+        first.intersection !== second.intersection &&
+        first.symbols.every((symbol: number) => !second.symbols.includes(symbol)),
       "noncanonical-fireworks-quad",
     );
     a.joinPeers(
-      p.certificate.table,
-      p.certificate.components[0].relation,
-      p.certificate.components[1].relation,
+      pattern.certificate.table,
+      pattern.certificate.components[0].relation,
+      pattern.certificate.components[1].relation,
     );
   } else
     requireProof(
-      p.certificate.table === p.certificate.components[0].relation,
+      pattern.certificate.table === pattern.certificate.components[0].relation,
       "substituted-fireworks-table",
     );
-  const table = a.node(p.certificate.table).conclusion;
+  const table = a.node(pattern.certificate.table).conclusion;
   requireProof(table.kind === "table" && table.count > 0, "empty-fireworks-relation");
   requireProof(
-    proposal.effects.every((e) => p.selected.includes(e.cell)),
+    proposal.effects.every((effect) => pattern.selected.includes(effect.cell)),
     "outside-fireworks-effect",
   );
-  a.directEffects(p.certificate.table);
+  a.directEffects(pattern.certificate.table);
 }

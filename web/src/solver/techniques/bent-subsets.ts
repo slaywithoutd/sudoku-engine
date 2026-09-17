@@ -15,7 +15,10 @@ import { symbolMask } from "../state/read";
 export class BentSubsets implements PatternStrategy {
   *patterns(view: ReadView, graph: PatternGraph) {
     const cells = view.assembly.problem.cells.filter(
-      (c) => !view.state.values[c] && digits(view, c).length >= 2 && digits(view, c).length <= 6,
+      (cell) =>
+        !view.state.values[cell] &&
+        digits(view, cell).length >= 2 &&
+        digits(view, cell).length <= 6,
     );
     for (const event of combinations(cells, 6, graph.context.workspace)) {
       if (event.kind === "work") {
@@ -26,7 +29,9 @@ export class BentSubsets implements PatternStrategy {
         n = selected.length;
       if (n < 4) continue;
       yield { kind: "work" as const, units: 1 };
-      const symbols = [...new Set(selected.flatMap((c) => digits(view, c)))].sort((a, b) => a - b);
+      const symbols = [...new Set(selected.flatMap((cell) => digits(view, cell)))].sort(
+        (left, right) => left - right,
+      );
       if (symbols.length !== n) continue;
       const conflicts: number[][] = [];
       for (let i = 0; i < n; i++)
@@ -37,44 +42,50 @@ export class BentSubsets implements PatternStrategy {
             conflicts.push([selected[i], selected[j]]);
         }
       const occurrences = Object.fromEntries(
-        symbols.map((s) => [s, selected.filter((c) => view.state.domains[c] & symbolMask(s))]),
+        symbols.map((symbol) => [
+          symbol,
+          selected.filter((cell) => view.state.domains[cell] & symbolMask(symbol)),
+        ]),
       );
-      const unrestricted = symbols.filter((s) =>
-        occurrences[s].some((a, i) =>
-          occurrences[s]
+      const unrestricted = symbols.filter((symbol) =>
+        occurrences[symbol].some((left, i) =>
+          occurrences[symbol]
             .slice(i + 1)
-            .some((b) => !conflicts.some((pair) => pair.includes(a) && pair.includes(b))),
+            .some(
+              (right) => !conflicts.some((pair) => pair.includes(left) && pair.includes(right)),
+            ),
         ),
       );
       if (unrestricted.length !== 1) continue;
-      const z = unrestricted[0];
+      const zDigit = unrestricted[0];
       const effects: Effect[] = [];
       for (const target of view.assembly.problem.cells) {
         yield { kind: "work" as const, units: 1 };
         if (
           !view.state.values[target] &&
           !selected.includes(target) &&
-          view.state.domains[target] & symbolMask(z) &&
-          occurrences[z].every((c) => graph.has(pos(c, z), pos(target, z)))
+          view.state.domains[target] & symbolMask(zDigit) &&
+          occurrences[zDigit].every((cell) => graph.has(pos(cell, zDigit), pos(target, zDigit)))
         )
-          effects.push({ kind: "remove", cell: target, symbol: z });
+          effects.push({ kind: "remove", cell: target, symbol: zDigit });
       }
       if (!effects.length) continue;
-      const values = selected.map((c) => digits(view, c)),
+      const values = selected.map((cell) => digits(view, cell)),
         cursor = values.map(() => 0);
       let done = false,
         survivors = 0,
         counterexample = false;
       while (!done) {
         yield { kind: "work" as const, units: 1 };
-        const assignment = values.map((v, i) => v[cursor[i]]);
+        const assignment = values.map((value, i) => value[cursor[i]]);
         if (
           conflicts.every(
-            ([a, b]) => assignment[selected.indexOf(a)] !== assignment[selected.indexOf(b)],
+            ([left, right]) =>
+              assignment[selected.indexOf(left)] !== assignment[selected.indexOf(right)],
           )
         ) {
           survivors++;
-          if (!assignment.includes(z)) {
+          if (!assignment.includes(zDigit)) {
             counterexample = true;
             break;
           }
@@ -92,7 +103,7 @@ export class BentSubsets implements PatternStrategy {
             alias: n === 4 ? "WXYZ-Wing" : "Bent almost-locked subsets",
             cells: selected,
             symbols,
-            nonrestrictedSymbol: z,
+            nonrestrictedSymbol: zDigit,
             occurrences,
             conflicts,
           },
@@ -101,11 +112,11 @@ export class BentSubsets implements PatternStrategy {
     }
   }
   *compile(view: ReadView, graph: PatternGraph, pattern: Json, effects: Effect[]) {
-    const b = new PatternBuilder(view, graph),
-      root = yield* b.bentTable(pattern as unknown as BentPattern),
+    const builder = new PatternBuilder(view, graph),
+      root = yield* builder.bentTable(pattern as unknown as BentPattern),
       roots: number[] = [];
-    for (const e of effects) roots.push(yield* b.eliminate(root, e));
-    return b.finish("c12@1", pattern, effects, roots);
+    for (const effect of effects) roots.push(yield* builder.eliminate(root, effect));
+    return builder.finish("c12@1", pattern, effects, roots);
   }
 }
 export const bentSubsetTechniques = Object.freeze([

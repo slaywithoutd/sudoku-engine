@@ -9,21 +9,27 @@ export class LockedCandidates {
     for (const cover of view.assembly.covers)
       for (const group of view.assembly.allDifferent) {
         yield { kind: "work", units: 1 };
-        const intersection = cover.cells.filter((c) => group.cells.includes(c));
+        const intersection = cover.cells.filter((cell) => group.cells.includes(cell));
         if (
           !intersection.length ||
           intersection.length === cover.cells.length ||
           intersection.length === group.cells.length
         )
           continue;
-        const cells = cover.cells.filter((c) => view.state.domains[c] & symbolMask(cover.symbol));
-        if (cells.length < 2 || cells.length > 3 || cells.some((c) => !intersection.includes(c)))
+        const cells = cover.cells.filter(
+          (cell) => view.state.domains[cell] & symbolMask(cover.symbol),
+        );
+        if (
+          cells.length < 2 ||
+          cells.length > 3 ||
+          cells.some((cell) => !intersection.includes(cell))
+        )
           continue;
         const targets = group.cells.filter(
-          (c) =>
-            !cover.cells.includes(c) &&
-            !view.state.values[c] &&
-            view.state.domains[c] & symbolMask(cover.symbol),
+          (cell) =>
+            !cover.cells.includes(cell) &&
+            !view.state.values[cell] &&
+            view.state.domains[cell] & symbolMask(cover.symbol),
         );
         if (!targets.length) continue;
         const primary = cover.id.startsWith("box:")

@@ -7,11 +7,12 @@ import { ChainCertificate, candidate, type ChainWork } from "./chains-certificat
 import type { PatternGraph } from "./pattern-runtime";
 import type { SdcPattern, AlignedPattern, CountPattern, SetPattern } from "./set-contracts";
 import { findHouse, symbolMask } from "../state/read";
+import { defined } from "../invariants";
 
 export const setDigits = (mask: number) =>
-  Array.from({ length: 9 }, (_, i) => i + 1).filter((s) => mask & symbolMask(s));
+  Array.from({ length: 9 }, (_, i) => i + 1).filter((symbol) => mask & symbolMask(symbol));
 export const setUnion = (view: ReadView, cells: number[]) =>
-  setDigits(cells.reduce((m, c) => m | view.state.domains[c], 0));
+  setDigits(cells.reduce((mask, cell) => mask | view.state.domains[cell], 0));
 export function* combinations(
   xs: readonly number[],
   size: number,
@@ -30,7 +31,7 @@ export function* assignments(domains: readonly number[]): Generator<number[]> {
   const choices = domains.map(setDigits),
     indexes = choices.map(() => 0);
   if (choices.some((xs) => !xs.length)) return;
-  while (true) {
+  for (;;) {
     yield choices.map((xs, i) => xs[indexes[i]]);
     let at = indexes.length - 1;
     while (at >= 0 && ++indexes[at] === choices[at].length) {
@@ -56,20 +57,23 @@ export class SetCertificate {
     cells: number[],
     scopes: { cells: number[]; house: string }[],
   ): Generator<ChainWork, number> {
-    const b = this.algebra,
+    const certificate = this.algebra,
       constraints: number[] = [];
     for (const scope of scopes) {
       yield { kind: "work", units: 1 };
-      const house = findHouse(this.view, scope.house)!;
+      const house = defined(findHouse(this.view, scope.house), "findHouse");
       const source = matchingFacts(this.view, { kind: "all-different", cells: house.cells }).find(
-        (f) => !f.openAssumptions.length,
+        (fact) => !fact.openAssumptions.length,
       );
       if (!source) throw Error("missing-set-source");
       constraints.push(
-        b.add("all-different-subset@1", [source.id], { kind: "all-different", cells: scope.cells }),
+        certificate.add("all-different-subset@1", [source.id], {
+          kind: "all-different",
+          cells: scope.cells,
+        }),
       );
     }
-    const sources = [...cells.map((c) => this.view.state.domainFacts[c]), ...constraints];
+    const sources = [...cells.map((cell) => this.view.state.domainFacts[cell]), ...constraints];
     const build = function* (box: number[]): Generator<ChainWork, { id: number; count: number }> {
       yield { kind: "work", units: 1 };
       const choices = box.map(setDigits),
@@ -81,14 +85,14 @@ export class SetCertificate {
         left[at] = symbolMask(choices[at][0]);
         right[at] &= ~left[at];
         const a = yield* build(left),
-          c = yield* build(right),
-          count = a.count + c.count;
+          rightTable = yield* build(right),
+          count = a.count + rightTable.count;
         return {
-          id: b.add("table-union@1", [a.id, c.id], {
+          id: certificate.add("table-union@1", [a.id, rightTable.id], {
             kind: "table",
             cells,
             count,
-            definition: b.next,
+            definition: certificate.next,
           }),
           count,
         };
@@ -99,108 +103,138 @@ export class SetCertificate {
         if (
           scopes.every(
             (scope) =>
-              new Set(scope.cells.map((c) => row[cells.indexOf(c)])).size === scope.cells.length,
+              new Set(scope.cells.map((cell) => row[cells.indexOf(cell)])).size ===
+              scope.cells.length,
           )
         )
           count++;
       }
       return {
-        id: b.add(
+        id: certificate.add(
           "table-filter@1",
           sources,
-          { kind: "table", cells, count, definition: b.next },
+          { kind: "table", cells, count, definition: certificate.next },
           { cells, box },
         ),
         count,
       };
     };
-    return (yield* build(cells.map((c) => this.view.state.domains[c]))).id;
+    return (yield* build(cells.map((cell) => this.view.state.domains[cell]))).id;
   }
   *compile(input: SetPattern, effects: Effect[]): Generator<ChainWork, DeductionProposal> {
-    const p = structuredClone(input),
-      b = this.algebra;
-    if (p.kind === "sdc") yield* this.sdc(p, effects);
-    else if (p.kind === "aligned") yield* this.aligned(p, effects);
-    else yield* this.count(p, effects);
+    const pattern = structuredClone(input),
+      certificate = this.algebra;
+    if (pattern.kind === "sdc") yield* this.sdc(pattern, effects);
+    else if (pattern.kind === "aligned") yield* this.aligned(pattern, effects);
+    else yield* this.count(pattern, effects);
     const roots =
-      p.kind === "sdc" ? p.routes.map((r) => r.root) : p.kind === "aligned" ? p.roots : [p.root];
-    return b.close(p.kind === "sdc" ? "c20@1" : "c21@1", p as unknown as Json, effects, roots);
+      pattern.kind === "sdc"
+        ? pattern.routes.map((route) => route.root)
+        : pattern.kind === "aligned"
+          ? pattern.roots
+          : [pattern.root];
+    return certificate.close(
+      pattern.kind === "sdc" ? "c20@1" : "c21@1",
+      pattern as unknown as Json,
+      effects,
+      roots,
+    );
   }
-  private *sdc(p: SdcPattern, effects: Effect[]): Generator<ChainWork> {
-    const cells = [...p.intersection, ...p.lineSide, ...p.boxSide].sort((a, b) => a - b);
-    p.table = yield* this.table(cells, [
-      { cells: [...p.intersection, ...p.lineSide].sort((a, b) => a - b), house: p.line },
-      { cells: [...p.intersection, ...p.boxSide].sort((a, b) => a - b), house: p.box },
+  private *sdc(pattern: SdcPattern, effects: Effect[]): Generator<ChainWork> {
+    const cells = [...pattern.intersection, ...pattern.lineSide, ...pattern.boxSide].sort(
+      (left, right) => left - right,
+    );
+    pattern.table = yield* this.table(cells, [
+      {
+        cells: [...pattern.intersection, ...pattern.lineSide].sort((left, right) => left - right),
+        house: pattern.line,
+      },
+      {
+        cells: [...pattern.intersection, ...pattern.boxSide].sort((left, right) => left - right),
+        house: pattern.box,
+      },
     ]);
-    for (const [i, route] of p.routes.entries()) {
+    for (const [i, route] of pattern.routes.entries()) {
       route.projection = this.algebra.add(
         "table-project@1",
-        [p.table],
-        clause(route.occurrences.map((c) => candidate(c, effects[i].symbol))),
+        [pattern.table],
+        clause(route.occurrences.map((cell) => candidate(cell, effects[i].symbol))),
       );
       route.visibility = [];
-      for (const c of route.occurrences)
+      for (const cell of route.occurrences)
         route.visibility.push(
           yield* this.algebra.weak(
-            candidate(c, effects[i].symbol),
+            candidate(cell, effects[i].symbol),
             candidate(effects[i].cell, effects[i].symbol),
           ),
         );
       route.root = yield* this.algebra.eliminate(route.projection, effects[i]);
     }
   }
-  private *aligned(p: AlignedPattern, effects: Effect[]): Generator<ChainWork> {
-    const b = this.algebra;
-    for (const a of p.auxiliaries) a.table = yield* this.table(a.cells, [a]);
-    const pairs = p.selected.flatMap((a, i) => p.selected.slice(i + 1).map((c) => [a, c]));
-    p.rejections = [];
+  private *aligned(pattern: AlignedPattern, effects: Effect[]): Generator<ChainWork> {
+    const certificate = this.algebra;
+    for (const set of pattern.auxiliaries) set.table = yield* this.table(set.cells, [set]);
+    const pairs = pattern.selected.flatMap((left, i) =>
+      pattern.selected.slice(i + 1).map((cell) => [left, cell]),
+    );
+    pattern.rejections = [];
     let index = 0;
-    for (const tuple of assignments(p.domains)) {
+    for (const tuple of assignments(pattern.domains)) {
       yield { kind: "work", units: 1 };
-      const reason = p.reasons[index++];
+      const reason = pattern.reasons[index++];
       if (!reason) {
-        p.rejections.push(-1);
+        pattern.rejections.push(-1);
         continue;
       }
       if (reason < 0) {
         const pair = pairs[-reason - 1];
-        p.rejections.push(
-          yield* b.weak(
-            candidate(pair[0], tuple[p.selected.indexOf(pair[0])]),
-            candidate(pair[1], tuple[p.selected.indexOf(pair[1])]),
+        pattern.rejections.push(
+          yield* certificate.weak(
+            candidate(pair[0], tuple[pattern.selected.indexOf(pair[0])]),
+            candidate(pair[1], tuple[pattern.selected.indexOf(pair[1])]),
           ),
         );
         continue;
       }
-      const auxiliary = p.auxiliaries[reason - 1],
+      const auxiliary = pattern.auxiliaries[reason - 1],
         blocked: { literal: Literal; selected: number }[] = [];
       for (const cell of auxiliary.cells)
         for (const symbol of setDigits(this.view.state.domains[cell])) {
           yield { kind: "work", units: 1 };
-          const selected = p.selected.findIndex((c, i) =>
+          const selected = pattern.selected.findIndex((c, i) =>
             this.graph.has(candidate(cell, symbol), candidate(c, tuple[i])),
           );
           if (selected >= 0) blocked.push({ literal: candidate(cell, symbol), selected });
         }
-      let root = b.add("table-project@1", [auxiliary.table], clause(blocked.map((v) => v.literal)));
-      for (const v of blocked)
-        root = b.resolve(
+      let root = certificate.add(
+        "table-project@1",
+        [auxiliary.table],
+        clause(blocked.map((value) => value.literal)),
+      );
+      for (const value of blocked)
+        root = certificate.resolve(
           root,
-          yield* b.weak(v.literal, candidate(p.selected[v.selected], tuple[v.selected])),
-          v.literal,
+          yield* certificate.weak(
+            value.literal,
+            candidate(pattern.selected[value.selected], tuple[value.selected]),
+          ),
+          value.literal,
         );
-      p.rejections.push(root);
+      pattern.rejections.push(root);
     }
-    const sources = [...p.selected.map((c) => b.cell(c)), ...p.rejections.filter((n) => n >= 0)];
-    const packaged = b
-      .package([...sources, ...p.auxiliaries.map((a) => a.table)])
+    const sources = [
+      ...pattern.selected.map((cell) => certificate.cell(cell)),
+      ...pattern.rejections.filter((n) => n >= 0),
+    ];
+    const packaged = certificate
+      .package([...sources, ...pattern.auxiliaries.map((set) => set.table)])
       .slice(0, sources.length);
     const mapped = new Map(sources.map((id, i) => [id, packaged[i]]));
-    p.roots = [];
+    pattern.roots = [];
     // Eliminate only the declared 2..4 selected variables. A recursive cell
     // cover resolution avoids exponential generic clause cross-products.
-    for (const e of effects) {
-      const rest = p.selected.filter((c) => c !== e.cell);
+    for (const effect of effects) {
+      const rest = pattern.selected.filter((cell) => cell !== effect.cell);
       const infer = function* (
         depth: number,
         values: Map<number, number>,
@@ -208,60 +242,78 @@ export class SetCertificate {
         yield { kind: "work", units: 1 };
         if (depth === rest.length) {
           let tupleIndex = 0;
-          for (let i = 0; i < p.selected.length; i++)
+          for (let i = 0; i < pattern.selected.length; i++)
             tupleIndex =
-              tupleIndex * setDigits(p.domains[i]).length +
-              setDigits(p.domains[i]).indexOf(values.get(p.selected[i])!);
-          const root = p.rejections[tupleIndex];
+              tupleIndex * setDigits(pattern.domains[i]).length +
+              setDigits(pattern.domains[i]).indexOf(
+                defined(values.get(pattern.selected[i]), "value"),
+              );
+          const root = pattern.rejections[tupleIndex];
           if (root < 0) throw Error("retained-aligned-candidate");
-          return mapped.get(root)!;
+          return defined(mapped.get(root), "mapped");
         }
         const cell = rest[depth],
-          alternatives = setDigits(b.view.state.domains[cell]);
-        let root = mapped.get(b.cell(cell))!;
+          alternatives = setDigits(certificate.view.state.domains[cell]);
+        let root = defined(mapped.get(certificate.cell(cell)), "mapped");
         for (const symbol of alternatives) {
           values.set(cell, symbol);
           const rejected = yield* infer(depth + 1, values);
-          if (!literals(b.values.get(rejected)!).some((l) => l.cell === cell)) return rejected;
-          root = b.resolve(root, rejected, candidate(cell, symbol));
+          if (
+            !literals(defined(certificate.values.get(rejected), "value")).some(
+              (literal) => literal.cell === cell,
+            )
+          )
+            return rejected;
+          root = certificate.resolve(root, rejected, candidate(cell, symbol));
         }
         return root;
       };
-      p.roots.push(yield* infer(0, new Map([[e.cell, e.symbol]])));
+      pattern.roots.push(yield* infer(0, new Map([[effect.cell, effect.symbol]])));
     }
   }
-  private *count(p: CountPattern, _effects: Effect[]): Generator<ChainWork> {
-    const b = this.algebra;
-    for (const scope of p.scopes) {
+  private *count(pattern: CountPattern, _effects: Effect[]): Generator<ChainWork> {
+    const certificate = this.algebra;
+    for (const scope of pattern.scopes) {
       yield { kind: "work", units: 1 };
-      const house = findHouse(this.view, scope.house)!;
+      const house = defined(findHouse(this.view, scope.house), "findHouse");
       const fact = matchingFacts(this.view, { kind: "all-different", cells: house.cells }).find(
         (f) => !f.openAssumptions.length,
       );
       if (!fact) throw Error("missing-set-source");
-      scope.root = b.add("all-different-subset@1", [fact.id], {
+      scope.root = certificate.add("all-different-subset@1", [fact.id], {
         kind: "all-different",
         cells: scope.cells,
       });
     }
-    const cells = [...new Set([...p.cells, p.target.cell])].sort((a, c) => a - c);
-    p.assumption = b.add("assume@1", [], clause([candidate(p.target.cell, p.target.symbol)]));
-    b.scope = [p.assumption];
-    p.contradiction = b.add(
+    const cells = [...new Set([...pattern.cells, pattern.target.cell])].sort(
+      (left, cell) => left - cell,
+    );
+    pattern.assumption = certificate.add(
+      "assume@1",
+      [],
+      clause([candidate(pattern.target.cell, pattern.target.symbol)]),
+    );
+    certificate.scope = [pattern.assumption];
+    pattern.contradiction = certificate.add(
       "subset-count@1",
       [
-        p.assumption,
-        ...cells.map((c) => this.view.state.domainFacts[c]),
-        ...p.scopes.map((s) => s.root),
+        pattern.assumption,
+        ...cells.map((cell) => this.view.state.domainFacts[cell]),
+        ...pattern.scopes.map((scope) => scope.root),
       ],
       { kind: "false" },
-      { cells: p.cells, symbols: p.symbols, capacities: p.capacities, target: p.target },
+      {
+        cells: pattern.cells,
+        symbols: pattern.symbols,
+        capacities: pattern.capacities,
+        target: pattern.target,
+      },
     );
-    b.scope = [];
-    p.root = b.add(
+    certificate.scope = [];
+    pattern.root = certificate.add(
       "discharge@1",
-      [p.assumption, p.contradiction],
-      clause([{ ...candidate(p.target.cell, p.target.symbol), positive: false }]),
+      [pattern.assumption, pattern.contradiction],
+      clause([{ ...candidate(pattern.target.cell, pattern.target.symbol), positive: false }]),
     );
   }
 }

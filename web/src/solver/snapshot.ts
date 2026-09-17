@@ -49,31 +49,42 @@ function assertFields(value: object, allowed: readonly string[]): void {
     throw new ProblemInputError("missing-field", `source is missing ${missing}`);
 }
 
+/** What a source reference may contain before validation. */
+type SourceClaim = {
+  readonly kind?: unknown;
+  readonly id?: unknown;
+  readonly name?: unknown;
+  readonly libraryRevision?: unknown;
+  readonly unsaved?: unknown;
+};
+
 function copySource(source: SourceRef): SourceRef {
-  if (source === null || typeof source !== "object" || Array.isArray(source))
+  const claim = source as SourceClaim | null | undefined;
+  if (claim === null || typeof claim !== "object" || Array.isArray(claim))
     throw new ProblemInputError("invalid-source", "source must be an object");
-  if (source.kind === "manual" || source.kind === "paste") {
-    assertFields(source, ["kind"]);
-    return Object.freeze({ kind: source.kind });
+  if (claim.kind === "manual" || claim.kind === "paste") {
+    assertFields(claim, ["kind"]);
+    return Object.freeze({ kind: claim.kind });
   }
-  if (source.kind !== "draft" && source.kind !== "puzzle")
+  if (claim.kind !== "draft" && claim.kind !== "puzzle")
     throw new ProblemInputError("invalid-source", "source.kind is unsupported");
-  assertFields(source, ["kind", "id", "name", "libraryRevision", "unsaved"]);
+  assertFields(claim, ["kind", "id", "name", "libraryRevision", "unsaved"]);
   if (
-    typeof source.id !== "string" ||
-    source.id.length === 0 ||
-    typeof source.name !== "string" ||
-    !Number.isSafeInteger(source.libraryRevision) ||
-    source.libraryRevision < 0 ||
-    typeof source.unsaved !== "boolean"
+    typeof claim.id !== "string" ||
+    claim.id.length === 0 ||
+    typeof claim.name !== "string" ||
+    typeof claim.libraryRevision !== "number" ||
+    !Number.isSafeInteger(claim.libraryRevision) ||
+    claim.libraryRevision < 0 ||
+    typeof claim.unsaved !== "boolean"
   )
     throw new ProblemInputError("invalid-source", "source metadata is malformed");
   return Object.freeze({
-    kind: source.kind,
-    id: source.id,
-    name: source.name,
-    libraryRevision: source.libraryRevision,
-    unsaved: source.unsaved,
+    kind: claim.kind,
+    id: claim.id,
+    name: claim.name,
+    libraryRevision: claim.libraryRevision,
+    unsaved: claim.unsaved,
   });
 }
 

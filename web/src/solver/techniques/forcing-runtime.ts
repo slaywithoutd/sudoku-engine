@@ -15,6 +15,7 @@ import {
   type ForcingLink,
   type ForcingReason,
 } from "./forcing-proof";
+import { defined } from "../invariants";
 type Work = { kind: "work"; units: number };
 
 /** Invocation-owned scalar graph; static branches borrow this frozen graph. */
@@ -28,22 +29,22 @@ export class ForcingGraph {
   *prepare(index: ImplicationIndex): Generator<Work> {
     for (const edge of index.edges) {
       yield { kind: "work", units: 1 };
-      const r = edge.recipe;
-      if (r.kind === "relation-conflict") continue;
-      const [a, b] = edge.literals;
+      const recipe = edge.recipe;
+      if (recipe.kind === "relation-conflict") continue;
+      const [literal, b] = edge.literals;
       let reason: ForcingReason;
-      if (r.kind === "cell-conflict" || r.kind === "cell-cover")
-        reason = { kind: r.kind, cell: a.cell };
+      if (recipe.kind === "cell-conflict" || recipe.kind === "cell-cover")
+        reason = { kind: recipe.kind, cell: literal.cell };
       else {
-        const p = this.view.facts.get(r.source)!.proposition;
-        if (!("cells" in p)) continue;
-        const h = findHouseEqualTo(this.view, p.cells);
-        if (!h) continue;
-        reason = { kind: r.kind, house: h.id, symbol: a.symbol };
+        const proposition = defined(this.view.facts.get(recipe.source), "fact").proposition;
+        if (!("cells" in proposition)) continue;
+        const house = findHouseEqualTo(this.view, proposition.cells);
+        if (!house) continue;
+        reason = { kind: recipe.kind, house: house.id, symbol: literal.symbol };
       }
       for (const [x, y] of [
-        [a, b],
-        [b, a],
+        [literal, b],
+        [b, literal],
       ]) {
         const from = edge.kind === "weak" ? x : opposite(x),
           to = edge.kind === "weak" ? opposite(y) : y,
@@ -56,11 +57,11 @@ export class ForcingGraph {
     }
     for (const list of this.arcs.values())
       list.sort(
-        (a, b) =>
-          a.to.cell - b.to.cell ||
-          a.to.symbol - b.to.symbol ||
-          Number(a.to.positive) - Number(b.to.positive) ||
-          JSON.stringify(a.reason).localeCompare(JSON.stringify(b.reason)),
+        (left, right) =>
+          left.to.cell - right.to.cell ||
+          left.to.symbol - right.to.symbol ||
+          Number(left.to.positive) - Number(right.to.positive) ||
+          JSON.stringify(left.reason).localeCompare(JSON.stringify(right.reason)),
       );
   }
   *paths(
@@ -77,7 +78,7 @@ export class ForcingGraph {
       for (let cursor = 0; cursor < queue.length; cursor++) {
         const item = queue[cursor],
           from = item.value,
-          path = visited.get(signedKey(from) + ":" + item.changed)!;
+          path = defined(visited.get(signedKey(from) + ":" + item.changed), "visited");
         if (path.length === 24) continue;
         for (const link of this.arcs.get(signedKey(from)) ?? []) {
           yield { kind: "work", units: 1 };
@@ -109,13 +110,13 @@ export class ForcingGraph {
     let best: ForcingLink[][] | undefined;
     for (const path of paths.values()) {
       const value = path.at(-1)?.to ?? assumption,
-        other = paths.get(signedKey(opposite(value)));
+        oppositePaths = paths.get(signedKey(opposite(value)));
       if (
-        other &&
-        path.length + other.length <= 24 &&
-        (!best || path.length + other.length < best[0].length + best[1].length)
+        oppositePaths &&
+        path.length + oppositePaths.length <= 24 &&
+        (!best || path.length + oppositePaths.length < best[0].length + best[1].length)
       )
-        best = [path, other];
+        best = [path, oppositePaths];
     }
     return best;
   }
@@ -134,7 +135,7 @@ function* splits(view: ReadView): Generator<Split> {
       if (!view.state.values[cell])
         for (const symbol of symbols(view, cell)) yield { cell, symbol, positive: true } as Literal;
   };
-  const digit = function* (kind: "digit" | "nishio") {
+  const digitCovers = function* (kind: "digit" | "nishio") {
     for (const candidate of candidates())
       if (symbols(view, candidate.cell).length >= 2)
         yield {
@@ -143,7 +144,7 @@ function* splits(view: ReadView): Generator<Split> {
           alternatives: kind === "digit" ? [candidate, opposite(candidate)] : [candidate],
         };
   };
-  const cell = function* () {
+  const cellCovers = function* () {
     for (const cell of view.assembly.problem.cells)
       if (!view.state.values[cell]) {
         const alternatives = symbols(view, cell).map((symbol) => ({
@@ -165,7 +166,7 @@ function* splits(view: ReadView): Generator<Split> {
           yield { kind: "unit" as const, cover: { house: house.id, symbol }, alternatives };
       }
   };
-  const cursors = [digit("digit"), cell(), unit(), digit("nishio")];
+  const cursors = [digitCovers("digit"), cellCovers(), unit(), digitCovers("nishio")];
   try {
     while (cursors.length)
       for (let i = 0; i < cursors.length;) {
@@ -201,7 +202,7 @@ export function* discoverForcing(view: ReadView, context: DiscoveryContext): Dis
       tick();
       if (event.kind === "work") yield event;
     }
-    for (const event of graph.prepare(index!)) {
+    for (const event of graph.prepare(defined(index, "index"))) {
       tick();
       yield event;
     }
@@ -254,14 +255,20 @@ export function* discoverForcing(view: ReadView, context: DiscoveryContext): Dis
                     symbol !== split.alternatives[0].symbol)
                 )
                   continue;
-                if (results.every((r) => r.falsePaths || r.paths.has(signedKey(target)))) {
+                if (
+                  results.every(
+                    (result) => result.falsePaths || result.paths.has(signedKey(target)),
+                  )
+                ) {
                   const plan: ForcingPlan = {
                     ...split,
                     alias: forcingAliases[split.kind],
-                    branches: results.map((r) => ({
-                      assumption: r.assumption,
-                      result: r.falsePaths ? "false" : target,
-                      paths: r.falsePaths ?? [r.paths.get(signedKey(target))!],
+                    branches: results.map((result) => ({
+                      assumption: result.assumption,
+                      result: result.falsePaths ? "false" : target,
+                      paths: result.falsePaths ?? [
+                        defined(result.paths.get(signedKey(target)), "path"),
+                      ],
                     })),
                   };
                   if (split.kind === "nishio" && !results[0].falsePaths) continue;
@@ -313,22 +320,25 @@ export function* discoverForcing(view: ReadView, context: DiscoveryContext): Dis
 }
 /** Shared descriptor metadata, with family-owned bounded discovery strategies. */
 export function forcingDescriptor(
-  row: "C22" | "C23" | "C24",
+  family: "C22" | "C23" | "C24",
   discover: TechniqueDescriptor["discover"],
 ): TechniqueDescriptor {
-  const e = coverageEntries.find((e) => e.id === row)!;
+  const entry = defined(
+    coverageEntries.find((entry) => entry.id === family),
+    "coverageEntry",
+  );
   return Object.freeze({
-    id: e.version,
-    aliases: e.aliases,
-    tier: e.tier,
-    requires: e.capabilities,
-    assumptionPolicy: e.assumptionPolicy,
+    id: entry.version,
+    aliases: entry.aliases,
+    tier: entry.tier,
+    requires: entry.capabilities,
+    assumptionPolicy: entry.assumptionPolicy,
     bounds: {
       maxLength: 24,
-      maxBranchDepth: row === "C23" ? 2 : 1,
-      maxAlternatives: row === "C24" ? 2 : 9,
+      maxBranchDepth: family === "C23" ? 2 : 1,
+      maxAlternatives: family === "C24" ? 2 : 9,
       maxPatternCells: 81,
-      maxSetSize: row === "C24" ? 4 : 0,
+      maxSetSize: family === "C24" ? 4 : 0,
     },
     watches: () => [{ kind: "all" as const }],
     eligible: (view: ReadView) => {

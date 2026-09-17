@@ -10,6 +10,7 @@ import { chainProofFits, type ChainWork } from "./chains-certificate";
 import { combinations, setUnion, SetCertificate } from "./set-certificate";
 import type { LocalSet, SetPattern } from "./set-contracts";
 import { assertOwnedView } from "../state/candidates";
+import { defined } from "../invariants";
 
 export type SetCandidate = { kind: "candidate"; pattern: SetPattern; effects: Effect[] };
 export type SetCursor = Generator<ChainWork | SetCandidate>;
@@ -23,28 +24,32 @@ function eligibility(
   view: ReadView,
   id: "C20" | "C21",
 ): ReturnType<TechniqueDescriptor["eligible"]> {
-  const scopes = view.assembly.allDifferent.filter((h) =>
-    matchingFacts(view, { kind: "all-different", cells: h.cells }).some(
-      (f) => !f.openAssumptions.length,
+  const scopes = view.assembly.allDifferent.filter((house) =>
+    matchingFacts(view, { kind: "all-different", cells: house.cells }).some(
+      (fact) => !fact.openAssumptions.length,
     ),
   );
   const lines = scopes.filter(
-    (h) =>
-      h.cells.length === 9 &&
-      (new Set(h.cells.map((c) => Math.floor(c / 9))).size === 1 ||
-        new Set(h.cells.map((c) => c % 9)).size === 1),
+    (house) =>
+      house.cells.length === 9 &&
+      (new Set(house.cells.map((cell) => Math.floor(cell / 9))).size === 1 ||
+        new Set(house.cells.map((cell) => cell % 9)).size === 1),
   );
   const boxes = scopes.filter(
-    (h) =>
-      h.cells.length === 9 &&
-      new Set(h.cells.map((c) => Math.floor(c / 27) * 3 + Math.floor((c % 9) / 3))).size === 1,
+    (house) =>
+      house.cells.length === 9 &&
+      new Set(house.cells.map((cell) => Math.floor(cell / 27) * 3 + Math.floor((cell % 9) / 3)))
+        .size === 1,
   );
   const capable =
     id === "C20"
-      ? lines.some((a) =>
-          boxes.some((b) => a.cells.filter((c) => b.cells.includes(c)).length === 3),
+      ? lines.some((left) =>
+          boxes.some(
+            (right) => left.cells.filter((cell) => right.cells.includes(cell)).length === 3,
+          ),
         )
-      : scopes.length > 0 || sourceFacts(view, "relation").some((f) => !f.openAssumptions.length);
+      : scopes.length > 0 ||
+        sourceFacts(view, "relation").some((fact) => !fact.openAssumptions.length);
   return capable
     ? { kind: "yes" }
     : { kind: "excluded", reason: "missing-set-capability", dependencies: [{ kind: "all" }] };
@@ -64,11 +69,11 @@ export function* localSets(
     yield { kind: "work", units: 1 };
     if (
       !matchingFacts(view, { kind: "all-different", cells: house.cells }).some(
-        (f) => !f.openAssumptions.length,
+        (fact) => !fact.openAssumptions.length,
       )
     )
       continue;
-    const empty = house.cells.filter((c) => !view.state.values[c]);
+    const empty = house.cells.filter((cell) => !view.state.values[cell]);
     for (let size = 1; size <= Math.min(max, empty.length); size++)
       for (const cells of combinations(empty, size)) {
         yield { kind: "work", units: 1 };
@@ -86,13 +91,16 @@ export function* localSets(
 /** One finite cursor per semantic size form, round-robin serviced. Both index
  * transfer and per-yield proposal ownership are explicit across cancellation. */
 export function setDescriptor(id: "C20" | "C21", strategy: SetStrategy): TechniqueDescriptor {
-  const row = coverageEntries.find((e) => e.id === id)!;
+  const entry = defined(
+    coverageEntries.find((entry) => entry.id === id),
+    "coverageEntry",
+  );
   return Object.freeze({
-    id: row.version,
-    aliases: row.aliases,
-    tier: row.tier,
-    requires: row.capabilities,
-    assumptionPolicy: row.assumptionPolicy,
+    id: entry.version,
+    aliases: entry.aliases,
+    tier: entry.tier,
+    requires: entry.capabilities,
+    assumptionPolicy: entry.assumptionPolicy,
     bounds: {
       maxLength: 0,
       maxBranchDepth: id === "C21" ? 1 : 0,
@@ -137,7 +145,7 @@ export function setDescriptor(id: "C20" | "C21", strategy: SetStrategy): Techniq
         const preparer = localSets(view, graph, id === "C20" ? 4 : 5);
         let sets: LocalSet[];
         try {
-          while (true) {
+          for (;;) {
             tick();
             const event = preparer.next();
             if (event.done) {
@@ -168,7 +176,7 @@ export function setDescriptor(id: "C20" | "C21", strategy: SetStrategy): Techniq
               event.value.effects,
             );
             try {
-              while (true) {
+              for (;;) {
                 tick();
                 const step = compiler.next();
                 if (step.done) {
@@ -194,7 +202,7 @@ export function setDescriptor(id: "C20" | "C21", strategy: SetStrategy): Techniq
           yield { kind: "interrupted", reason: "work-limit" };
         else throw error;
       } finally {
-        cursors.forEach((c) => c.return(undefined));
+        cursors.forEach((cursor) => cursor.return(undefined));
         lease?.dispose();
         index?.dispose();
       }

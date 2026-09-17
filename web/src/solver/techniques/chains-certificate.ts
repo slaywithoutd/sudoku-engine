@@ -5,6 +5,7 @@ import type { DeductionProposal, Effect, Limits } from "../proof/types";
 import { clause, literals } from "../proof/primitives";
 import { PatternBuilder, type PatternGraph } from "./pattern-runtime";
 import { findHouse, symbolMask } from "../state/read";
+import { defined } from "../invariants";
 
 /** An event means OR of all its members. ALS events deliberately have no group-size cap. */
 export interface ChainEvent {
@@ -37,7 +38,7 @@ export const candidate = (cell: number, symbol: number): Literal => ({
   symbol,
   positive: true,
 });
-export const literalKey = (l: Literal): string => `${l.cell}:${l.symbol}`;
+export const literalKey = (literal: Literal): string => `${literal.cell}:${literal.symbol}`;
 export const eventKey = (e: ChainEvent): string =>
   `${e.als ? `als:${e.als.join()}:` : ""}${e.members.map(literalKey).join("/")}`;
 export type ChainWork = { kind: "work"; units: number };
@@ -76,7 +77,7 @@ export class ChainCertificate extends PatternBuilder {
     const key = JSON.stringify([rule, premises, conclusion, parameters, this.scope]),
       old = this.memo.get(key);
     if (old !== undefined) return old;
-    this.graph.compilation!.grow(
+    defined(this.graph.compilation, "compilation").grow(
       1,
       2048 + JSON.stringify(conclusion).length * 4 + premises.length * 16,
     );
@@ -93,38 +94,41 @@ export class ChainCertificate extends PatternBuilder {
     if (source.kind === "cell") return this.cell(source.cell);
     if (source.kind === "house") return this.house(source.house, source.symbol);
     if (source.kind === "proved-cover") {
-      const fact = this.view.facts.get(source.source)!.proposition;
-      if (fact.kind !== "cover") throw Error("missing-proved-cover");
-      const cells = fact.cells.filter(
-        (c) => this.view.state.domains[c] & symbolMask(source.symbol),
+      const proposition = defined(this.view.facts.get(source.source), "fact").proposition;
+      if (proposition.kind !== "cover") throw Error("missing-proved-cover");
+      const cells = proposition.cells.filter(
+        (cell) => this.view.state.domains[cell] & symbolMask(source.symbol),
       );
       const support = this.add(
         "support@1",
-        [source.source, ...fact.cells.map((c) => this.view.state.domainFacts[c])],
+        [source.source, ...proposition.cells.map((cell) => this.view.state.domainFacts[cell])],
         { kind: "cover", symbol: source.symbol, cells },
       );
       return this.add(
         "cover-clause@1",
         [support],
-        clause(cells.map((c) => candidate(c, source.symbol))),
+        clause(cells.map((cell) => candidate(cell, source.symbol))),
       );
     }
-    const house = findHouse(this.view, source.house)!;
-    const fact = matchingFacts(this.view, { kind: "all-different", cells: house.cells }).find(
-      (f) => !f.openAssumptions.length,
-    )!;
+    const house = defined(findHouse(this.view, source.house), "findHouse");
+    const fact = defined(
+      matchingFacts(this.view, { kind: "all-different", cells: house.cells }).find(
+        (f) => !f.openAssumptions.length,
+      ),
+      "find",
+    );
     const subset = this.add("all-different-subset@1", [fact.id], {
       kind: "all-different",
       cells: source.cells,
     });
-    const premises = [...source.cells.map((c) => this.view.state.domainFacts[c]), subset];
+    const premises = [...source.cells.map((cell) => this.view.state.domainFacts[cell]), subset];
     const recurse = function* (
       this: ChainCertificate,
       box: number[],
     ): Generator<ChainWork, { id: number; count: number }> {
       yield { kind: "work", units: 1 };
       const choices = box.map((mask) =>
-        this.view.assembly.problem.symbols.filter((s) => mask & symbolMask(s)),
+        this.view.assembly.problem.symbols.filter((symbol) => mask & symbolMask(symbol)),
       );
       if (choices.reduce((n, xs) => n * xs.length, 1) > 256) {
         const at = choices.findIndex((xs) => xs.length > 1),
@@ -167,7 +171,7 @@ export class ChainCertificate extends PatternBuilder {
     };
     const table = yield* recurse.call(
       this,
-      source.cells.map((c) => this.view.state.domains[c]),
+      source.cells.map((cell) => this.view.state.domains[cell]),
     );
     return this.add("table-project@1", [table.id], clause(members));
   }
@@ -176,7 +180,9 @@ export class ChainCertificate extends PatternBuilder {
   *derive(sources: number[], target: Literal): Generator<ChainWork, number> {
     let active = [...new Set(sources)];
     const variables = [
-      ...new Set(active.flatMap((id) => literals(this.values.get(id)!).map(literalKey))),
+      ...new Set(
+        active.flatMap((id) => literals(defined(this.values.get(id), "value")).map(literalKey)),
+      ),
     ].filter((k) => k !== literalKey(target));
     for (const variable of variables) {
       const plus: number[] = [],
@@ -184,29 +190,39 @@ export class ChainCertificate extends PatternBuilder {
         rest: number[] = [];
       for (const id of active) {
         yield { kind: "work", units: 1 };
-        const terms = literals(this.values.get(id)!);
-        if (terms.some((l) => literalKey(l) === variable && l.positive)) plus.push(id);
-        else if (terms.some((l) => literalKey(l) === variable && !l.positive)) minus.push(id);
+        const terms = literals(defined(this.values.get(id), "value"));
+        if (terms.some((literal) => literalKey(literal) === variable && literal.positive))
+          plus.push(id);
+        else if (terms.some((literal) => literalKey(literal) === variable && !literal.positive))
+          minus.push(id);
         else rest.push(id);
       }
       const seen = new Set(rest.map((id) => JSON.stringify(this.values.get(id))));
-      for (const a of plus)
-        for (const b of minus) {
+      for (const left of plus)
+        for (const right of minus) {
           yield { kind: "work", units: 1 };
-          const pivot = literals(this.values.get(a)!).find((l) => literalKey(l) === variable)!;
-          const terms = [...literals(this.values.get(a)!), ...literals(this.values.get(b)!)].filter(
-            (l) => literalKey(l) !== variable,
+          const pivot = defined(
+            literals(defined(this.values.get(left), "value")).find(
+              (literal) => literalKey(literal) === variable,
+            ),
+            "find",
           );
+          const terms = [
+            ...literals(defined(this.values.get(left), "value")),
+            ...literals(defined(this.values.get(right), "value")),
+          ].filter((literal) => literalKey(literal) !== variable);
           if (
-            terms.some((l) =>
-              terms.some((r) => literalKey(r) === literalKey(l) && r.positive !== l.positive),
+            terms.some((literal) =>
+              terms.some(
+                (r) => literalKey(r) === literalKey(literal) && r.positive !== literal.positive,
+              ),
             )
           )
             continue;
           const key = JSON.stringify(clause(terms));
           if (seen.has(key)) continue;
           seen.add(key);
-          rest.push(this.resolve(a, b, pivot));
+          rest.push(this.resolve(left, right, pivot));
         }
       active = rest;
     }
@@ -230,44 +246,57 @@ export class ChainCertificate extends PatternBuilder {
     for (const source of sources.slice(1)) {
       const pair = this.add("conjunction@1", [carrier, source], {
         kind: "and",
-        terms: [this.values.get(carrier)!, this.values.get(source)!],
+        terms: [
+          defined(this.values.get(carrier), "value"),
+          defined(this.values.get(source), "value"),
+        ],
       });
-      carrier = this.add("conjunction@1", [pair], this.values.get(carrier)!, { index: 0 });
+      carrier = this.add("conjunction@1", [pair], defined(this.values.get(carrier), "value"), {
+        index: 0,
+      });
     }
     return sources.map((source, index) => {
       if (!index) return carrier;
       const pair = this.add("conjunction@1", [carrier, source], {
         kind: "and",
-        terms: [this.values.get(carrier)!, this.values.get(source)!],
+        terms: [
+          defined(this.values.get(carrier), "value"),
+          defined(this.values.get(source), "value"),
+        ],
       });
-      return this.add("conjunction@1", [pair], this.values.get(source)!, { index: 1 });
+      return this.add("conjunction@1", [pair], defined(this.values.get(source), "value"), {
+        index: 1,
+      });
     });
   }
 
   /** Domain closure honors positive placements; prune only algebra branches unused by any result. */
   close(technique: string, pattern: Json, effects: Effect[], roots: number[]): DeductionProposal {
     const domains = new Map<number, { id: number; mask: number }>();
-    effects.forEach((e, i) => {
-      const prior = domains.get(e.cell) ?? {
-        id: this.view.state.domainFacts[e.cell],
-        mask: this.view.state.domains[e.cell],
+    effects.forEach((effect, i) => {
+      const prior = domains.get(effect.cell) ?? {
+        id: this.view.state.domainFacts[effect.cell],
+        mask: this.view.state.domains[effect.cell],
       };
-      const mask = e.kind === "place" ? symbolMask(e.symbol) : prior.mask & ~symbolMask(e.symbol);
-      domains.set(e.cell, {
+      const mask =
+        effect.kind === "place"
+          ? symbolMask(effect.symbol)
+          : prior.mask & ~symbolMask(effect.symbol);
+      domains.set(effect.cell, {
         id: this.add("domain-restrict@1", [prior.id, roots[i]], {
           kind: "domain",
-          cell: e.cell,
+          cell: effect.cell,
           mask,
         }),
         mask,
       });
     });
-    const end = [...new Set([...roots, ...[...domains.values()].map((d) => d.id)])];
+    const end = [...new Set([...roots, ...[...domains.values()].map((domain) => domain.id)])];
     const byId = new Map(this.nodes.map((n) => [n.id, n])),
       needed = new Set<number>(),
       pending = [...end];
     while (pending.length) {
-      const id = pending.pop()!;
+      const id = defined(pending.pop(), "pending");
       if (needed.has(id)) continue;
       needed.add(id);
       pending.push(...(byId.get(id)?.premises ?? []));
@@ -280,7 +309,9 @@ export class ChainCertificate extends PatternBuilder {
       proof: {
         state: this.view.state.key,
         nodes: this.nodes.filter((n) => needed.has(n.id)),
-        imports: [...needed].filter((id) => this.view.facts.has(id)).sort((a, b) => a - b),
+        imports: [...needed]
+          .filter((id) => this.view.facts.has(id))
+          .sort((left, right) => left - right),
         roots: end,
       },
     };
@@ -294,53 +325,70 @@ export function* compileChain(
   input: ChainPattern,
   effects: Effect[],
 ): Generator<ChainWork, DeductionProposal> {
-  const b = new ChainCertificate(view, graph),
-    p = structuredClone(input);
-  for (let i = 0; i < p.links.length; i++) {
-    const a = p.vertices[i].members,
-      next = p.vertices[(i + 1) % p.vertices.length].members,
-      link = p.links[i];
+  const certificate = new ChainCertificate(view, graph),
+    pattern = structuredClone(input);
+  for (let i = 0; i < pattern.links.length; i++) {
+    const left = pattern.vertices[i].members,
+      next = pattern.vertices[(i + 1) % pattern.vertices.length].members,
+      link = pattern.links[i];
     link.roots = [];
-    if (link.kind === "strong") link.roots.push(yield* b.strong(link.source!, [...a, ...next]));
-    else for (const x of a) for (const y of next) link.roots.push(yield* b.weak(x, y));
+    if (link.kind === "strong")
+      link.roots.push(
+        yield* certificate.strong(defined(link.source, "source"), [...left, ...next]),
+      );
+    else for (const x of left) for (const y of next) link.roots.push(yield* certificate.weak(x, y));
   }
-  const raw = p.links.flatMap((l) => l.roots),
-    packaged = b.package(raw),
+  const raw = pattern.links.flatMap((link) => link.roots),
+    packaged = certificate.package(raw),
     mapped = new Map(raw.map((id, i) => [id, packaged[i]]));
   const roots: number[] = [];
-  for (const [i, e] of effects.entries()) {
-    const cut = p.cuts[i],
-      ids = p.links.flatMap((l, j) => (j === cut ? [] : l.roots.map((id) => mapped.get(id)!)));
-    if (p.polarity === null) {
-      const order = p.vertices.map((_, j) => (p.closed ? (cut + 1 + j) % p.vertices.length : j));
+  for (const [i, effect] of effects.entries()) {
+    const cut = pattern.cuts[i],
+      ids = pattern.links.flatMap((link, j) =>
+        j === cut ? [] : link.roots.map((id) => defined(mapped.get(id), "mapped")),
+      );
+    if (pattern.polarity === null) {
+      const order = pattern.vertices.map((_, j) =>
+        pattern.closed ? (cut + 1 + j) % pattern.vertices.length : j,
+      );
       const strong = order
         .slice(0, -1)
         .filter((_, j) => j % 2 === 0)
-        .map((at) => mapped.get(p.links[at].roots[0])!);
-      const endpoint = yield* b.path(
-        order.map((at) => p.vertices[at].members),
+        .map((at) => defined(mapped.get(pattern.links[at].roots[0]), "mapped"));
+      const endpoint = yield* certificate.path(
+        order.map((at) => pattern.vertices[at].members),
         strong,
       );
-      roots.push(yield* b.eliminate(endpoint, e));
+      roots.push(yield* certificate.eliminate(endpoint, effect));
       continue;
     } else if (
-      e.cell !== p.vertices[0].members[0].cell ||
-      e.symbol !== p.vertices[0].members[0].symbol
+      effect.cell !== pattern.vertices[0].members[0].cell ||
+      effect.symbol !== pattern.vertices[0].members[0].symbol
     ) {
-      const endpoint = p.vertices[0].members[0],
-        positive = yield* b.derive(ids, endpoint);
+      const endpoint = pattern.vertices[0].members[0],
+        positive = yield* certificate.derive(ids, endpoint);
       roots.push(
-        b.resolve(positive, yield* b.weak(endpoint, candidate(e.cell, e.symbol)), endpoint),
+        certificate.resolve(
+          positive,
+          yield* certificate.weak(endpoint, candidate(effect.cell, effect.symbol)),
+          endpoint,
+        ),
       );
       continue;
     }
     roots.push(
-      yield* b.derive(ids, { cell: e.cell, symbol: e.symbol, positive: e.kind === "place" }),
+      yield* certificate.derive(ids, {
+        cell: effect.cell,
+        symbol: effect.symbol,
+        positive: effect.kind === "place",
+      }),
     );
   }
-  return b.close(
-    p.alias === "X-Chains" || p.alias === "XY-Chains" || p.alias === "AICs" ? "c16@1" : "c17@1",
-    p as unknown as Json,
+  return certificate.close(
+    pattern.alias === "X-Chains" || pattern.alias === "XY-Chains" || pattern.alias === "AICs"
+      ? "c16@1"
+      : "c17@1",
+    pattern as unknown as Json,
     effects,
     roots,
   );

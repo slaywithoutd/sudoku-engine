@@ -8,6 +8,7 @@ import { forcingProofFits, signedKey, symbols } from "./forcing-proof";
 import { krakenFishShapes } from "./fish";
 import { compileKraken } from "./kraken";
 import { houseCells } from "../state/read";
+import { defined } from "../invariants";
 
 /** Fair C07/C08 size cursors consume scalar implication reachability recipes. */
 export function* discoverKraken(view: ReadView, context: DiscoveryContext): Discovery {
@@ -24,15 +25,15 @@ export function* discoverKraken(view: ReadView, context: DiscoveryContext): Disc
   try {
     lease = context.workspace.reserve(1, 4000000);
     const graph = new ForcingGraph(view, context, lease);
-    for (const e of buildImplications(view, context.workspace)) {
-      if (e.kind === "ready") index = e.value;
-      else if (e.kind === "interrupted") throw new IndexInterrupted(e.reason);
+    for (const indexEvent of buildImplications(view, context.workspace)) {
+      if (indexEvent.kind === "ready") index = indexEvent.value;
+      else if (indexEvent.kind === "interrupted") throw new IndexInterrupted(indexEvent.reason);
       tick();
-      if (e.kind === "work") yield e;
+      if (indexEvent.kind === "work") yield indexEvent;
     }
-    for (const e of graph.prepare(index!)) {
+    for (const prepared of graph.prepare(defined(index, "index"))) {
       tick();
-      yield e;
+      yield prepared;
     }
     const reachable = new Map<string, Set<number>>();
     for (const cell of view.assembly.problem.cells)
@@ -87,12 +88,15 @@ export function* discoverKraken(view: ReadView, context: DiscoveryContext): Disc
         const finBranches = fish.fins.map((fin) => ({
           fin,
           assumption: { cell: target.cell, symbol: target.symbol, positive: true },
-          path: next.value.get(signedKey({ cell: fin, symbol: target.symbol, positive: false }))!,
+          path: defined(
+            next.value.get(signedKey({ cell: fin, symbol: target.symbol, positive: false })),
+            "value",
+          ),
         }));
         const incidence = view.assembly.problem.cells.map(
-          (c) =>
-            fish.covers.reduce((sum, id) => sum + Number(houseCells(view, id).includes(c)), 0) -
-            fish.bases.reduce((sum, id) => sum + Number(houseCells(view, id).includes(c)), 0),
+          (cell) =>
+            fish.covers.reduce((sum, id) => sum + Number(houseCells(view, id).includes(cell)), 0) -
+            fish.bases.reduce((sum, id) => sum + Number(houseCells(view, id).includes(cell)), 0),
         );
         const scratch = context.workspace.reserve(1, 4000000);
         let session: HypotheticalSession | undefined;

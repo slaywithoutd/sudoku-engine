@@ -9,6 +9,7 @@ import { canonicalProblem } from "./problem";
 import { EXACT_METHOD, isWitness, exactInitializationReservation } from "./exact";
 import { isAcceptedPath } from "./state/candidates";
 import { symbolMask } from "./state/read";
+import { unverified } from "./invariants";
 
 export type CountProof =
   | {
@@ -108,7 +109,7 @@ export function acceptedUniqueParent(
     revokedUniqueCounts.has(count) ||
     !accepted ||
     count.kind !== "unique" ||
-    !context ||
+    !unverified(context) ||
     context.run.operation !== "primary" ||
     context.human === "invalidated" ||
     !sameRun(accepted, context.run) ||
@@ -169,9 +170,10 @@ const runFields = [
 ] as const;
 const version = /^[a-z][a-z0-9-]*@[1-9]\d*$/;
 function validRun(run: RunKey): boolean {
+  const claim = unverified(run);
   return (
-    !!run &&
-    typeof run === "object" &&
+    !!claim &&
+    typeof claim === "object" &&
     Object.keys(run).length === runFields.length &&
     runFields.every((field) => Object.hasOwn(run, field)) &&
     [run.requestId, run.snapshotId, run.problemKey, run.optionsKey].every(
@@ -179,7 +181,7 @@ function validRun(run: RunKey): boolean {
     ) &&
     Number.isSafeInteger(run.inputRevision) &&
     run.inputRevision >= 0 &&
-    (run.mode === "explain" || run.mode === "analyze") &&
+    (claim.mode === "explain" || claim.mode === "analyze") &&
     [run.engine, run.profile, run.scheduler, run.checker, run.exact].every(
       (value) => typeof value === "string" && version.test(value),
     ) &&
@@ -238,7 +240,7 @@ function unconditional(accepted: readonly CheckedStep[]): boolean {
 }
 function validStats(stats: ExactStats): boolean {
   return (
-    !!stats &&
+    !!unverified(stats) &&
     Object.keys(stats).length === 3 &&
     [stats.nodes, stats.backtracks, stats.maxDepth].every(
       (value) => Number.isSafeInteger(value) && value >= 0,
@@ -249,17 +251,15 @@ function validStats(stats: ExactStats): boolean {
     stats.maxDepth < stats.nodes
   );
 }
-function validExhaustion(
-  proof: Extract<CountProof, { kind: "root-exhausted" }>,
-  context: EvidenceContext,
-): boolean {
+function validExhaustion(proof: CountProof, context: EvidenceContext): boolean {
+  const claim = unverified(proof);
   return (
-    !!proof &&
+    !!claim &&
     Object.keys(proof).length === 5 &&
     proof.kind === "root-exhausted" &&
-    proof.frontierEmpty === true &&
+    unverified(proof)?.frontierEmpty === true &&
     proof.method === EXACT_METHOD &&
-    proof.key?.exact === EXACT_METHOD &&
+    unverified(proof.key)?.exact === EXACT_METHOD &&
     validStats(proof.stats) &&
     context.phase === "exact" &&
     context.run.operation === "primary" &&
@@ -269,7 +269,8 @@ function validExhaustion(
   );
 }
 function validDuplicate(proof: CountProof, context: EvidenceContext): boolean {
-  if (!proof || Object.keys(proof).length !== 4 || proof.kind !== "duplicate-givens") return false;
+  if (!unverified(proof) || Object.keys(proof).length !== 4 || proof.kind !== "duplicate-givens")
+    return false;
   const problem = context.snapshot.problem;
   const rule = problem.constraints.find((rule) => rule.id === proof.constraintId);
   return (
@@ -303,7 +304,7 @@ export function deriveQuality(
   usedFallback: boolean,
   context: QualityContext,
 ): Quality {
-  if (!context || !boundContext(snapshot, context)) return "not-established";
+  if (!unverified(context) || !boundContext(snapshot, context)) return "not-established";
   if (context.run.operation !== "primary") return "not-established";
   if (!isAcceptedPath(context.initialView, context.acceptedView, accepted)) return "inconsistent";
   if (human === "invalidated") return "inconsistent";
@@ -346,7 +347,8 @@ export function mergeEvidence(
   const bound = boundContext(context.snapshot, context);
   if (!bound) diagnostics.add("evidence-context-mismatch");
   for (const evidence of [previous, incoming]) {
-    if (!evidence || typeof evidence !== "object") {
+    const claim = unverified(evidence);
+    if (!claim || typeof claim !== "object") {
       diagnostics.add("malformed-evidence");
       continue;
     }
@@ -372,16 +374,17 @@ export function mergeEvidence(
         typeof evidence.evidenceId === "string" &&
         evidence.evidenceId.length > 0 &&
         (evidence.kind !== "unique" ||
-          (evidence.rootExhausted === true &&
+          (unverified(evidence)?.rootExhausted === true &&
             isWitness(context.snapshot.problem, context.assembly, evidence.witness))) &&
         (authorized ||
           (evidence.kind === "zero" && validDuplicate(evidence.proof, context)) ||
-          (evidence.proof?.kind === "root-exhausted" && validExhaustion(evidence.proof, context)));
+          (unverified(evidence.proof)?.kind === "root-exhausted" &&
+            validExhaustion(evidence.proof, context)));
       if (valid) claims.push(evidence);
       else diagnostics.add("rejected-count-proof");
     } else if (
       (evidence.kind === "multiple" && (offered.length !== 2 || witnesses.length < 2)) ||
-      (evidence.kind !== "unknown" && evidence.kind !== "multiple")
+      (claim.kind !== "unknown" && claim.kind !== "multiple")
     )
       diagnostics.add("malformed-evidence");
   }

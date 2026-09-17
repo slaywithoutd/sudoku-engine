@@ -3,6 +3,7 @@ import type { ReadView } from "../state/types";
 import type { BentPattern, ShortPath, ShortPattern } from "./pattern-contracts";
 import { clause, requireProof, sameValue } from "../proof/primitives";
 import { houseCells } from "../state/read";
+import { defined } from "../invariants";
 
 interface LocalTable {
   readonly box: readonly number[];
@@ -27,7 +28,7 @@ class BentTableLineage {
     const pending = [{ id: root, expanded: false }],
       active = new Set<number>();
     while (pending.length) {
-      const { id, expanded } = pending.pop()!;
+      const { id, expanded } = defined(pending.pop(), "pending");
       if (this.#checked.has(id)) continue;
       const node = this.available.get(id);
       requireProof(
@@ -49,45 +50,53 @@ class BentTableLineage {
       active.delete(id);
       if (node.rule === "table-filter@1") this.#checked.set(id, this.checkLeaf(node));
       else {
-        const a = this.#checked.get(node.premises[0])!,
-          b = this.#checked.get(node.premises[1])!;
-        requireProof(a && b && sameValue(a.sources, b.sources), "mismatched-bent-table-sources");
-        const changed = a.box.map((mask, i) => (mask !== b.box[i] ? i : -1)).filter((i) => i >= 0);
+        const left = this.#checked.get(node.premises[0]),
+          right = this.#checked.get(node.premises[1]);
         requireProof(
-          changed.length === 1 && (a.box[changed[0]] & b.box[changed[0]]) === 0,
+          left && right && sameValue(left.sources, right.sources),
+          "mismatched-bent-table-sources",
+        );
+        const changed = left.box
+          .map((mask, i) => (mask !== right.box[i] ? i : -1))
+          .filter((i) => i >= 0);
+        requireProof(
+          changed.length === 1 && (left.box[changed[0]] & right.box[changed[0]]) === 0,
           "invalid-bent-table-partition",
         );
-        this.#checked.set(id, { sources: a.sources, box: a.box.map((mask, i) => mask | b.box[i]) });
+        this.#checked.set(id, {
+          sources: left.sources,
+          box: left.box.map((mask, i) => mask | right.box[i]),
+        });
       }
     }
-    const complete = this.#checked.get(root)!;
+    const complete = defined(this.#checked.get(root), "checked");
     requireProof(
       sameValue(
         complete.box,
-        this.pattern.cells.map((c) => this.view.state.domains[c]),
+        this.pattern.cells.map((cell) => this.view.state.domains[cell]),
       ),
       "incomplete-bent-table-partition",
     );
-    const source = this.available.get(root)!.conclusion;
+    const source = defined(this.available.get(root), "available").conclusion;
     requireProof(source.kind === "table" && source.count > 0, "empty-local-pattern");
   }
 
   private checkLeaf(node: ProofNode): LocalTable {
-    const p = this.pattern,
+    const pattern = this.pattern,
       parameters = node.parameters as { cells: number[]; box: number[] };
     requireProof(
-      sameValue(parameters.cells, p.cells) &&
-        parameters.box.length === p.cells.length &&
-        node.premises.length === p.cells.length + p.conflicts.length,
+      sameValue(parameters.cells, pattern.cells) &&
+        parameters.box.length === pattern.cells.length &&
+        node.premises.length === pattern.cells.length + pattern.conflicts.length,
       "incomplete-bent-table-sources",
     );
-    const currentDomains = p.cells.map((c) => this.view.state.domainFacts[c]);
+    const currentDomains = pattern.cells.map((cell) => this.view.state.domainFacts[cell]);
     requireProof(
       currentDomains.every((id) => node.premises.includes(id)),
       "stale-bent-table-domains",
     );
     const conflicts = node.premises.filter((id) => !currentDomains.includes(id));
-    const declared = new Set(p.conflicts.map((pair) => pair.join(":"))),
+    const declared = new Set(pattern.conflicts.map((pair) => pair.join(":"))),
       found = new Set<string>();
     for (const id of conflicts) {
       const subset = this.available.get(id);
@@ -106,8 +115,9 @@ class BentTableLineage {
           source?.openAssumptions.length === 0 &&
           source.proposition.kind === "all-different" &&
           subset.conclusion.cells.every(
-            (c) =>
-              source.proposition.kind === "all-different" && source.proposition.cells.includes(c),
+            (cell) =>
+              source.proposition.kind === "all-different" &&
+              source.proposition.cells.includes(cell),
           ),
         "invalid-bent-table-conflict",
       );
@@ -119,7 +129,7 @@ class BentTableLineage {
         (mask, i) =>
           Number.isSafeInteger(mask) &&
           mask >= 0 &&
-          (mask & this.view.state.domains[p.cells[i]]) === mask,
+          (mask & this.view.state.domains[pattern.cells[i]]) === mask,
       ),
       "invalid-bent-table-partition",
     );
@@ -188,22 +198,22 @@ class ShortComponentLineage {
     readonly available: ReadonlyMap<number, ProofNode>,
     readonly path: ShortPath,
   ) {
-    const [a, b, c, d] = path.vertices,
+    const [left, right, third, fourth] = path.vertices,
       symbol = path.symbol;
     const covers = [
-      [...a, ...b],
-      [...c, ...d],
+      [...left, ...right],
+      [...third, ...fourth],
     ].map((cells) => clauseKey(cells.map((cell) => positive(cell, symbol))));
     const middle = new Map<string, number>();
-    for (const left of b)
-      for (const right of c)
+    for (const left of right)
+      for (const right of third)
         middle.set(
           clauseKey([negative(left, symbol), negative(right, symbol)]),
           1 << (middle.size + 2),
         );
     const required = (1 << (middle.size + 2)) - 1,
       local = new Map<number, number>();
-    const endpoint = clauseKey([...a, ...d].map((cell) => positive(cell, symbol)));
+    const endpoint = clauseKey([...left, ...fourth].map((cell) => positive(cell, symbol)));
     for (const node of proposal.proof.nodes) {
       const key = JSON.stringify(node.conclusion);
       if (node.rule === "cover-clause@1") {
@@ -215,7 +225,7 @@ class ShortComponentLineage {
       } else if (node.rule === "resolution@1" && node.premises.every((id) => local.has(id))) {
         local.set(
           node.id,
-          node.premises.reduce((mask, id) => mask | local.get(id)!, 0),
+          node.premises.reduce((mask, id) => mask | defined(local.get(id), "local"), 0),
         );
       }
       if (node.rule === "resolution@1" && key === endpoint && local.get(node.id) === required)
@@ -235,7 +245,7 @@ class ShortComponentLineage {
       sameValue(source.proposition.cells, scope) &&
       sameValue(
         support.premises.slice(1),
-        scope.map((c) => this.view.state.domainFacts[c]),
+        scope.map((cell) => this.view.state.domainFacts[cell]),
       )
     );
   }
@@ -260,7 +270,7 @@ class ShortComponentLineage {
       } else if (node.rule === "resolution@1" && node.premises.every((id) => local.has(id)))
         local.set(
           node.id,
-          node.premises.reduce((mask, id) => mask | local.get(id)!, 0),
+          node.premises.reduce((mask, id) => mask | defined(local.get(id), "local"), 0),
         );
     }
     return this.proposal.proof.roots.filter(
@@ -306,7 +316,8 @@ export function requireDualRootLineage(
     );
   }
   requireProof(
-    roots.length === 2 && [...roots[0]].some((a) => [...roots[1]].some((b) => a !== b)),
+    roots.length === 2 &&
+      [...roots[0]].some((left) => [...roots[1]].some((right) => left !== right)),
     "missing-dual-component-root",
   );
 }

@@ -15,6 +15,7 @@ import {
   type SpecializedStrategy,
 } from "./specialized-runtime";
 import { symbolMask } from "../state/read";
+import { defined } from "../invariants";
 
 export interface FireworkComponent {
   readonly intersection: number;
@@ -35,63 +36,71 @@ export function* compileFireworks(
   plan: FireworksPlan,
   lease?: WorkspaceReservation,
 ): Generator<SpecializedWork, DeductionProposal | null> {
-  const b = new SpecializedProof(view, lease),
+  const proof = new SpecializedProof(view, lease),
     components: any[] = [];
-  for (const p of plan.components) {
-    const row = b.houses.rows[Math.floor(p.intersection / 9)]!,
-      column = b.houses.columns[p.intersection % 9]!,
+  for (const pattern of plan.components) {
+    const row = defined(proof.houses.rows[Math.floor(pattern.intersection / 9)], "rows"),
+      column = defined(proof.houses.columns[pattern.intersection % 9], "columns"),
       certificates: any[] = [];
-    for (const symbol of p.symbols) {
+    for (const symbol of pattern.symbols) {
       yield specializedWork;
-      const rowRoot = b.cover(row, symbol),
-        columnRoot = b.cover(column, symbol);
+      const rowRoot = proof.cover(row, symbol),
+        columnRoot = proof.cover(column, symbol);
       const routes: any[] = [];
       for (const [line, cross, wing, crossWing, start, other] of [
-        [row, column, p.rowWing, p.columnWing, rowRoot, columnRoot],
-        [column, row, p.columnWing, p.rowWing, columnRoot, rowRoot],
+        [row, column, pattern.rowWing, pattern.columnWing, rowRoot, columnRoot],
+        [column, row, pattern.columnWing, pattern.rowWing, columnRoot, rowRoot],
       ] as const) {
         let root = start;
         const weak: number[] = [],
           steps: number[] = [];
-        for (const a of line.filter(
-          (c) => c !== p.intersection && c !== wing && candidates(view, c).includes(symbol),
+        for (const left of line.filter(
+          (cell) =>
+            cell !== pattern.intersection &&
+            cell !== wing &&
+            candidates(view, cell).includes(symbol),
         )) {
           let arm = other;
-          for (const c of cross.filter(
-            (c) => c !== crossWing && candidates(view, c).includes(symbol),
+          for (const cell of cross.filter(
+            (cell) => cell !== crossWing && candidates(view, cell).includes(symbol),
           )) {
-            const edge = b.add(
+            const edge = proof.add(
               "weak-link@1",
               [
-                b.wire.fact({
+                proof.wire.fact({
                   kind: "all-different",
-                  cells: b.houses.boxes[boxOf(p.intersection)]!,
+                  cells: defined(proof.houses.boxes[boxOf(pattern.intersection)], "boxes"),
                 }),
               ],
               clause([
-                { cell: a, symbol, positive: false },
-                { cell: c, symbol, positive: false },
+                { cell: left, symbol, positive: false },
+                { cell: cell, symbol, positive: false },
               ]),
             );
             weak.push(edge);
-            arm = b.resolve(arm, edge, { cell: c, symbol, positive: true });
+            arm = proof.resolve(arm, edge, { cell: cell, symbol, positive: true });
             steps.push(arm);
           }
-          root = b.resolve(root, arm, { cell: a, symbol, positive: true });
+          root = proof.resolve(root, arm, { cell: left, symbol, positive: true });
           steps.push(root);
         }
         routes.push({ weak, steps, root });
       }
       certificates.push({ symbol, row: rowRoot, column: columnRoot, routes });
     }
-    const roots: number[] = certificates.flatMap((c) => c.routes.map((r: any) => r.root)),
+    const roots: number[] = certificates.flatMap((cert) =>
+        cert.routes.map((route: any) => route.root),
+      ),
       domains = new Map<number, { id: number; mask: number }>(),
       filters: number[] = [];
     // A cover may already be singleton. Carry its checked restriction into the
     // complete local domain evidence; join-filter deliberately accepts clauses
     // only and must not be widened implicitly for this degenerate case.
     for (const id of new Set(roots)) {
-      const claim = b.nodes.find((n) => n.id === id)!.conclusion;
+      const claim = defined(
+        proof.nodes.find((n) => n.id === id),
+        "node",
+      ).conclusion;
       if (claim.kind === "literal") {
         const { cell, symbol } = claim.value,
           prior = domains.get(cell) ?? {
@@ -100,26 +109,32 @@ export function* compileFireworks(
           },
           mask = prior.mask & symbolMask(symbol);
         domains.set(cell, {
-          id: b.add("domain-restrict@1", [prior.id, id], { kind: "domain", cell, mask }),
+          id: proof.add("domain-restrict@1", [prior.id, id], { kind: "domain", cell, mask }),
           mask,
         });
       }
     }
     for (const id of roots)
-      if (b.nodes.find((n) => n.id === id)!.conclusion.kind === "clause") filters.push(id);
-    const cells = sortedCells([p.intersection, p.rowWing, p.columnWing]),
-      local = yield* b.local(
+      if (
+        defined(
+          proof.nodes.find((n) => n.id === id),
+          "node",
+        ).conclusion.kind === "clause"
+      )
+        filters.push(id);
+    const cells = sortedCells([pattern.intersection, pattern.rowWing, pattern.columnWing]),
+      local = yield* proof.local(
         cells,
         [
-          [p.intersection, p.rowWing],
-          [p.intersection, p.columnWing],
+          [pattern.intersection, pattern.rowWing],
+          [pattern.intersection, pattern.columnWing],
         ],
         domains,
       );
     // The one-cell operand preserves the local domain, while the filters add
     // the independently derived complete symbol covers.
-    const identity = yield* b.local([p.intersection]);
-    const relation = yield* b.join(local, identity, filters);
+    const identity = yield* proof.local([pattern.intersection]);
+    const relation = yield* proof.join(local, identity, filters);
     components.push({
       covers: certificates,
       local: local.id,
@@ -129,7 +144,7 @@ export function* compileFireworks(
     (components.at(-1) as any).value = relation;
   }
   let table = components[0].value;
-  if (components.length === 2) table = yield* b.joinPeers(table, components[1].value);
+  if (components.length === 2) table = yield* proof.joinPeers(table, components[1].value);
   if (!table.rows.length) return null;
   const effects: Effect[] = [],
     roots: number[] = [];
@@ -138,10 +153,12 @@ export function* compileFireworks(
       yield specializedWork;
       if (
         !view.state.values[cell] &&
-        table.rows.every((r: readonly number[]) => r[table.cells.indexOf(cell)] !== symbol)
+        table.rows.every((row: readonly number[]) => row[table.cells.indexOf(cell)] !== symbol)
       ) {
         effects.push({ kind: "remove", cell, symbol });
-        roots.push(b.project(table, { kind: "literal", value: { cell, symbol, positive: false } }));
+        roots.push(
+          proof.project(table, { kind: "literal", value: { cell, symbol, positive: false } }),
+        );
       }
     }
   if (!effects.length) return null;
@@ -149,7 +166,7 @@ export function* compileFireworks(
     components: components.map(({ value, ...record }) => record),
     table: table.id,
   };
-  return b.finish("c29@1", { ...plan, certificate }, effects, roots);
+  return proof.finish("c29@1", { ...plan, certificate }, effects, roots);
 }
 
 /** Two independent canonical geometry/compilation jobs share one invocation. */
@@ -161,65 +178,69 @@ export class FireworksSearch implements SpecializedStrategy {
       : [this];
   }
   *plans(view: ReadView) {
-    const h = new ClassicHouses(view);
+    const houses = new ClassicHouses(view);
     for (let x = 0; x < 81; x++) {
       if (view.state.values[x]) continue;
-      for (const y of h.rows[Math.floor(x / 9)] ?? [])
-        for (const z of h.columns[x % 9] ?? []) {
+      for (const y of houses.rows[Math.floor(x / 9)] ?? [])
+        for (const zDigit of houses.columns[x % 9] ?? []) {
           yield specializedWork;
           if (
             boxOf(y) === boxOf(x) ||
-            boxOf(z) === boxOf(x) ||
+            boxOf(zDigit) === boxOf(x) ||
             view.state.values[y] ||
-            view.state.values[z] ||
-            !h.boxes[boxOf(x)]
+            view.state.values[zDigit] ||
+            !houses.boxes[boxOf(x)]
           )
             continue;
-          const valid = (a: number, b: number, c: number) =>
-            candidates(view, a).filter(
-              (s) =>
-                h.rows[Math.floor(a / 9)]!.every(
-                  (q) => boxOf(q) === boxOf(a) || q === b || !candidates(view, q).includes(s),
+          const valid = (left: number, right: number, cell: number) =>
+            candidates(view, left).filter(
+              (symbol) =>
+                defined(houses.rows[Math.floor(left / 9)], "rows").every(
+                  (q) =>
+                    boxOf(q) === boxOf(left) ||
+                    q === right ||
+                    !candidates(view, q).includes(symbol),
                 ) &&
-                h.columns[a % 9]!.every(
-                  (q) => boxOf(q) === boxOf(a) || q === c || !candidates(view, q).includes(s),
+                defined(houses.columns[left % 9], "columns").every(
+                  (q) =>
+                    boxOf(q) === boxOf(left) || q === cell || !candidates(view, q).includes(symbol),
                 ),
             );
-          const symbols = valid(x, y, z);
+          const symbols = valid(x, y, zDigit);
           if (this.form !== "quad")
             for (const core of choose(symbols, 3))
               yield {
                 kind: "plan" as const,
                 plan: {
                   alias: "Triple Fireworks",
-                  components: [{ intersection: x, rowWing: y, columnWing: z, symbols: core }],
-                  selected: sortedCells([x, y, z]),
+                  components: [{ intersection: x, rowWing: y, columnWing: zDigit, symbols: core }],
+                  selected: sortedCells([x, y, zDigit]),
                 },
               };
           if (this.form === "triple") continue;
-          const opposite = Math.floor(z / 9) * 9 + (y % 9);
+          const opposite = Math.floor(zDigit / 9) * 9 + (y % 9);
           if (
             opposite <= x ||
             view.state.values[opposite] ||
-            !h.rows[Math.floor(opposite / 9)] ||
-            !h.columns[opposite % 9] ||
-            !h.boxes[boxOf(opposite)]
+            !houses.rows[Math.floor(opposite / 9)] ||
+            !houses.columns[opposite % 9] ||
+            !houses.boxes[boxOf(opposite)]
           )
             continue;
-          const other = valid(opposite, z, y);
+          const other = valid(opposite, zDigit, y);
           for (const first of choose(symbols, 2))
             for (const second of choose(other, 2)) {
               yield specializedWork;
-              if (first.some((s) => second.includes(s))) continue;
+              if (first.some((symbol) => second.includes(symbol))) continue;
               yield {
                 kind: "plan" as const,
                 plan: {
                   alias: "Quadruple Fireworks",
                   components: [
-                    { intersection: x, rowWing: y, columnWing: z, symbols: first },
-                    { intersection: opposite, rowWing: z, columnWing: y, symbols: second },
+                    { intersection: x, rowWing: y, columnWing: zDigit, symbols: first },
+                    { intersection: opposite, rowWing: zDigit, columnWing: y, symbols: second },
                   ],
-                  selected: sortedCells([x, y, z, opposite]),
+                  selected: sortedCells([x, y, zDigit, opposite]),
                 },
               };
             }

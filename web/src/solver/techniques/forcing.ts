@@ -9,6 +9,7 @@ import {
   type PathCertificate,
 } from "./forcing-proof";
 import { forcingDescriptor, discoverForcing } from "./forcing-runtime";
+import { defined } from "../invariants";
 
 export interface ForcingPlan {
   /** D088: retain the complete negative theorem without candidate progress. */
@@ -44,21 +45,25 @@ export function compileForcing(
   plan: ForcingPlan,
   effect: Effect,
 ): DeductionProposal {
-  const b = new ForcingProof(view);
+  const proof = new ForcingProof(view);
   let cover: number | null = null;
-  if (plan.kind === "cell") cover = b.cover(plan.cover.cell!);
-  else if (plan.kind === "unit") cover = b.houseCover(plan.cover.house!, plan.cover.symbol!);
+  if (plan.kind === "cell") cover = proof.cover(defined(plan.cover.cell, "cell"));
+  else if (plan.kind === "unit")
+    cover = proof.houseCover(
+      defined(plan.cover.house, "house"),
+      defined(plan.cover.symbol, "symbol"),
+    );
   else if (plan.kind === "digit") {
-    const candidate = plan.cover.candidate!;
-    cover = b.cover(candidate.cell);
-    const others = symbols(view, candidate.cell).filter((s) => s !== candidate.symbol);
+    const candidate = defined(plan.cover.candidate, "candidate");
+    cover = proof.cover(candidate.cell);
+    const others = symbols(view, candidate.cell).filter((symbol) => symbol !== candidate.symbol);
     for (const [i, symbol] of others.entries()) {
-      const weak = b.edge({
+      const weak = proof.edge({
         from: { ...candidate, symbol },
         to: opposite(candidate),
         reason: { kind: "cell-conflict", cell: candidate.cell },
       });
-      cover = b.add(
+      cover = proof.add(
         "resolution@1",
         [cover, weak],
         proposedClause([
@@ -70,24 +75,24 @@ export function compileForcing(
     }
   }
   const cases = plan.branches.map((branch) => {
-    b.scope = [];
-    const assumption = b.add("assume@1", [], proposedClause([branch.assumption]));
-    b.scope = [assumption];
-    const paths = branch.paths.map((path) => b.path(assumption, path));
+    proof.scope = [];
+    const assumption = proof.add("assume@1", [], proposedClause([branch.assumption]));
+    proof.scope = [assumption];
+    const paths = branch.paths.map((path) => proof.path(assumption, path));
     const result =
       branch.result === "false"
-        ? b.add(
+        ? proof.add(
             "contradiction@1",
-            paths.map((p) => p.end),
+            paths.map((certificate) => certificate.end),
             { kind: "false" },
           )
         : paths[0].end;
     return { assumption, paths, result };
   });
-  b.scope = [];
+  proof.scope = [];
   let root: number;
   if (plan.kind === "nishio")
-    root = b.add(
+    root = proof.add(
       "discharge@1",
       [cases[0].assumption, cases[0].result],
       proposedClause([{ cell: effect.cell, symbol: effect.symbol, positive: false }]),
@@ -95,16 +100,19 @@ export function compileForcing(
   else {
     // CasesStrategy consumes the canonical signed-clause order (negative first).
     const ordered = cases
-      .map((c, i) => ({ c, a: plan.branches[i].assumption }))
+      .map((branch, i) => ({ c: branch, a: plan.branches[i].assumption }))
       .sort(
-        (a, b) =>
-          a.a.cell - b.a.cell ||
-          a.a.symbol - b.a.symbol ||
-          Number(a.a.positive) - Number(b.a.positive),
+        (left, right) =>
+          left.a.cell - right.a.cell ||
+          left.a.symbol - right.a.symbol ||
+          Number(left.a.positive) - Number(right.a.positive),
       );
-    root = b.add(
+    root = proof.add(
       "cases@1",
-      [cover!, ...ordered.flatMap(({ c }) => [c.assumption, c.result])],
+      [
+        defined(cover, "cover"),
+        ...ordered.flatMap(({ c: branch }) => [branch.assumption, branch.result]),
+      ],
       proposedClause([
         { cell: effect.cell, symbol: effect.symbol, positive: effect.kind === "place" },
       ]),
@@ -112,7 +120,7 @@ export function compileForcing(
   }
   if (plan.mode === "cache") {
     if (effect.kind !== "remove") throw Error("forcing-cache-negative-only");
-    return b.bundle(
+    return proof.bundle(
       "c22@1",
       {
         ...plan,
@@ -123,7 +131,7 @@ export function compileForcing(
       [root],
     );
   }
-  return b.finish(
+  return proof.finish(
     "c22@1",
     { ...plan, certificate: { cover, branches: cases, root } satisfies ForcingCertificate },
     effect,

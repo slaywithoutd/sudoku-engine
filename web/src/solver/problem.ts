@@ -1,3 +1,4 @@
+import { defined } from "./invariants";
 /** Dense zero-based cell identifier within one normalized problem. */
 export type CellId = number;
 /** Dense one-based symbol identifier within one normalized problem. */
@@ -59,7 +60,10 @@ function assertPlainObject(
   if (prototype !== Object.prototype && prototype !== null)
     fail("invalid-json", `${label} must be a plain JSON object`);
   for (const key of Reflect.ownKeys(value)) {
-    const descriptor = Object.getOwnPropertyDescriptor(value, key)!;
+    const descriptor = defined(
+      Object.getOwnPropertyDescriptor(value, key),
+      "getOwnPropertyDescriptor",
+    );
     if (typeof key !== "string" || !descriptor.enumerable || !("value" in descriptor))
       fail("invalid-json", `${label} contains a non-JSON property`);
   }
@@ -82,7 +86,10 @@ function assertDenseArray(value: unknown, label: string): asserts value is unkno
   if (!Array.isArray(value)) fail("invalid-shape", `${label} must be an array`);
   for (const key of Reflect.ownKeys(value)) {
     if (key === "length") continue;
-    const descriptor = Object.getOwnPropertyDescriptor(value, key)!;
+    const descriptor = defined(
+      Object.getOwnPropertyDescriptor(value, key),
+      "getOwnPropertyDescriptor",
+    );
     if (
       typeof key !== "string" ||
       !/^(0|[1-9]\d*)$/.test(key) ||

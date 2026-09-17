@@ -3,6 +3,7 @@ import type { DeductionProposal } from "../proof/types";
 import { proposedClause } from "../proof/builder";
 import { ForcingProof, bit, type ForcingLink } from "./forcing-proof";
 import { houseWithCells } from "../state/read";
+import { defined } from "../invariants";
 export { netTechniques } from "./nets-runtime";
 
 export type NetOperation =
@@ -64,15 +65,15 @@ class NetDomains {
   readonly masks: number[];
   readonly roots: number[];
   constructor(
-    readonly b: ForcingProof,
+    readonly proof: ForcingProof,
     parent?: NetDomains,
   ) {
-    this.masks = [...(parent?.masks ?? b.view.state.domains)];
-    this.roots = [...(parent?.roots ?? b.view.state.domainFacts)];
+    this.masks = [...(parent?.masks ?? proof.view.state.domains)];
+    this.roots = [...(parent?.roots ?? proof.view.state.domainFacts)];
   }
   restrict(cell: number, symbol: number, positive: boolean, root: number): void {
     const mask = positive ? this.masks[cell] & bit(symbol) : this.masks[cell] & ~bit(symbol);
-    this.roots[cell] = this.b.add("domain-restrict@1", [this.roots[cell], root], {
+    this.roots[cell] = this.proof.add("domain-restrict@1", [this.roots[cell], root], {
       kind: "domain",
       cell,
       mask,
@@ -80,25 +81,25 @@ class NetDomains {
     this.masks[cell] = mask;
   }
   cover(house: string, symbol: number): number {
-    const cells = this.b.house(house),
-      supports = cells.filter((c) => this.masks[c] & bit(symbol));
-    const support = this.b.add(
+    const cells = this.proof.house(house),
+      supports = cells.filter((cell) => this.masks[cell] & bit(symbol));
+    const support = this.proof.add(
       "support@1",
-      [this.b.fact({ kind: "cover", cells, symbol }), ...cells.map((c) => this.roots[c])],
+      [this.proof.fact({ kind: "cover", cells, symbol }), ...cells.map((cell) => this.roots[cell])],
       { kind: "cover", cells: supports, symbol },
     );
-    return this.b.add(
+    return this.proof.add(
       "cover-clause@1",
       [support],
       proposedClause(supports.map((cell) => ({ cell, symbol, positive: true }))),
     );
   }
   apply(step: NetOperation): void {
-    const b = this.b;
+    const proof = this.proof;
     let source: number | undefined, symbol: number | undefined;
     if (step.kind === "singleton-peer") {
       symbol = Math.log2(step.mask) + 1;
-      source = b.add(
+      source = proof.add(
         "cover-clause@1",
         [this.roots[step.cell]],
         proposedClause([{ cell: step.cell, symbol, positive: true }]),
@@ -112,67 +113,70 @@ class NetDomains {
         const reason = link.reason;
         let clause: number;
         if (reason.kind === "cell-cover") {
-          const cell = reason.cell!;
-          clause = b.add(
+          const cell = defined(reason.cell, "cell");
+          clause = proof.add(
             "cover-clause@1",
             [this.roots[cell]],
             proposedClause(
-              b.view.assembly.problem.symbols
+              proof.view.assembly.problem.symbols
                 .filter((s) => this.masks[cell] & bit(s))
                 .map((symbol) => ({ cell, symbol, positive: true })),
             ),
           );
         } else if (reason.kind === "house-cover")
-          clause = this.cover(reason.house!, reason.symbol!);
+          clause = this.cover(defined(reason.house, "house"), defined(reason.symbol, "symbol"));
         else
-          clause = b.add(
+          clause = proof.add(
             "weak-link@1",
             [
               reason.kind === "cell-conflict"
-                ? this.roots[reason.cell!]
-                : b.fact({ kind: "all-different", cells: b.house(reason.house!) }),
+                ? this.roots[defined(reason.cell, "cell")]
+                : proof.fact({
+                    kind: "all-different",
+                    cells: proof.house(defined(reason.house, "house")),
+                  }),
             ],
             proposedClause([{ ...link.from, positive: !link.from.positive }, link.to]),
           );
-        source = b.add("resolution@1", [source, clause], proposedClause([link.to]));
+        source = proof.add("resolution@1", [source, clause], proposedClause([link.to]));
       }
     }
     for (const [cell, mask] of step.effects) {
       if (step.kind === "hidden-single") {
-        this.restrict(cell, symbol!, true, source!);
+        this.restrict(cell, defined(symbol, "symbol"), true, defined(source, "source"));
         continue;
       }
       const removed = this.masks[cell] & ~mask;
-      for (const digit of b.view.assembly.problem.symbols)
+      for (const digit of proof.view.assembly.problem.symbols)
         if (removed & bit(digit)) {
           let root: number;
           if (step.kind === "singleton-peer") {
-            const house = houseWithCells(b.view, step.cell, cell);
-            const weak = b.add(
+            const house = houseWithCells(proof.view, step.cell, cell);
+            const weak = proof.add(
               "weak-link@1",
-              [b.fact({ kind: "all-different", cells: house.cells })],
+              [proof.fact({ kind: "all-different", cells: house.cells })],
               proposedClause([
                 { cell: step.cell, symbol: digit, positive: false },
                 { cell, symbol: digit, positive: false },
               ]),
             );
-            root = b.add(
+            root = proof.add(
               "resolution@1",
-              [source!, weak],
+              [defined(source, "source"), weak],
               proposedClause([{ cell, symbol: digit, positive: false }]),
             );
           } else if (step.kind === "locked") {
-            root = source!;
+            root = defined(source, "source");
             for (const [i, c] of step.supports.entries()) {
-              const weak = b.add(
+              const weak = proof.add(
                 "weak-link@1",
-                [b.fact({ kind: "all-different", cells: b.house(step.otherHouse) })],
+                [proof.fact({ kind: "all-different", cells: proof.house(step.otherHouse) })],
                 proposedClause([
                   { cell: c, symbol: digit, positive: false },
                   { cell, symbol: digit, positive: false },
                 ]),
               );
-              root = b.add(
+              root = proof.add(
                 "resolution@1",
                 [root, weak],
                 proposedClause([
@@ -184,15 +188,15 @@ class NetDomains {
               );
             }
           } else if (step.kind === "naked-subset")
-            root = b.add(
+            root = proof.add(
               "hall@1",
               [
-                b.fact({ kind: "all-different", cells: b.house(step.house) }),
+                proof.fact({ kind: "all-different", cells: proof.house(step.house) }),
                 ...step.cells.map((c) => this.roots[c]),
               ],
               proposedClause([{ cell, symbol: digit, positive: false }]),
             );
-          else root = source!;
+          else root = defined(source, "source");
           this.restrict(cell, digit, false, root);
         }
     }
@@ -201,52 +205,64 @@ class NetDomains {
 
 /** Compile finite basic steps, then optional complete second-level cell cases. */
 export function compileNet(view: ReadView, plan: NetPlan): DeductionProposal {
-  const b = new ForcingProof(view),
-    outer = new NetDomains(b),
+  const proof = new ForcingProof(view),
+    outer = new NetDomains(proof),
     value = { ...plan.outer.assumption, positive: true };
-  const assumption = b.add("assume@1", [], proposedClause([value]));
-  b.scope = [assumption];
+  const assumption = proof.add("assume@1", [], proposedClause([value]));
+  proof.scope = [assumption];
   outer.restrict(value.cell, value.symbol, true, assumption);
   for (const step of plan.outer.steps) outer.apply(step);
   let result: number,
     cover: number | null = null;
   const children: NetBranchCertificate[] = [];
   if (plan.branches) {
-    const cell = plan.innerCell!,
-      alternatives = plan.innerAlternatives!;
-    cover = b.add(
+    const cell = defined(plan.innerCell, "innerCell"),
+      alternatives = defined(plan.innerAlternatives, "innerAlternatives");
+    cover = proof.add(
       "cover-clause@1",
       [outer.roots[cell]],
       proposedClause(alternatives.map((symbol) => ({ cell, symbol, positive: true }))),
     );
     for (const branch of plan.branches) {
-      b.scope = [assumption];
-      const a = b.add("assume@1", [], proposedClause([{ ...branch.assumption, positive: true }]));
-      b.scope = [assumption, a];
-      const domains = new NetDomains(b, outer);
-      domains.restrict(branch.assumption.cell, branch.assumption.symbol, true, a);
+      proof.scope = [assumption];
+      const left = proof.add(
+        "assume@1",
+        [],
+        proposedClause([{ ...branch.assumption, positive: true }]),
+      );
+      proof.scope = [assumption, left];
+      const domains = new NetDomains(proof, outer);
+      domains.restrict(branch.assumption.cell, branch.assumption.symbol, true, left);
       for (const step of branch.steps) domains.apply(step);
-      const result = b.add("contradiction@1", [domains.roots[branch.contradiction!.cell]], {
-        kind: "false",
-      });
-      children.push({ assumption: a, result, children: [], cover: null });
+      const result = proof.add(
+        "contradiction@1",
+        [domains.roots[defined(branch.contradiction, "contradiction").cell]],
+        {
+          kind: "false",
+        },
+      );
+      children.push({ assumption: left, result, children: [], cover: null });
     }
-    b.scope = [assumption];
-    result = b.add("cases@1", [cover, ...children.flatMap((c) => [c.assumption, c.result])], {
+    proof.scope = [assumption];
+    result = proof.add("cases@1", [cover, ...children.flatMap((c) => [c.assumption, c.result])], {
       kind: "false",
     });
   } else
-    result = b.add("contradiction@1", [outer.roots[plan.outer.contradiction!.cell]], {
-      kind: "false",
-    });
-  b.scope = [];
-  const root = b.add(
+    result = proof.add(
+      "contradiction@1",
+      [outer.roots[defined(plan.outer.contradiction, "contradiction").cell]],
+      {
+        kind: "false",
+      },
+    );
+  proof.scope = [];
+  const root = proof.add(
     "discharge@1",
     [assumption, result],
     proposedClause([{ ...value, positive: false }]),
   );
   const mode = plan.mode ?? (plan.branches ? "nested" : "static");
-  return b.finish(
+  return proof.finish(
     "c23@1",
     {
       kind: "net",

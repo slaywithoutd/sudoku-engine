@@ -16,6 +16,7 @@ import {
   type SpecializedWork,
   type SpecializedStrategy,
 } from "./specialized-runtime";
+import { defined } from "../invariants";
 
 export interface JuniorPlan {
   readonly orientation: "row" | "column";
@@ -38,22 +39,25 @@ export type ExocetPlan =
 
 /** Emits the actual weighted scopes and every nonzero incidence domain. */
 function countClause(
-  b: SpecializedProof,
-  p: JuniorPlan,
+  proof: SpecializedProof,
+  pattern: JuniorPlan,
   base: number,
   symbol: number,
   targets: readonly number[],
 ): number {
   const capacityNames = [
-    ...p.covers.find((c) => c.symbol === symbol)!.houses,
-    `${p.orientation}:${p.orientation === "row" ? Math.floor(base / 9) : base % 9}`,
+    ...defined(
+      pattern.covers.find((cover) => cover.symbol === symbol),
+      "cover",
+    ).houses,
+    `${pattern.orientation}:${pattern.orientation === "row" ? Math.floor(base / 9) : base % 9}`,
     `box:${boxOf(base)}`,
   ];
-  const covers = p.crossLines.map((name) =>
-    b.wire.fact({ kind: "cover", symbol, cells: b.houses.house(name) }),
+  const covers = pattern.crossLines.map((name) =>
+    proof.wire.fact({ kind: "cover", symbol, cells: proof.houses.house(name) }),
   );
   const capacities = capacityNames.map((name) =>
-    b.wire.fact({ kind: "all-different", cells: b.houses.house(name) }),
+    proof.wire.fact({ kind: "all-different", cells: proof.houses.house(name) }),
   );
   const weightedCapacities = [...new Set(capacities)].map((premise) => ({
     premise,
@@ -61,23 +65,24 @@ function countClause(
   }));
   const coefficients = new Map<number, number>();
   for (const [names, sign] of [
-    [p.crossLines, -1],
+    [pattern.crossLines, -1],
     [capacityNames, 1],
   ] as const)
     for (const name of names)
-      for (const c of b.houses.house(name)) coefficients.set(c, (coefficients.get(c) ?? 0) + sign);
+      for (const cell of proof.houses.house(name))
+        coefficients.set(cell, (coefficients.get(cell) ?? 0) + sign);
   const needed = sortedCells(
     [...coefficients]
-      .filter(([, a]) => a !== 0)
-      .map(([c]) => c)
+      .filter(([, left]) => left !== 0)
+      .map(([cell]) => cell)
       .concat([base, ...targets]),
   );
-  return b.add(
+  return proof.add(
     "cover-count-clause@1",
     [
       ...covers,
-      ...weightedCapacities.map((c) => c.premise),
-      ...needed.map((c) => b.view.state.domainFacts[c]),
+      ...weightedCapacities.map((term) => term.premise),
+      ...needed.map((cell) => proof.view.state.domainFacts[cell]),
     ],
     clause([
       { cell: base, symbol, positive: false },
@@ -93,29 +98,34 @@ function countClause(
 
 export function* compileExocet(
   view: ReadView,
-  p: ExocetPlan,
+  pattern: ExocetPlan,
   lease?: WorkspaceReservation,
 ): Generator<SpecializedWork, DeductionProposal | null> {
-  const b = new SpecializedProof(view, lease),
-    plans = "components" in p ? p.components : [p],
+  const proof = new SpecializedProof(view, lease),
+    plans = "components" in pattern ? pattern.components : [pattern],
     components: any[] = [];
   for (const plan of plans) {
     const cells = sortedCells([...plan.base, ...plan.targets]),
-      local = yield* b.local(cells, [plan.base]),
+      local = yield* proof.local(cells, [plan.base]),
       counts: any[] = [];
     for (const symbol of plan.baseSymbols)
       for (const base of plan.base)
         if (candidates(view, base).includes(symbol)) {
-          const cover = plan.covers.find((c) => c.symbol === symbol)!;
+          const cover = defined(
+            plan.covers.find((symbolCover) => symbolCover.symbol === symbol),
+            "cover",
+          );
           const clauses =
-            cover.houses.length === 1 ? plan.targets.map((t) => [t]) : [[...plan.targets]];
+            cover.houses.length === 1
+              ? plan.targets.map((target) => [target])
+              : [[...plan.targets]];
           for (const targets of clauses) {
             yield specializedWork;
-            const forced = targets.find((t) => view.state.domains[t] === bitOf(symbol));
+            const forced = targets.find((target) => view.state.domains[target] === bitOf(symbol));
             const root =
               forced === undefined
-                ? countClause(b, plan, base, symbol, targets)
-                : b.project(
+                ? countClause(proof, plan, base, symbol, targets)
+                : proof.project(
                     local,
                     clause([
                       { cell: base, symbol, positive: false },
@@ -131,11 +141,11 @@ export function* compileExocet(
             });
           }
         }
-    const identity = yield* b.local([plan.base[0]]),
-      relation = yield* b.join(
+    const identity = yield* proof.local([plan.base[0]]),
+      relation = yield* proof.join(
         local,
         identity,
-        counts.map((c) => c.root),
+        counts.map((count) => count.root),
       );
     if (!relation.rows.length) return null;
     components.push({
@@ -147,7 +157,7 @@ export function* compileExocet(
     });
   }
   let table: LocalRelation = components[0].value;
-  if (components.length === 2) table = yield* b.joinPeers(table, components[1].value);
+  if (components.length === 2) table = yield* proof.joinPeers(table, components[1].value);
   if (!table.rows.length) return null;
   const effects: Effect[] = [],
     roots: number[] = [];
@@ -159,13 +169,18 @@ export function* compileExocet(
         table.rows.every((row) => row[table.cells.indexOf(cell)] !== symbol)
       ) {
         effects.push({ kind: "remove", cell, symbol });
-        roots.push(b.project(table, { kind: "literal", value: { cell, symbol, positive: false } }));
+        roots.push(
+          proof.project(table, { kind: "literal", value: { cell, symbol, positive: false } }),
+        );
       }
     }
   if (!effects.length) return null;
-  return b.finish(
+  return proof.finish(
     "c31@1",
-    { ...p, certificate: { components: components.map(({ value, ...c }) => c), table: table.id } },
+    {
+      ...pattern,
+      certificate: { components: components.map(({ value, ...rest }) => rest), table: table.id },
+    },
     effects,
     roots,
   );
@@ -190,65 +205,77 @@ export class ExocetSearch implements SpecializedStrategy {
       : [this];
   }
   *plans(view: ReadView, lease?: WorkspaceReservation) {
-    const h = new ClassicHouses(view),
+    const houses = new ClassicHouses(view),
       prior: JuniorPlan[] = [];
     for (const orientation of this.orientation
       ? [this.orientation]
       : (["row", "column"] as const)) {
-      const at = (r: number, c: number) => (orientation === "row" ? r * 9 + c : c * 9 + r);
+      const at = (rowIndex: number, cell: number) =>
+        orientation === "row" ? rowIndex * 9 + cell : cell * 9 + rowIndex;
       for (let band = 0; band < 3; band++)
         for (let line = band * 3; line < band * 3 + 3; line++)
           for (let stack = 0; stack < 3; stack++)
             for (const selected of choose([0, 1, 2], 2)) {
               yield specializedWork;
-              const base = selected.map((i) => at(line, stack * 3 + i)).sort((a, b) => a - b),
-                baseSymbols = sortedCells(base.flatMap((c) => candidates(view, c)));
+              const base = selected
+                  .map((i) => at(line, stack * 3 + i))
+                  .sort((left, right) => left - right),
+                baseSymbols = sortedCells(base.flatMap((cell) => candidates(view, cell)));
               if (
-                base.some((c) => view.state.values[c]) ||
+                base.some((cell) => view.state.values[cell]) ||
                 baseSymbols.length < 3 ||
                 baseSymbols.length > 4
               )
                 continue;
-              const otherRows = [band * 3, band * 3 + 1, band * 3 + 2].filter((r) => r !== line),
-                otherStacks = [0, 1, 2].filter((s) => s !== stack),
-                unused = stack * 3 + [0, 1, 2].find((i) => !selected.includes(i))!;
+              const otherRows = [band * 3, band * 3 + 1, band * 3 + 2].filter(
+                  (otherRow) => otherRow !== line,
+                ),
+                otherStacks = [0, 1, 2].filter((symbol) => symbol !== stack),
+                unused =
+                  stack * 3 +
+                  defined(
+                    [0, 1, 2].find((i) => !selected.includes(i)),
+                    "find",
+                  );
               for (const order of [otherRows, [...otherRows].reverse()])
                 for (let left = 0; left < 3; left++)
                   for (let right = 0; right < 3; right++) {
                     yield specializedWork;
                     const columns = [otherStacks[0] * 3 + left, otherStacks[1] * 3 + right],
-                      targets = columns.map((c, i) => at(order[i], c)),
-                      companions = columns.map((c, i) => at(order[1 - i], c));
+                      targets = columns.map((cell, i) => at(order[i], cell)),
+                      companions = columns.map((cell, i) => at(order[1 - i], cell));
                     if (
-                      targets.some((c) => view.state.values[c]) ||
-                      companions.some((c) =>
-                        baseSymbols.some((s) => candidates(view, c).includes(s)),
+                      targets.some((cell) => view.state.values[cell]) ||
+                      companions.some((cell) =>
+                        baseSymbols.some((symbol) => candidates(view, cell).includes(symbol)),
                       )
                     )
                       continue;
                     const crossLines = [unused, ...columns].map(
-                        (c) => `${orientation === "row" ? "column" : "row"}:${c}`,
+                        (cell) => `${orientation === "row" ? "column" : "row"}:${cell}`,
                       ),
                       sCells = sortedCells(
-                        [unused, ...columns].flatMap((c) =>
-                          Array.from({ length: 9 }, (_, r) => r)
-                            .filter((r) => Math.floor(r / 3) !== band)
-                            .map((r) => at(r, c)),
+                        [unused, ...columns].flatMap((cell) =>
+                          Array.from({ length: 9 }, (_, rowIndex) => rowIndex)
+                            .filter((rowIndex) => Math.floor(rowIndex / 3) !== band)
+                            .map((rowIndex) => at(rowIndex, cell)),
                         ),
                       );
-                    const scopes = [...h.rows, ...h.columns, ...h.boxes].filter(
-                        (v): v is readonly number[] => !!v,
+                    const scopes = [...houses.rows, ...houses.columns, ...houses.boxes].filter(
+                        (value): value is readonly number[] => !!value,
                       ),
                       covers: JuniorPlan["covers"][number][] = [];
                     for (const symbol of baseSymbols) {
-                      const occurrences = sCells.filter((c) =>
-                          candidates(view, c).includes(symbol),
+                      const occurrences = sCells.filter((cell) =>
+                          candidates(view, cell).includes(symbol),
                         ),
-                        assignedOccurrences = sCells.filter((c) => view.state.values[c] === symbol);
+                        assignedOccurrences = sCells.filter(
+                          (cell) => view.state.values[cell] === symbol,
+                        );
                       let chosen: (readonly number[])[] | undefined;
                       for (const scope of scopes) {
                         yield specializedWork;
-                        if (occurrences.every((c) => scope.includes(c))) {
+                        if (occurrences.every((cell) => scope.includes(cell))) {
                           chosen = [scope];
                           break;
                         }
@@ -256,7 +283,7 @@ export class ExocetSearch implements SpecializedStrategy {
                       if (!chosen)
                         for (const pair of choose(scopes, 2)) {
                           yield specializedWork;
-                          if (occurrences.every((c) => pair.some((s) => s.includes(c)))) {
+                          if (occurrences.every((cell) => pair.some((s) => s.includes(cell)))) {
                             chosen = pair;
                             break;
                           }
@@ -264,7 +291,7 @@ export class ExocetSearch implements SpecializedStrategy {
                       if (!chosen) break;
                       covers.push({
                         symbol,
-                        houses: chosen.map((s) => h.id(s)),
+                        houses: chosen.map((s) => houses.id(s)),
                         occurrences,
                         assignedOccurrences,
                       });
@@ -307,8 +334,8 @@ export class ExocetSearch implements SpecializedStrategy {
             }
     }
   }
-  compile(view: ReadView, p: ExocetPlan, lease?: WorkspaceReservation) {
-    return compileExocet(view, p, lease);
+  compile(view: ReadView, pattern: ExocetPlan, lease?: WorkspaceReservation) {
+    return compileExocet(view, pattern, lease);
   }
 }
 export const exocetTechniques = Object.freeze([

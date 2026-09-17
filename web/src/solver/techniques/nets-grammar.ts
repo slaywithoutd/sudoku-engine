@@ -4,6 +4,7 @@ import { domainAssertion, requireProof, sameValue } from "../proof/primitives";
 import { checkForcingRoots } from "./forcing-grammar";
 import type { NetBranchCertificate } from "./nets";
 import { symbolMask } from "../state/read";
+import { defined } from "../invariants";
 
 /** Bounded net grammar: basic domain/cover/Hall reasoning and scalar resolution.
  * No relation tables, exact primitives, recursive solver calls or caller-issued facts.
@@ -13,7 +14,7 @@ export function checkNetPattern(
   view: ReadView,
   nodes: ReadonlyMap<number, ProofNode>,
 ): void {
-  const p = proposal.pattern as unknown as {
+  const pattern = proposal.pattern as unknown as {
     kind: string;
     mode: string;
     alias: string;
@@ -21,12 +22,12 @@ export function checkNetPattern(
     root: number;
   };
   requireProof(
-    p.kind === "net" &&
-      ["static", "dynamic", "nested"].includes(p.mode) &&
-      p.alias ===
-        (p.mode === "nested"
+    pattern.kind === "net" &&
+      ["static", "dynamic", "nested"].includes(pattern.mode) &&
+      pattern.alias ===
+        (pattern.mode === "nested"
           ? "Nested forcing"
-          : p.mode === "dynamic"
+          : pattern.mode === "dynamic"
             ? "Dynamic forcing nets"
             : "Static forcing nets"),
     "net-profile",
@@ -49,29 +50,29 @@ export function checkNetPattern(
     maxDepth = 0;
   const taint = new Map<number, boolean>();
   const depends = (id: number): boolean => {
-    if (view.facts.has(id)) return view.facts.get(id)!.openAssumptions.length > 0;
+    if (view.facts.has(id)) return defined(view.facts.get(id), "fact").openAssumptions.length > 0;
     const cached = taint.get(id);
     if (cached !== undefined) return cached;
-    const n = nodes.get(id)!;
+    const n = defined(nodes.get(id), "node");
     const value = n.rule === "assume@1" || n.premises.some(depends);
     taint.set(id, value);
     return value;
   };
-  const check = (c: NetBranchCertificate, parent: readonly number[]) => {
+  const check = (branch: NetBranchCertificate, parent: readonly number[]) => {
     requireProof(parent.length < 2, "net-depth-out-of-profile");
-    const a = nodes.get(c.assumption),
-      r = nodes.get(c.result),
-      scope = [...parent, c.assumption];
+    const left = nodes.get(branch.assumption),
+      node = nodes.get(branch.result),
+      scope = [...parent, branch.assumption];
     requireProof(
-      a?.rule === "assume@1" &&
-        sameValue(a.scope, parent) &&
-        r &&
-        sameValue(r.scope, scope) &&
-        r.conclusion.kind === "false" &&
-        !branches.has(a.id),
+      left?.rule === "assume@1" &&
+        sameValue(left.scope, parent) &&
+        node &&
+        sameValue(node.scope, scope) &&
+        node.conclusion.kind === "false" &&
+        !branches.has(left.id),
       "net-branch-lineage",
     );
-    branches.add(a.id);
+    branches.add(left.id);
     maxDepth = Math.max(maxDepth, scope.length);
     const local = proposal.proof.nodes.filter(
       (n) =>
@@ -79,27 +80,33 @@ export function checkNetPattern(
         ["resolution@1", "hall@1", "cover-clause@1", "contradiction@1", "cases@1"].includes(n.rule),
     );
     requireProof(local.length <= 128, "net-node-out-of-profile");
-    if (c.children.length) {
+    if (branch.children.length) {
       requireProof(
-        c.children.length >= 2 &&
-          c.children.length <= 9 &&
-          r.rule === "cases@1" &&
-          sameValue(r.premises, [c.cover, ...c.children.flatMap((v) => [v.assumption, v.result])]),
+        branch.children.length >= 2 &&
+          branch.children.length <= 9 &&
+          node.rule === "cases@1" &&
+          sameValue(node.premises, [
+            branch.cover,
+            ...branch.children.flatMap((value) => [value.assumption, value.result]),
+          ]),
         "net-incomplete-cases",
       );
-      const cover = nodes.get(c.cover!);
+      const cover = nodes.get(defined(branch.cover, "cover"));
       requireProof(
         cover?.rule === "cover-clause@1" &&
           sameValue(cover.scope, scope) &&
           cover.premises.length === 1 &&
-          domainAssertion(nodes.get(cover.premises[0])!.conclusion),
+          domainAssertion(defined(nodes.get(cover.premises[0]), "node").conclusion),
         "net-cell-alternatives",
       );
-      for (const child of c.children) check(child, scope);
+      for (const child of branch.children) check(child, scope);
     } else
-      requireProof(c.cover === null && r.rule === "contradiction@1", "net-terminal-contradiction");
+      requireProof(
+        branch.cover === null && node.rule === "contradiction@1",
+        "net-terminal-contradiction",
+      );
   };
-  check(p.branch, []);
+  check(pattern.branch, []);
   for (const node of proposal.proof.nodes) {
     requireProof(
       allowed.has(node.rule) &&
@@ -110,16 +117,16 @@ export function checkNetPattern(
     if (node.rule === "assume@1") requireProof(branches.has(node.id), "net-unrelated-assumption");
     if (node.rule === "hall@1") {
       requireProof(node.premises.length >= 3 && node.premises.length <= 5, "net-subset-bound");
-      const s = nodes.get(node.premises[0])!.conclusion;
+      const proposition = defined(nodes.get(node.premises[0]), "node").conclusion;
       requireProof(
-        s.kind === "all-different" &&
-          view.assembly.allDifferent.some((h) => sameValue(h.cells, s.cells)),
+        proposition.kind === "all-different" &&
+          view.assembly.allDifferent.some((house) => sameValue(house.cells, proposition.cells)),
         "net-subset-scope",
       );
       fanIn = true;
     }
     if (node.rule === "resolution@1") {
-      const sources = node.premises.map((id) => nodes.get(id)!);
+      const sources = node.premises.map((id) => defined(nodes.get(id), "node"));
       if (sources.every((n) => depends(n.id) && n.rule !== "assume@1")) fanIn = true;
       for (const s of sources)
         if (
@@ -131,23 +138,23 @@ export function checkNetPattern(
           const d = domain && domainAssertion(domain.conclusion);
           if (
             d &&
-            domain!.scope.length &&
+            defined(domain, "domain").scope.length &&
             view.assembly.problem.symbols.filter(
               (symbol) => view.state.domains[d.cell] & symbolMask(symbol),
             ).length > 2
           )
             dynamic = true;
           if (domain?.rule === "support@1") {
-            const base = nodes.get(domain.premises[0])!.conclusion;
+            const base = defined(nodes.get(domain.premises[0]), "node").conclusion;
             if (
               base.kind === "cover" &&
               base.cells.filter((cell) => view.state.domains[cell] & symbolMask(base.symbol))
                 .length > 2 &&
-              domain.premises.slice(1).some((id) => nodes.get(id)!.scope.length > 0)
+              domain.premises.slice(1).some((id) => defined(nodes.get(id), "node").scope.length > 0)
             )
               dynamic = true;
           }
-          if (p.mode === "static")
+          if (pattern.mode === "static")
             requireProof(
               domain?.rule === "support@1"
                 ? domain.premises.slice(1).every((id) => view.state.domainFacts.includes(id))
@@ -158,14 +165,14 @@ export function checkNetPattern(
     }
   }
   requireProof(fanIn, "net-missing-convergence");
-  requireProof(p.mode === "nested" ? maxDepth === 2 : maxDepth === 1, "net-nesting-label");
-  if (p.mode === "dynamic") requireProof(dynamic, "net-missing-dynamic-link");
-  const root = nodes.get(p.root);
+  requireProof(pattern.mode === "nested" ? maxDepth === 2 : maxDepth === 1, "net-nesting-label");
+  if (pattern.mode === "dynamic") requireProof(dynamic, "net-missing-dynamic-link");
+  const root = nodes.get(pattern.root);
   requireProof(
     root?.rule === "discharge@1" &&
       root.scope.length === 0 &&
-      sameValue(root.premises, [p.branch.assumption, p.branch.result]),
+      sameValue(root.premises, [pattern.branch.assumption, pattern.branch.result]),
     "net-root-lineage",
   );
-  checkForcingRoots(proposal, view, nodes, p.root);
+  checkForcingRoots(proposal, view, nodes, pattern.root);
 }

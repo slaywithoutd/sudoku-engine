@@ -19,10 +19,11 @@ import {
   type BlossomPattern,
 } from "./als-certificate";
 import { classicHouseEqualTo, symbolMask } from "../state/read";
+import { defined } from "../invariants";
 
-const projection = (set: number, a: number, b: number): AlsProjection => ({
+const projection = (set: number, left: number, right: number): AlsProjection => ({
   set,
-  symbols: [a, b],
+  symbols: [left, right],
   root: -1,
 });
 type Cursor = Generator<ChainWork | AlsCandidate>;
@@ -43,7 +44,7 @@ export class AlsSearch {
     const seen = new Set<string>();
     for (const entry of this.index.entries) {
       yield { kind: "work", units: 1 };
-      const source = this.view.facts.get(entry.recipe.source)!.proposition;
+      const source = defined(this.view.facts.get(entry.recipe.source), "fact").proposition;
       if (source.kind !== "all-different") continue;
       const house = classicHouseEqualTo(this.view, source.cells);
       if (!house || seen.has(entry.cells.join())) continue;
@@ -53,11 +54,15 @@ export class AlsSearch {
         cells: [...entry.cells],
         symbols: [...entry.symbols],
         house: house.id,
-        occurrences: Object.fromEntries(entry.occurrences.map((o) => [o.symbol, [...o.cells]])),
+        occurrences: Object.fromEntries(
+          entry.occurrences.map((occurrence) => [occurrence.symbol, [...occurrence.cells]]),
+        ),
       });
     }
     this.sets.sort(
-      (a, b) => a.cells.length - b.cells.length || a.cells.join().localeCompare(b.cells.join()),
+      (left, right) =>
+        left.cells.length - right.cells.length ||
+        left.cells.join().localeCompare(right.cells.join()),
     );
   }
   private *rcc(a: number, b: number, symbol: number): Generator<ChainWork, boolean> {
@@ -66,8 +71,9 @@ export class AlsSearch {
       prior = this.#rcc.get(key);
     if (prior !== undefined) return prior;
     let valid = true;
-    const left = this.sets[a].occurrences[symbol],
-      right = this.sets[b].occurrences[symbol];
+    // The record is sparse: a symbol absent from the set has no entry.
+    const left = this.sets[a].occurrences[symbol] as number[] | undefined,
+      right = this.sets[b].occurrences[symbol] as number[] | undefined;
     if (!left || !right) valid = false;
     else
       outer: for (const x of left)
@@ -83,18 +89,25 @@ export class AlsSearch {
     return valid;
   }
   private *effects(
-    p: AlsPattern,
+    pattern: AlsPattern,
     symbol: number,
     form: AlsRoute["form"],
     selected: number[],
     lockedSet = -1,
   ): Cursor {
-    const sequence = selected.map((i) => p.rccs[i].symbol);
+    const sequence = selected.map((i) => pattern.rccs[i].symbol);
     let witnesses =
       lockedSet >= 0
-        ? alsMembers(p.sets, lockedSet, symbol)
-        : [...alsMembers(p.sets, 0, symbol), ...alsMembers(p.sets, p.sets.length - 1, symbol)];
-    witnesses = [...new Map(witnesses.map((l) => [l.cell + ":" + l.symbol, l])).values()];
+        ? alsMembers(pattern.sets, lockedSet, symbol)
+        : [
+            ...alsMembers(pattern.sets, 0, symbol),
+            ...alsMembers(pattern.sets, pattern.sets.length - 1, symbol),
+          ];
+    witnesses = [
+      ...new Map(
+        witnesses.map((literal) => [literal.cell + ":" + literal.symbol, literal]),
+      ).values(),
+    ];
     const projections =
       lockedSet >= 0
         ? [
@@ -102,11 +115,11 @@ export class AlsSearch {
             projection(lockedSet, sequence[1], symbol),
             projection(1 - lockedSet, sequence[0], sequence[1]),
           ]
-        : p.sets.map((_, i) =>
+        : pattern.sets.map((_, i) =>
             projection(
               i,
               i ? sequence[i - 1] : symbol,
-              i === p.sets.length - 1 ? symbol : sequence[i],
+              i === pattern.sets.length - 1 ? symbol : sequence[i],
             ),
           );
     const effects: Effect[] = [];
@@ -115,9 +128,9 @@ export class AlsSearch {
       if (this.view.state.values[cell] || !(this.view.state.domains[cell] & symbolMask(symbol)))
         continue;
       let valid = true;
-      for (const l of witnesses) {
+      for (const literal of witnesses) {
         yield { kind: "work", units: 1 };
-        if (!this.graph.has(l, candidate(cell, symbol))) {
+        if (!this.graph.has(literal, candidate(cell, symbol))) {
           valid = false;
           break;
         }
@@ -129,7 +142,7 @@ export class AlsSearch {
         kind: "candidate",
         effects,
         pattern: {
-          ...p,
+          ...pattern,
           routes: effects.map(() => ({
             form,
             projections,
@@ -143,13 +156,16 @@ export class AlsSearch {
   }
   /** Two-set XZ includes genuine double-RCC locked-set and locked-union routes. */
   *xz(): Cursor {
-    for (let a = 0; a < this.sets.length; a++)
-      for (let b = a + 1; b < this.sets.length; b++) {
+    for (let left = 0; left < this.sets.length; left++)
+      for (let right = left + 1; right < this.sets.length; right++) {
         yield { kind: "work", units: 1 };
-        const common = this.sets[a].symbols.filter((s) => this.sets[b].symbols.includes(s)),
+        const common = this.sets[left].symbols.filter((symbol) =>
+            this.sets[right].symbols.includes(symbol),
+          ),
           restricted: number[] = [];
-        for (const symbol of common) if (yield* this.rcc(a, b, symbol)) restricted.push(symbol);
-        const sets = [this.sets[a], this.sets[b]],
+        for (const symbol of common)
+          if (yield* this.rcc(left, right, symbol)) restricted.push(symbol);
+        const sets = [this.sets[left], this.sets[right]],
           base = {
             kind: "als" as const,
             alias: "ALS-XZ" as const,
@@ -158,10 +174,10 @@ export class AlsSearch {
             routes: [],
           };
         for (const x of restricted)
-          for (const z of common.filter((s) => s !== x))
+          for (const zDigit of common.filter((symbol) => symbol !== x))
             yield* this.effects(
               { ...base, rccs: [{ left: 0, right: 1, symbol: x, roots: [] }] },
-              z,
+              zDigit,
               "path",
               [0],
             );
@@ -173,13 +189,14 @@ export class AlsSearch {
                 symbol,
                 roots: [],
               })),
-              p = { ...base, rccs };
+              pattern = { ...base, rccs };
             for (let side = 0; side < 2; side++)
               for (const symbol of sets[side].symbols.filter(
-                (s) => !rccs.some((r) => r.symbol === s),
+                (s) => !rccs.some((row) => row.symbol === s),
               ))
-                yield* this.effects(p, symbol, "locked", [0, 1], side);
-            for (let i = 0; i < 2; i++) yield* this.effects(p, rccs[i].symbol, "rcc", [1 - i]);
+                yield* this.effects(pattern, symbol, "locked", [0, 1], side);
+            for (let i = 0; i < 2; i++)
+              yield* this.effects(pattern, rccs[i].symbol, "rcc", [1 - i]);
           }
       }
   }
@@ -194,12 +211,13 @@ export class AlsSearch {
       yield { kind: "work", units: 1 };
       if (path.length === length) {
         const first = this.sets[path[0]],
-          last = this.sets[path.at(-1)!];
+          last = this.sets[defined(path.at(-1), "path")];
         const sets = path.map((i) => this.sets[i]);
-        for (const z of first.symbols.filter(
-          (s) => last.symbols.includes(s) && s !== links[0] && s !== links.at(-1),
+        for (const zDigit of first.symbols.filter(
+          (symbol) =>
+            last.symbols.includes(symbol) && symbol !== links[0] && symbol !== links.at(-1),
         )) {
-          const p: AlsPattern = {
+          const pattern: AlsPattern = {
             kind: "als",
             alias: xy ? "ALS-XY-Wing" : "ALS chains",
             sets,
@@ -208,15 +226,15 @@ export class AlsSearch {
             routes: [],
           };
           yield* this.effects(
-            p,
-            z,
+            pattern,
+            zDigit,
             "path",
             links.map((_, i) => i),
           );
         }
         return;
       }
-      const from = path.at(-1)!;
+      const from = defined(path.at(-1), "path");
       for (let next = 0; next < this.sets.length; next++) {
         yield { kind: "work", units: 1 };
         if (path.includes(next)) continue;
@@ -243,10 +261,12 @@ export class AlsSearch {
       for (const stem of this.view.assembly.problem.cells) {
         yield { kind: "work", units: 1 };
         const symbols = this.view.assembly.problem.symbols.filter(
-          (s) => this.view.state.domains[stem] & symbolMask(s),
+          (symbol) => this.view.state.domains[stem] & symbolMask(symbol),
         );
         if (this.view.state.values[stem] || symbols.length !== size) continue;
-        for (const z of this.view.assembly.problem.symbols.filter((s) => !symbols.includes(s))) {
+        for (const zDigit of this.view.assembly.problem.symbols.filter(
+          (symbol) => !symbols.includes(symbol),
+        )) {
           const choices: number[][] = symbols.map(() => []);
           for (let i = 0; i < symbols.length; i++)
             for (let set = 0; set < this.sets.length; set++) {
@@ -255,7 +275,7 @@ export class AlsSearch {
               if (
                 als.cells.includes(stem) ||
                 !als.symbols.includes(symbols[i]) ||
-                !als.symbols.includes(z)
+                !als.symbols.includes(zDigit)
               )
                 continue;
               let valid = true;
@@ -272,16 +292,19 @@ export class AlsSearch {
           // product so unproductive petal combinations do not hide other stem sizes.
           for (const cell of this.view.assembly.problem.cells) {
             yield { kind: "work", units: 1 };
-            if (this.view.state.values[cell] || !(this.view.state.domains[cell] & symbolMask(z)))
+            if (
+              this.view.state.values[cell] ||
+              !(this.view.state.domains[cell] & symbolMask(zDigit))
+            )
               continue;
             const local: number[][] = choices.map(() => []);
             for (let i = 0; i < choices.length; i++)
               for (const set of choices[i]) {
                 yield { kind: "work", units: 1 };
                 let valid = true;
-                for (const occurrence of this.sets[set].occurrences[z]) {
+                for (const occurrence of this.sets[set].occurrences[zDigit]) {
                   yield { kind: "work", units: 1 };
-                  if (!this.graph.has(candidate(occurrence, z), candidate(cell, z))) {
+                  if (!this.graph.has(candidate(occurrence, zDigit), candidate(cell, zDigit))) {
                     valid = false;
                     break;
                   }
@@ -299,7 +322,7 @@ export class AlsSearch {
               const unique = [...new Set(selected)],
                 sets = unique.map((i) => this.sets[i]),
                 petals = selected.map((i) => unique.indexOf(i));
-              const p: BlossomPattern = {
+              const pattern: BlossomPattern = {
                 kind: "blossom",
                 alias: "Death Blossom",
                 sets,
@@ -312,7 +335,7 @@ export class AlsSearch {
                   symbols.map((symbol, i) => ({
                     symbol,
                     petal: petals[i],
-                    projection: projection(petals[i], symbol, z),
+                    projection: projection(petals[i], symbol, zDigit),
                     conflicts: [],
                     visibility: [],
                     assumption: -1,
@@ -322,8 +345,8 @@ export class AlsSearch {
               };
               yield {
                 kind: "candidate",
-                pattern: p,
-                effects: [{ kind: "remove", cell, symbol: z }],
+                pattern: pattern,
+                effects: [{ kind: "remove", cell, symbol: zDigit }],
               };
             };
             yield* combine.call(this, []);
@@ -339,13 +362,16 @@ export class AlsSearch {
 /** Descriptor lifecycle owns both transferred indexes, live subcursors and one
  * proposal lease. Consumers retaining a yielded proposal must reserve their copy. */
 export function alsDescriptor(id: "C18" | "C19"): TechniqueDescriptor {
-  const row = coverageEntries.find((e) => e.id === id)!;
+  const entry = defined(
+    coverageEntries.find((entry) => entry.id === id),
+    "coverageEntry",
+  );
   return Object.freeze({
-    id: row.version,
-    aliases: row.aliases,
-    tier: row.tier,
-    requires: row.capabilities,
-    assumptionPolicy: row.assumptionPolicy,
+    id: entry.version,
+    aliases: entry.aliases,
+    tier: entry.tier,
+    requires: entry.capabilities,
+    assumptionPolicy: entry.assumptionPolicy,
     bounds: {
       maxLength: id === "C19" ? 24 : 0,
       maxBranchDepth: id === "C19" ? 1 : 0,
@@ -419,7 +445,7 @@ export function alsDescriptor(id: "C18" | "C19"): TechniqueDescriptor {
               next.value.effects,
             );
             try {
-              while (true) {
+              for (;;) {
                 tick();
                 const step = compiler.next();
                 if (step.done) {
@@ -445,7 +471,7 @@ export function alsDescriptor(id: "C18" | "C19"): TechniqueDescriptor {
           yield { kind: "interrupted", reason: "work-limit" };
         else throw error;
       } finally {
-        cursors.forEach((c) => c.return(undefined));
+        cursors.forEach((cursor) => cursor.return(undefined));
         lease?.dispose();
         als?.dispose();
         implications?.dispose();

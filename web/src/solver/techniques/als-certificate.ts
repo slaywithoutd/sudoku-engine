@@ -4,6 +4,7 @@ import type { DeductionProposal, Effect } from "../proof/types";
 import { clause } from "../proof/primitives";
 import { ChainCertificate, candidate, type ChainWork } from "./chains-certificate";
 import type { PatternGraph } from "./pattern-runtime";
+import { defined } from "../invariants";
 
 /** Exact set identity and every occurrence, including cells shared with another ALS. */
 export interface AlsSet {
@@ -70,11 +71,13 @@ export type AlsCandidate = {
   effects: Effect[];
 };
 export const alsMembers = (sets: AlsSet[], set: number, symbol: number): Literal[] =>
-  sets[set].occurrences[symbol].map((c) => candidate(c, symbol));
+  sets[set].occurrences[symbol].map((cell) => candidate(cell, symbol));
 export const alsOverlaps = (sets: AlsSet[]): AlsOverlap[] =>
   sets.flatMap((a, left) =>
     sets.flatMap((b, right) =>
-      left < right ? [{ left, right, cells: a.cells.filter((c) => b.cells.includes(c)) }] : [],
+      left < right
+        ? [{ left, right, cells: a.cells.filter((cell) => b.cells.includes(cell)) }]
+        : [],
     ),
   );
 
@@ -89,59 +92,70 @@ export class AlsCertificate {
   ) {
     this.algebra = new ChainCertificate(view, graph);
   }
-  private *projection(sets: AlsSet[], p: AlsProjection): Generator<ChainWork> {
-    const set = sets[p.set];
+  private *projection(sets: AlsSet[], projection: AlsProjection): Generator<ChainWork> {
+    const set = sets[projection.set];
     yield { kind: "work", units: 1 };
-    const key = JSON.stringify([set.cells, set.house, [...p.symbols].sort((a, b) => a - b)]),
+    const key = JSON.stringify([
+        set.cells,
+        set.house,
+        [...projection.symbols].sort((left, right) => left - right),
+      ]),
       prior = this.#projections.get(key);
     if (prior !== undefined) {
-      p.root = prior;
+      projection.root = prior;
       return;
     }
-    p.root = yield* this.algebra.strong(
+    projection.root = yield* this.algebra.strong(
       { kind: "als", cells: set.cells, symbols: set.symbols, house: set.house },
-      p.symbols.flatMap((symbol) => alsMembers(sets, p.set, symbol)),
+      projection.symbols.flatMap((symbol) => alsMembers(sets, projection.set, symbol)),
     );
-    this.graph.compilation!.grow(1, 256);
-    this.#projections.set(key, p.root);
+    defined(this.graph.compilation, "compilation").grow(1, 256);
+    this.#projections.set(key, projection.root);
   }
   *compile(
     input: AlsPattern | BlossomPattern,
     effects: Effect[],
   ): Generator<ChainWork, DeductionProposal> {
-    const p = structuredClone(input),
-      b = this.algebra,
+    const pattern = structuredClone(input),
+      certificate = this.algebra,
       roots: number[] = [];
-    if (p.kind === "als") {
-      for (const edge of p.rccs) {
+    if (pattern.kind === "als") {
+      for (const edge of pattern.rccs) {
         edge.roots = [];
-        for (const a of alsMembers(p.sets, edge.left, edge.symbol))
-          for (const c of alsMembers(p.sets, edge.right, edge.symbol))
-            edge.roots.push(yield* b.weak(a, c));
+        for (const literal of alsMembers(pattern.sets, edge.left, edge.symbol))
+          for (const c of alsMembers(pattern.sets, edge.right, edge.symbol))
+            edge.roots.push(yield* certificate.weak(literal, c));
       }
-      for (const [i, route] of p.routes.entries()) {
-        for (const projection of route.projections) yield* this.projection(p.sets, projection);
+      for (const [i, route] of pattern.routes.entries()) {
+        for (const projection of route.projections)
+          yield* this.projection(pattern.sets, projection);
         route.visibility = [];
         for (const witness of route.witnesses)
           route.visibility.push(
-            yield* b.weak(witness, candidate(effects[i].cell, effects[i].symbol)),
+            yield* certificate.weak(witness, candidate(effects[i].cell, effects[i].symbol)),
           );
         const selected = [
-          ...route.projections.map((s) => s.root),
-          ...route.rccs.flatMap((j) => p.rccs[j].roots),
+          ...route.projections.map((projection) => projection.root),
+          ...route.rccs.flatMap((j) => pattern.rccs[j].roots),
           ...route.visibility,
         ];
-        const packaged = b.package([...selected, ...p.rccs.flatMap((e) => e.roots)]);
+        const packaged = certificate.package([
+          ...selected,
+          ...pattern.rccs.flatMap((rcc) => rcc.roots),
+        ]);
         if (route.form !== "locked") {
           // Establish the complete endpoint OR before applying target conflicts.
           // General elimination could silently choose a shorter overlapping route.
-          const vertices = route.projections.flatMap((s) =>
-            s.symbols.map((symbol) => alsMembers(p.sets, s.set, symbol)),
+          const vertices = route.projections.flatMap((projection) =>
+            projection.symbols.map((symbol) => alsMembers(pattern.sets, projection.set, symbol)),
           );
-          const endpoint = yield* b.path(vertices, packaged.slice(0, route.projections.length));
-          route.root = yield* b.eliminate(endpoint, effects[i]);
+          const endpoint = yield* certificate.path(
+            vertices,
+            packaged.slice(0, route.projections.length),
+          );
+          route.root = yield* certificate.eliminate(endpoint, effects[i]);
         } else
-          route.root = yield* b.derive(packaged.slice(0, selected.length), {
+          route.root = yield* certificate.derive(packaged.slice(0, selected.length), {
             cell: effects[i].cell,
             symbol: effects[i].symbol,
             positive: false,
@@ -149,38 +163,44 @@ export class AlsCertificate {
         roots.push(route.root);
       }
     } else {
-      p.cover = b.cell(p.stem);
-      for (const [i, branches] of p.branches.entries()) {
+      pattern.cover = certificate.cell(pattern.stem);
+      for (const [i, branches] of pattern.branches.entries()) {
         for (const branch of branches) {
-          yield* this.projection(p.sets, branch.projection);
+          yield* this.projection(pattern.sets, branch.projection);
           branch.conflicts = [];
           branch.visibility = [];
-          for (const occurrence of alsMembers(p.sets, branch.petal, branch.symbol))
-            branch.conflicts.push(yield* b.weak(candidate(p.stem, branch.symbol), occurrence));
-          for (const occurrence of alsMembers(p.sets, branch.petal, effects[i].symbol))
-            branch.visibility.push(
-              yield* b.weak(occurrence, candidate(effects[i].cell, effects[i].symbol)),
+          for (const occurrence of alsMembers(pattern.sets, branch.petal, branch.symbol))
+            branch.conflicts.push(
+              yield* certificate.weak(candidate(pattern.stem, branch.symbol), occurrence),
             );
-          branch.assumption = b.add("assume@1", [], clause([candidate(p.stem, branch.symbol)]));
-          b.scope = [branch.assumption];
-          branch.root = yield* b.derive(
+          for (const occurrence of alsMembers(pattern.sets, branch.petal, effects[i].symbol))
+            branch.visibility.push(
+              yield* certificate.weak(occurrence, candidate(effects[i].cell, effects[i].symbol)),
+            );
+          branch.assumption = certificate.add(
+            "assume@1",
+            [],
+            clause([candidate(pattern.stem, branch.symbol)]),
+          );
+          certificate.scope = [branch.assumption];
+          branch.root = yield* certificate.derive(
             [branch.projection.root, ...branch.conflicts, ...branch.visibility, branch.assumption],
             { cell: effects[i].cell, symbol: effects[i].symbol, positive: false },
           );
-          b.scope = [];
+          certificate.scope = [];
         }
         roots.push(
-          b.add(
+          certificate.add(
             "cases@1",
-            [p.cover, ...branches.flatMap((branch) => [branch.assumption, branch.root])],
+            [pattern.cover, ...branches.flatMap((branch) => [branch.assumption, branch.root])],
             clause([{ cell: effects[i].cell, symbol: effects[i].symbol, positive: false }]),
           ),
         );
       }
     }
-    return b.close(
-      p.alias === "ALS-XZ" || p.alias === "ALS-XY-Wing" ? "c18@1" : "c19@1",
-      p as unknown as Json,
+    return certificate.close(
+      pattern.alias === "ALS-XZ" || pattern.alias === "ALS-XY-Wing" ? "c18@1" : "c19@1",
+      pattern as unknown as Json,
       effects,
       roots,
     );

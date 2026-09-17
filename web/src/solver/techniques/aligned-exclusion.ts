@@ -22,13 +22,13 @@ export class AlignedExclusionSearch {
   ): Generator<ChainWork, { reasons: number[]; support: number[] }> {
     const reasons: number[] = [],
       support = selected.map(() => 0),
-      pairs = selected.flatMap((a, i) => selected.slice(i + 1).map((b) => [a, b]));
-    for (const tuple of assignments(selected.map((c) => this.view.state.domains[c]))) {
+      pairs = selected.flatMap((left, i) => selected.slice(i + 1).map((right) => [left, right]));
+    for (const tuple of assignments(selected.map((cell) => this.view.state.domains[cell]))) {
       yield { kind: "work", units: 1 };
-      const direct = pairs.findIndex(([a, b]) =>
+      const direct = pairs.findIndex(([left, right]) =>
         this.graph.has(
-          candidate(a, tuple[selected.indexOf(a)]),
-          candidate(b, tuple[selected.indexOf(b)]),
+          candidate(left, tuple[selected.indexOf(left)]),
+          candidate(right, tuple[selected.indexOf(right)]),
         ),
       );
       if (direct >= 0) {
@@ -38,13 +38,15 @@ export class AlignedExclusionSearch {
       let reason = 0;
       for (const [i, auxiliary] of auxiliaries.entries()) {
         yield { kind: "work", units: 1 };
-        const reduced = auxiliary.cells.map((c) =>
-          setDigits(this.view.state.domains[c])
+        const reduced = auxiliary.cells.map((cell) =>
+          setDigits(this.view.state.domains[cell])
             .filter(
-              (s) =>
-                !selected.some((v, j) => this.graph.has(candidate(c, s), candidate(v, tuple[j]))),
+              (symbol) =>
+                !selected.some((value, j) =>
+                  this.graph.has(candidate(cell, symbol), candidate(value, tuple[j])),
+                ),
             )
-            .reduce((mask, s) => mask | symbolMask(s), 0),
+            .reduce((mask, symbol) => mask | symbolMask(symbol), 0),
         );
         let survives = false;
         for (const row of assignments(reduced)) {
@@ -60,23 +62,24 @@ export class AlignedExclusionSearch {
         }
       }
       reasons.push(reason);
-      if (!reason) tuple.forEach((s, i) => (support[i] |= symbolMask(s)));
+      if (!reason) tuple.forEach((symbol, i) => (support[i] |= symbolMask(symbol)));
     }
     return { reasons, support };
   }
   *patterns(size: number): SetCursor {
-    const empty = this.view.assembly.problem.cells.filter((c) => !this.view.state.values[c]);
+    const empty = this.view.assembly.problem.cells.filter((cell) => !this.view.state.values[cell]);
     for (const selected of combinations(empty, size)) {
       yield { kind: "work", units: 1 };
       const scratch = this.graph.context.workspace.reserve(0, 262144 + this.sets.length * 16);
       try {
         const auxiliaries: LocalSet[] = [],
           seen = new Set<string>();
-        for (const a of this.sets) {
+        for (const set of this.sets) {
           yield { kind: "work", units: 1 };
-          if (a.cells.some((c) => selected.includes(c)) || seen.has(a.cells.join())) continue;
-          seen.add(a.cells.join());
-          auxiliaries.push(a);
+          if (set.cells.some((cell) => selected.includes(cell)) || seen.has(set.cells.join()))
+            continue;
+          seen.add(set.cells.join());
+          auxiliaries.push(set);
         }
         const { reasons, support } = yield* this.classify(selected, auxiliaries);
         if (support.some((mask) => !mask)) continue;
@@ -88,8 +91,10 @@ export class AlignedExclusionSearch {
           })),
         );
         if (!effects.length) continue;
-        const used = [...new Set(reasons.filter((r) => r > 0))].sort((a, b) => a - b);
-        const p: AlignedPattern = {
+        const used = [...new Set(reasons.filter((reason) => reason > 0))].sort(
+          (left, right) => left - right,
+        );
+        const pattern: AlignedPattern = {
           kind: "aligned",
           alias:
             size === 2
@@ -98,17 +103,17 @@ export class AlignedExclusionSearch {
                 ? "Aligned Triple Exclusion"
                 : "Generalized Aligned Exclusion",
           selected,
-          domains: selected.map((c) => this.view.state.domains[c]),
-          auxiliaries: used.map((r) => ({
-            ...auxiliaries[r - 1],
-            domains: auxiliaries[r - 1].cells.map((c) => this.view.state.domains[c]),
+          domains: selected.map((cell) => this.view.state.domains[cell]),
+          auxiliaries: used.map((reason) => ({
+            ...auxiliaries[reason - 1],
+            domains: auxiliaries[reason - 1].cells.map((cell) => this.view.state.domains[cell]),
             table: -1,
           })),
-          reasons: reasons.map((r) => (r > 0 ? used.indexOf(r) + 1 : r)),
+          reasons: reasons.map((reason) => (reason > 0 ? used.indexOf(reason) + 1 : reason)),
           rejections: [],
           roots: [],
         };
-        yield { kind: "candidate", pattern: p, effects };
+        yield { kind: "candidate", pattern: pattern, effects };
       } finally {
         scratch.dispose();
       }

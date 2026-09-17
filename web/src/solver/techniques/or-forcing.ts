@@ -46,41 +46,41 @@ export function compileOrForcing(
   effect: Effect,
   lease?: WorkspaceReservation,
 ): DeductionProposal {
-  const b = new ForcingProof(view, lease),
+  const proof = new ForcingProof(view, lease),
     branches: OrBranchCertificate[] = [];
   for (const branch of plan.branches) {
-    b.scope = [];
-    const assumption = b.add("assume@1", [], proposedClause([branch.assumption]));
-    b.scope = [assumption];
+    proof.scope = [];
+    const assumption = proof.add("assume@1", [], proposedClause([branch.assumption]));
+    proof.scope = [assumption];
     let result: number,
       generalized: OrBranchCertificate["generalized"] = null;
-    const paths = (branch.paths ?? []).map((path) => b.path(assumption, path));
+    const paths = (branch.paths ?? []).map((path) => proof.path(assumption, path));
     if (branch.generalized) {
-      generalized = new GeneralizedProof(view, b).positions(branch.generalized, assumption);
+      generalized = new GeneralizedProof(view, proof).positions(branch.generalized, assumption);
       result = generalized.contradiction;
     } else
       result =
         branch.result === "false"
-          ? b.add(
+          ? proof.add(
               "contradiction@1",
-              paths.map((p) => p.end),
+              paths.map((certificate) => certificate.end),
               { kind: "false" },
             )
           : paths[0].end;
     branches.push({ assumption, result, paths, generalized });
   }
-  b.scope = [];
+  proof.scope = [];
   const ordered = plan.branches
     .map((branch, i) => ({ branch, c: branches[i] }))
     .sort(
-      (a, b) =>
-        a.branch.assumption.cell - b.branch.assumption.cell ||
-        a.branch.assumption.symbol - b.branch.assumption.symbol ||
-        Number(a.branch.assumption.positive) - Number(b.branch.assumption.positive),
+      (left, right) =>
+        left.branch.assumption.cell - right.branch.assumption.cell ||
+        left.branch.assumption.symbol - right.branch.assumption.symbol ||
+        Number(left.branch.assumption.positive) - Number(right.branch.assumption.positive),
     );
-  const root = b.add(
+  const root = proof.add(
     "cases@1",
-    [plan.source, ...ordered.flatMap(({ c }) => [c.assumption, c.result])],
+    [plan.source, ...ordered.flatMap(({ c: branch }) => [branch.assumption, branch.result])],
     proposedClause([
       {
         cell: effect.cell,
@@ -89,7 +89,7 @@ export function compileOrForcing(
       },
     ]),
   );
-  return b.finish(
+  return proof.finish(
     "c28@1",
     {
       ...plan,

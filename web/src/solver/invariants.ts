@@ -30,3 +30,11 @@ export function unverified<T>(value: T): Unverified<T> {
 export function optionalHead<T>(items: readonly T[]): [T | undefined, ...T[]] {
   return [items[0], ...items.slice(1)];
 }
+
+/** Fields of a cast value, each read as unknown so a validator's checks stay real. */
+export type Claimed<T> = { readonly [Key in keyof T]?: unknown };
+
+/** Reads the fields a cast promised without trusting any of them. */
+export function claimed<T extends object>(value: T): Claimed<T> {
+  return value;
+}

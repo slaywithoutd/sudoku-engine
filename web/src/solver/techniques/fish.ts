@@ -703,11 +703,11 @@ class FishTechnique implements TechniqueDescriptor {
   readonly assumptionPolicy: "unconditional" | "discharged";
   readonly bounds;
   constructor(readonly family: string) {
-    const row = coverageEntry(family);
-    this.id = row.version;
-    this.aliases = row.aliases;
-    this.tier = row.tier;
-    this.requires = row.capabilities;
+    const entry = coverageEntry(family);
+    this.id = entry.version;
+    this.aliases = entry.aliases;
+    this.tier = entry.tier;
+    this.requires = entry.capabilities;
     this.assumptionPolicy = family === "C06" ? "unconditional" : "discharged";
     this.bounds = Object.freeze({
       maxLength: 0,

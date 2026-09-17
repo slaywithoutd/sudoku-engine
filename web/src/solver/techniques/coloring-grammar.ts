@@ -5,15 +5,18 @@ import { clause, requireProof, sameValue } from "../proof/primitives";
 import type { ColoringPattern, ColorEdge } from "./coloring";
 import { ChainSources, projectedSource } from "./chains-grammar";
 import { classicHouseContaining, symbolMask } from "../state/read";
+import { claimed, defined } from "../invariants";
 
-const key = (l: Literal) => `${l.cell}:${l.symbol}`;
-const identity = (e: ColorEdge) =>
+const key = (literal: Literal) => `${literal.cell}:${literal.symbol}`;
+const identity = (edge: ColorEdge) =>
   JSON.stringify({
-    ends: [...e.ends].sort((a, b) => a.cell - b.cell || a.symbol - b.symbol),
-    source: e.source,
+    ends: [...edge.ends].sort(
+      (left, right) => left.cell - right.cell || left.symbol - right.symbol,
+    ),
+    source: edge.source,
   });
-const fields = (p: object, names: string[]) =>
-  requireProof(sameValue(Object.keys(p).sort(), names.sort()), "invalid-coloring-fields");
+const fields = (pattern: object, names: string[]) =>
+  requireProof(sameValue(Object.keys(pattern).sort(), names.sort()), "invalid-coloring-fields");
 
 /** Independent complete-component reconstruction; at-least-one alone never supplies XOR. */
 export function checkColoringPattern(
@@ -30,38 +33,46 @@ export function* checkColoringPatternSteps(
   view: ReadView,
   available: ReadonlyMap<number, ProofNode>,
 ): Generator<number, void, void> {
-  const p = proposal.pattern as unknown as ColoringPattern,
+  const pattern = proposal.pattern as unknown as ColoringPattern,
     medusa = proposal.technique === "c15@1";
   requireProof(proposal.effects.length > 0, "unproductive-coloring-pattern");
-  fields(p, ["kind", "alias", "form", "components", "branches"]);
+  fields(pattern, ["kind", "alias", "form", "components", "branches"]);
   requireProof(
-    p.kind === "coloring" &&
-      ["trap", "cell-wrap", "house-wrap", "multi"].includes(p.form) &&
+    claimed(pattern).kind === "coloring" &&
+      ["trap", "cell-wrap", "house-wrap", "multi"].includes(pattern.form) &&
       (medusa
-        ? p.alias === "3D Medusa" && p.form !== "multi"
-        : ["Simple coloring", "Color trap", "Color wrap", "Multi-coloring"].includes(p.alias)),
+        ? pattern.alias === "3D Medusa" && pattern.form !== "multi"
+        : ["Simple coloring", "Color trap", "Color wrap", "Multi-coloring"].includes(
+            pattern.alias,
+          )),
     "invalid-coloring-alias",
   );
   requireProof(
-    Array.isArray(p.components) &&
-      p.components.length === (p.form === "multi" ? 2 : 1) &&
-      Array.isArray(p.branches) &&
-      p.branches.length === 1 << p.components.length,
+    Array.isArray(pattern.components) &&
+      pattern.components.length === (pattern.form === "multi" ? 2 : 1) &&
+      Array.isArray(pattern.branches) &&
+      pattern.branches.length === 1 << pattern.components.length,
     "incomplete-color-alternatives",
   );
-  if (p.alias === "Color trap") requireProof(p.form === "trap", "invalid-coloring-alias");
-  if (p.alias === "Color wrap")
-    requireProof(p.form === "cell-wrap" || p.form === "house-wrap", "invalid-coloring-alias");
-  if (p.alias === "Multi-coloring") requireProof(p.form === "multi", "invalid-coloring-alias");
-  if (p.alias === "Simple coloring") requireProof(p.form !== "multi", "invalid-coloring-alias");
+  if (pattern.alias === "Color trap")
+    requireProof(pattern.form === "trap", "invalid-coloring-alias");
+  if (pattern.alias === "Color wrap")
+    requireProof(
+      pattern.form === "cell-wrap" || pattern.form === "house-wrap",
+      "invalid-coloring-alias",
+    );
+  if (pattern.alias === "Multi-coloring")
+    requireProof(pattern.form === "multi", "invalid-coloring-alias");
+  if (pattern.alias === "Simple coloring")
+    requireProof(pattern.form !== "multi", "invalid-coloring-alias");
   const sources = new ChainSources(view, available),
     allKeys = new Set<string>(),
     edgeRoots = new Set<number>();
-  for (const component of p.components) {
+  for (const component of pattern.components) {
     fields(component, ["colors", "edges"]);
     requireProof(
       Array.isArray(component.colors) &&
-        component.colors.length === 2 &&
+        (component.colors as readonly unknown[]).length === 2 &&
         component.colors.every((xs) => Array.isArray(xs) && xs.length > 0) &&
         Array.isArray(component.edges) &&
         component.edges.length > 0,
@@ -71,23 +82,23 @@ export function* checkColoringPatternSteps(
       colors = new Map<string, number>();
     requireProof(
       members.length <= (medusa ? 729 : 81) &&
-        (medusa || new Set(members.map((l) => l.symbol)).size === 1),
+        (medusa || new Set(members.map((literal) => literal.symbol)).size === 1),
       "color-component-out-of-profile",
     );
     component.colors.forEach((xs, color) =>
-      xs.forEach((l) => {
-        fields(l, ["cell", "symbol", "positive"]);
+      xs.forEach((literal) => {
+        fields(literal, ["cell", "symbol", "positive"]);
         requireProof(
-          l.positive &&
-            view.assembly.problem.cells.includes(l.cell) &&
-            view.assembly.problem.symbols.includes(l.symbol) &&
-            !view.state.values[l.cell] &&
-            !!(view.state.domains[l.cell] & symbolMask(l.symbol)) &&
-            !allKeys.has(key(l)),
+          literal.positive &&
+            view.assembly.problem.cells.includes(literal.cell) &&
+            view.assembly.problem.symbols.includes(literal.symbol) &&
+            !view.state.values[literal.cell] &&
+            !!(view.state.domains[literal.cell] & symbolMask(literal.symbol)) &&
+            !allKeys.has(key(literal)),
           "invalid-color-members",
         );
-        allKeys.add(key(l));
-        colors.set(key(l), color);
+        allKeys.add(key(literal));
+        colors.set(key(literal), color);
       }),
     );
     const adjacency = new Map<string, string[]>(),
@@ -96,8 +107,8 @@ export function* checkColoringPatternSteps(
       fields(edge, ["ends", "source", "roots"]);
       requireProof(
         Array.isArray(edge.ends) &&
-          edge.ends.length === 2 &&
-          edge.ends.every((l) => colors.has(key(l))) &&
+          (edge.ends as readonly unknown[]).length === 2 &&
+          edge.ends.every((literal) => colors.has(key(literal))) &&
           colors.get(key(edge.ends[0])) !== colors.get(key(edge.ends[1])) &&
           edge.source.kind !== "als" &&
           (medusa || edge.source.kind === "house" || edge.source.kind === "proved-cover") &&
@@ -111,16 +122,16 @@ export function* checkColoringPatternSteps(
       sources.strong(edge.source, edge.ends, edge.roots[0]);
       sources.weak(edge.roots[1], ...edge.ends);
       edge.roots.forEach((id) => edgeRoots.add(id));
-      for (const [a, b] of [edge.ends, [...edge.ends].reverse()]) {
-        const xs = adjacency.get(key(a)) ?? [];
+      for (const [literal, b] of [edge.ends, [...edge.ends].reverse()]) {
+        const xs = adjacency.get(key(literal)) ?? [];
         xs.push(key(b));
-        adjacency.set(key(a), xs);
+        adjacency.set(key(literal), xs);
       }
     }
     const reached = new Set<string>(),
       pending = [key(members[0])];
     while (pending.length) {
-      const at = pending.pop()!;
+      const at = defined(pending.pop(), "pending");
       if (reached.has(at)) continue;
       reached.add(at);
       pending.push(...(adjacency.get(at) ?? []));
@@ -129,9 +140,9 @@ export function* checkColoringPatternSteps(
     // Reconstruct every eligible XOR edge touching this component from closed current facts.
     const expected = new Set<string>();
     const include = (edge: ColorEdge) => {
-      if (!edge.ends.some((l) => colors.has(key(l)))) return;
+      if (!edge.ends.some((literal) => colors.has(key(literal)))) return;
       requireProof(
-        edge.ends.every((l) => colors.has(key(l))),
+        edge.ends.every((literal) => colors.has(key(literal))),
         "incomplete-color-component",
       );
       expected.add(identity(edge));
@@ -140,7 +151,7 @@ export function* checkColoringPatternSteps(
       for (const cell of view.assembly.problem.cells) {
         if (view.state.values[cell]) continue;
         const symbols = view.assembly.problem.symbols.filter(
-          (s) => view.state.domains[cell] & symbolMask(s),
+          (symbol) => view.state.domains[cell] & symbolMask(symbol),
         );
         if (symbols.length === 2)
           include({
@@ -155,8 +166,10 @@ export function* checkColoringPatternSteps(
       const cover = fact.proposition;
       const house = classicHouseContaining(view, cover.cells);
       if (!house) continue;
-      const cells = cover.cells.filter((c) => view.state.domains[c] & symbolMask(cover.symbol));
-      if (cells.length !== 2 || cells.some((c) => view.state.values[c])) continue;
+      const cells = cover.cells.filter(
+        (cell) => view.state.domains[cell] & symbolMask(cover.symbol),
+      );
+      if (cells.length !== 2 || cells.some((cell) => view.state.values[cell])) continue;
       // The house's checked all-different source supplies the at-most-one side.
       const prepared = preparedSources(view, "complete");
       if (
@@ -167,7 +180,8 @@ export function* checkColoringPatternSteps(
                 !f.openAssumptions.length &&
                 f.proposition.kind === "all-different" &&
                 cells.every(
-                  (c) => f.proposition.kind === "all-different" && f.proposition.cells.includes(c),
+                  (cell) =>
+                    f.proposition.kind === "all-different" && f.proposition.cells.includes(cell),
                 ),
             )
       )
@@ -187,33 +201,41 @@ export function* checkColoringPatternSteps(
   }
   if (!medusa)
     requireProof(
-      new Set(p.components.flatMap((c) => c.colors.flat().map((l) => l.symbol))).size === 1,
+      new Set(
+        pattern.components.flatMap((component) =>
+          component.colors.flat().map((literal) => literal.symbol),
+        ),
+      ).size === 1,
       "mixed-symbol-coloring",
     );
   let invalid = 0;
-  p.branches.forEach((branch, index) => {
+  pattern.branches.forEach((branch, index) => {
     fields(branch, ["colors", "conflict", "witnesses", "roots", "proofs"]);
     requireProof(
       Array.isArray(branch.proofs) && branch.proofs.length === proposal.effects.length,
       "missing-color-branch-proofs",
     );
-    const expected = p.components.map((_, i) => (index >> (p.components.length - i - 1)) & 1);
+    const expected = pattern.components.map(
+      (_, i) => (index >> (pattern.components.length - i - 1)) & 1,
+    );
     requireProof(sameValue(branch.colors, expected), "incomplete-color-branches");
-    const assigned = new Set(p.components.flatMap((c, i) => c.colors[branch.colors[i]]).map(key));
+    const assigned = new Set(
+      pattern.components.flatMap((component, i) => component.colors[branch.colors[i]]).map(key),
+    );
     if (branch.conflict !== null) {
       requireProof(
         Array.isArray(branch.conflict) &&
-          branch.conflict.length === 2 &&
-          branch.conflict.every((l) => assigned.has(key(l))) &&
+          (branch.conflict as readonly unknown[]).length === 2 &&
+          branch.conflict.every((literal) => assigned.has(key(literal))) &&
           branch.roots.length === 1 &&
           branch.witnesses.length === 0,
         "unjustified-color-conflict",
       );
       sources.weak(branch.roots[0], ...branch.conflict);
       invalid++;
-      if (p.form === "cell-wrap")
+      if (pattern.form === "cell-wrap")
         requireProof(branch.conflict[0].cell === branch.conflict[1].cell, "invalid-cell-wrap");
-      if (p.form === "house-wrap")
+      if (pattern.form === "house-wrap")
         requireProof(
           branch.conflict[0].cell !== branch.conflict[1].cell &&
             branch.conflict[0].symbol === branch.conflict[1].symbol,
@@ -237,8 +259,8 @@ export function* checkColoringPatternSteps(
     }
   });
   requireProof(
-    invalid < p.branches.length &&
-      (p.form === "trap" ? invalid === 0 : p.form === "multi" || invalid === 1),
+    invalid < pattern.branches.length &&
+      (pattern.form === "trap" ? invalid === 0 : pattern.form === "multi" || invalid === 1),
     "invalid-color-alternatives",
   );
   proposal.effects.forEach((effect, i) => {
@@ -256,8 +278,11 @@ export function* checkColoringPatternSteps(
       assumptions: number[],
       colors: number[],
     ): void => {
-      if (depth === p.components.length) {
-        const branch = p.branches.find((b) => sameValue(b.colors, colors))!,
+      if (depth === pattern.components.length) {
+        const branch = defined(
+            pattern.branches.find((b) => sameValue(b.colors, colors)),
+            "branche",
+          ),
           proof = branch.proofs[i];
         fields(proof, ["assumptions", "root"]);
         requireProof(
@@ -296,7 +321,7 @@ export function* checkColoringPatternSteps(
         return;
       }
       const node = available.get(id),
-        component = p.components[depth],
+        component = pattern.components[depth],
         edge = component.edges[0];
       requireProof(
         node?.rule === "cases@1" &&
@@ -305,7 +330,9 @@ export function* checkColoringPatternSteps(
           projectedSource(node.premises[0], available) === edge.roots[0],
         "missing-color-case-tree",
       );
-      const alternatives = [...edge.ends].sort((a, b) => a.cell - b.cell || a.symbol - b.symbol);
+      const alternatives = [...edge.ends].sort(
+        (left, right) => left.cell - right.cell || left.symbol - right.symbol,
+      );
       alternatives.forEach((representative, choice) => {
         const assumptionId = node.premises[1 + choice * 2],
           assumption = available.get(assumptionId);
@@ -316,7 +343,7 @@ export function* checkColoringPatternSteps(
           "invalid-color-case-assumption",
         );
         const color = component.colors.findIndex((xs) =>
-          xs.some((l) => key(l) === key(representative)),
+          xs.some((literal) => key(literal) === key(representative)),
         );
         checkCases(
           node.premises[2 + choice * 2],
@@ -331,7 +358,7 @@ export function* checkColoringPatternSteps(
   requireProof(
     proposal.proof.nodes.every(
       (n) =>
-        n.scope.length <= p.components.length &&
+        n.scope.length <= pattern.components.length &&
         [
           "support@1",
           "cover-clause@1",

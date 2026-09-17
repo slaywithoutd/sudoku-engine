@@ -2,6 +2,7 @@ import type { RunKey } from "../snapshot";
 import type { Limits } from "../limits";
 import type { ProofHeader } from "./protocol";
 import { encodeRecords } from "./codec";
+import { defined } from "../invariants";
 export interface Sender {
   sendProof(header: ProofHeader, records: readonly unknown[]): Promise<void>;
   ack(batchSeq: number): void;
@@ -20,6 +21,8 @@ export function createSender(
     maximum = 0,
     cancelled = false;
   const waiters: (() => void)[] = [];
+  // Re-read after each await: cancel() may have run while this send was parked.
+  const isCancelled = () => cancelled;
   const frame = (type: string, extra: Record<string, unknown>) =>
     send({ protocol: 2, key, seq: ++seq, type, ...extra });
   return {
@@ -30,7 +33,7 @@ export function createSender(
       for (const bytes of chunks) {
         while (unacked.size >= Math.min(2, limits.inFlightBatches)) {
           await new Promise<void>((resolve) => waiters.push(resolve));
-          if (cancelled) throw Error("transport-cancelled");
+          if (isCancelled()) throw Error("transport-cancelled");
         }
         const id = ++batch;
         unacked.add(id);
@@ -44,12 +47,12 @@ export function createSender(
     },
     ack(id) {
       if (!unacked.delete(id)) return;
-      while (waiters.length) waiters.shift()!();
+      while (waiters.length) defined(waiters.shift(), "waiter")();
     },
     accepted() {},
     cancel() {
       cancelled = true;
-      while (waiters.length) waiters.shift()!();
+      while (waiters.length) defined(waiters.shift(), "waiter")();
       unacked.clear();
     },
     get maxUnacked() {

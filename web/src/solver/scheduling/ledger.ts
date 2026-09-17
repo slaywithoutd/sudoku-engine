@@ -33,15 +33,15 @@ export interface ScheduledJob {
   lastService: number;
   reason?: string;
 }
-export function compareJob(a: ScheduledJob, b: ScheduledJob): number {
+export function compareJob(left: ScheduledJob, right: ScheduledJob): number {
   return (
-    a.tier - b.tier ||
-    compareText(a.key.technique, b.key.technique) ||
-    compareText(a.key.scopeKey, b.key.scopeKey)
+    left.tier - right.tier ||
+    compareText(left.key.technique, right.key.technique) ||
+    compareText(left.key.scopeKey, right.key.scopeKey)
   );
 }
-export function compareText(a: string, b: string): number {
-  return a < b ? -1 : a > b ? 1 : 0;
+export function compareText(left: string, right: string): number {
+  return left < right ? -1 : left > right ? 1 : 0;
 }
 /** At most 256 whole descriptor/rule records, never combinatorial scope jobs. */
 export class SchedulingLedger {

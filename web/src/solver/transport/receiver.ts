@@ -30,7 +30,7 @@ export function createReceiver(
     expected++;
     if (message.type === "proof-begin") {
       if (header) throw Error("protocol-duplicate-step");
-      header = message.header as ProofHeader;
+      header = message.header as ProofHeader | undefined;
       if (
         !header ||
         header.nodeCount < 0 ||

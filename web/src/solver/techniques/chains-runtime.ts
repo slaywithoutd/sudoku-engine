@@ -19,6 +19,7 @@ import {
   type StrongSource,
 } from "./chains-certificate";
 import { classicHouseContaining, classicHouseEqualTo, symbolMask } from "../state/read";
+import { defined } from "../invariants";
 
 export type ChainCandidate = { kind: "candidate"; pattern: ChainPattern; effects: Effect[] };
 type Arc = { a: number; b: number; source: StrongSource };
@@ -44,9 +45,9 @@ export class ChainSearch {
     this.#eventIds.set(key, id);
     return id;
   }
-  private arc(a: ChainEvent, b: ChainEvent, source: StrongSource): void {
-    const x = this.event(a),
-      y = this.event(b),
+  private arc(left: ChainEvent, right: ChainEvent, source: StrongSource): void {
+    const x = this.event(left),
+      y = this.event(right),
       key = `${Math.min(x, y)}:${Math.max(x, y)}:${JSON.stringify(source)}`;
     if (x === y || this.#arcs.has(key)) return;
     this.graph.lease.grow(1, 512);
@@ -60,21 +61,21 @@ export class ChainSearch {
       if (entry.recipe.kind === "cell-cover")
         source = { kind: "cell", cell: entry.literals[0]?.cell ?? -1 };
       else {
-        const fact = this.view.facts.get(entry.recipe.source)!.proposition;
-        if (fact.kind !== "cover") continue;
-        const house = classicHouseContaining(this.view, fact.cells);
+        const proposition = defined(this.view.facts.get(entry.recipe.source), "fact").proposition;
+        if (proposition.kind !== "cover") continue;
+        const house = classicHouseContaining(this.view, proposition.cells);
         if (!house) continue;
         source =
-          house.cells.join() === fact.cells.join()
-            ? { kind: "house", house: house.id, symbol: fact.symbol }
+          house.cells.join() === proposition.cells.join()
+            ? { kind: "house", house: house.id, symbol: proposition.symbol }
             : {
                 kind: "proved-cover",
                 source: entry.recipe.source,
                 house: house.id,
-                symbol: fact.symbol,
+                symbol: proposition.symbol,
               };
       }
-      if (entry.literals.some((l) => this.view.state.values[l.cell])) continue;
+      if (entry.literals.some((literal) => this.view.state.values[literal.cell])) continue;
       for (const literal of entry.literals) this.event({ members: [literal], als: null });
       if (entry.literals.length === 2)
         this.arc(
@@ -92,27 +93,28 @@ export class ChainSearch {
       const n = entry.literals.length;
       for (let mask = 1; mask < (1 << n) - 1; mask += 2) {
         yield { kind: "work", units: 1 };
-        const a = entry.literals.filter((_, i) => mask & (1 << i)),
-          b = entry.literals.filter((_, i) => !(mask & (1 << i)));
-        if (this.group(a) && this.group(b))
-          this.arc({ members: [...a], als: null }, { members: [...b], als: null }, source);
+        const left = entry.literals.filter((_, i) => mask & (1 << i)),
+          right = entry.literals.filter((_, i) => !(mask & (1 << i)));
+        if (this.group(left) && this.group(right))
+          this.arc({ members: [...left], als: null }, { members: [...right], als: null }, source);
       }
     }
     if (this.family !== "scalar")
-      for (const a of this.view.assembly.allDifferent)
+      for (const house of this.view.assembly.allDifferent)
         for (const b of this.view.assembly.allDifferent) {
           yield { kind: "work", units: 1 };
-          if (a.id >= b.id) continue;
-          const cells = a.cells.filter((c) => b.cells.includes(c));
+          if (house.id >= b.id) continue;
+          const cells = house.cells.filter((cell) => b.cells.includes(cell));
           if (cells.length !== 3) continue;
           for (const symbol of this.view.assembly.problem.symbols) {
             yield { kind: "work", units: 1 };
             const members = cells
               .filter(
-                (c) =>
-                  !this.view.state.values[c] && this.view.state.domains[c] & symbolMask(symbol),
+                (cell) =>
+                  !this.view.state.values[cell] &&
+                  this.view.state.domains[cell] & symbolMask(symbol),
               )
-              .map((c) => candidate(c, symbol));
+              .map((cell) => candidate(cell, symbol));
             if (members.length > 1) this.event({ members, als: null });
           }
         }
@@ -127,23 +129,23 @@ export class ChainSearch {
       if (!index?.completeFor(this.view)) throw Error("incomplete-chain-als-index");
       for (const als of index.entries) {
         yield { kind: "work", units: 1 };
-        const fact = this.view.facts.get(als.recipe.source)!.proposition;
-        if (fact.kind !== "all-different") continue;
-        const house = classicHouseEqualTo(this.view, fact.cells);
+        const proposition = defined(this.view.facts.get(als.recipe.source), "fact").proposition;
+        if (proposition.kind !== "all-different") continue;
+        const house = classicHouseEqualTo(this.view, proposition.cells);
         if (!house) continue;
-        for (let a = 0; a < als.occurrences.length; a++)
-          for (let b = a + 1; b < als.occurrences.length; b++) {
+        for (let left = 0; left < als.occurrences.length; left++)
+          for (let right = left + 1; right < als.occurrences.length; right++) {
             yield { kind: "work", units: 1 };
             this.arc(
               {
-                members: als.occurrences[a].cells.map((c) =>
-                  candidate(c, als.occurrences[a].symbol),
+                members: als.occurrences[left].cells.map((cell) =>
+                  candidate(cell, als.occurrences[left].symbol),
                 ),
                 als: [...als.cells],
               },
               {
-                members: als.occurrences[b].cells.map((c) =>
-                  candidate(c, als.occurrences[b].symbol),
+                members: als.occurrences[right].cells.map((cell) =>
+                  candidate(cell, als.occurrences[right].symbol),
                 ),
                 als: [...als.cells],
               },
@@ -159,41 +161,48 @@ export class ChainSearch {
     if (members.length === 1) return true;
     if (members.length > 3) return false;
     const symbol = members[0].symbol,
-      cells = members.map((l) => l.cell).join();
-    return this.view.assembly.allDifferent.some((a) =>
+      cells = members.map((member) => member.cell).join();
+    return this.view.assembly.allDifferent.some((left) =>
       this.view.assembly.allDifferent.some(
-        (b) =>
-          a.id !== b.id &&
-          a.cells.filter((c) => b.cells.includes(c)).length === 3 &&
-          a.cells
-            .filter((c) => b.cells.includes(c) && this.view.state.domains[c] & symbolMask(symbol))
+        (right) =>
+          left.id !== right.id &&
+          left.cells.filter((cell) => right.cells.includes(cell)).length === 3 &&
+          left.cells
+            .filter(
+              (cell) =>
+                right.cells.includes(cell) && this.view.state.domains[cell] & symbolMask(symbol),
+            )
             .join() === cells,
       ),
     );
   }
-  private weak(a: number, b: number): boolean {
-    return this.events[a].members.every((x) =>
-      this.events[b].members.every((y) => this.graph.has(x, y)),
+  private weak(left: number, right: number): boolean {
+    return this.events[left].members.every((x) =>
+      this.events[right].members.every((y) => this.graph.has(x, y)),
     );
   }
   private simple(path: number[], next: number, kind: "strong" | "weak"): boolean {
     const event = this.events[next];
     if (
       path.some((id) =>
-        this.events[id].members.some((a) =>
-          event.members.some((b) => literalKey(a) === literalKey(b)),
+        this.events[id].members.some((left) =>
+          event.members.some((right) => literalKey(left) === literalKey(right)),
         ),
       )
     )
       return false;
     const visits = new Set(
-      path.filter((id) => this.events[id].als).map((id) => this.events[id].als!.join()),
+      path
+        .filter((id) => this.events[id].als)
+        .map((id) => defined(this.events[id].als, "als").join()),
     );
     let groups = path.filter(
       (id) => !this.events[id].als && this.events[id].members.length > 1,
     ).length;
     if (event.als) {
-      const same = path.filter((id) => this.events[id].als?.join() === event.als!.join());
+      const same = path.filter(
+        (id) => this.events[id].als?.join() === defined(event.als, "als").join(),
+      );
       if (same.length && !(same.length === 1 && same[0] === path.at(-1) && kind === "strong"))
         return false;
       visits.add(event.als.join());
@@ -231,12 +240,12 @@ export class ChainSearch {
       return { effects, cuts };
     }
     const choices = pattern.closed
-      ? pattern.links.flatMap((l, i) => (l.kind === "weak" ? [i] : []))
+      ? pattern.links.flatMap((link, i) => (link.kind === "weak" ? [i] : []))
       : [-1];
     for (const cut of choices) {
       const ends =
         cut < 0
-          ? [vertices[0], vertices.at(-1)!]
+          ? [vertices[0], defined(vertices.at(-1), "vertice")]
           : [vertices[cut], vertices[(cut + 1) % vertices.length]];
       for (const cell of this.view.assembly.problem.cells)
         for (const symbol of this.view.assembly.problem.symbols) {
@@ -244,11 +253,11 @@ export class ChainSearch {
           if (
             this.view.state.values[cell] ||
             !(this.view.state.domains[cell] & symbolMask(symbol)) ||
-            effects.some((e) => e.cell === cell && e.symbol === symbol)
+            effects.some((effect) => effect.cell === cell && effect.symbol === symbol)
           )
             continue;
           const target = candidate(cell, symbol);
-          if (ends.every((e) => e.members.every((l) => this.graph.has(l, target)))) {
+          if (ends.every((e) => e.members.every((literal) => this.graph.has(literal, target)))) {
             effects.push({ kind: "remove", cell, symbol });
             cuts.push(cut);
           }
@@ -261,24 +270,26 @@ export class ChainSearch {
     yield* this.prepare();
     const order = this.events
       .map((_, i) => i)
-      .sort((a, b) => eventKey(this.events[a]).localeCompare(eventKey(this.events[b])));
+      .sort((left, right) =>
+        eventKey(this.events[left]).localeCompare(eventKey(this.events[right])),
+      );
     const arcs = new Map<number, { next: number; source: StrongSource }[]>();
     for (const arc of this.strong) {
       yield { kind: "work", units: 1 };
-      for (const [a, b] of [
+      for (const [left, right] of [
         [arc.a, arc.b],
         [arc.b, arc.a],
       ]) {
-        const list = arcs.get(a) ?? [];
-        list.push({ next: b, source: arc.source });
-        arcs.set(a, list);
+        const list = arcs.get(left) ?? [];
+        list.push({ next: right, source: arc.source });
+        arcs.set(left, list);
       }
     }
     for (const list of arcs.values())
       list.sort(
-        (a, b) =>
-          eventKey(this.events[a.next]).localeCompare(eventKey(this.events[b.next])) ||
-          JSON.stringify(a.source).localeCompare(JSON.stringify(b.source)),
+        (left, right) =>
+          eventKey(this.events[left.next]).localeCompare(eventKey(this.events[right.next])) ||
+          JSON.stringify(left.source).localeCompare(JSON.stringify(right.source)),
       );
     const visit = function* (
       this: ChainSearch,
@@ -299,10 +310,12 @@ export class ChainSearch {
         )
           return;
         // An ALS event can only occur as the paired ends of its own strong transition.
-        for (const cells of new Set(vertices.filter((e) => e.als).map((e) => e.als!.join())))
+        for (const cells of new Set(
+          vertices.filter((e) => e.als).map((e) => defined(e.als, "als").join()),
+        ))
           if (vertices.filter((e) => e.als?.join() === cells).length !== 2) return;
         const polarity =
-          closed && links[0].kind === links.at(-1)!.kind
+          closed && links[0].kind === defined(links.at(-1), "link").kind
             ? first === "strong"
               ? "on"
               : "off"
@@ -310,10 +323,11 @@ export class ChainSearch {
         const aliases = !loops
           ? [
               "AICs",
-              ...(new Set(vertices.flatMap((e) => e.members.map((l) => l.symbol))).size === 1
+              ...(new Set(vertices.flatMap((e) => e.members.map((literal) => literal.symbol)))
+                .size === 1
                 ? ["X-Chains"]
                 : []),
-              ...(links.every((l) => l.kind === "weak" || l.source?.kind === "cell")
+              ...(links.every((link) => link.kind === "weak" || link.source?.kind === "cell")
                 ? ["XY-Chains"]
                 : []),
             ]
@@ -332,7 +346,7 @@ export class ChainSearch {
           kind: "chain",
           alias: aliases[0],
           vertices,
-          links: links.map((l) => ({ ...l })),
+          links: links.map((link) => ({ ...link })),
           closed,
           polarity,
           inferenceLinks: length,
@@ -349,12 +363,12 @@ export class ChainSearch {
       const final = closed && links.length === length - 1;
       const choices =
         kind === "strong"
-          ? (arcs.get(path.at(-1)!) ?? [])
+          ? (arcs.get(defined(path.at(-1), "path")) ?? [])
           : (final ? [path[0]] : order).map((next) => ({ next, source: null }));
       for (const edge of choices) {
         yield { kind: "work", units: 1 };
         if (final ? edge.next !== path[0] : !this.simple(path, edge.next, kind)) continue;
-        if (kind === "weak" && !this.weak(path.at(-1)!, edge.next)) continue;
+        if (kind === "weak" && !this.weak(defined(path.at(-1), "path"), edge.next)) continue;
         const link: ChainLink = { kind, source: edge.source, roots: [] };
         yield* visit.call(
           this,
@@ -382,13 +396,16 @@ export class ChainSearch {
 
 /** Each independent search space gets one deterministic turn; all own leases close on every exit. */
 export function chainDescriptor(id: "C16" | "C17"): TechniqueDescriptor {
-  const row = coverageEntries.find((e) => e.id === id)!;
+  const entry = defined(
+    coverageEntries.find((entry) => entry.id === id),
+    "coverageEntry",
+  );
   return Object.freeze({
-    id: row.version,
-    aliases: row.aliases,
-    tier: row.tier,
-    requires: row.capabilities,
-    assumptionPolicy: row.assumptionPolicy,
+    id: entry.version,
+    aliases: entry.aliases,
+    tier: entry.tier,
+    requires: entry.capabilities,
+    assumptionPolicy: entry.assumptionPolicy,
     bounds: {
       maxLength: 24,
       maxBranchDepth: 1,
@@ -444,7 +461,7 @@ export function chainDescriptor(id: "C16" | "C17"): TechniqueDescriptor {
             graph.compilation = context.workspace.reserve(0, 65536);
             const compiler = compileChain(view, graph, next.value.pattern, next.value.effects);
             try {
-              while (true) {
+              for (;;) {
                 tick();
                 const step = compiler.next();
                 if (step.done) {
