@@ -1,0 +1,8 @@
+{
+  "schema": 1,
+  "calibration": [{"id":"cal-empty","partition":"calibration","family":"exact-empty","puzzle":"0","oracleCount":1,"sourceGroup":"cal-1"}],
+  "heldOut": [{"id":"held-one","partition":"held-out","family":"exact-one","puzzle":"1","oracleCount":1,"sourceGroup":"held-1"}],
+  "policies":["fixed-scan@1","event-fixed@1","explain-fair@1","analyze-fair@1"],
+  "profile":"classic-expanded@1",
+  "limits":{"timeMs":10000,"workUnits":2000000,"exactNodes":500000}
+}

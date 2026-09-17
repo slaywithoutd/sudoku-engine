@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Save failure harness</title>
+    <style>
+      .test-controls {
+        position: fixed;
+        right: 16px;
+        bottom: 16px;
+        z-index: 10;
+        display: flex;
+        gap: 8px;
+        padding: 8px;
+        background: white;
+        border: 1px solid #aaa;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="test-controls">
+      <button id="allow">Allow test saves</button>
+      <button id="hold">Pause test saves</button>
+      <button id="release">Complete test saves</button>
+    </div>
+    <div id="app"></div>
+    <script type="module" src="./failure.ts"></script>
+  </body>
+</html>

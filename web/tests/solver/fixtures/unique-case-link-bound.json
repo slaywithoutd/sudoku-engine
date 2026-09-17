@@ -1,0 +1,1150 @@
+{
+  "fixtures": [
+    {
+      "id": "U03-case-shared-links-25-independent",
+      "rowId": "U03",
+      "givens": "534678912072005348008342507850760420426850793703024856000537284287400635345286179",
+      "preState": {
+        "values": [
+          5,
+          3,
+          4,
+          6,
+          7,
+          8,
+          9,
+          1,
+          2,
+          0,
+          7,
+          2,
+          0,
+          0,
+          5,
+          3,
+          4,
+          8,
+          0,
+          0,
+          8,
+          3,
+          4,
+          2,
+          5,
+          0,
+          7,
+          8,
+          5,
+          0,
+          7,
+          6,
+          0,
+          4,
+          2,
+          0,
+          4,
+          2,
+          6,
+          8,
+          5,
+          0,
+          7,
+          9,
+          3,
+          7,
+          0,
+          3,
+          0,
+          2,
+          4,
+          8,
+          5,
+          6,
+          0,
+          0,
+          0,
+          5,
+          3,
+          7,
+          2,
+          8,
+          4,
+          2,
+          8,
+          7,
+          4,
+          0,
+          0,
+          6,
+          3,
+          5,
+          3,
+          4,
+          5,
+          2,
+          8,
+          6,
+          1,
+          7,
+          9
+        ],
+        "domains": [
+          16,
+          4,
+          8,
+          32,
+          64,
+          128,
+          256,
+          1,
+          2,
+          289,
+          64,
+          2,
+          257,
+          257,
+          16,
+          4,
+          8,
+          128,
+          289,
+          289,
+          128,
+          4,
+          8,
+          2,
+          16,
+          32,
+          64,
+          128,
+          16,
+          257,
+          64,
+          32,
+          261,
+          8,
+          2,
+          1,
+          8,
+          2,
+          32,
+          128,
+          16,
+          1,
+          64,
+          256,
+          4,
+          64,
+          257,
+          4,
+          257,
+          2,
+          8,
+          128,
+          16,
+          32,
+          289,
+          289,
+          257,
+          16,
+          4,
+          64,
+          2,
+          128,
+          8,
+          2,
+          128,
+          64,
+          8,
+          257,
+          257,
+          32,
+          4,
+          16,
+          4,
+          8,
+          16,
+          2,
+          128,
+          32,
+          1,
+          64,
+          256
+        ]
+      },
+      "expectedPattern": {
+        "cells": [
+          12,
+          13,
+          18,
+          19,
+          29,
+          32,
+          46,
+          48,
+          54,
+          56,
+          67,
+          68
+        ],
+        "coreSymbols": [
+          1,
+          9
+        ],
+        "guardians": [
+          {
+            "cell": 18,
+            "symbol": 6
+          },
+          {
+            "cell": 19,
+            "symbol": 6
+          },
+          {
+            "cell": 32,
+            "symbol": 3
+          },
+          {
+            "cell": 54,
+            "symbol": 6
+          }
+        ],
+        "coreAssignment": [
+          1,
+          9,
+          1,
+          9,
+          9,
+          1,
+          1,
+          9,
+          9,
+          1,
+          1,
+          9
+        ],
+        "swappedAssignment": [
+          9,
+          1,
+          9,
+          1,
+          1,
+          9,
+          9,
+          1,
+          1,
+          9,
+          9,
+          1
+        ],
+        "loopOrder": [
+          12,
+          13,
+          67,
+          68,
+          32,
+          29,
+          56,
+          54,
+          18,
+          19,
+          46,
+          48
+        ],
+        "conditionalBranches": [
+          {
+            "assumption": {
+              "cell": 18,
+              "symbol": 6,
+              "positive": true
+            },
+            "result": "false",
+            "paths": [
+              [],
+              [
+                {
+                  "from": {
+                    "cell": 18,
+                    "symbol": 6,
+                    "positive": true
+                  },
+                  "to": {
+                    "cell": 18,
+                    "symbol": 1,
+                    "positive": false
+                  },
+                  "reason": {
+                    "kind": "cell-conflict",
+                    "cell": 18
+                  }
+                },
+                {
+                  "from": {
+                    "cell": 18,
+                    "symbol": 1,
+                    "positive": false
+                  },
+                  "to": {
+                    "cell": 19,
+                    "symbol": 1,
+                    "positive": true
+                  },
+                  "reason": {
+                    "kind": "house-cover",
+                    "house": "row:2",
+                    "symbol": 1
+                  }
+                },
+                {
+                  "from": {
+                    "cell": 19,
+                    "symbol": 1,
+                    "positive": true
+                  },
+                  "to": {
+                    "cell": 19,
+                    "symbol": 9,
+                    "positive": false
+                  },
+                  "reason": {
+                    "kind": "cell-conflict",
+                    "cell": 19
+                  }
+                },
+                {
+                  "from": {
+                    "cell": 19,
+                    "symbol": 9,
+                    "positive": false
+                  },
+                  "to": {
+                    "cell": 18,
+                    "symbol": 9,
+                    "positive": true
+                  },
+                  "reason": {
+                    "kind": "house-cover",
+                    "house": "row:2",
+                    "symbol": 9
+                  }
+                },
+                {
+                  "from": {
+                    "cell": 18,
+                    "symbol": 9,
+                    "positive": true
+                  },
+                  "to": {
+                    "cell": 18,
+                    "symbol": 6,
+                    "positive": false
+                  },
+                  "reason": {
+                    "kind": "cell-conflict",
+                    "cell": 18
+                  }
+                }
+              ]
+            ]
+          },
+          {
+            "assumption": {
+              "cell": 19,
+              "symbol": 6,
+              "positive": true
+            },
+            "result": "false",
+            "paths": [
+              [],
+              [
+                {
+                  "from": {
+                    "cell": 19,
+                    "symbol": 6,
+                    "positive": true
+                  },
+                  "to": {
+                    "cell": 19,
+                    "symbol": 1,
+                    "positive": false
+                  },
+                  "reason": {
+                    "kind": "cell-conflict",
+                    "cell": 19
+                  }
+                },
+                {
+                  "from": {
+                    "cell": 19,
+                    "symbol": 1,
+                    "positive": false
+                  },
+                  "to": {
+                    "cell": 18,
+                    "symbol": 1,
+                    "positive": true
+                  },
+                  "reason": {
+                    "kind": "house-cover",
+                    "house": "row:2",
+                    "symbol": 1
+                  }
+                },
+                {
+                  "from": {
+                    "cell": 18,
+                    "symbol": 1,
+                    "positive": true
+                  },
+                  "to": {
+                    "cell": 18,
+                    "symbol": 9,
+                    "positive": false
+                  },
+                  "reason": {
+                    "kind": "cell-conflict",
+                    "cell": 18
+                  }
+                },
+                {
+                  "from": {
+                    "cell": 18,
+                    "symbol": 9,
+                    "positive": false
+                  },
+                  "to": {
+                    "cell": 19,
+                    "symbol": 9,
+                    "positive": true
+                  },
+                  "reason": {
+                    "kind": "house-cover",
+                    "house": "row:2",
+                    "symbol": 9
+                  }
+                },
+                {
+                  "from": {
+                    "cell": 19,
+                    "symbol": 9,
+                    "positive": true
+                  },
+                  "to": {
+                    "cell": 19,
+                    "symbol": 6,
+                    "positive": false
+                  },
+                  "reason": {
+                    "kind": "cell-conflict",
+                    "cell": 19
+                  }
+                }
+              ]
+            ]
+          },
+          {
+            "assumption": {
+              "cell": 32,
+              "symbol": 3,
+              "positive": true
+            },
+            "result": {
+              "cell": 9,
+              "symbol": 1,
+              "positive": false
+            },
+            "paths": [
+              [
+                {
+                  "from": {
+                    "cell": 32,
+                    "symbol": 3,
+                    "positive": true
+                  },
+                  "to": {
+                    "cell": 32,
+                    "symbol": 9,
+                    "positive": false
+                  },
+                  "reason": {
+                    "kind": "cell-conflict",
+                    "cell": 32
+                  }
+                },
+                {
+                  "from": {
+                    "cell": 32,
+                    "symbol": 9,
+                    "positive": false
+                  },
+                  "to": {
+                    "cell": 48,
+                    "symbol": 9,
+                    "positive": true
+                  },
+                  "reason": {
+                    "kind": "house-cover",
+                    "house": "box:4",
+                    "symbol": 9
+                  }
+                },
+                {
+                  "from": {
+                    "cell": 48,
+                    "symbol": 9,
+                    "positive": true
+                  },
+                  "to": {
+                    "cell": 48,
+                    "symbol": 1,
+                    "positive": false
+                  },
+                  "reason": {
+                    "kind": "cell-conflict",
+                    "cell": 48
+                  }
+                },
+                {
+                  "from": {
+                    "cell": 48,
+                    "symbol": 1,
+                    "positive": false
+                  },
+                  "to": {
+                    "cell": 12,
+                    "symbol": 1,
+                    "positive": true
+                  },
+                  "reason": {
+                    "kind": "house-cover",
+                    "house": "column:3",
+                    "symbol": 1
+                  }
+                },
+                {
+                  "from": {
+                    "cell": 12,
+                    "symbol": 1,
+                    "positive": true
+                  },
+                  "to": {
+                    "cell": 9,
+                    "symbol": 1,
+                    "positive": false
+                  },
+                  "reason": {
+                    "kind": "scope-conflict",
+                    "house": "row:1",
+                    "symbol": 1
+                  }
+                }
+              ]
+            ]
+          },
+          {
+            "assumption": {
+              "cell": 54,
+              "symbol": 6,
+              "positive": true
+            },
+            "result": "false",
+            "paths": [
+              [
+                {
+                  "from": {
+                    "cell": 54,
+                    "symbol": 6,
+                    "positive": true
+                  },
+                  "to": {
+                    "cell": 55,
+                    "symbol": 6,
+                    "positive": false
+                  },
+                  "reason": {
+                    "kind": "scope-conflict",
+                    "house": "row:6",
+                    "symbol": 6
+                  }
+                },
+                {
+                  "from": {
+                    "cell": 55,
+                    "symbol": 6,
+                    "positive": false
+                  },
+                  "to": {
+                    "cell": 19,
+                    "symbol": 6,
+                    "positive": true
+                  },
+                  "reason": {
+                    "kind": "house-cover",
+                    "house": "column:1",
+                    "symbol": 6
+                  }
+                },
+                {
+                  "from": {
+                    "cell": 19,
+                    "symbol": 6,
+                    "positive": true
+                  },
+                  "to": {
+                    "cell": 19,
+                    "symbol": 9,
+                    "positive": false
+                  },
+                  "reason": {
+                    "kind": "cell-conflict",
+                    "cell": 19
+                  }
+                },
+                {
+                  "from": {
+                    "cell": 19,
+                    "symbol": 9,
+                    "positive": false
+                  },
+                  "to": {
+                    "cell": 18,
+                    "symbol": 9,
+                    "positive": true
+                  },
+                  "reason": {
+                    "kind": "house-cover",
+                    "house": "row:2",
+                    "symbol": 9
+                  }
+                },
+                {
+                  "from": {
+                    "cell": 18,
+                    "symbol": 9,
+                    "positive": true
+                  },
+                  "to": {
+                    "cell": 18,
+                    "symbol": 1,
+                    "positive": false
+                  },
+                  "reason": {
+                    "kind": "cell-conflict",
+                    "cell": 18
+                  }
+                },
+                {
+                  "from": {
+                    "cell": 18,
+                    "symbol": 1,
+                    "positive": false
+                  },
+                  "to": {
+                    "cell": 19,
+                    "symbol": 1,
+                    "positive": true
+                  },
+                  "reason": {
+                    "kind": "house-cover",
+                    "house": "row:2",
+                    "symbol": 1
+                  }
+                },
+                {
+                  "from": {
+                    "cell": 19,
+                    "symbol": 1,
+                    "positive": true
+                  },
+                  "to": {
+                    "cell": 46,
+                    "symbol": 1,
+                    "positive": false
+                  },
+                  "reason": {
+                    "kind": "scope-conflict",
+                    "house": "column:1",
+                    "symbol": 1
+                  }
+                },
+                {
+                  "from": {
+                    "cell": 46,
+                    "symbol": 1,
+                    "positive": false
+                  },
+                  "to": {
+                    "cell": 29,
+                    "symbol": 1,
+                    "positive": true
+                  },
+                  "reason": {
+                    "kind": "house-cover",
+                    "house": "box:3",
+                    "symbol": 1
+                  }
+                },
+                {
+                  "from": {
+                    "cell": 29,
+                    "symbol": 1,
+                    "positive": true
+                  },
+                  "to": {
+                    "cell": 29,
+                    "symbol": 9,
+                    "positive": false
+                  },
+                  "reason": {
+                    "kind": "cell-conflict",
+                    "cell": 29
+                  }
+                },
+                {
+                  "from": {
+                    "cell": 29,
+                    "symbol": 9,
+                    "positive": false
+                  },
+                  "to": {
+                    "cell": 32,
+                    "symbol": 9,
+                    "positive": true
+                  },
+                  "reason": {
+                    "kind": "house-cover",
+                    "house": "row:3",
+                    "symbol": 9
+                  }
+                },
+                {
+                  "from": {
+                    "cell": 32,
+                    "symbol": 9,
+                    "positive": true
+                  },
+                  "to": {
+                    "cell": 68,
+                    "symbol": 9,
+                    "positive": false
+                  },
+                  "reason": {
+                    "kind": "scope-conflict",
+                    "house": "column:5",
+                    "symbol": 9
+                  }
+                },
+                {
+                  "from": {
+                    "cell": 68,
+                    "symbol": 9,
+                    "positive": false
+                  },
+                  "to": {
+                    "cell": 67,
+                    "symbol": 9,
+                    "positive": true
+                  },
+                  "reason": {
+                    "kind": "house-cover",
+                    "house": "row:7",
+                    "symbol": 9
+                  }
+                },
+                {
+                  "from": {
+                    "cell": 67,
+                    "symbol": 9,
+                    "positive": true
+                  },
+                  "to": {
+                    "cell": 13,
+                    "symbol": 9,
+                    "positive": false
+                  },
+                  "reason": {
+                    "kind": "scope-conflict",
+                    "house": "column:4",
+                    "symbol": 9
+                  }
+                },
+                {
+                  "from": {
+                    "cell": 13,
+                    "symbol": 9,
+                    "positive": false
+                  },
+                  "to": {
+                    "cell": 13,
+                    "symbol": 1,
+                    "positive": true
+                  },
+                  "reason": {
+                    "kind": "cell-cover",
+                    "cell": 13
+                  }
+                },
+                {
+                  "from": {
+                    "cell": 13,
+                    "symbol": 1,
+                    "positive": true
+                  },
+                  "to": {
+                    "cell": 67,
+                    "symbol": 1,
+                    "positive": false
+                  },
+                  "reason": {
+                    "kind": "scope-conflict",
+                    "house": "column:4",
+                    "symbol": 1
+                  }
+                },
+                {
+                  "from": {
+                    "cell": 67,
+                    "symbol": 1,
+                    "positive": false
+                  },
+                  "to": {
+                    "cell": 68,
+                    "symbol": 1,
+                    "positive": true
+                  },
+                  "reason": {
+                    "kind": "house-cover",
+                    "house": "row:7",
+                    "symbol": 1
+                  }
+                }
+              ],
+              [
+                {
+                  "from": {
+                    "cell": 54,
+                    "symbol": 6,
+                    "positive": true
+                  },
+                  "to": {
+                    "cell": 55,
+                    "symbol": 6,
+                    "positive": false
+                  },
+                  "reason": {
+                    "kind": "scope-conflict",
+                    "house": "row:6",
+                    "symbol": 6
+                  }
+                },
+                {
+                  "from": {
+                    "cell": 55,
+                    "symbol": 6,
+                    "positive": false
+                  },
+                  "to": {
+                    "cell": 19,
+                    "symbol": 6,
+                    "positive": true
+                  },
+                  "reason": {
+                    "kind": "house-cover",
+                    "house": "column:1",
+                    "symbol": 6
+                  }
+                },
+                {
+                  "from": {
+                    "cell": 19,
+                    "symbol": 6,
+                    "positive": true
+                  },
+                  "to": {
+                    "cell": 19,
+                    "symbol": 1,
+                    "positive": false
+                  },
+                  "reason": {
+                    "kind": "cell-conflict",
+                    "cell": 19
+                  }
+                },
+                {
+                  "from": {
+                    "cell": 19,
+                    "symbol": 1,
+                    "positive": false
+                  },
+                  "to": {
+                    "cell": 18,
+                    "symbol": 1,
+                    "positive": true
+                  },
+                  "reason": {
+                    "kind": "house-cover",
+                    "house": "row:2",
+                    "symbol": 1
+                  }
+                },
+                {
+                  "from": {
+                    "cell": 18,
+                    "symbol": 1,
+                    "positive": true
+                  },
+                  "to": {
+                    "cell": 18,
+                    "symbol": 9,
+                    "positive": false
+                  },
+                  "reason": {
+                    "kind": "cell-conflict",
+                    "cell": 18
+                  }
+                },
+                {
+                  "from": {
+                    "cell": 18,
+                    "symbol": 9,
+                    "positive": false
+                  },
+                  "to": {
+                    "cell": 19,
+                    "symbol": 9,
+                    "positive": true
+                  },
+                  "reason": {
+                    "kind": "house-cover",
+                    "house": "row:2",
+                    "symbol": 9
+                  }
+                },
+                {
+                  "from": {
+                    "cell": 19,
+                    "symbol": 9,
+                    "positive": true
+                  },
+                  "to": {
+                    "cell": 46,
+                    "symbol": 9,
+                    "positive": false
+                  },
+                  "reason": {
+                    "kind": "scope-conflict",
+                    "house": "column:1",
+                    "symbol": 9
+                  }
+                },
+                {
+                  "from": {
+                    "cell": 46,
+                    "symbol": 9,
+                    "positive": false
+                  },
+                  "to": {
+                    "cell": 48,
+                    "symbol": 9,
+                    "positive": true
+                  },
+                  "reason": {
+                    "kind": "house-cover",
+                    "house": "row:5",
+                    "symbol": 9
+                  }
+                },
+                {
+                  "from": {
+                    "cell": 48,
+                    "symbol": 9,
+                    "positive": true
+                  },
+                  "to": {
+                    "cell": 32,
+                    "symbol": 9,
+                    "positive": false
+                  },
+                  "reason": {
+                    "kind": "scope-conflict",
+                    "house": "box:4",
+                    "symbol": 9
+                  }
+                },
+                {
+                  "from": {
+                    "cell": 32,
+                    "symbol": 9,
+                    "positive": false
+                  },
+                  "to": {
+                    "cell": 68,
+                    "symbol": 9,
+                    "positive": true
+                  },
+                  "reason": {
+                    "kind": "house-cover",
+                    "house": "column:5",
+                    "symbol": 9
+                  }
+                },
+                {
+                  "from": {
+                    "cell": 68,
+                    "symbol": 9,
+                    "positive": true
+                  },
+                  "to": {
+                    "cell": 68,
+                    "symbol": 1,
+                    "positive": false
+                  },
+                  "reason": {
+                    "kind": "cell-conflict",
+                    "cell": 68
+                  }
+                }
+              ]
+            ]
+          }
+        ]
+      },
+      "expectedEffects": [
+        {
+          "kind": "remove",
+          "cell": 9,
+          "symbol": 1
+        }
+      ],
+      "origin": {
+        "author": "Independent repository fixture author",
+        "license": "Repository-owned; no external puzzle copied",
+        "sourceRevision": "independent-unique-case-link-bound@1",
+        "construction": "Existing independent four-guardian loop original. Replace only fourth guardian contradiction by two simple causal implication-tree paths; all remaining complete cases unchanged. Each path has no repeated unsigned literal; no repeated semantic edge. Independent original/counterfactual verification required."
+      },
+      "oracleRecord": {
+        "method": "independent-algorithm-x@1",
+        "originalInputHash": "79598ba42fa4a7c68ca3dd004cc078aef4d64cbc23ea06654eb4e4f93c7a77c0",
+        "originalCount": "unique",
+        "exhausted": true,
+        "witnesses": [
+          [
+            5,
+            3,
+            4,
+            6,
+            7,
+            8,
+            9,
+            1,
+            2,
+            6,
+            7,
+            2,
+            1,
+            9,
+            5,
+            3,
+            4,
+            8,
+            1,
+            9,
+            8,
+            3,
+            4,
+            2,
+            5,
+            6,
+            7,
+            8,
+            5,
+            9,
+            7,
+            6,
+            3,
+            4,
+            2,
+            1,
+            4,
+            2,
+            6,
+            8,
+            5,
+            1,
+            7,
+            9,
+            3,
+            7,
+            1,
+            3,
+            9,
+            2,
+            4,
+            8,
+            5,
+            6,
+            9,
+            6,
+            1,
+            5,
+            3,
+            7,
+            2,
+            8,
+            4,
+            2,
+            8,
+            7,
+            4,
+            1,
+            9,
+            6,
+            3,
+            5,
+            3,
+            4,
+            5,
+            2,
+            8,
+            6,
+            1,
+            7,
+            9
+          ]
+        ],
+        "forceForbidExhausted": true,
+        "command": "node .superpowers/sdd/2026-09-12-m2-classic-solver/root-verify-unique-case-link-bound.cjs"
+      },
+      "independentTradeCheck": {
+        "loopLength": 12,
+        "guardians": 4,
+        "affectedHouses": 18,
+        "originalCluesPreserved": true,
+        "allConditionalBranchesChecked": true
+      },
+      "independentLinkBoundary": {
+        "branchIndex": 3,
+        "distinctLinks": 25,
+        "totalUnsharedPathLinks": 27,
+        "maximumPathLinks": 16,
+        "goals": [
+          [
+            68,
+            1,
+            true
+          ],
+          [
+            68,
+            1,
+            false
+          ]
+        ]
+      },
+      "expectation": "out-of-profile"
+    }
+  ],
+  "trials": 30000,
+  "generatorSha256": "d4cce32d38c46e59476a928e36a5ed1ee5715a2e5575e65f9b4348653d9e0f11",
+  "preparationSource": ".superpowers/sdd/2026-09-12-m2-classic-solver/root-task18-unique-case-link-bound-seeds.json",
+  "verificationCommand": "npm test -- tests/unit/solver/unique-integration.test.ts tests/unit/solver/unique-boundaries.test.ts"
+}

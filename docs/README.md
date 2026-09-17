@@ -1,65 +1,89 @@
 # Sudoku platform: resume here
 
-Last updated: 2026-09-12.
+Last updated: 2026-09-15.
+
+**M2 implementation review reached T27, but M2 is not release-complete.** T19–T26 have task commits in the isolated `feat/m2-engine` worktree. Fresh post-cleanup verification passed typecheck, all 1,745 unit tests, build, 27 development E2E tests, 11 production E2E tests and the whitespace check; benchmark calibration and release acceptance evidence are still outstanding. Read the [M2 solver verification](m2-solver-verification.md) for exact evidence and limitations.
+
+**Latest feature:** Settings → Appearance now offers Light/Dark plus Blue, Green, Pink, Purple and Gray pastel themes. All ten combinations apply throughout the application and persist in IndexedDB. Legacy libraries default to light green; backup appearance restores only with settings opt-in. Fresh verification: 64 application tests, 23 browser tests, typecheck and build passed. See [appearance verification](appearance-verification.md) and D058. No appearance implementation work remains.
+
+**Earlier visual adjustment:** cell squircles now sit 5% inside each cell, making the shape visibly separate from the grid. The full rectangular cell remains clickable. Fresh checks: eight board/desktop browser tests, typecheck, build and a corner-click/input smoke check passed. See the [inset follow-up](ui-refinement-2026-09-12.md#cell-highlight-inset-follow-up).
+
+**Latest UI update:** Sudoku Engine now uses English throughout, squircle buttons/cell highlights, larger digits, fixed 3 × 3 notes and repeat-value erasing. Thick grid strokes cover thin strokes. Fresh verification passed: 59 unit/storage/controller tests, 22 browser tests, typecheck and build. See the [refinement verification record](ui-refinement-2026-09-12.md) and [earlier sidebar update](ui-sidebar-update-2026-09-12.md). No work remains for these UI requests. D053 supersedes earlier Portuguese UI and corner-note presentation requirements, including language references in the separate M2 design workstream.
 
 ## Current state
 
-Planning is complete for the agreed scope. The user answered all 38 interview questions, approved the browser-first architecture and first-release behavior, and requested a detailed first-release plan plus a roadmap with later design checkpoints. Decisions D001–D044 record the outcome.
+**The approved first release (M1a + M1b) is implemented and verified.** The active application is in `web/`: TypeScript + Vite, plain TypeScript views, native IndexedDB, and no server dependency. Existing Spring/Java files are unchanged legacy references.
 
-Only Markdown documentation was created/updated during planning. Application code remains at the original Spring/Java/static-JavaScript baseline; the TypeScript application has not been implemented, installed, compiled, or tested.
+Implementation is on local branch `release/first-release`, based on planning commit `7c9512b`. Work was committed task by task. All ten tasks in the [implementation plan](superpowers/plans/2026-09-12-first-release.md) are complete. See the [release verification record](release-verification.md) for implementation commit, acceptance coverage, fixes, evidence and limitations.
 
-## Start here
+**M2 implementation is authorized under D065/D066.** The approved design is `0e98c2b`; implementation lives in `.worktrees/m2-engine` on `feat/m2-engine`. T01-T18 and all bounded C01-C33/U01-U05 catalogue families retain their independent review evidence. T19–T26 added scheduling, orchestration, transport, worker, controller, UI, integration and benchmark scaffolding. The post-cleanup whole-suite gate is green, but the benchmark matrix and numerical resource defaults remain unvalidated, and rollout remains disabled. Exact results are in [M2 solver verification](m2-solver-verification.md) and [M2 implementation progress](m2-implementation-progress.md).
 
-1. [First-release implementation plan](superpowers/plans/2026-09-12-first-release.md): ten ordered tasks, interfaces, test examples, commands, and coverage map.
-2. [Approved first-release specification](superpowers/specs/2026-09-12-first-release-design.md): exact product behavior and acceptance checks.
-3. [Platform architecture](superpowers/specs/2026-09-12-platform-design.md): subsystem boundaries and engine direction.
-4. [Roadmap](roadmap.md): delivery order, exit evidence, and explicitly deferred design checkpoints.
-5. [Decision log](decisions.md): confirmed requirements and how recommendations were accepted or replaced.
-6. [Product vision](product-vision.md): the complete long-term ambition.
-7. [Interview history](design-tree.md): all five rounds and their answers; do not repeat settled questions.
-8. [Existing application baseline](current-application.md): what the current source actually implements.
-9. [Reference research](references/reference-research.md), [architecture research](references/architecture-research.md), and [toolchain evidence](references/toolchain.md): sources and limits of verification.
-10. [Planning verification](planning-verification.md): document checks and their limits.
+All 38 catalogue rows retain independently verified per-alias evidence; the pre-T19 catalogue readiness gate is closed. Final whole-suite acceptance, complete runtime integration and benchmark calibration remain required. Authentic conditional OR/template source integration is covered at the engine level; the solver is not release-enabled in the application, and proposed defaults remain unvalidated.
 
-## Key decisions
+Read the [screen/evidence specification](superpowers/specs/2026-09-12-m2-classic-solver-design.md), [concrete engine contracts](superpowers/specs/2026-09-12-m2-engine-contracts.md), [38-row bounded coverage matrix](superpowers/specs/2026-09-12-m2-technique-coverage.md) and [27-task implementation plan](superpowers/plans/2026-09-12-m2-classic-solver.md). The [researched rationale](superpowers/specs/2026-09-12-m2-engine-expansion-design.md) retains primary sources. D054-D057 confirm expanded direction; D059-D064 record completed planning and proposed technical choices. The obsolete six-technique/ten-task documents have been replaced. Planning preserved research `24e0d25` and newer application work; the original design and release branches remain preserved.
 
-- Desktop browser, personal use first, initially at localhost.
-- TypeScript + Vite with plain TypeScript views, IndexedDB, and a later solver worker.
-- First release: menu, classic creator/player, personal library, basic Settings; Solve and community Explore identify future features.
-- Creation allows conflicting drafts to autosave; Finish rejects conflicts. Finished clues are locked during play; editing creates a draft copy.
-- Manual or 81-cell string entry; Shift corner notes; single-cell selection; wrapping arrows; selectable givens.
-- Values hide notes, erasure reveals them; no automatic peer-note cleanup initially.
-- Undo/redo includes edit/erase/reset, excludes navigation, and persists with each separate draft/play history.
-- Play conflict highlighting off by default; creation highlighting always on.
-- Versioned JSON backups include histories/settings, with validated graph-aware merge/copies. Portuguese UI and simple light design.
-- Perfect is the default assistant target: unique plus a complete allowed logical path. Explainable contradiction techniques may count; fallback search does not certify perfection.
-- Unique and Open are alternatives. Open means at least one solution, with uniqueness optional.
-- First assistant preserves every entered clue and only adds digits; seek no removable added clue, without a global-minimum guarantee.
-- Configurable solving/construction limits and Cancel; incomplete checks remain explicitly unknown.
-- AI rule support requires examples, automated validation, and user review before trusted registration.
+The sidebar update was committed separately as `09887f4` on `docs/m2-solver-design`. The current refinements retain the sidebar and `BoardOptions.controlsContainer` integration points. Reinspect the current implementation before M2; the latest verification below covers these M1 refinements, not a solver.
 
-## Delivery order
+## Run it
 
-Classic creation → classic play (first usable release) → classic solver → classic construction assistance → initial variant creation/play → variant solving → gameplay hints.
+From the repository root:
 
-The first variants are diagonal, killer cages, and thermometers, combinable on the classic 9×9 base. Broader customization, extended gameplay, richer imports/library, community, variant assistance, and AI have explicit later checkpoints. Their listing order is not an additional agreed total delivery order.
+```powershell
+cd web
+npm ci
+npm run dev
+```
 
-## How to continue
+Open exactly **http://localhost:5173**. The [root README](../README.md) explains prerequisites, controls, backups and test commands. Node 24.19.0 / npm 11.17.0 and the exact planned dependency pins were exercised successfully.
 
-The next implementation task is Task 1 in the first-release plan. Read that plan and its linked specifications, inspect current Git status and applicable repository instructions, then implement task-by-task when the user resumes implementation. Do not restart the interview or implement solver/variant/community/AI work inside the first release.
+## Verification results
 
-Keep task checkboxes and this handoff current with actual results. Preserve prior decisions unless the user changes them; record replacements and rationale. Later-stage design questions belong at the roadmap checkpoints, not as hidden assumptions or prerequisites for beginning the approved first release.
+- `npm ci`: passed; 45 packages installed, audit reported zero vulnerabilities.
+- `npm run typecheck`: passed.
+- `npm test`: **64 passed**, seven unit/storage/controller/route test files.
+- `npm run build`: passed; production assets emitted to `web/dist/`.
+- `npm run test:e2e`: **23 passed**, eight Chromium browser suites; latest complete run took 17.0 seconds.
+- Real same-context refresh/reopen, true browser restart with an isolated temporary profile, and stale-tab conflict recovery passed.
+- Home, creator, player and Settings screenshots inspected at 1280×800 and 1920×1080; nine corner notes, selection, fixed clues and conflicts checked. Creator/player board controls fit the 800-pixel viewport.
+- Independent reviews found three issues: inherited record-key collisions, concurrent Retry status and focused name autosave. All were reproduced and fixed with regressions. Final review had no remaining critical/important findings.
+- `git diff --check` passed. Spring paths, generated dependencies/builds and test profiles were excluded from commits.
 
-The current plan is an implementation artifact, not evidence of an implemented app. At execution, record actual install/build/test results and limitations before claiming completion.
+## Implemented behavior
 
-## Planning checks
+- English Home, personal library with Drafts/Puzzles, classic creator/player and Settings. Solver and community Explore are marked as future features. Legacy Portuguese libraries/backups remain readable; existing user-authored names are preserved.
+- Manual/81-cell string creation, autosaved conflicting drafts, conflict-blocked Finish, immutable playable definitions, edit-copy, rename and confirmed deletion.
+- Locked/selectable givens, wrapping arrows, physical numpad/Shift input, notes in fixed 3 × 3 positions, hidden note retention, layered erase, repeat-value erasing, undo/redo/reset and saved selection/tool.
+- Immediate in-memory edits with serialized atomic saves of the entire library and histories. Separate draft/play history, no silent history cap, error indicators and live-work export/retry.
+- Versioned JSON backups, whole-graph validation, history replay validation, linked copies for collisions, preview freshness checks, settings opt-in and atomic restore.
+- Optional play conflicts off by default, mandatory creation conflicts, dismissible valid-board completion without solver claims.
 
-- Repository and primary references inspected.
-- All 38 interview questions answered; architecture and first-release defaults approved.
-- Decisions recorded; later details explicitly deferred.
-- First-release task plan and full roadmap written.
-- Documentation QA checks links, decision/question continuity, fixture validity, and plan/spec coverage. Application verification is reserved for execution.
+## Known limits
 
-## New-chat starter
+Desktop Chromium is the verified browser. Other browsers and assistive technologies have not received manual compatibility certification. Persistence uses one aggregate transaction and full history validation; histories are retained without a cap, and very large libraries have not been benchmarked. Quota/abort/open failures are simulated at adapter/browser boundaries; real quota eviction and power-loss durability are not guaranteed. Data remains browser/profile/origin-local; use JSON backups for recovery and transfer.
 
-> Read docs/README.md, docs/superpowers/specs/2026-09-12-first-release-design.md, and docs/superpowers/plans/2026-09-12-first-release.md. Continue implementation from the first unchecked task, preserving the recorded decisions. The architecture and first-release behavior are approved; do not restart brainstorming.
+## Next checkpoint
+
+There is no remaining M1 implementation task. **Execute and verify the approved M2 plan; track each batch in the implementation record.** The plan includes subsets, fish, wings, coloring, chains/loops, ALS, forcing/nets/generalized families, specialized patterns, templates and separately gated uniqueness techniques. It specifies normalized multi-constraint capabilities, proof/fact provenance, invalidation, deterministic fair Explain/Analyze scheduling, independent counting and bounded worker transport with separate chunk ACK and atomic step acceptance. The implementation record distinguishes completed technique coverage from the remaining scheduling and runtime gates; the expanded application profile is not available yet.
+
+Both product questions remain answered: Explain is the default mode, and uniqueness-dependent paths are separate and never qualify as Perfect. No new product question blocks the proposal. Technical bounds/interfaces/tasks are now concrete. Key recommendations are memory-only input/results/options, optional Save Clues, separate conditional analysis, a 70% human-phase ceiling within the total budget, configurable work/proof caps and a proposed 10-second default (1–120 seconds). Cost tables, phase share, practical resource defaults and rollout value have explicit production/held-out benchmark gates; rollout is initially off. No universal logical completeness, validated default or speedup is claimed.
+
+The earlier design session changed Markdown only; the approved implementation now adds code and tests in the isolated worktree. See [M2 planning verification](m2-design-verification.md) for requirement/interface coverage, source checks, links, whitespace and documentation-only evidence. M1 test results above remain recorded application results, not newly executed solver tests. Gameplay hints still wait until variant solving (M5); construction assistance, variants, community and AI remain outside M2.
+
+The 38-question interview and approved architecture/first-release review are complete; do not restart them. Preserve D001–D045 and the D046 approval history; D065 records the subsequent authorization to implement. Any future change to an approved behavior must be recorded with rationale.
+
+## Reference map
+
+Start M2 review with the [revised specification](superpowers/specs/2026-09-12-m2-classic-solver-design.md), [engine contracts](superpowers/specs/2026-09-12-m2-engine-contracts.md), [bounded coverage matrix](superpowers/specs/2026-09-12-m2-technique-coverage.md) and [complete plan](superpowers/plans/2026-09-12-m2-classic-solver.md). The [research rationale](superpowers/specs/2026-09-12-m2-engine-expansion-design.md) links primary sources beside supported claims.
+
+1. [First-release implementation plan](superpowers/plans/2026-09-12-first-release.md)
+2. [Approved first-release behavior](superpowers/specs/2026-09-12-first-release-design.md)
+3. [Platform architecture](superpowers/specs/2026-09-12-platform-design.md)
+4. [Roadmap and later design checkpoints](roadmap.md)
+5. [Decision log](decisions.md)
+6. [Product vision](product-vision.md)
+7. [Interview history](design-tree.md)
+8. [Original application baseline](current-application.md)
+9. [Reference research](references/reference-research.md), [architecture research](references/architecture-research.md), [toolchain evidence](references/toolchain.md)
+10. [Historical planning verification](planning-verification.md) and [actual release verification](release-verification.md)
+
+11. [M2 implementation evidence](m2-implementation-progress.md), [engine coding guide](solver/architecture.md), [foundation reasoning](solver/techniques/foundation.md), [short-pattern/wing reasoning](solver/techniques/wings-and-short-patterns.md), [fish reasoning](solver/techniques/fish.md), [chain/coloring reasoning](solver/techniques/chains-and-coloring.md), [ALS reasoning](solver/techniques/als.md) and [set/count reasoning](solver/techniques/set-arguments.md), [forcing](solver/techniques/forcing.md), [generalized chains](solver/techniques/generalized-chains.md), [Fireworks](solver/techniques/fireworks.md), [SK Loops](solver/techniques/sk-loops.md), [Exocet](solver/techniques/exocet.md) and [Tridagon guardians](solver/techniques/tridagon.md)

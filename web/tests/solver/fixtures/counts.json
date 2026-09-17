@@ -1,0 +1,53 @@
+{
+  "schemaVersion": 1,
+  "provenance": {
+    "source": "Repository-owned tests/fixtures.ts SOLUTION seed plus documented local mutations",
+    "license": "Repository-owned test data; no external puzzle collection",
+    "seedSha256": "4c5e72057519c48e1a2430cbedb7cff3a4a1d244eb28b8d865f85141f643017d",
+    "verificationCommand": "npm test -- tests/unit/solver/oracle.test.ts"
+  },
+  "cases": {
+    "complete": {
+      "puzzle": "534678912672195348198342567859761423426853791713924856961537284287419635345286179",
+      "expectedWitnesses": 1,
+      "expectedExhausted": true,
+      "limit": 2,
+      "maxNodes": 1000000
+    },
+    "oneHole": {
+      "puzzle": "034678912672195348198342567859761423426853791713924856961537284287419635345286179",
+      "expectedWitnesses": 1,
+      "expectedExhausted": true,
+      "limit": 2,
+      "maxNodes": 1000000
+    },
+    "duplicate": {
+      "puzzle": "554678912672195348198342567859761423426853791713924856961537284287419635345286179",
+      "expectedWitnesses": 0,
+      "expectedExhausted": true,
+      "limit": 1,
+      "maxNodes": 1000000
+    },
+    "noPlace": {
+      "puzzle": "123456780000000009000000000000000000000000000000000000000000000000000000000000000",
+      "expectedWitnesses": 0,
+      "expectedExhausted": true,
+      "limit": 1,
+      "maxNodes": 1000000
+    },
+    "twoRectangle": {
+      "puzzle": "534008912672195348198342567859001423426853791713924856961537284287419635345286179",
+      "expectedWitnesses": 2,
+      "expectedExhausted": true,
+      "limit": 3,
+      "maxNodes": 1000000
+    },
+    "empty": {
+      "puzzle": "000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+      "expectedWitnesses": 2,
+      "expectedExhausted": false,
+      "limit": 2,
+      "maxNodes": 1000000
+    }
+  }
+}

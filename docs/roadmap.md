@@ -1,6 +1,6 @@
 # Sudoku platform roadmap
 
-Updated: 2026-09-12. Status: delivery constraints approved through D044; later implementation details are intentionally deferred to the checkpoints below. No application milestone described here has been implemented in this planning session.
+Updated: 2026-09-15. Status: **M1a + M1b implemented and verified**. **M2 design is approved and implementation review reached T27, but M2 is not release-complete.** See [implementation progress](m2-implementation-progress.md) and [M2 solver verification](m2-solver-verification.md). M2 direction is D046–D057; completed planning and proposed choices are D059–D064.
 
 ## Delivery sequence
 
@@ -8,7 +8,7 @@ Updated: 2026-09-12. Status: delivery constraints approved through D044; later i
 | --- | --- | --- | --- |
 | M1a | Classic creator, autosaved drafts, manual/string entry, conflict checks, Finish into personal library. | Conflicting drafts survive reopen; Finish rejects conflicts; finished definitions are immutable. | Approved first-release specification and detailed plan. |
 | M1b | Classic play, notes, arrows, undo/redo, personal library, settings, JSON backups. First usable release includes M1a + M1b. | First-release acceptance checks and a local startup guide pass. | Approved first-release specification and detailed plan. |
-| M2 | Classic human-first solver plus exact solving/count classification and expandable trace. | Sound deductions; reliable 0/1/2+ classification when conclusive; search identified; cancellation/timeout handled. | Define technique ordering, step schema, worker protocol, evidence, and measured limits. No gameplay hints yet. |
+| M2 | Broad classic deduction engine, Explain/Analyze modes, independent count evidence and expandable proofs; shared constraint interfaces designed now. | All 33 primary/five conditional coverage rows accepted at declared bounds; independent proofs/counts, fair scheduling, identified fallback, bounded transport/Cancel, measured budgets and no false Perfect. | [Concrete contracts](superpowers/specs/2026-09-12-m2-engine-contracts.md), [coverage matrix](superpowers/specs/2026-09-12-m2-technique-coverage.md) and [complete 27-task plan](superpowers/plans/2026-09-12-m2-classic-solver.md) are approved; execution/acceptance tracked in the implementation record. No gameplay hints yet. |
 | M3 | Classic construction assistant. | Existing clues preserved; additions-only proposal; target evidence; honest removability status; applying proposal undoable. | Define target evaluator and irreducibility evidence, resource budgets, deterministic/randomized construction, and impossible input handling. |
 | M4 | Diagonal, killer, and thermometer creation/play on classic 9×9; combinable constraints. | Rule definitions round-trip; graphics match declared semantics; support limitations visible. | Set exact variant semantics, editing gestures, overlaps/coverage, capability display, and file version migration. |
 | M5 | Solver support for the initial variants and their supported combinations. | Exact and logical fixtures for individual/mixed constraints; trace replay; unsupported rules never ignored in full-puzzle claims. | Define shared propagation, mixed-rule techniques, soundness checks, and performance budgets. |
@@ -36,7 +36,7 @@ After M5, the following branches have design dependencies but no user-approved t
 | At least one solution / Open target | A completed assignment validated against every supported rule. | An unfinished search or unsupported constraint. |
 | Unique target | One solution and an exhaustive relevant check excluding a second. | Finding only one solution before timeout. |
 | Multiple solutions | Two distinct valid solutions; exact counts need further exhaustive work. | A solver stalled on one branch. |
-| Perfect target (default) | Uniqueness evidence plus a complete explained path using the allowed human technique set. | A solution found through fallback search alone. |
+| Perfect target (default) | Independent uniqueness evidence plus complete checked logical path derived from clues/rules alone, with all temporary assumptions discharged. | Fallback completion, uniqueness-dependent path or an incomplete proof. |
 | No removable added clue | Target-specific evidence that each single added-clue removal breaks the selected target. | Failing to rediscover a logical path or running out of time. |
 
 Keep target, existence/count status, human-path status, and minimality status separate. Retain valid partial evidence when a task is cancelled or reaches its budget, while identifying what remains unknown. The UI must never claim unsupported properties.
@@ -57,6 +57,19 @@ For Perfect minimality, define the verification contract at M3 before promising 
 
 ## First release and continuation
 
-Use the [approved behavior specification](superpowers/specs/2026-09-12-first-release-design.md) and [implementation plan](superpowers/plans/2026-09-12-first-release.md). M1 is the next implementation task. M2–M6 and later branches are planned product direction, not work authorized for inclusion in M1.
+M1 is complete under the [approved behavior specification](superpowers/specs/2026-09-12-first-release-design.md) and [implementation plan](superpowers/plans/2026-09-12-first-release.md), with D053/D058 refinements. **Execute and independently verify the approved expanded M2 plan.** Expanded technique coverage and runtime integration remain in progress; M2–M6 and later branches remain product direction, not work included in M1.
+
+M2 implementation batches preserve the full bounded target: oracle/contracts/shared proofs → foundation → graph/short patterns/fish → coloring/chains/ALS → combinations/forcing/generalized/specialized/templates → conditional techniques → scheduling/orchestration → bounded worker/controller/UI → independent integration and benchmark gates. Intermediate batches are reviewable; completing the first six techniques does not complete M2. No universal technique completeness is promised.
+
+T01-T18 are implemented and independently reviewed, covering all bounded C01-C33 and U01-U05 families. T18 passes through `5a19be1`, including authentic conditional OR/template source reuse, original-clue replay, permanent taint and cancellation authority. The final covering/fix checks passed; the earlier complete broad run had 1,656 passes and 33 test timeouts. [Implementation progress](m2-implementation-progress.md) preserves exact verification history and limits.
+
+All 38 rows have complete independently verified catalogue evidence after the reviewed pre-T19 closure at `18c103c`. Six earlier minor fixture, descriptor and regression follow-ups remain assigned to T25. Scheduling, worker/controller/UI integration, final whole-suite acceptance and browser calibration remain required before M2 becomes available. Conditional paths remain separate and cannot qualify for Perfect.
+
+Remaining empirical gates are cost tables, proposed 70% human-phase share, configurable time/work/proof limits and Analyze rollout benefit. Proposed default is 10 seconds with 1–120 control; all caps and measurement criteria are in the contracts. Temporary input/results/options remain memory-only; optional Save Clues creates a normal draft. No unresolved product question blocks this design, and no solver default is yet validated.
 
 At each later checkpoint: read the decision log, inspect the implemented state, research any changing tool/format behavior, settle that stage's deferred choices, write its specification and implementation plan, and record results in this folder. Preserve earlier user decisions unless the user changes them.
+
+
+## M2 final review checkpoint (2026-09-15)
+
+T01-T26 have task commits and the T27 verification record is written. Catalogue evidence remains independently reviewed, but the full unit gate has four timeouts, benchmark calibration was not run, and runtime contract coverage is incomplete. M2 is not available in the application and must not be marked complete. See [M2 solver verification](m2-solver-verification.md) for exact results and follow-up.

@@ -1,0 +1,285 @@
+{
+  "rowId": "C29",
+  "givens": "030078902072195348098302567809761423020803791713924856961037284287019635345286179",
+  "preState": {
+    "values": [
+      0,
+      3,
+      0,
+      0,
+      7,
+      8,
+      9,
+      0,
+      2,
+      0,
+      7,
+      2,
+      1,
+      9,
+      5,
+      3,
+      4,
+      8,
+      0,
+      9,
+      8,
+      3,
+      0,
+      2,
+      5,
+      6,
+      7,
+      8,
+      0,
+      9,
+      7,
+      6,
+      1,
+      4,
+      2,
+      3,
+      0,
+      2,
+      0,
+      8,
+      0,
+      3,
+      7,
+      9,
+      1,
+      7,
+      1,
+      3,
+      9,
+      2,
+      4,
+      8,
+      5,
+      6,
+      9,
+      6,
+      1,
+      0,
+      3,
+      7,
+      2,
+      8,
+      4,
+      2,
+      8,
+      7,
+      0,
+      1,
+      9,
+      6,
+      3,
+      5,
+      3,
+      4,
+      5,
+      2,
+      8,
+      6,
+      1,
+      7,
+      9
+    ],
+    "domains": [
+      57,
+      4,
+      40,
+      40,
+      64,
+      128,
+      256,
+      1,
+      2,
+      32,
+      64,
+      2,
+      1,
+      256,
+      16,
+      4,
+      8,
+      128,
+      9,
+      256,
+      128,
+      4,
+      8,
+      2,
+      16,
+      32,
+      64,
+      128,
+      16,
+      256,
+      64,
+      32,
+      1,
+      8,
+      2,
+      4,
+      56,
+      2,
+      40,
+      128,
+      16,
+      4,
+      64,
+      256,
+      1,
+      64,
+      1,
+      4,
+      256,
+      2,
+      8,
+      128,
+      16,
+      32,
+      256,
+      32,
+      1,
+      16,
+      4,
+      64,
+      2,
+      128,
+      8,
+      2,
+      128,
+      64,
+      8,
+      1,
+      256,
+      32,
+      4,
+      16,
+      4,
+      8,
+      16,
+      2,
+      128,
+      32,
+      1,
+      64,
+      256
+    ]
+  },
+  "expectedPattern": {
+    "components": [
+      {
+        "intersection": 0,
+        "rowWing": 3,
+        "columnWing": 36,
+        "symbols": [
+          4,
+          5,
+          6
+        ]
+      }
+    ],
+    "selected": [
+      0,
+      3,
+      36
+    ],
+    "alias": "Triple Fireworks"
+  },
+  "expectedEffects": [
+    {
+      "kind": "remove",
+      "cell": 0,
+      "symbol": 1
+    },
+    {
+      "kind": "remove",
+      "cell": 0,
+      "symbol": 4
+    },
+    {
+      "kind": "remove",
+      "cell": 0,
+      "symbol": 6
+    },
+    {
+      "kind": "remove",
+      "cell": 36,
+      "symbol": 5
+    }
+  ],
+  "independentLocalEnumeration": {
+    "directionalClauses": [
+      [
+        4,
+        [
+          0,
+          3,
+          36
+        ]
+      ],
+      [
+        4,
+        [
+          0,
+          36,
+          3
+        ]
+      ],
+      [
+        5,
+        [
+          0
+        ]
+      ],
+      [
+        5,
+        [
+          0,
+          36
+        ]
+      ],
+      [
+        6,
+        [
+          0,
+          3,
+          36
+        ]
+      ],
+      [
+        6,
+        [
+          0,
+          36,
+          3
+        ]
+      ]
+    ],
+    "survivors": 2
+  },
+  "prefix": "Only original-given peer exclusions; no solution-derived candidate axioms.",
+  "origin": {
+    "kind": "repository-owned construction",
+    "license": "Original repository-owned fixture; no external puzzle/code copied",
+    "sourceMath": "https://www.sudokuwiki.org/Fireworks",
+    "method": "Original C29-triple construction strengthened by original clue cell14=solution value; no unchecked logical prefix."
+  },
+  "id": "C29-singleton-cover",
+  "oracleRecord": {
+    "command": "npm test -- tests/unit/solver/specialized-acceptance.test.ts -t C29-singleton-cover",
+    "checks": "Original prestate SAT; each production effect forced/forbidden as appropriate; original-clue replay for independent and production certificates."
+  },
+  "alias": "Triple Fireworks",
+  "grammar": "c29-grammar@1",
+  "expectation": "productive",
+  "reachability": "Original-given peer exclusions only; productive singleton directional cover admitted in the full Fireworks certificate.",
+  "provenance": {
+    "kind": "repository-owned-construction",
+    "license": "Repository-owned original fixture; no copied puzzle or code",
+    "method": "C29 triple fixture strengthened by original clues (14,). Full directional cover enumeration includes a singleton; its restriction must retain checked cover provenance."
+  }
+}

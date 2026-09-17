@@ -1,6 +1,6 @@
 # First usable release: approved behavior
 
-Date: 2026-09-12. Status: APPROVED by Q32/D038. All behavior defaults below were accepted by the user. Application implementation and verification have not started.
+Date: 2026-09-12. Status: APPROVED by Q32/D038. All behavior defaults below were accepted by the user. First-release implementation and verification are complete; see [release evidence](../../release-verification.md). The behavior below remains the approved contract.
 
 ## Confirmed scope
 
@@ -87,4 +87,4 @@ The board can use an HTML grid initially. Keep rendering separate from domain st
 9. Backup/restore round-trips the agreed data, handles duplicate/conflicting records, and rejects malformed backups without partial writes.
 10. Save failures remain visible; a full valid board reports completion without claiming uniqueness.
 
-Run domain/persistence tests for these stateful contracts and browser checks for real input/focus behavior. This document describes intended verification, not tests already run.
+Run domain/persistence tests for these stateful contracts and browser checks for real input/focus behavior. This document defines the verification contract; [release verification](../../release-verification.md) records the completed implementation checks and their limits.

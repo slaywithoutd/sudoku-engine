@@ -31,3 +31,13 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### Browser application ###
+web/node_modules/
+web/dist/
+web/test-results/
+web/playwright-report/
+
+### Isolated implementation workspaces ###
+.worktrees/
+.superpowers/

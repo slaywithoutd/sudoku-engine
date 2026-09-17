@@ -1,6 +1,6 @@
 # Sudoku platform architecture
 
-Date: 2026-09-12. Status: APPROVED architecture under Q31/D037, refined by D038–D044. First-release behavior is approved; later subsystem details have explicit roadmap checkpoints. Confirmed decisions are in `../../decisions.md`. No application code has been changed.
+Date: 2026-09-12. Status: APPROVED architecture under Q31/D037, refined by D038–D044. First-release behavior is implemented and verified in `web/`; later subsystem details have explicit roadmap checkpoints. Confirmed decisions are in `../../decisions.md`; actual first-release evidence is in [release verification](../../release-verification.md).
 
 ## Product and delivery order
 
@@ -68,7 +68,7 @@ Keep authored rules/algorithm descriptions alongside executable implementations 
 
 Run longer solving tasks in a worker. Inputs are snapshots tagged with puzzle revision and request ID. Results include that identity, status, explanation trace, elapsed effort, and search use. UI applies results only to the intended revision. Support cancellation and time budgets; results after cancellation are not applied.
 
-Initial architectural technique baseline: naked/hidden singles, locked candidates, and naked/hidden pairs. The solver-stage checkpoint defines precise ordering and evidence contracts. Add advanced and contradiction techniques later under the chosen technique set. Human deductions run until solved or stalled; fallback search is identified.
+The original architectural baseline (singles, intersections and pairs) is the kernel, not final M2 coverage. D054–D057 require broad classic families, Explain/Analyze with Explain default and separately labeled uniqueness-dependent paths. The completed [M2 contracts](2026-09-12-m2-engine-contracts.md), [bounded coverage matrix](2026-09-12-m2-technique-coverage.md) and [revised plan](../plans/2026-09-12-m2-classic-solver.md) specify shared constraint/fact/proof interfaces now, with real variant implementation still in M4/M5. They are proposals awaiting design approval. Every applied deduction is checked; independent original-rule counting and identified fallback remain separate from the logical path.
 
 Separate the exact solver's completeness from human technique coverage. For uniqueness classification, searching until a second solution is found can establish multiple solutions; proving exactly one requires completing the relevant search without a second solution. A timeout means unknown, not unique or impossible.
 
@@ -101,4 +101,4 @@ Ordinary browser workers are useful for responsiveness but are not a sufficient 
 - Variants: individual and mixed-rule fixtures; unsupported-rule behavior; definition round trips.
 - Assistant: preserved locks, target verification, removability evidence, and atomic proposal application.
 
-Architecture and first-release behavior are approved. Produce the detailed first-release plan and milestone roadmap under D044. Later subsystems receive their own detailed designs before code; checkpoints preserve the full ambition without silently deciding unspecified behavior.
+Architecture and first-release behavior are approved, and M1 implementation is complete. The detailed first-release plan and milestone roadmap record delivery under D044. M2 is the next design checkpoint. Later subsystems receive their own detailed designs before code; checkpoints preserve the full ambition without silently deciding unspecified behavior.

@@ -1,0 +1,873 @@
+[
+  {
+    "id": "C14-trap",
+    "rowId": "C14",
+    "givens": "534600910000195008098000067800700000400000090710904000000507084080400600340080170",
+    "preState": {
+      "values": [
+        5,
+        3,
+        4,
+        6,
+        0,
+        0,
+        9,
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        9,
+        5,
+        0,
+        0,
+        8,
+        0,
+        9,
+        8,
+        0,
+        0,
+        0,
+        0,
+        6,
+        7,
+        8,
+        0,
+        0,
+        7,
+        0,
+        0,
+        0,
+        0,
+        0,
+        4,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        9,
+        0,
+        7,
+        1,
+        0,
+        9,
+        0,
+        4,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        5,
+        0,
+        7,
+        0,
+        8,
+        4,
+        0,
+        8,
+        0,
+        4,
+        0,
+        0,
+        6,
+        0,
+        0,
+        3,
+        4,
+        0,
+        0,
+        8,
+        0,
+        1,
+        7,
+        0
+      ],
+      "domains": [
+        16,
+        4,
+        8,
+        32,
+        66,
+        130,
+        256,
+        1,
+        2,
+        34,
+        98,
+        98,
+        1,
+        256,
+        16,
+        14,
+        14,
+        128,
+        3,
+        256,
+        128,
+        6,
+        14,
+        6,
+        30,
+        32,
+        64,
+        128,
+        50,
+        310,
+        64,
+        55,
+        39,
+        30,
+        30,
+        55,
+        8,
+        50,
+        54,
+        134,
+        55,
+        167,
+        214,
+        256,
+        55,
+        64,
+        1,
+        54,
+        256,
+        54,
+        8,
+        150,
+        22,
+        54,
+        291,
+        34,
+        291,
+        16,
+        39,
+        64,
+        6,
+        128,
+        8,
+        259,
+        128,
+        339,
+        8,
+        7,
+        263,
+        32,
+        22,
+        278,
+        4,
+        8,
+        306,
+        2,
+        128,
+        290,
+        1,
+        64,
+        274
+      ]
+    },
+    "expectedPattern": {
+      "components": [
+        {
+          "colors": [
+            [
+              [
+                5,
+                8
+              ],
+              [
+                39,
+                8
+              ]
+            ],
+            [
+              [
+                41,
+                8
+              ]
+            ]
+          ],
+          "edges": [
+            {
+              "ends": [
+                [
+                  5,
+                  8
+                ],
+                [
+                  41,
+                  8
+                ]
+              ],
+              "source": {
+                "kind": "house",
+                "id": "column:5",
+                "symbol": 8
+              }
+            },
+            {
+              "ends": [
+                [
+                  39,
+                  8
+                ],
+                [
+                  41,
+                  8
+                ]
+              ],
+              "source": {
+                "kind": "house",
+                "id": "box:4",
+                "symbol": 8
+              }
+            }
+          ]
+        }
+      ],
+      "validColors": [
+        0,
+        1
+      ]
+    },
+    "expectedEffects": [
+      {
+        "kind": "remove",
+        "cell": 42,
+        "symbol": 8
+      }
+    ],
+    "origin": {
+      "author": "Independent repository fixture author",
+      "license": "Repository-owned; no external puzzle copied",
+      "sourceRevision": "independent-coloring-seeds@1"
+    },
+    "prefix": "Only original-given peer exclusions; no solution-derived candidate axioms.",
+    "oracleRecord": {
+      "method": "independent-algorithm-x@1",
+      "inputHash": "516247dc304f57f9374a3ec98b339c34e64fb27b807005dbe529a254e6993cc1",
+      "command": "npm test -- tests/unit/solver/coloring.test.ts tests/unit/solver/chains.test.ts",
+      "satisfiable": true,
+      "forceForbidExhausted": true
+    },
+    "grammar": "c14-grammar@1",
+    "alias": "Color trap",
+    "expectation": "productive",
+    "reachability": "original-clue-path"
+  },
+  {
+    "id": "C14-wrap",
+    "rowId": "C14",
+    "givens": "534600910000195008098000067800700000400000090710904000000507084080400600340080170",
+    "preState": {
+      "values": [
+        5,
+        3,
+        4,
+        6,
+        0,
+        0,
+        9,
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        9,
+        5,
+        0,
+        0,
+        8,
+        0,
+        9,
+        8,
+        0,
+        0,
+        0,
+        0,
+        6,
+        7,
+        8,
+        0,
+        0,
+        7,
+        0,
+        0,
+        0,
+        0,
+        0,
+        4,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        9,
+        0,
+        7,
+        1,
+        0,
+        9,
+        0,
+        4,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        5,
+        0,
+        7,
+        0,
+        8,
+        4,
+        0,
+        8,
+        0,
+        4,
+        0,
+        0,
+        6,
+        0,
+        0,
+        3,
+        4,
+        0,
+        0,
+        8,
+        0,
+        1,
+        7,
+        0
+      ],
+      "domains": [
+        16,
+        4,
+        8,
+        32,
+        66,
+        130,
+        256,
+        1,
+        2,
+        34,
+        98,
+        98,
+        1,
+        256,
+        16,
+        14,
+        14,
+        128,
+        3,
+        256,
+        128,
+        6,
+        14,
+        6,
+        30,
+        32,
+        64,
+        128,
+        50,
+        310,
+        64,
+        55,
+        39,
+        30,
+        30,
+        55,
+        8,
+        50,
+        54,
+        134,
+        55,
+        167,
+        214,
+        256,
+        55,
+        64,
+        1,
+        54,
+        256,
+        54,
+        8,
+        150,
+        22,
+        54,
+        291,
+        34,
+        291,
+        16,
+        39,
+        64,
+        6,
+        128,
+        8,
+        259,
+        128,
+        339,
+        8,
+        7,
+        263,
+        32,
+        22,
+        278,
+        4,
+        8,
+        306,
+        2,
+        128,
+        290,
+        1,
+        64,
+        274
+      ]
+    },
+    "expectedPattern": {
+      "components": [
+        {
+          "colors": [
+            [
+              [
+                54,
+                9
+              ]
+            ],
+            [
+              [
+                56,
+                9
+              ],
+              [
+                63,
+                9
+              ]
+            ]
+          ],
+          "edges": [
+            {
+              "ends": [
+                [
+                  54,
+                  9
+                ],
+                [
+                  56,
+                  9
+                ]
+              ],
+              "source": {
+                "kind": "house",
+                "id": "row:6",
+                "symbol": 9
+              }
+            },
+            {
+              "ends": [
+                [
+                  54,
+                  9
+                ],
+                [
+                  63,
+                  9
+                ]
+              ],
+              "source": {
+                "kind": "house",
+                "id": "column:0",
+                "symbol": 9
+              }
+            }
+          ]
+        }
+      ],
+      "invalidColor": 1,
+      "conflicts": [
+        [
+          [
+            56,
+            9
+          ],
+          [
+            63,
+            9
+          ]
+        ]
+      ]
+    },
+    "expectedEffects": [
+      {
+        "kind": "remove",
+        "cell": 56,
+        "symbol": 9
+      },
+      {
+        "kind": "remove",
+        "cell": 63,
+        "symbol": 9
+      }
+    ],
+    "origin": {
+      "author": "Independent repository fixture author",
+      "license": "Repository-owned; no external puzzle copied",
+      "sourceRevision": "independent-coloring-seeds@1"
+    },
+    "prefix": "Only original-given peer exclusions; no solution-derived candidate axioms.",
+    "oracleRecord": {
+      "method": "independent-algorithm-x@1",
+      "inputHash": "516247dc304f57f9374a3ec98b339c34e64fb27b807005dbe529a254e6993cc1",
+      "command": "npm test -- tests/unit/solver/coloring.test.ts tests/unit/solver/chains.test.ts",
+      "satisfiable": true,
+      "forceForbidExhausted": true
+    },
+    "grammar": "c14-grammar@1",
+    "alias": "Color wrap",
+    "expectation": "productive",
+    "reachability": "original-clue-path"
+  },
+  {
+    "id": "C14-multi",
+    "rowId": "C14",
+    "givens": "534600910000195008098000067800700000400000090710904000000507084080400600340080170",
+    "preState": {
+      "values": [
+        5,
+        3,
+        4,
+        6,
+        0,
+        0,
+        9,
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        9,
+        5,
+        0,
+        0,
+        8,
+        0,
+        9,
+        8,
+        0,
+        0,
+        0,
+        0,
+        6,
+        7,
+        8,
+        0,
+        0,
+        7,
+        0,
+        0,
+        0,
+        0,
+        0,
+        4,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        9,
+        0,
+        7,
+        1,
+        0,
+        9,
+        0,
+        4,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        5,
+        0,
+        7,
+        0,
+        8,
+        4,
+        0,
+        8,
+        0,
+        4,
+        0,
+        0,
+        6,
+        0,
+        0,
+        3,
+        4,
+        0,
+        0,
+        8,
+        0,
+        1,
+        7,
+        0
+      ],
+      "domains": [
+        16,
+        4,
+        8,
+        32,
+        66,
+        130,
+        256,
+        1,
+        2,
+        34,
+        98,
+        98,
+        1,
+        256,
+        16,
+        14,
+        14,
+        128,
+        3,
+        256,
+        128,
+        6,
+        14,
+        6,
+        30,
+        32,
+        64,
+        128,
+        50,
+        310,
+        64,
+        55,
+        39,
+        30,
+        30,
+        55,
+        8,
+        50,
+        54,
+        134,
+        55,
+        167,
+        214,
+        256,
+        55,
+        64,
+        1,
+        54,
+        256,
+        54,
+        8,
+        150,
+        22,
+        54,
+        291,
+        34,
+        291,
+        16,
+        39,
+        64,
+        6,
+        128,
+        8,
+        259,
+        128,
+        339,
+        8,
+        7,
+        263,
+        32,
+        22,
+        278,
+        4,
+        8,
+        306,
+        2,
+        128,
+        290,
+        1,
+        64,
+        274
+      ]
+    },
+    "expectedPattern": {
+      "components": [
+        {
+          "colors": [
+            [
+              [
+                5,
+                8
+              ],
+              [
+                39,
+                8
+              ]
+            ],
+            [
+              [
+                41,
+                8
+              ]
+            ]
+          ],
+          "edges": [
+            {
+              "ends": [
+                [
+                  5,
+                  8
+                ],
+                [
+                  41,
+                  8
+                ]
+              ],
+              "source": {
+                "kind": "house",
+                "id": "column:5",
+                "symbol": 8
+              }
+            },
+            {
+              "ends": [
+                [
+                  39,
+                  8
+                ],
+                [
+                  41,
+                  8
+                ]
+              ],
+              "source": {
+                "kind": "house",
+                "id": "box:4",
+                "symbol": 8
+              }
+            }
+          ]
+        },
+        {
+          "colors": [
+            [
+              [
+                42,
+                8
+              ]
+            ],
+            [
+              [
+                51,
+                8
+              ]
+            ]
+          ],
+          "edges": [
+            {
+              "ends": [
+                [
+                  42,
+                  8
+                ],
+                [
+                  51,
+                  8
+                ]
+              ],
+              "source": {
+                "kind": "house",
+                "id": "column:6",
+                "symbol": 8
+              }
+            },
+            {
+              "ends": [
+                [
+                  42,
+                  8
+                ],
+                [
+                  51,
+                  8
+                ]
+              ],
+              "source": {
+                "kind": "house",
+                "id": "box:5",
+                "symbol": 8
+              }
+            }
+          ]
+        }
+      ],
+      "validAssignments": [
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          1
+        ]
+      ],
+      "branches": 4
+    },
+    "expectedEffects": [
+      {
+        "kind": "remove",
+        "cell": 42,
+        "symbol": 8
+      },
+      {
+        "kind": "remove",
+        "cell": 51,
+        "symbol": 2
+      },
+      {
+        "kind": "remove",
+        "cell": 51,
+        "symbol": 3
+      },
+      {
+        "kind": "remove",
+        "cell": 51,
+        "symbol": 5
+      }
+    ],
+    "origin": {
+      "author": "Independent repository fixture author",
+      "license": "Repository-owned; no external puzzle copied",
+      "sourceRevision": "independent-coloring-seeds@1"
+    },
+    "prefix": "Only original-given peer exclusions; no solution-derived candidate axioms.",
+    "oracleRecord": {
+      "method": "independent-algorithm-x@1",
+      "inputHash": "516247dc304f57f9374a3ec98b339c34e64fb27b807005dbe529a254e6993cc1",
+      "command": "npm test -- tests/unit/solver/coloring.test.ts tests/unit/solver/chains.test.ts",
+      "satisfiable": true,
+      "forceForbidExhausted": true
+    },
+    "grammar": "c14-grammar@1",
+    "alias": "Multi-coloring",
+    "expectation": "productive",
+    "reachability": "original-clue-path"
+  }
+]

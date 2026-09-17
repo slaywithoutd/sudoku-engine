@@ -1,0 +1,1455 @@
+[
+  {
+    "id": "C25-z",
+    "rowId": "C25",
+    "givens": "534000900602190040100342500859061020000003001700904050900037000007009035005000170",
+    "preState": {
+      "values": [
+        5,
+        3,
+        4,
+        0,
+        0,
+        0,
+        9,
+        0,
+        0,
+        6,
+        0,
+        2,
+        1,
+        9,
+        0,
+        0,
+        4,
+        0,
+        1,
+        0,
+        0,
+        3,
+        4,
+        2,
+        5,
+        0,
+        0,
+        8,
+        5,
+        9,
+        0,
+        6,
+        1,
+        0,
+        2,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        3,
+        0,
+        0,
+        1,
+        7,
+        0,
+        0,
+        9,
+        0,
+        4,
+        0,
+        5,
+        0,
+        9,
+        0,
+        0,
+        0,
+        3,
+        7,
+        0,
+        0,
+        0,
+        0,
+        0,
+        7,
+        0,
+        0,
+        9,
+        0,
+        3,
+        5,
+        0,
+        0,
+        5,
+        0,
+        0,
+        0,
+        1,
+        7,
+        0
+      ],
+      "domains": [
+        16,
+        4,
+        8,
+        224,
+        192,
+        160,
+        256,
+        161,
+        226,
+        32,
+        192,
+        2,
+        1,
+        256,
+        144,
+        196,
+        8,
+        196,
+        1,
+        448,
+        128,
+        4,
+        8,
+        2,
+        16,
+        160,
+        224,
+        128,
+        16,
+        256,
+        64,
+        32,
+        1,
+        76,
+        2,
+        76,
+        10,
+        42,
+        32,
+        210,
+        210,
+        4,
+        232,
+        416,
+        1,
+        64,
+        35,
+        37,
+        256,
+        130,
+        8,
+        164,
+        16,
+        164,
+        256,
+        171,
+        161,
+        186,
+        4,
+        64,
+        170,
+        160,
+        170,
+        10,
+        171,
+        64,
+        170,
+        131,
+        256,
+        170,
+        4,
+        16,
+        14,
+        170,
+        16,
+        170,
+        130,
+        160,
+        1,
+        64,
+        426
+      ]
+    },
+    "expectedPattern": {
+      "grammar": "z",
+      "target": [
+        67,
+        8
+      ],
+      "positions": [
+        {
+          "variable": "cell:77",
+          "alternatives": [
+            [
+              77,
+              6
+            ],
+            [
+              77,
+              8
+            ]
+          ],
+          "left": [
+            77,
+            8
+          ],
+          "leftConflict": [
+            67,
+            8
+          ],
+          "excluded": [],
+          "right": [
+            77,
+            6
+          ]
+        },
+        {
+          "variable": "cell:5",
+          "alternatives": [
+            [
+              5,
+              6
+            ],
+            [
+              5,
+              8
+            ]
+          ],
+          "left": [
+            5,
+            6
+          ],
+          "leftConflict": [
+            77,
+            6
+          ],
+          "excluded": [],
+          "right": [
+            5,
+            8
+          ]
+        },
+        {
+          "variable": "column:3:symbol:8",
+          "alternatives": [
+            [
+              3,
+              8
+            ],
+            [
+              39,
+              8
+            ],
+            [
+              57,
+              8
+            ],
+            [
+              66,
+              8
+            ],
+            [
+              75,
+              8
+            ]
+          ],
+          "left": [
+            3,
+            8
+          ],
+          "leftConflict": [
+            5,
+            8
+          ],
+          "excluded": [
+            {
+              "literal": [
+                57,
+                8
+              ],
+              "conflictWith": [
+                67,
+                8
+              ]
+            },
+            {
+              "literal": [
+                66,
+                8
+              ],
+              "conflictWith": [
+                67,
+                8
+              ]
+            },
+            {
+              "literal": [
+                75,
+                8
+              ],
+              "conflictWith": [
+                67,
+                8
+              ]
+            }
+          ],
+          "right": [
+            39,
+            8
+          ]
+        },
+        {
+          "variable": "cell:49",
+          "alternatives": [
+            [
+              49,
+              2
+            ],
+            [
+              49,
+              8
+            ]
+          ],
+          "left": [
+            49,
+            8
+          ],
+          "leftConflict": [
+            39,
+            8
+          ],
+          "excluded": [],
+          "right": [
+            49,
+            2
+          ]
+        },
+        {
+          "variable": "cell:76",
+          "alternatives": [
+            [
+              76,
+              2
+            ],
+            [
+              76,
+              8
+            ]
+          ],
+          "left": [
+            76,
+            2
+          ],
+          "leftConflict": [
+            49,
+            2
+          ],
+          "excluded": [
+            {
+              "literal": [
+                76,
+                8
+              ],
+              "conflictWith": [
+                67,
+                8
+              ]
+            }
+          ],
+          "right": null
+        }
+      ],
+      "positionCount": 5,
+      "fullPairCount": 4,
+      "terminalForm": "no-right",
+      "features": [
+        "z-only-extra"
+      ]
+    },
+    "expectedEffects": [
+      {
+        "kind": "remove",
+        "cell": 67,
+        "symbol": 8
+      }
+    ],
+    "prefix": "Only original-given peer exclusions; no solution-derived candidate axioms.",
+    "origin": {
+      "author": "Independent repository fixture author",
+      "license": "Repository-owned; no external puzzle copied",
+      "sourceRevision": "independent-generalized-seeds@1",
+      "construction": "Complete cell/house-symbol alternatives and explicit pairwise peer conflicts, recomputed from original given-peer domains. No production index, builder, detector or exact search imported."
+    },
+    "oracleRecord": {
+      "method": "independent-algorithm-x@1",
+      "inputHash": "cef98a770fcc1dbd5f88ed6d307336a660eb9ff268af3f98a2e42fe46576a102",
+      "command": "npm test -- tests/unit/solver/generalized-chains.test.ts",
+      "satisfiable": true,
+      "forceForbidExhausted": true
+    }
+  },
+  {
+    "id": "C25-bivalue-12-no-premature-close",
+    "rowId": "C25",
+    "givens": "530670900600100300008342000000760420000853700710004806001537280287410005300080170",
+    "preState": {
+      "values": [
+        5,
+        3,
+        0,
+        6,
+        7,
+        0,
+        9,
+        0,
+        0,
+        6,
+        0,
+        0,
+        1,
+        0,
+        0,
+        3,
+        0,
+        0,
+        0,
+        0,
+        8,
+        3,
+        4,
+        2,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        7,
+        6,
+        0,
+        4,
+        2,
+        0,
+        0,
+        0,
+        0,
+        8,
+        5,
+        3,
+        7,
+        0,
+        0,
+        7,
+        1,
+        0,
+        0,
+        0,
+        4,
+        8,
+        0,
+        6,
+        0,
+        0,
+        1,
+        5,
+        3,
+        7,
+        2,
+        8,
+        0,
+        2,
+        8,
+        7,
+        4,
+        1,
+        0,
+        0,
+        0,
+        5,
+        3,
+        0,
+        0,
+        0,
+        8,
+        0,
+        1,
+        7,
+        0
+      ],
+      "domains": [
+        16,
+        4,
+        10,
+        32,
+        64,
+        128,
+        256,
+        9,
+        139,
+        32,
+        330,
+        266,
+        1,
+        256,
+        400,
+        4,
+        24,
+        202,
+        257,
+        320,
+        128,
+        4,
+        8,
+        2,
+        48,
+        49,
+        65,
+        384,
+        272,
+        276,
+        64,
+        32,
+        257,
+        8,
+        2,
+        261,
+        264,
+        298,
+        298,
+        128,
+        16,
+        4,
+        64,
+        257,
+        257,
+        64,
+        1,
+        278,
+        258,
+        258,
+        8,
+        128,
+        276,
+        32,
+        264,
+        296,
+        1,
+        16,
+        4,
+        64,
+        2,
+        128,
+        264,
+        2,
+        128,
+        64,
+        8,
+        1,
+        288,
+        32,
+        292,
+        16,
+        4,
+        312,
+        312,
+        258,
+        128,
+        288,
+        1,
+        64,
+        264
+      ]
+    },
+    "expectedPattern": {
+      "grammar": "bivalue",
+      "target": [
+        47,
+        2
+      ],
+      "positions": [
+        {
+          "variable": "cell:2",
+          "alternatives": [
+            [
+              2,
+              2
+            ],
+            [
+              2,
+              4
+            ]
+          ],
+          "left": [
+            2,
+            2
+          ],
+          "right": [
+            2,
+            4
+          ],
+          "leftConflict": [
+            47,
+            2
+          ],
+          "excluded": []
+        },
+        {
+          "variable": "cell:7",
+          "alternatives": [
+            [
+              7,
+              1
+            ],
+            [
+              7,
+              4
+            ]
+          ],
+          "left": [
+            7,
+            4
+          ],
+          "right": [
+            7,
+            1
+          ],
+          "leftConflict": [
+            2,
+            4
+          ],
+          "excluded": []
+        },
+        {
+          "variable": "cell:43",
+          "alternatives": [
+            [
+              43,
+              1
+            ],
+            [
+              43,
+              9
+            ]
+          ],
+          "left": [
+            43,
+            1
+          ],
+          "right": [
+            43,
+            9
+          ],
+          "leftConflict": [
+            7,
+            1
+          ],
+          "excluded": []
+        },
+        {
+          "variable": "cell:36",
+          "alternatives": [
+            [
+              36,
+              4
+            ],
+            [
+              36,
+              9
+            ]
+          ],
+          "left": [
+            36,
+            9
+          ],
+          "right": [
+            36,
+            4
+          ],
+          "leftConflict": [
+            43,
+            9
+          ],
+          "excluded": []
+        },
+        {
+          "variable": "cell:54",
+          "alternatives": [
+            [
+              54,
+              4
+            ],
+            [
+              54,
+              9
+            ]
+          ],
+          "left": [
+            54,
+            4
+          ],
+          "right": [
+            54,
+            9
+          ],
+          "leftConflict": [
+            36,
+            4
+          ],
+          "excluded": []
+        },
+        {
+          "variable": "cell:62",
+          "alternatives": [
+            [
+              62,
+              4
+            ],
+            [
+              62,
+              9
+            ]
+          ],
+          "left": [
+            62,
+            9
+          ],
+          "right": [
+            62,
+            4
+          ],
+          "leftConflict": [
+            54,
+            9
+          ],
+          "excluded": []
+        },
+        {
+          "variable": "cell:80",
+          "alternatives": [
+            [
+              80,
+              4
+            ],
+            [
+              80,
+              9
+            ]
+          ],
+          "left": [
+            80,
+            4
+          ],
+          "right": [
+            80,
+            9
+          ],
+          "leftConflict": [
+            62,
+            4
+          ],
+          "excluded": []
+        },
+        {
+          "variable": "cell:77",
+          "alternatives": [
+            [
+              77,
+              6
+            ],
+            [
+              77,
+              9
+            ]
+          ],
+          "left": [
+            77,
+            9
+          ],
+          "right": [
+            77,
+            6
+          ],
+          "leftConflict": [
+            80,
+            9
+          ],
+          "excluded": []
+        },
+        {
+          "variable": "cell:68",
+          "alternatives": [
+            [
+              68,
+              6
+            ],
+            [
+              68,
+              9
+            ]
+          ],
+          "left": [
+            68,
+            6
+          ],
+          "right": [
+            68,
+            9
+          ],
+          "leftConflict": [
+            77,
+            6
+          ],
+          "excluded": []
+        },
+        {
+          "variable": "cell:75",
+          "alternatives": [
+            [
+              75,
+              2
+            ],
+            [
+              75,
+              9
+            ]
+          ],
+          "left": [
+            75,
+            9
+          ],
+          "right": [
+            75,
+            2
+          ],
+          "leftConflict": [
+            68,
+            9
+          ],
+          "excluded": []
+        },
+        {
+          "variable": "cell:48",
+          "alternatives": [
+            [
+              48,
+              2
+            ],
+            [
+              48,
+              9
+            ]
+          ],
+          "left": [
+            48,
+            2
+          ],
+          "right": [
+            48,
+            9
+          ],
+          "leftConflict": [
+            75,
+            2
+          ],
+          "excluded": []
+        },
+        {
+          "variable": "cell:49",
+          "alternatives": [
+            [
+              49,
+              2
+            ],
+            [
+              49,
+              9
+            ]
+          ],
+          "left": [
+            49,
+            9
+          ],
+          "right": [
+            49,
+            2
+          ],
+          "leftConflict": [
+            48,
+            9
+          ],
+          "excluded": []
+        }
+      ],
+      "positionCount": 12,
+      "fullPairCount": 12,
+      "terminalForm": "last-right-conflicts-target",
+      "closingConflict": [
+        47,
+        2
+      ]
+    },
+    "expectedEffects": [
+      {
+        "kind": "remove",
+        "cell": 47,
+        "symbol": 2
+      }
+    ],
+    "origin": {
+      "author": "Independent repository fixture author",
+      "license": "Repository-owned; no external puzzle copied",
+      "sourceRevision": "independent-bivalue12@1",
+      "construction": "Seeded original-clue construction; complete original bivalue domains and twelve distinct CSP variables; right literals have no premature target or earlier-right conflict. Construction solution is never a proof premise."
+    },
+    "oracleRecord": {
+      "method": "independent-algorithm-x@1",
+      "inputHash": "53962622926cdc7b2c2ec71533d8097ca421fd7ddf5bc311575e561a8a6d64e7",
+      "command": "npm test -- tests/unit/solver/generalized-chains.test.ts",
+      "satisfiable": true,
+      "forceForbidExhausted": true
+    }
+  },
+  {
+    "id": "C25-bivalue-13-no-premature-close",
+    "rowId": "C25",
+    "givens": "534678902670105300098000000850761000006800790010904806900530000287009635000080179",
+    "preState": {
+      "values": [
+        5,
+        3,
+        4,
+        6,
+        7,
+        8,
+        9,
+        0,
+        2,
+        6,
+        7,
+        0,
+        1,
+        0,
+        5,
+        3,
+        0,
+        0,
+        0,
+        9,
+        8,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        8,
+        5,
+        0,
+        7,
+        6,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        6,
+        8,
+        0,
+        0,
+        7,
+        9,
+        0,
+        0,
+        1,
+        0,
+        9,
+        0,
+        4,
+        8,
+        0,
+        6,
+        9,
+        0,
+        0,
+        5,
+        3,
+        0,
+        0,
+        0,
+        0,
+        2,
+        8,
+        7,
+        0,
+        0,
+        9,
+        6,
+        3,
+        5,
+        0,
+        0,
+        0,
+        0,
+        8,
+        0,
+        1,
+        7,
+        9
+      ],
+      "domains": [
+        16,
+        4,
+        8,
+        32,
+        64,
+        128,
+        256,
+        1,
+        2,
+        32,
+        64,
+        2,
+        1,
+        266,
+        16,
+        4,
+        136,
+        136,
+        1,
+        256,
+        128,
+        14,
+        10,
+        6,
+        24,
+        57,
+        73,
+        128,
+        16,
+        262,
+        64,
+        32,
+        1,
+        10,
+        10,
+        12,
+        12,
+        10,
+        32,
+        128,
+        18,
+        6,
+        64,
+        256,
+        13,
+        68,
+        1,
+        6,
+        256,
+        18,
+        8,
+        128,
+        18,
+        32,
+        256,
+        40,
+        1,
+        16,
+        4,
+        98,
+        10,
+        138,
+        136,
+        2,
+        128,
+        64,
+        8,
+        9,
+        256,
+        32,
+        4,
+        16,
+        12,
+        40,
+        20,
+        10,
+        128,
+        34,
+        1,
+        64,
+        256
+      ]
+    },
+    "expectedPattern": {
+      "grammar": "bivalue",
+      "target": [
+        25,
+        4
+      ],
+      "positions": [
+        {
+          "variable": "cell:17",
+          "alternatives": [
+            [
+              17,
+              4
+            ],
+            [
+              17,
+              8
+            ]
+          ],
+          "left": [
+            17,
+            4
+          ],
+          "right": [
+            17,
+            8
+          ],
+          "leftConflict": [
+            25,
+            4
+          ],
+          "excluded": []
+        },
+        {
+          "variable": "cell:62",
+          "alternatives": [
+            [
+              62,
+              4
+            ],
+            [
+              62,
+              8
+            ]
+          ],
+          "left": [
+            62,
+            8
+          ],
+          "right": [
+            62,
+            4
+          ],
+          "leftConflict": [
+            17,
+            8
+          ],
+          "excluded": []
+        },
+        {
+          "variable": "cell:60",
+          "alternatives": [
+            [
+              60,
+              2
+            ],
+            [
+              60,
+              4
+            ]
+          ],
+          "left": [
+            60,
+            4
+          ],
+          "right": [
+            60,
+            2
+          ],
+          "leftConflict": [
+            62,
+            4
+          ],
+          "excluded": []
+        },
+        {
+          "variable": "cell:33",
+          "alternatives": [
+            [
+              33,
+              2
+            ],
+            [
+              33,
+              4
+            ]
+          ],
+          "left": [
+            33,
+            2
+          ],
+          "right": [
+            33,
+            4
+          ],
+          "leftConflict": [
+            60,
+            2
+          ],
+          "excluded": []
+        },
+        {
+          "variable": "cell:34",
+          "alternatives": [
+            [
+              34,
+              2
+            ],
+            [
+              34,
+              4
+            ]
+          ],
+          "left": [
+            34,
+            4
+          ],
+          "right": [
+            34,
+            2
+          ],
+          "leftConflict": [
+            33,
+            4
+          ],
+          "excluded": []
+        },
+        {
+          "variable": "cell:52",
+          "alternatives": [
+            [
+              52,
+              2
+            ],
+            [
+              52,
+              5
+            ]
+          ],
+          "left": [
+            52,
+            2
+          ],
+          "right": [
+            52,
+            5
+          ],
+          "leftConflict": [
+            34,
+            2
+          ],
+          "excluded": []
+        },
+        {
+          "variable": "cell:49",
+          "alternatives": [
+            [
+              49,
+              2
+            ],
+            [
+              49,
+              5
+            ]
+          ],
+          "left": [
+            49,
+            5
+          ],
+          "right": [
+            49,
+            2
+          ],
+          "leftConflict": [
+            52,
+            5
+          ],
+          "excluded": []
+        },
+        {
+          "variable": "cell:47",
+          "alternatives": [
+            [
+              47,
+              2
+            ],
+            [
+              47,
+              3
+            ]
+          ],
+          "left": [
+            47,
+            2
+          ],
+          "right": [
+            47,
+            3
+          ],
+          "leftConflict": [
+            49,
+            2
+          ],
+          "excluded": []
+        },
+        {
+          "variable": "cell:36",
+          "alternatives": [
+            [
+              36,
+              3
+            ],
+            [
+              36,
+              4
+            ]
+          ],
+          "left": [
+            36,
+            3
+          ],
+          "right": [
+            36,
+            4
+          ],
+          "leftConflict": [
+            47,
+            3
+          ],
+          "excluded": []
+        },
+        {
+          "variable": "cell:37",
+          "alternatives": [
+            [
+              37,
+              2
+            ],
+            [
+              37,
+              4
+            ]
+          ],
+          "left": [
+            37,
+            4
+          ],
+          "right": [
+            37,
+            2
+          ],
+          "leftConflict": [
+            36,
+            4
+          ],
+          "excluded": []
+        },
+        {
+          "variable": "cell:41",
+          "alternatives": [
+            [
+              41,
+              2
+            ],
+            [
+              41,
+              3
+            ]
+          ],
+          "left": [
+            41,
+            2
+          ],
+          "right": [
+            41,
+            3
+          ],
+          "leftConflict": [
+            37,
+            2
+          ],
+          "excluded": []
+        },
+        {
+          "variable": "cell:23",
+          "alternatives": [
+            [
+              23,
+              2
+            ],
+            [
+              23,
+              3
+            ]
+          ],
+          "left": [
+            23,
+            3
+          ],
+          "right": [
+            23,
+            2
+          ],
+          "leftConflict": [
+            41,
+            3
+          ],
+          "excluded": []
+        },
+        {
+          "variable": "cell:22",
+          "alternatives": [
+            [
+              22,
+              2
+            ],
+            [
+              22,
+              4
+            ]
+          ],
+          "left": [
+            22,
+            2
+          ],
+          "right": [
+            22,
+            4
+          ],
+          "leftConflict": [
+            23,
+            2
+          ],
+          "excluded": []
+        }
+      ],
+      "positionCount": 13,
+      "fullPairCount": 13,
+      "terminalForm": "last-right-conflicts-target",
+      "closingConflict": [
+        25,
+        4
+      ]
+    },
+    "expectedEffects": [
+      {
+        "kind": "remove",
+        "cell": 25,
+        "symbol": 4
+      }
+    ],
+    "origin": {
+      "author": "Independent repository fixture author",
+      "license": "Repository-owned; no external puzzle copied",
+      "sourceRevision": "independent-bivalue13@1",
+      "construction": "Seeded original-clue construction; complete original bivalue domains and thirteen distinct CSP variables; right literals have no premature target or earlier-right conflict. Construction solution is never a proof premise."
+    },
+    "expectedAdmission": "out-of-profile",
+    "profileViolation": "13 positions exceeds the named 12-position cap"
+  }
+]

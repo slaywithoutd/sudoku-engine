@@ -1,5 +1,7 @@
 # First-release toolchain research
 
+Execution update, 2026-09-12: these exact pins were installed and exercised successfully during M1. See [release verification](../release-verification.md) for actual results. The research account below records the earlier planning checks.
+
 Checked 2026-09-12. Local read-only checks report Node `v24.19.0` and npm `11.17.0`. Official npm metadata supports the pins below on that Node version; no packages were installed and no runtime compatibility tests were run during planning.
 
 | Development package | Exact pin | Declared Node requirement | Source |

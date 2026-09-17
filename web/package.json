@@ -1,0 +1,27 @@
+{
+  "name": "sudoku-platform",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "typecheck": "tsc --noEmit && tsc -p tsconfig.worker.json --noEmit",
+    "build": "vite build",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:e2e": "playwright test",
+    "test:e2e:production": "playwright test -c playwright.production.config.ts",
+    "bench:solver": "playwright test -c playwright.benchmark.config.ts",
+    "test:serve": "vite --host 127.0.0.1 --port 5174 --strictPort"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.63.0",
+    "@types/node": "24.13.4",
+    "fake-indexeddb": "6.2.5",
+    "typescript": "7.0.2",
+    "vite": "8.3.0",
+    "vitest": "5.0.0"
+  },
+  "dependencies": {
+    "lucide-static": "1.46.0"
+  }
+}

@@ -10,7 +10,7 @@
 
 **Spec:** [Approved first-release behavior](../specs/2026-09-12-first-release-design.md) and [platform architecture](../specs/2026-09-12-platform-design.md).
 
-**Status:** Ready for implementation; none of the task checkboxes represent completed application work. This document is an execution plan, not a report of passing tests. Package pins were checked against official metadata, not installed or exercised; see [toolchain evidence](../../references/toolchain.md).
+**Status:** COMPLETE, 2026-09-12. All ten tasks were implemented on local branch release/first-release, based on 7c9512b. Verified implementation commit: 66b8381. Clean install, typecheck, 54 unit/storage/controller tests, production build and 20 Chromium tests passed. See [actual release evidence](../../release-verification.md) and [resume handoff](../../README.md). The steps and examples below retain the execution contract; checked boxes record completed work.
 
 ## Global Constraints
 
@@ -65,7 +65,7 @@ Files are assigned by responsibility, not a requirement to fill every file with 
 
 **Produces:** domain types below; `emptyEditor(): EditorState`, `parsePuzzleString(text: string): Value[]`, `conflictingCells(values: readonly Value[]): number[]`, `isComplete(values: readonly Value[]): boolean`, `effectiveValues(editor: EditorState, givens: readonly Value[]): Value[]`.
 
-- [ ] Create `web/` without altering the Spring tree. Initialize the package as private ESM, then install exact development pins inside `web/`:
+- [x] Create `web/` without altering the Spring tree. Initialize the package as private ESM, then install exact development pins inside `web/`:
 
 ```powershell
 npm install --save-dev --save-exact typescript@7.0.2 vite@8.3.0 vitest@5.0.0 @playwright/test@1.63.0 fake-indexeddb@6.2.5 @types/node@24.13.4
@@ -131,7 +131,7 @@ export default defineConfig({
 });
 ```
 
-- [ ] Define the serializable model. Arrays have runtime shape validation; do not rely on TypeScript to validate imported JSON. The `finishedPuzzleId` link retains completed authoring history without allowing mutation of a finished puzzle.
+- [x] Define the serializable model. Arrays have runtime shape validation; do not rely on TypeScript to validate imported JSON. The `finishedPuzzleId` link retains completed authoring history without allowing mutation of a finished puzzle.
 
 ```ts
 export type Digit = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
@@ -168,7 +168,7 @@ export function emptyEditor(): EditorState {
 }
 ```
 
-- [ ] Add independent fixtures and failing rule/import tests. Put fixture constants in `tests/fixtures.ts` for later tasks:
+- [x] Add independent fixtures and failing rule/import tests. Put fixture constants in `tests/fixtures.ts` for later tasks:
 
 ```ts
 export const SOLUTION = '534678912672195348198342567859761423426853791713924856961537284287419635345286179';
@@ -190,7 +190,7 @@ test('import and classic validity are distinct contracts', () => {
 });
 ```
 
-- [ ] Run `npm test -- tests/unit/classic.test.ts`; expect failure because the parser/checker behavior is absent. Implement the parser and unit-based duplicate collection; add cases for column-only/box-only conflicts and whitespace.
+- [x] Run `npm test -- tests/unit/classic.test.ts`; expect failure because the parser/checker behavior is absent. Implement the parser and unit-based duplicate collection; add cases for column-only/box-only conflicts and whitespace.
 
 ```ts
 export function parsePuzzleString(text: string): Value[] {
@@ -215,7 +215,7 @@ for (let n = 0; n < 9; n++) {
 }
 ```
 
-- [ ] Run the focused tests, `npm run typecheck`, and `npm run build`. `index.html` uses `lang="pt-BR"` and imports `/src/main.ts`; bootstrap only the app root at this task. Add `web/node_modules/`, `web/dist/`, `web/test-results/`, and `web/playwright-report/` to `.gitignore`, preserving existing entries. Commit this testable foundation with an explicit file list.
+- [x] Run the focused tests, `npm run typecheck`, and `npm run build`. `index.html` uses `lang="pt-BR"` and imports `/src/main.ts`; bootstrap only the app root at this task. Add `web/node_modules/`, `web/dist/`, `web/test-results/`, and `web/playwright-report/` to `.gitignore`, preserving existing entries. Commit this testable foundation with an explicit file list.
 
 ## Task 2 — Reversible board edits and navigation
 
@@ -234,7 +234,7 @@ export type BoardAction =
   | { type: 'tool'; tool: Tool };
 ```
 
-- [ ] Add a failing regression test for hidden notes, layered erasure, and undo before implementing actions:
+- [x] Add a failing regression test for hidden notes, layered erasure, and undo before implementing actions:
 
 ```ts
 import { expect, test } from 'vitest';
@@ -253,7 +253,7 @@ test('a value hides notes; erase reveals; undo restores value and notes', () => 
 });
 ```
 
-- [ ] Run `npm test -- tests/unit/editor.test.ts` and confirm the behavioral failure. Implement edits as changed-cell deltas, cloning before/after values; no-op edits return the original state and do not discard redo.
+- [x] Run `npm test -- tests/unit/editor.test.ts` and confirm the behavioral failure. Implement edits as changed-cell deltas, cloning before/after values; no-op edits return the original state and do not discard redo.
 
 ```ts
 function applyEdit(state: EditorState, label: Edit['label'], changes: CellChange[]): EditorState {
@@ -271,7 +271,7 @@ function move(state: EditorState, dr: number, dc: number): EditorState {
 
 Digit action: block if a play given. In play, a corner action toggles a sorted unique note only in an empty cell; on a filled cell it is a no-op, never a replacement digit. Ordinary digit actions replace the value and retain notes. Creation interprets digit actions as clue entry regardless of the modifier. Erase: clear nonzero value first; if no value, clear notes. Reset: one edit clearing every editable cell's value and notes. Undo: pop `past`, apply `before`, push to `future`; redo pops `future`, applies `after`, and pushes to `past`. Preserve `selected`/`tool` through undo/redo. Validate indices and ignore unsupported move increments from malformed callers.
 
-- [ ] Add tests for all four edge wraps, selectable locked givens, same-digit/no-op history, note toggle repeats, notes ignored on filled cells, create mode rejecting corner-note interpretation, reset restoring multiple hidden notes in one undo, redo after navigation, and fresh edits discarding redo.
+- [x] Add tests for all four edge wraps, selectable locked givens, same-digit/no-op history, note toggle repeats, notes ignored on filled cells, create mode rejecting corner-note interpretation, reset restoring multiple hidden notes in one undo, redo after navigation, and fresh edits discarding redo.
 
 ```ts
 test('navigation does not consume undo and givens are immutable', () => {
@@ -285,7 +285,7 @@ test('navigation does not consume undo and givens are immutable', () => {
 });
 ```
 
-- [ ] Run focused editor/classic tests and typecheck. Commit the domain reducer and regression tests; do not add UI or storage logic here.
+- [x] Run focused editor/classic tests and typecheck. Commit the domain reducer and regression tests; do not add UI or storage logic here.
 
 ## Task 3 — Draft, puzzle, and play-session lifecycle
 
@@ -295,7 +295,7 @@ test('navigation does not consume undo and givens are immutable', () => {
 
 **Produces:** `emptyLibrary(): LibraryData`, `createDraft(data, id, now, values?): LibraryData`, `finishDraft(data, draftId, puzzleId, now): LibraryData`, `startPlay(data, puzzleId, now): LibraryData`, `copyPuzzleToDraft(data, puzzleId, draftId, now): LibraryData`, `renameRecord(data, kind: 'draft'|'puzzle', id, name, now): LibraryData`, `deleteRecord(data, kind, id): LibraryData`. Every unannotated argument is `LibraryData`, string ID/ISO time, or `readonly Value[]` as applicable; returns are immutable library snapshots. IDs and clock values are supplied by the caller for deterministic tests.
 
-- [ ] Write the failing lifecycle test and run `npm test -- tests/unit/library.test.ts`:
+- [x] Write the failing lifecycle test and run `npm test -- tests/unit/library.test.ts`:
 
 ```ts
 import { expect, test } from 'vitest';
@@ -316,7 +316,7 @@ test('finish and copy preserve immutable puzzle identity and play state', () => 
 });
 ```
 
-- [ ] Implement initial settings and draft creation. Name blank records `Sem título`; use a trimmed nonempty name when renaming. A parsed import starts a new draft with the imported givens as its initial state, not a mutation of the current draft.
+- [x] Implement initial settings and draft creation. Name blank records `Sem título`; use a trimmed nonempty name when renaming. A parsed import starts a new draft with the imported givens as its initial state, not a mutation of the current draft.
 
 ```ts
 export function emptyLibrary(): LibraryData {
@@ -325,7 +325,7 @@ export function emptyLibrary(): LibraryData {
 }
 ```
 
-- [ ] Implement Finish as an immutable transition. Reject missing/already-finished drafts, duplicate destination IDs, and conflicts. Create `ClassicDefinition` from draft cell values; retain the source draft/history with `finishedPuzzleId` and exclude it from active Drafts. Reopening that archived authoring route goes to its finished puzzle, never edits it. Empty drafts may Finish. Keep solution properties unverified; do not infer them from local checks.
+- [x] Implement Finish as an immutable transition. Reject missing/already-finished drafts, duplicate destination IDs, and conflicts. Create `ClassicDefinition` from draft cell values; retain the source draft/history with `finishedPuzzleId` and exclude it from active Drafts. Reopening that archived authoring route goes to its finished puzzle, never edits it. Empty drafts may Finish. Keep solution properties unverified; do not infer them from local checks.
 
 ```ts
 const givens = draft.editor.cells.map(cell => cell.value);
@@ -337,9 +337,9 @@ const puzzle: Puzzle = {
 };
 ```
 
-- [ ] Implement resume without overwriting an existing session; new sessions have empty player values/notes/history and read givens from the definition. Copy-to-draft copies definition values and metadata name, sets `sourcePuzzleId`, and starts a fresh authoring history. Reset calls the editor's one-action reset, not session replacement.
-- [ ] Implement deletion through domain functions without UI prompts: deleting a puzzle deletes its session and associated archived authoring records. Independent active draft copies retain their clue data but lose the deleted puzzle's provenance link. Deleting an active draft only removes that draft. This prevents orphaned archived history from reappearing as an editable draft. UI confirmation belongs in Task 8. Add tests for no duplicate active sessions, conflicting/zero-clue Finish, archived draft immutability, rename, and reference cleanup.
-- [ ] Run lifecycle/classic/editor suites and typecheck; commit the lifecycle layer. Later tasks must not recreate these transitions in UI code.
+- [x] Implement resume without overwriting an existing session; new sessions have empty player values/notes/history and read givens from the definition. Copy-to-draft copies definition values and metadata name, sets `sourcePuzzleId`, and starts a fresh authoring history. Reset calls the editor's one-action reset, not session replacement.
+- [x] Implement deletion through domain functions without UI prompts: deleting a puzzle deletes its session and associated archived authoring records. Independent active draft copies retain their clue data but lose the deleted puzzle's provenance link. Deleting an active draft only removes that draft. This prevents orphaned archived history from reappearing as an editable draft. UI confirmation belongs in Task 8. Add tests for no duplicate active sessions, conflicting/zero-clue Finish, archived draft immutability, rename, and reference cleanup.
+- [x] Run lifecycle/classic/editor suites and typecheck; commit the lifecycle layer. Later tasks must not recreate these transitions in UI code.
 
 ## Task 4 — Runtime validation and lossless backup merge
 
@@ -356,7 +356,7 @@ export interface BackupEnvelope {
 export interface RestorePreview { data: LibraryData; added: number; copied: number; skipped: number }
 ```
 
-- [ ] Add failing tests for complete round-trip and atomic rejection before writing the parser:
+- [x] Add failing tests for complete round-trip and atomic rejection before writing the parser:
 
 ```ts
 import { expect, test } from 'vitest';
@@ -377,8 +377,8 @@ test('identical backup is skipped and malformed history is rejected', () => {
 });
 ```
 
-- [ ] Run `npm test -- tests/unit/backup.test.ts` and confirm failure. Validate discriminants, schema versions, ordinary object structure, record key/ID agreement, timestamps, 81 cells, integers 0–9, sorted unique notes 1–9, selection 0–80, tool, booleans, definition shape and references. Reject unsupported newer versions without partial import. Produce validated objects field-by-field; reject dangerous record IDs such as `__proto__`, `prototype`, and `constructor`, and never trust imported prototypes.
-- [ ] Validate history as executable data: unique valid cell indices per edit, allowed labels, valid before/after cells, nonempty changes, no edits to play givens, and consistency when replaying past backward from present and future forward. Draft cells/history contain no notes. Verify finished draft values match their linked definition. Reject an envelope with invalid references or impossible history before any storage call.
+- [x] Run `npm test -- tests/unit/backup.test.ts` and confirm failure. Validate discriminants, schema versions, ordinary object structure, record key/ID agreement, timestamps, 81 cells, integers 0–9, sorted unique notes 1–9, selection 0–80, tool, booleans, definition shape and references. Reject unsupported newer versions without partial import. Produce validated objects field-by-field; reject dangerous record IDs such as `__proto__`, `prototype`, and `constructor`, and never trust imported prototypes.
+- [x] Validate history as executable data: unique valid cell indices per edit, allowed labels, valid before/after cells, nonempty changes, no edits to play givens, and consistency when replaying past backward from present and future forward. Draft cells/history contain no notes. Verify finished draft values match their linked definition. Reject an envelope with invalid references or impossible history before any storage call.
 
 ```ts
 function sameCell(a: CellState, b: CellState): boolean {
@@ -390,9 +390,9 @@ function sameCell(a: CellState, b: CellState): boolean {
 // reverse stack order, require before to match, then replace with after.
 ```
 
-- [ ] Implement graph-aware merge. Allocate unique IDs before remapping references. Exact same-ID/content records skip; same-ID/different-content records copy. If an imported session conflicts with the local session of an otherwise identical puzzle, copy its puzzle branch too, so both sessions remain attached to different puzzle identities. Remap session keys/puzzle IDs and draft provenance/finished links. Identical imported archived drafts whose linked puzzle branch is copied must also copy/remap. Use the current library revision; imported revision cannot overwrite the repository's revision.
-- [ ] Retain current settings unless `restoreSettings` is true. Cover changed-session collisions, changed-puzzle collisions, two drafts referencing one copied puzzle, duplicate IDs produced by the supplied generator (retry), invalid versions, given edits hidden in history, and preservation of hidden notes/redo. Assert the current library never mutates during preview.
-- [ ] Run the backup/domain tests and typecheck; commit validated backup logic. No browser download/upload UI yet.
+- [x] Implement graph-aware merge. Allocate unique IDs before remapping references. Exact same-ID/content records skip; same-ID/different-content records copy. If an imported session conflicts with the local session of an otherwise identical puzzle, copy its puzzle branch too, so both sessions remain attached to different puzzle identities. Remap session keys/puzzle IDs and draft provenance/finished links. Identical imported archived drafts whose linked puzzle branch is copied must also copy/remap. Use the current library revision; imported revision cannot overwrite the repository's revision.
+- [x] Retain current settings unless `restoreSettings` is true. Cover changed-session collisions, changed-puzzle collisions, two drafts referencing one copied puzzle, duplicate IDs produced by the supplied generator (retry), invalid versions, given edits hidden in history, and preservation of hidden notes/redo. Assert the current library never mutates during preview.
+- [x] Run the backup/domain tests and typecheck; commit validated backup logic. No browser download/upload UI yet.
 
 ## Task 5 — Atomic IndexedDB state/history persistence
 
@@ -413,7 +413,7 @@ export class RevisionConflictError extends Error {}
 
 Use IndexedDB database `sudoku-engine`, database version 1, object store `library`, root key `current`. The initial personal dataset can be one versioned aggregate: it makes backups and state/history transitions atomic. The adapter hides this choice so a later measured migration can introduce per-record stores without changing domain APIs. Do not introduce a separate database per puzzle.
 
-- [ ] Write a failing test using a fresh fake factory per test. Run `npm test -- tests/storage/repository.test.ts`:
+- [x] Write a failing test using a fresh fake factory per test. Run `npm test -- tests/storage/repository.test.ts`:
 
 ```ts
 import { expect, test } from 'vitest';
@@ -434,8 +434,8 @@ test('reopen retains complete state and stale revisions cannot overwrite it', as
 });
 ```
 
-- [ ] Open/create the store in `onupgradeneeded`, report blocked opening through the callback, close the connection on `versionchange`, and reject failed opens without clearing existing data. `load()` returns a validated current record or `emptyLibrary()` when absent. A corrupt stored record is an error with a recovery path, not a reason to reset the database.
-- [ ] Implement commit in one readwrite transaction. Validate the proposed data before opening the transaction. After reading current revision, compare with `expectedRevision`, allocate the next revision, and put the full aggregate. Only resolve after `oncomplete`; request success alone must never announce Saved.
+- [x] Open/create the store in `onupgradeneeded`, report blocked opening through the callback, close the connection on `versionchange`, and reject failed opens without clearing existing data. `load()` returns a validated current record or `emptyLibrary()` when absent. A corrupt stored record is an error with a recovery path, not a reason to reset the database.
+- [x] Implement commit in one readwrite transaction. Validate the proposed data before opening the transaction. After reading current revision, compare with `expectedRevision`, allocate the next revision, and put the full aggregate. Only resolve after `oncomplete`; request success alone must never announce Saved.
 
 ```ts
 function commit(db: IDBDatabase, data: LibraryData, expectedRevision: number): Promise<LibraryData> {
@@ -464,8 +464,8 @@ function commit(db: IDBDatabase, data: LibraryData, expectedRevision: number): P
 
 Catch synchronous exceptions inside request callbacks, assign `failure`, and abort; never leave a promise pending when `put` throws. Implement readonly load completion/error handling with the same transaction-lifecycle discipline. Do not perform timers or network work inside the transaction.
 
-- [ ] Add persistence tests containing real editor history/hidden notes and restored backup data. Test malformed data rejection leaves the previous record unchanged, competing revisions retain the winner, close/reopen works, and a failed/aborted write does not resolve as saved. Use explicit fake failure injection in the test adapter layer where browser quota cannot be simulated; do not claim that fake tests prove quota/eviction behavior.
-- [ ] Run storage tests, domain tests, and typecheck. Commit the adapter. The real-browser durability check is scheduled in Task 10.
+- [x] Add persistence tests containing real editor history/hidden notes and restored backup data. Test malformed data rejection leaves the previous record unchanged, competing revisions retain the winner, close/reopen works, and a failed/aborted write does not resolve as saved. Use explicit fake failure injection in the test adapter layer where browser quota cannot be simulated; do not claim that fake tests prove quota/eviction behavior.
+- [x] Run storage tests, domain tests, and typecheck. Commit the adapter. The real-browser durability check is scheduled in Task 10.
 
 ## Task 6 — Application state, save queue, and navigation contracts
 
@@ -491,7 +491,7 @@ export type Route =
   | { screen: 'settings' };
 ```
 
-- [ ] Write a test showing that edits are visible before asynchronous commit completes and later edits are not lost. Use a controlled fake repository with the actual `Repository` contract:
+- [x] Write a test showing that edits are visible before asynchronous commit completes and later edits are not lost. Use a controlled fake repository with the actual `Repository` contract:
 
 ```ts
 import { expect, test } from 'vitest';
@@ -521,7 +521,7 @@ test('UI state updates immediately while durable saves are serialized', async ()
 });
 ```
 
-- [ ] Run focused tests to establish the missing behavior. Maintain live in-memory state, an edit generation, saved generation, and last committed revision. One save loop captures the latest immutable snapshot and serially commits it; coalescing pending snapshots is allowed because the latest includes the full history. Do not mark newer work saved when only an older generation completed.
+- [x] Run focused tests to establish the missing behavior. Maintain live in-memory state, an edit generation, saved generation, and last committed revision. One save loop captures the latest immutable snapshot and serially commits it; coalescing pending snapshots is allowed because the latest includes the full history. Do not mark newer work saved when only an older generation completed.
 
 ```ts
 // Core save-loop ordering, inside createController:
@@ -538,9 +538,9 @@ while (savedGeneration < generation) {
 
 Define these closure variables explicitly in the implementation; `notify` calls a Set of subscribed listeners. Catch failures outside the loop, keep live work, expose error status, and leave work dirty. `retry()` restarts the queue for the same work. On revision conflict, require reload or export recovery instead of silently replacing the expected revision and overwriting another tab. `flush()` waits for the current dirty generation or rejects with the save error.
 
-- [ ] Add tests for old completion versus newer edits, save rejection retaining work/history, successful retry, listener unsubscribe, no-op updates not writing, and stale-revision errors remaining visible. Do not add an automatic discard/reset path.
-- [ ] Implement hash routes `#/`, `#/library/puzzles`, `#/library/drafts`, `#/create/<encoded-id>`, `#/play/<encoded-id>`, and `#/settings`. Unknown/malformed paths resolve Home; missing record IDs show a Portuguese message and a Library link at screen mounting. Route changes never clear unsaved in-memory edits.
-- [ ] Run controller/router tests and typecheck; commit the controller and routing contracts.
+- [x] Add tests for old completion versus newer edits, save rejection retaining work/history, successful retry, listener unsubscribe, no-op updates not writing, and stale-revision errors remaining visible. Do not add an automatic discard/reset path.
+- [x] Implement hash routes `#/`, `#/library/puzzles`, `#/library/drafts`, `#/create/<encoded-id>`, `#/play/<encoded-id>`, and `#/settings`. Unknown/malformed paths resolve Home; missing record IDs show a Portuguese message and a Library link at screen mounting. Route changes never clear unsaved in-memory edits.
+- [x] Run controller/router tests and typecheck; commit the controller and routing contracts.
 
 ## Task 7 — Accessible board and unified keyboard/mouse input
 
@@ -563,8 +563,8 @@ export function digitFromEvent(event: KeyboardEvent): Digit | null {
 }
 ```
 
-- [ ] Create a dedicated browser harness under `tests/browser/`, serving the actual board module with `emptyEditor()` and a reducer-backed callback. It is not a production app route or a duplicate renderer. Add a text field in the harness to test input focus isolation.
-- [ ] Write failing browser assertions and run `npm run test:e2e -- board.spec.ts` before implementing the handlers:
+- [x] Create a dedicated browser harness under `tests/browser/`, serving the actual board module with `emptyEditor()` and a reducer-backed callback. It is not a production app route or a duplicate renderer. Add a text field in the harness to test input focus isolation.
+- [x] Write failing browser assertions and run `npm run test:e2e -- board.spec.ts` before implementing the handlers:
 
 ```ts
 import { expect, test } from '@playwright/test';
@@ -587,7 +587,7 @@ test('wrap, shifted corner entry, hidden notes and undo use real keyboard events
 });
 ```
 
-- [ ] Render a grid with 81 reusable cell nodes, clear 3×3 boundaries, a separate value/notes span, `data-cell-index`, `aria-selected`, and a Portuguese label containing row/column/value/given status. Use roving focus for the selected cell. Givens render definition values and stay selectable. Update nodes in place so typing and focus are not lost on each edit. All metadata/names use `textContent`, never interpolated HTML.
+- [x] Render a grid with 81 reusable cell nodes, clear 3×3 boundaries, a separate value/notes span, `data-cell-index`, `aria-selected`, and a Portuguese label containing row/column/value/given status. Use roving focus for the selected cell. Givens render definition values and stay selectable. Update nodes in place so typing and focus are not lost on each edit. All metadata/names use `textContent`, never interpolated HTML.
 
 ```ts
 const button = document.createElement('button');
@@ -599,10 +599,10 @@ button.setAttribute('aria-selected', String(index === state.selected));
 button.setAttribute('aria-label', `Linha ${Math.floor(index / 9) + 1}, coluna ${index % 9 + 1}`);
 ```
 
-- [ ] Map keyboard and number buttons to the same actions. Handle Ctrl+Z/Y/Shift+Z before digit parsing; do not steal other Ctrl/Meta/Alt shortcuts. Shift or selected corner tool requests notes; creation always enters clues. Ignore repeated keydown toggles for notes/undo while allowing arrow repeat. Erase keys are 0/Backspace/Delete. A number-button click uses `MouseEvent.shiftKey`, avoiding a sticky global Shift flag. Selecting a cell/using keypad returns focus to the selected cell; updates from other controls must not steal input-field focus.
-- [ ] Limit shortcut handling to the mounted board/keypad when they own interaction. Exclude `input`, `textarea`, `select`, and contenteditable targets. Remove listeners with an `AbortController` on destroy. A name or import textarea must accept normal keys and native text undo.
-- [ ] Test shifted symbols on the number row, numpad codes, Shift+button, persistent note mode, note toggle/erasure layers, all wraps, no duplicate actions, locked givens, input focus isolation, and remount cleanup. Add a screenshot/manual visual check at a desktop viewport with all nine corner notes, selection, and conflicts. Unit tests remain focused on domain semantics rather than duplicating DOM classes.
-- [ ] Run the board browser suite, domain tests, typecheck, and build. Commit board rendering/input with its harness; do not expose the harness in app navigation.
+- [x] Map keyboard and number buttons to the same actions. Handle Ctrl+Z/Y/Shift+Z before digit parsing; do not steal other Ctrl/Meta/Alt shortcuts. Shift or selected corner tool requests notes; creation always enters clues. Ignore repeated keydown toggles for notes/undo while allowing arrow repeat. Erase keys are 0/Backspace/Delete. A number-button click uses `MouseEvent.shiftKey`, avoiding a sticky global Shift flag. Selecting a cell/using keypad returns focus to the selected cell; updates from other controls must not steal input-field focus.
+- [x] Limit shortcut handling to the mounted board/keypad when they own interaction. Exclude `input`, `textarea`, `select`, and contenteditable targets. Remove listeners with an `AbortController` on destroy. A name or import textarea must accept normal keys and native text undo.
+- [x] Test shifted symbols on the number row, numpad codes, Shift+button, persistent note mode, note toggle/erasure layers, all wraps, no duplicate actions, locked givens, input focus isolation, and remount cleanup. Add a screenshot/manual visual check at a desktop viewport with all nine corner notes, selection, and conflicts. Unit tests remain focused on domain semantics rather than duplicating DOM classes.
+- [x] Run the board browser suite, domain tests, typecheck, and build. Commit board rendering/input with its harness; do not expose the harness in app navigation.
 
 ## Task 8 — Creator, library, player, and local application shell
 
@@ -628,7 +628,7 @@ export declare function mountPlayer(container: HTMLElement, services: ScreenServ
 export declare function mountSettings(container: HTMLElement, services: ScreenServices): () => void;
 ```
 
-- [ ] Write the browser lifecycle test using actual Portuguese controls. Run `npm run test:e2e -- lifecycle.spec.ts` and see the missing-screen failures:
+- [x] Write the browser lifecycle test using actual Portuguese controls. Run `npm run test:e2e -- lifecycle.spec.ts` and see the missing-screen failures:
 
 ```ts
 import { expect, test } from '@playwright/test';
@@ -653,7 +653,7 @@ test('conflicting draft saves, cannot finish, and valid puzzle locks clues', asy
 });
 ```
 
-- [ ] Bootstrap repository/load/controller once. Mount a screen on hash changes and dispose the previous screen/listeners. Each screen subscribes to update its existing nodes; do not remount the whole screen for every save-status notification. If storage opening fails, offer an in-memory session with an explicit unsaved indicator and export recovery; never claim persistence or clear an inaccessible database. Inject `crypto.randomUUID` and ISO time through services.
+- [x] Bootstrap repository/load/controller once. Mount a screen on hash changes and dispose the previous screen/listeners. Each screen subscribes to update its existing nodes; do not remount the whole screen for every save-status notification. If storage opening fails, offer an in-memory session with an explicit unsaved indicator and export recovery; never claim persistence or clear an inaccessible database. Inject `crypto.randomUUID` and ISO time through services.
 
 ```ts
 const repository = await openRepository(indexedDB, 'sudoku-engine', () => {
@@ -666,8 +666,8 @@ const services: ScreenServices = {
 };
 ```
 
-- [ ] Implement Home buttons `Jogar`, `Criar`, `Resolver — em breve`, and `Configurações`. Library has `Rascunhos`/`Jogos` tabs and `Explorar — em breve`. Future features are explanatory disabled controls, not fake working screens. Create allocates/saves a draft before navigation; Paste Puzzle validates into a new draft without replacing current work.
-- [ ] Wire creator edits through the domain reducer, retaining no-op identity so selection/edits have the intended save semantics:
+- [x] Implement Home buttons `Jogar`, `Criar`, `Resolver — em breve`, and `Configurações`. Library has `Rascunhos`/`Jogos` tabs and `Explorar — em breve`. Future features are explanatory disabled controls, not fake working screens. Create allocates/saves a draft before navigation; Paste Puzzle validates into a new draft without replacing current work.
+- [x] Wire creator edits through the domain reducer, retaining no-op identity so selection/edits have the intended save semantics:
 
 ```ts
 function onDraftAction(action: BoardAction): void {
@@ -683,10 +683,10 @@ function onDraftAction(action: BoardAction): void {
 ```
 
 Always show conflicts and a reason when Finish is blocked. Finish calls the domain transition, then offers Play Now or Library. Mark solvability/uniqueness unverified, including for a zero-clue puzzle. Keep archived source history but never reopen it as a mutable definition.
-- [ ] Implement playable list open/resume, rename, `Editar cópia`, and delete confirmation. Player reads immutable givens, edits only its session, and has Notes, Erase, Undo, Redo, Reset, and Home/Library navigation. Apply reset through the reducer so it is one undoable action. Derive lifecycle badges from records/current board rather than storing contradictory duplicated flags.
-- [ ] Settings edits `showConflicts` in live state and persists it. Display save status (`Salvando…`, `Salvo`, or `Não salvo`) globally. Save failure exposes Retry/Export while retaining memory. Do not rebuild name/import fields on every saving-status notification; preserve cursor/focus and input composition.
-- [ ] Add full-board completion checking: valid full classic board shows a dismissible success message once per transition from incomplete/invalid to complete. Undo/redo can transition again. A full conflicting board stays editable; when highlighting is off, no unsolicited mistake popup appears. Completion says nothing about uniqueness.
-- [ ] Run lifecycle/board browser tests, all unit/storage tests, typecheck, and build. Commit the working create/play shell. Add tests for saved selection, returning Home without losing work, deleting with cancel/confirm, finished-copy independence, and configurable play conflicts versus mandatory creation conflicts.
+- [x] Implement playable list open/resume, rename, `Editar cópia`, and delete confirmation. Player reads immutable givens, edits only its session, and has Notes, Erase, Undo, Redo, Reset, and Home/Library navigation. Apply reset through the reducer so it is one undoable action. Derive lifecycle badges from records/current board rather than storing contradictory duplicated flags.
+- [x] Settings edits `showConflicts` in live state and persists it. Display save status (`Salvando…`, `Salvo`, or `Não salvo`) globally. Save failure exposes Retry/Export while retaining memory. Do not rebuild name/import fields on every saving-status notification; preserve cursor/focus and input composition.
+- [x] Add full-board completion checking: valid full classic board shows a dismissible success message once per transition from incomplete/invalid to complete. Undo/redo can transition again. A full conflicting board stays editable; when highlighting is off, no unsolicited mistake popup appears. Completion says nothing about uniqueness.
+- [x] Run lifecycle/board browser tests, all unit/storage tests, typecheck, and build. Commit the working create/play shell. Add tests for saved selection, returning Home without losing work, deleting with cancel/confirm, finished-copy independence, and configurable play conflicts versus mandatory creation conflicts.
 
 ## Task 9 — Backup/restore and failure recovery in the interface
 
@@ -696,7 +696,7 @@ Always show conflicts and a reason when Finish is blocked. Finish calls the doma
 
 **Produces:** actual JSON download/upload, restore preview with counts/settings choice, one atomic apply, and recovery export of unsaved live work.
 
-- [ ] Add a browser test that downloads a library containing a draft with history, imports it unchanged (skip), then imports a modified conflicting record (copy), preserving the original. Capture the download using Playwright rather than assuming a file was written:
+- [x] Add a browser test that downloads a library containing a draft with history, imports it unchanged (skip), then imports a modified conflicting record (copy), preserving the original. Capture the download using Playwright rather than assuming a file was written:
 
 ```ts
 const downloadPromise = page.waitForEvent('download');
@@ -709,7 +709,7 @@ await page.getByLabel('Importar backup').setInputFiles(file);
 await expect(page.getByRole('dialog')).toContainText('Resumo da importação');
 ```
 
-- [ ] Run the failing browser test, then implement export from `controller.snapshot()`, including dirty in-memory work if a save failed. The export must not reload stale IndexedDB first. Use a JSON Blob, download link, and revoke the object URL after the click has been processed.
+- [x] Run the failing browser test, then implement export from `controller.snapshot()`, including dirty in-memory work if a save failed. The export must not reload stale IndexedDB first. Use a JSON Blob, download link, and revoke the object URL after the click has been processed.
 
 ```ts
 const json = exportBackup(services.controller.snapshot(), services.now());
@@ -721,10 +721,10 @@ link.click();
 setTimeout(() => URL.revokeObjectURL(url), 0);
 ```
 
-- [ ] Read a chosen file, parse/validate it, and compute a pure preview. Show additions/copies/skips and a default-unchecked `Restaurar configurações do backup` checkbox. Cancel closes with no state mutation. Capture the current edit generation/revision; if it changes before Apply, recompute the preview and require the updated summary to be acknowledged rather than applying stale merged state.
-- [ ] Apply the preview through the controller as one library update/transaction, outside board history. Existing histories remain attached to their copied/remapped records. Avoid calling per-record save in a loop. If commit fails, retain the complete proposed state as unsaved and show recovery controls; on refresh only a completed transaction is restored.
-- [ ] Test malformed/newer-version backup rejection, cancellation, changed-session branch copying, setting retention/restoration, XSS-like names displayed as text, and backup of hidden notes plus redo. Simulate repository failure at the adapter boundary in a test-only harness and verify live edits remain exportable and Retry clears the failure only after commit. Do not inject test hooks into public product Settings.
-- [ ] Run backup browser/unit tests plus controller/storage suites and typecheck; commit recovery and backup UI.
+- [x] Read a chosen file, parse/validate it, and compute a pure preview. Show additions/copies/skips and a default-unchecked `Restaurar configurações do backup` checkbox. Cancel closes with no state mutation. Capture the current edit generation/revision; if it changes before Apply, recompute the preview and require the updated summary to be acknowledged rather than applying stale merged state.
+- [x] Apply the preview through the controller as one library update/transaction, outside board history. Existing histories remain attached to their copied/remapped records. Avoid calling per-record save in a loop. If commit fails, retain the complete proposed state as unsaved and show recovery controls; on refresh only a completed transaction is restored.
+- [x] Test malformed/newer-version backup rejection, cancellation, changed-session branch copying, setting retention/restoration, XSS-like names displayed as text, and backup of hidden notes plus redo. Simulate repository failure at the adapter boundary in a test-only harness and verify live edits remain exportable and Retry clears the failure only after commit. Do not inject test hooks into public product Settings.
+- [x] Run backup browser/unit tests plus controller/storage suites and typecheck; commit recovery and backup UI.
 
 ## Task 10 — End-to-end durability, visual QA, and delivery documentation
 
@@ -734,8 +734,8 @@ setTimeout(() => URL.revokeObjectURL(url), 0);
 
 **Produces:** verified local release, repeatable startup/test instructions, and an accurate resume record.
 
-- [ ] Add a real refresh/reopen test in the same browser context: enter notes/value, undo once, wait for `Salvo`, reload, redo, close page, open a new page at the same origin, and confirm editor/history/selection. A new isolated context is expected to be empty; do not mistake that for a persistence failure.
-- [ ] Add one true browser-restart persistence check with a temporary profile under the test output directory. Launch, save, close, relaunch the same profile, and verify state/history. Never point tests at a personal browser profile. Use Playwright's temporary artifact lifecycle to clean up only the test profile; verify its absolute path before any recursive cleanup on Windows.
+- [x] Add a real refresh/reopen test in the same browser context: enter notes/value, undo once, wait for `Salvo`, reload, redo, close page, open a new page at the same origin, and confirm editor/history/selection. A new isolated context is expected to be empty; do not mistake that for a persistence failure.
+- [x] Add one true browser-restart persistence check with a temporary profile under the test output directory. Launch, save, close, relaunch the same profile, and verify state/history. Never point tests at a personal browser profile. Use Playwright's temporary artifact lifecycle to clean up only the test profile; verify its absolute path before any recursive cleanup on Windows.
 
 ```ts
 import { chromium, expect, test } from '@playwright/test';
@@ -763,8 +763,8 @@ test('library survives a browser restart', async ({}, testInfo) => {
 
 Use `try/finally` in the implementation to close contexts if assertions fail; do not leave hidden browser processes behind.
 
-- [ ] Cover completion with a nearly full valid fixture, ordinary conflicting full entries with highlights off/on, and no false uniqueness wording. Verify keyboard and pointer controls, numeric keypad, normal text-field undo, and disabled future actions. Inspect desktop screenshots at 1280×800 and 1920×1080 for overflow, all nine corner notes, crisp 3×3 boundaries, focus, and legibility.
-- [ ] Execute the release gates from `web/`, separately, and inspect every result:
+- [x] Cover completion with a nearly full valid fixture, ordinary conflicting full entries with highlights off/on, and no false uniqueness wording. Verify keyboard and pointer controls, numeric keypad, normal text-field undo, and disabled future actions. Inspect desktop screenshots at 1280×800 and 1920×1080 for overflow, all nine corner notes, crisp 3×3 boundaries, focus, and legibility.
+- [x] Execute the release gates from `web/`, separately, and inspect every result:
 
 ```powershell
 npm ci
@@ -776,8 +776,8 @@ npm run test:e2e
 
 Expected: installation succeeds with locked dependencies; typecheck exits 0; all unit/storage and browser tests pass; Vite emits a production build. If new failures require fixes, rerun the affected checks and the necessary final gates. Do not report browser quota/eviction guarantees from fake IndexedDB tests.
 
-- [ ] Write root startup instructions: install Node matching the baseline; `cd web`, `npm ci`, then `npm run dev`; open exactly `http://localhost:5173`. Explain that another port/hostname has separate browser data, provide backup instructions, list keyboard controls, and identify solver/variants/community as future stages. Document each test command and that existing Spring files are retained as a legacy reference, not the active runtime. Do not delete them merely to tidy the repository.
-- [ ] Check `git diff --check`, review changed paths, and ensure no generated dependencies, build output, personal data, secrets, or test profiles are staged. Commit the finished release with relevant docs. Update this plan's checkboxes and `docs/README.md` with actual results, commit identifier, known limitations, and the next checkpoint M2. Only claim completed behavior verified by the executed checks.
+- [x] Write root startup instructions: install Node matching the baseline; `cd web`, `npm ci`, then `npm run dev`; open exactly `http://localhost:5173`. Explain that another port/hostname has separate browser data, provide backup instructions, list keyboard controls, and identify solver/variants/community as future stages. Document each test command and that existing Spring files are retained as a legacy reference, not the active runtime. Do not delete them merely to tidy the repository.
+- [x] Check `git diff --check`, review changed paths, and ensure no generated dependencies, build output, personal data, secrets, or test profiles are staged. Commit the finished release with relevant docs. Update this plan's checkboxes and `docs/README.md` with actual results, commit identifier, known limitations, and the next checkpoint M2. Only claim completed behavior verified by the executed checks.
 
 ## Coverage map and execution order
 

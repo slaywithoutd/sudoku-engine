@@ -1,0 +1,152 @@
+import type { WorkerHandle } from "./solver-worker";
+
+export type SolverOutcome = "idle" | "running" | "cancelled" | "complete" | "error";
+
+export interface SolverSnapshot {
+  readonly requestId: string;
+  readonly outcome: SolverOutcome;
+  readonly acceptedRevision: number;
+  readonly input: unknown;
+  readonly options: unknown;
+  readonly result: unknown;
+  /** Latest non-terminal worker event of the accepted request (progress, explained step). */
+  readonly lastEvent: unknown;
+}
+
+export interface SolverWorker {
+  start(
+    request: unknown,
+    handlers: { onEvent(event: unknown): void; onError(error: Error): void },
+  ): WorkerHandle;
+}
+
+export interface SolverControllerDeps {
+  readonly clock: { now(): number };
+  readonly newId: () => string;
+  readonly workerFactory: SolverWorker;
+}
+
+export interface SolverController {
+  snapshot(): SolverSnapshot;
+  subscribe(listener: () => void): () => void;
+  replaceInput(definition: unknown, source?: unknown): void;
+  edit(action: unknown): void;
+  setOptions(options: unknown): void;
+  start(): void;
+  startConditional(): void;
+  cancel(reason: string): void;
+  dispose(): void;
+}
+
+/**
+ * Owns the volatile Solve request and at most one worker handle. Every state
+ * replacement increments `generation` before termination, so callbacks from a
+ * cancelled or superseded worker cannot mutate the accepted snapshot.
+ */
+export function createSolverController(deps: SolverControllerDeps): SolverController {
+  let generation = 0;
+  let worker: WorkerHandle | undefined;
+  let state: SolverSnapshot = {
+    requestId: "",
+    outcome: "idle",
+    acceptedRevision: 0,
+    input: null,
+    options: null,
+    result: null,
+    lastEvent: null,
+  };
+  const listeners = new Set<() => void>();
+
+  const notify = () => listeners.forEach((listener) => listener());
+  const invalidate = (outcome: SolverOutcome) => {
+    generation++;
+    worker?.terminate();
+    worker = undefined;
+    state = Object.freeze({ ...state, requestId: state.requestId, outcome });
+    notify();
+  };
+  const start = (conditional = false) => {
+    invalidate("running");
+    const id = deps.newId();
+    const token = generation;
+    state = Object.freeze({
+      ...state,
+      requestId: id,
+      outcome: "running",
+      result: conditional ? { kind: "conditional" } : null,
+      lastEvent: null,
+    });
+    notify();
+    worker = deps.workerFactory.start(
+      {
+        requestId: id,
+        conditional,
+        input: structuredClone(state.input),
+        options: structuredClone(state.options),
+      },
+      {
+        onEvent(event) {
+          if (token !== generation) return;
+          const value = event as {
+            kind?: string;
+            outcome?: SolverOutcome;
+            revision?: number;
+            result?: unknown;
+          };
+          if (value.kind === "terminal") {
+            state = Object.freeze({
+              ...state,
+              outcome: value.outcome ?? "complete",
+              acceptedRevision: value.revision ?? state.acceptedRevision,
+              result: value.result ?? state.result,
+            });
+            worker?.terminate();
+            worker = undefined;
+            notify();
+          } else {
+            state = Object.freeze({ ...state, lastEvent: event });
+            notify();
+          }
+        },
+        onError(error) {
+          if (token !== generation) return;
+          state = Object.freeze({ ...state, outcome: "error", result: { error: error.message } });
+          worker?.terminate();
+          worker = undefined;
+          notify();
+        },
+      },
+    );
+  };
+  const replaceInput = (definition: unknown) => {
+    invalidate("idle");
+    state = Object.freeze({ ...state, input: structuredClone(definition), result: null, lastEvent: null });
+    notify();
+  };
+
+  return {
+    snapshot: () => state,
+    subscribe(listener) {
+      listeners.add(listener);
+      return () => listeners.delete(listener);
+    },
+    replaceInput,
+    edit(action) {
+      const input =
+        state.input && typeof state.input === "object"
+          ? { ...(state.input as Record<string, unknown>), lastAction: structuredClone(action) }
+          : { action: structuredClone(action) };
+      replaceInput(input);
+    },
+    setOptions(options) {
+      state = Object.freeze({ ...state, options: structuredClone(options) });
+      notify();
+    },
+    start: () => start(false),
+    startConditional: () => start(true),
+    cancel(_reason) {
+      invalidate("cancelled");
+    },
+    dispose: () => invalidate("cancelled"),
+  };
+}
