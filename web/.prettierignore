@@ -1,0 +1,8 @@
+node_modules/
+dist/
+test-results/
+playwright-report/
+.vercel/
+# Fixture data is generated; keep its layout stable
+tests/solver/fixtures/
+tests/solver/bench/corpus.json
