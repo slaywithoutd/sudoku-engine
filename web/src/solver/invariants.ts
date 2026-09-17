@@ -25,3 +25,8 @@ export type Unverified<T> = T extends readonly (infer Item)[]
 export function unverified<T>(value: T): Unverified<T> {
   return value as Unverified<T>;
 }
+
+/** Destructuring reads the first element as possibly absent, matching the runtime. */
+export function optionalHead<T>(items: readonly T[]): [T | undefined, ...T[]] {
+  return [items[0], ...items.slice(1)];
+}

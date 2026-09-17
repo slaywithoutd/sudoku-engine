@@ -9,6 +9,7 @@ import {
 import { weightedIncidences, type WeightedPremise } from "./counts";
 import type { CheckContext, CheckedInference, PrimitiveInput } from "./types";
 import { symbolMask } from "../state/read";
+import { defined } from "../invariants";
 
 /** Finite signed-count entailment. Falsifying the proposed clause fixes unary
  * occupancy bits; an exact lower bound above U-L rejects that whole assignment
@@ -16,30 +17,32 @@ import { symbolMask } from "../state/read";
 export class CoverCountClauseChecker {
   readonly id = "cover-count-clause@1";
   *check(input: PrimitiveInput, context: CheckContext): Generator<number, CheckedInference> {
-    const p = input.parameters as unknown as {
-        symbol: number;
-        covers: WeightedPremise[];
-        capacities: WeightedPremise[];
-      },
+    const pattern = input.parameters as unknown as
+        | {
+            symbol: number;
+            covers: WeightedPremise[];
+            capacities: WeightedPremise[];
+          }
+        | undefined,
       claim = input.conclusion;
     requireProof(
-      p &&
-        context.view.assembly.problem.symbols.includes(p.symbol) &&
-        Array.isArray(p.covers) &&
-        p.covers.length > 0 &&
-        Array.isArray(p.capacities) &&
-        p.capacities.length > 0 &&
+      pattern &&
+        context.view.assembly.problem.symbols.includes(pattern.symbol) &&
+        Array.isArray(pattern.covers) &&
+        pattern.covers.length > 0 &&
+        Array.isArray(pattern.capacities) &&
+        pattern.capacities.length > 0 &&
         sameValue(input.parameters, {
-          symbol: p.symbol,
-          covers: p.covers,
-          capacities: p.capacities,
+          symbol: pattern.symbol,
+          covers: pattern.covers,
+          capacities: pattern.capacities,
         }),
       "invalid-count-parameters",
     );
     const scratch =
       65536 +
       input.premises.length * 256 +
-      (p.covers.length + p.capacities.length) * 128 +
+      (pattern.covers.length + pattern.capacities.length) * 128 +
       (claim.kind === "clause" ? claim.alternatives.length * 128 : 0);
     requireProof((context.workspaceRemaining ?? 0) >= scratch, "count-clause-workspace-limit");
     requireProof(
@@ -56,16 +59,16 @@ export class CoverCountClauseChecker {
     const { coefficients, bound, domainIds } = yield* weightedIncidences(
       input,
       context,
-      p.symbol,
-      p.covers,
-      p.capacities,
+      pattern.symbol,
+      pattern.covers,
+      pattern.capacities,
     );
     const fixings = new Map<number, number>();
     for (const value of claim.alternatives) {
       yield 1;
       requireProof(
         validLiteral(value, context) &&
-          value.symbol === p.symbol &&
+          value.symbol === pattern.symbol &&
           coefficients.has(value.cell) &&
           !fixings.has(value.cell),
         "invalid-count-clause",
@@ -79,22 +82,22 @@ export class CoverCountClauseChecker {
     const domains = new Map<number, number>();
     for (const id of domainIds) {
       yield 1;
-      const d = domainAssertion(context.retained.get(id)!.conclusion);
+      const domain = domainAssertion(defined(context.retained.get(id), "retained").conclusion);
       requireProof(
-        d && needed.has(d.cell) && !domains.has(d.cell) && d.mask !== 0,
+        domain && needed.has(domain.cell) && !domains.has(domain.cell) && domain.mask !== 0,
         "incomplete-count-clause-domains",
       );
-      domains.set(d.cell, d.mask);
+      domains.set(domain.cell, domain.mask);
     }
     requireProof(domains.size === needed.size, "incomplete-count-clause-domains");
     let minimum = 0;
-    const bit = symbolMask(p.symbol);
+    const bit = symbolMask(pattern.symbol);
     for (const [cell, mask] of domains) {
       yield 1;
       const canOne = (mask & bit) !== 0,
         canZero = (mask & ~bit) !== 0,
         fixed = fixings.get(cell),
-        coefficient = coefficients.get(cell)!;
+        coefficient = defined(coefficients.get(cell), "coefficient");
       requireProof(
         fixed === undefined ? canOne || canZero : fixed === 1 ? canOne : canZero,
         "incompatible-count-clause-falsification",

@@ -8,6 +8,7 @@ import {
   validLiteral,
 } from "./primitives";
 import type { CheckContext, CheckedInference, PrimitiveInput, ProofNode } from "./types";
+import { defined } from "../invariants";
 
 /** Lexical scopes are ancestor chains; a numeric list is never assumption authority. */
 export function checkScope(node: ProofNode, context: CheckContext): void {
@@ -22,7 +23,7 @@ export function checkScope(node: ProofNode, context: CheckContext): void {
   }
   if (node.rule === "discharge@1" || node.rule === "cases@1") return;
   for (const id of node.premises) {
-    const premise = context.retained.get(id)!;
+    const premise = defined(context.retained.get(id), "retained");
     const scope = premise.rule === "assume@1" ? [...premise.scope, id] : premise.scope;
     requireProof(
       scope.every((ancestor, index) => node.scope[index] === ancestor),
@@ -96,9 +97,12 @@ export class ContradictionStrategy {
     let valid =
       sources.length === 1 &&
       (sources[0].kind === "false" || domainAssertion(sources[0])?.mask === 0);
-    if (sources.length === 2 && sources.every((p) => p.kind === "literal")) {
-      const [a, b] = sources.map((p) => (p.kind === "literal" ? p.value : undefined));
-      valid = a!.cell === b!.cell && a!.symbol === b!.symbol && a!.positive !== b!.positive;
+    if (sources.length === 2 && sources.every((proposition) => proposition.kind === "literal")) {
+      const [left, right] = sources.map((pattern) => pattern.value);
+      valid =
+        defined(left, "left").cell === defined(right, "right").cell &&
+        defined(left, "left").symbol === defined(right, "right").symbol &&
+        defined(left, "left").positive !== defined(right, "right").positive;
     }
     if (sources[0]?.kind === "clause") {
       const alternatives = sources[0].alternatives;
@@ -184,12 +188,15 @@ export class CasesStrategy {
       alternatives.length > 0 && input.premises.length === 1 + alternatives.length * 2,
       "incomplete-cases",
     );
-    const parent = context.currentNode!.scope;
+    const parent = defined(context.currentNode, "currentNode").scope;
     requireProof(
-      context
-        .premiseInferences!.get(input.premises[0])!
-        .openAssumptions.every((id) => parent.includes(id)) &&
-        context.retained.get(input.premises[0])!.scope.every((id, index) => parent[index] === id),
+      defined(
+        defined(context.premiseInferences, "premiseInferences").get(input.premises[0]),
+        "get",
+      ).openAssumptions.every((id) => parent.includes(id)) &&
+        defined(context.retained.get(input.premises[0]), "retained").scope.every(
+          (id, index) => parent[index] === id,
+        ),
       "scoped-case-cover",
     );
     const discharged: number[] = [];

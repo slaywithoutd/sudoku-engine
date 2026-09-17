@@ -10,9 +10,14 @@ export function literal(cell: number, symbol: number, positive: boolean): Propos
 }
 export function proposedClause(values: readonly Literal[]): Proposition {
   const alternatives = [
-    ...new Map(values.map((v) => [`${v.cell}:${v.symbol}:${v.positive}`, v])).values(),
+    ...new Map(
+      values.map((value) => [`${value.cell}:${value.symbol}:${value.positive}`, value]),
+    ).values(),
   ].sort(
-    (a, b) => a.cell - b.cell || a.symbol - b.symbol || Number(a.positive) - Number(b.positive),
+    (left, right) =>
+      left.cell - right.cell ||
+      left.symbol - right.symbol ||
+      Number(left.positive) - Number(right.positive),
   );
   return alternatives.length === 1
     ? { kind: "literal", value: alternatives[0] }
@@ -48,7 +53,7 @@ export class CertificateBuilder {
   }
   fact(proposition: Proposition): number {
     const fact = matchingFacts(this.view, proposition).find(
-      (f) => f.openAssumptions.length === 0 && !f.conditional,
+      (candidate) => candidate.openAssumptions.length === 0 && !candidate.conditional,
     );
     if (!fact) throw Error("missing-proposed-premise");
     return fact.root;
@@ -83,7 +88,7 @@ export class CertificateBuilder {
       if (scope.cells.includes(cell))
         for (const peer of scope.cells)
           if (peer !== cell && !peers.has(peer)) peers.set(peer, scope.cells);
-    for (const [peer, scope] of [...peers].sort(([a], [b]) => a - b))
+    for (const [peer, scope] of [...peers].sort(([left], [right]) => left - right))
       if (!this.view.state.values[peer] && this.view.state.domains[peer] & symbolMask(symbol))
         this.peer(root, cell, peer, symbol, scope);
   }
@@ -103,12 +108,12 @@ export class CertificateBuilder {
   }
   finish(technique: string, pattern: Json): DeductionProposal {
     const entries = [...this.#effects.values()].sort(
-      (a, b) =>
-        a.effect.cell - b.effect.cell ||
-        a.effect.symbol - b.effect.symbol ||
-        a.effect.kind.localeCompare(b.effect.kind),
+      (left, right) =>
+        left.effect.cell - right.effect.cell ||
+        left.effect.symbol - right.effect.symbol ||
+        left.effect.kind.localeCompare(right.effect.kind),
     );
-    const roots = [...entries.map((e) => e.root), ...this.#additionalRoots],
+    const roots = [...entries.map((entry) => entry.root), ...this.#additionalRoots],
       domains = new Map<number, { id: number; mask: number }>();
     for (const { effect, root } of entries) {
       const prior = domains.get(effect.cell) ?? {
@@ -126,16 +131,16 @@ export class CertificateBuilder {
         mask,
       });
     }
-    roots.push(...[...domains.values()].map((v) => v.id));
+    roots.push(...[...domains.values()].map((domain) => domain.id));
     return {
       technique,
       state: this.view.state.key,
-      effects: entries.map((e) => e.effect),
+      effects: entries.map((entry) => entry.effect),
       pattern,
       proof: {
         state: this.view.state.key,
         nodes: [...this.#nodes],
-        imports: [...this.#imports].sort((a, b) => a - b),
+        imports: [...this.#imports].sort((left, right) => left - right),
         roots,
       },
     };

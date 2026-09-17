@@ -58,7 +58,7 @@ export function* initializationReservation(
     add("rule-instance@1", { kind: "rule", constraintId: rule.id });
   }
   const sorted = <T extends { id: string }>(values: readonly T[]) =>
-    [...values].sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+    [...values].sort((left, right) => (left.id < right.id ? -1 : left.id > right.id ? 1 : 0));
   for (const scope of sorted(assembly.allDifferent)) {
     yield { kind: "work", units: 1 };
     add("all-different@1", { kind: "all-different", cells: scope.cells }, [scope.premise], {

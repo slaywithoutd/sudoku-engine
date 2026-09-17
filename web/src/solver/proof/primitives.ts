@@ -25,6 +25,7 @@ import { SubsetCountChecker } from "./subset-count";
 import type { TableDefinition } from "./tables";
 import type { ProofNode } from "./types";
 import { symbolMask } from "../state/read";
+import { defined } from "../invariants";
 
 export class ProofError extends Error {
   constructor(readonly code: string) {
@@ -169,7 +170,10 @@ export function assertM2RootAssemblyBounds(assembly: Assembly): void {
       "invalid-root-parameters",
     );
     for (const key of Reflect.ownKeys(rule.parameters)) {
-      const descriptor = Object.getOwnPropertyDescriptor(rule.parameters, key)!;
+      const descriptor = defined(
+        Object.getOwnPropertyDescriptor(rule.parameters, key),
+        "getOwnPropertyDescriptor",
+      );
       requireProof(
         typeof key === "string" &&
           key.length <= 64 &&
@@ -249,10 +253,14 @@ export function derived(input: PrimitiveInput, context: CheckContext): CheckedIn
   return Object.freeze({
     conclusion: input.conclusion,
     openAssumptions: Object.freeze(
-      [...new Set(premises.flatMap((p) => p!.openAssumptions))].sort((a, b) => a - b),
+      [...new Set(premises.flatMap((premise) => defined(premise, "premise").openAssumptions))].sort(
+        (left, right) => left - right,
+      ),
     ),
-    conditional: premises.some((p) => p!.conditional),
-    rules: Object.freeze([...new Set(premises.flatMap((p) => p!.rules))].sort()),
+    conditional: premises.some((premise) => defined(premise, "premise").conditional),
+    rules: Object.freeze(
+      [...new Set(premises.flatMap((premise) => defined(premise, "premise").rules))].sort(),
+    ),
   });
 }
 export function premises(
@@ -291,7 +299,10 @@ export function clause(values: readonly Literal[]): Proposition {
       values.map((value) => [`${value.cell}:${value.symbol}:${value.positive}`, value]),
     ).values(),
   ].sort(
-    (a, b) => a.cell - b.cell || a.symbol - b.symbol || Number(a.positive) - Number(b.positive),
+    (left, right) =>
+      left.cell - right.cell ||
+      left.symbol - right.symbol ||
+      Number(left.positive) - Number(right.positive),
   );
   if (sorted.length === 0) return { kind: "false" };
   if (sorted.length === 1) return { kind: "literal", value: sorted[0] };
@@ -324,15 +335,15 @@ function weakLink(input: PrimitiveInput, context: CheckContext): CheckedInferenc
       sameValue(input.conclusion, clause(alternatives)),
     "invalid-weak-link",
   );
-  const [a, b] = alternatives,
+  const [first, second] = alternatives,
     domain = domainAssertion(scope);
   const valid = domain
-    ? a.cell === domain.cell && b.cell === domain.cell && a.symbol !== b.symbol
+    ? first.cell === domain.cell && second.cell === domain.cell && first.symbol !== second.symbol
     : scope.kind === "all-different" &&
-      scope.cells.includes(a.cell) &&
-      scope.cells.includes(b.cell) &&
-      a.cell !== b.cell &&
-      a.symbol === b.symbol;
+      scope.cells.includes(first.cell) &&
+      scope.cells.includes(second.cell) &&
+      first.cell !== second.cell &&
+      first.symbol === second.symbol;
   requireProof(valid, "invalid-weak-link");
   return derived(input, context);
 }
@@ -357,17 +368,17 @@ function resolve(input: PrimitiveInput, context: CheckContext): CheckedInference
     [...left, ...right].every((value) => validLiteral(value, context)),
     "invalid-resolution",
   );
-  const valid = left.some((a) =>
+  const valid = left.some((first) =>
     right.some(
-      (b) =>
-        a.cell === b.cell &&
-        a.symbol === b.symbol &&
-        a.positive !== b.positive &&
+      (second) =>
+        first.cell === second.cell &&
+        first.symbol === second.symbol &&
+        first.positive !== second.positive &&
         sameValue(
           input.conclusion,
           clause([
-            ...left.filter((v) => !sameValue(v, a)),
-            ...right.filter((v) => !sameValue(v, b)),
+            ...left.filter((literal) => !sameValue(literal, first)),
+            ...right.filter((literal) => !sameValue(literal, second)),
           ]),
         ),
     ),

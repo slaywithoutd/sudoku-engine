@@ -1,6 +1,7 @@
 import { derived, domainAssertion, requireProof, sameValue, validLiteral } from "./primitives";
 import type { CheckContext, CheckedInference, PrimitiveInput } from "./types";
 import { symbolMask } from "../state/read";
+import { defined } from "../invariants";
 
 /** Extended Subset Principle, with exact per-symbol independent occupancy.
  * A forced candidate restricts only its own cell and explicitly cited peers.
@@ -10,44 +11,50 @@ import { symbolMask } from "../state/read";
 export class SubsetCountChecker {
   readonly id = "subset-count@1";
   *check(input: PrimitiveInput, context: CheckContext): Generator<number, CheckedInference> {
-    const p = input.parameters as unknown as {
-      cells: number[];
-      symbols: number[];
-      capacities: number[];
-      target: { cell: number; symbol: number };
-    };
+    const pattern = input.parameters as unknown as
+      | {
+          cells: number[];
+          symbols: number[];
+          capacities: number[];
+          target?: { cell: number; symbol: number };
+        }
+      | undefined;
     requireProof(
-      p &&
+      pattern &&
         sameValue(input.parameters, {
-          cells: p.cells,
-          symbols: p.symbols,
-          capacities: p.capacities,
-          target: p.target,
+          cells: pattern.cells,
+          symbols: pattern.symbols,
+          capacities: pattern.capacities,
+          target: pattern.target,
         }) &&
-        Array.isArray(p.cells) &&
-        p.cells.length >= 1 &&
-        p.cells.length <= 12 &&
-        p.cells.every(
-          (c, i) => context.view.assembly.problem.cells.includes(c) && (!i || c > p.cells[i - 1]),
+        Array.isArray(pattern.cells) &&
+        pattern.cells.length >= 1 &&
+        pattern.cells.length <= 12 &&
+        pattern.cells.every(
+          (cell, i) =>
+            context.view.assembly.problem.cells.includes(cell) &&
+            (!i || cell > pattern.cells[i - 1]),
         ) &&
-        p.target &&
-        sameValue(p.target, { cell: p.target.cell, symbol: p.target.symbol }) &&
-        validLiteral({ ...p.target, positive: true }, context),
+        pattern.target &&
+        sameValue(pattern.target, { cell: pattern.target.cell, symbol: pattern.target.symbol }) &&
+        validLiteral({ ...pattern.target, positive: true }, context),
       "invalid-subset-count-parameters",
     );
-    const sources = input.premises.map((id) => context.retained.get(id)!);
+    const sources = input.premises.map((id) => defined(context.retained.get(id), "retained"));
     requireProof(new Set(input.premises).size === sources.length, "duplicate-subset-count-premise");
-    const assumption = sources[0];
+    const assumption = sources.at(0);
     requireProof(
       assumption?.rule === "assume@1" &&
         sameValue(assumption.conclusion, {
           kind: "literal",
-          value: { ...p.target, positive: true },
+          value: { ...pattern.target, positive: true },
         }) &&
         context.currentNode?.scope.includes(assumption.id),
       "missing-subset-count-assumption",
     );
-    const local = [...new Set([...p.cells, p.target.cell])].sort((a, b) => a - b),
+    const local = [...new Set([...pattern.cells, pattern.target.cell])].sort(
+        (left, right) => left - right,
+      ),
       domainNodes = sources.slice(1, 1 + local.length);
     requireProof(
       domainNodes.length === local.length &&
@@ -56,12 +63,12 @@ export class SubsetCountChecker {
     );
     const domains = new Map(
       domainNodes.map((n) => {
-        const d = domainAssertion(n.conclusion)!;
-        return [d.cell, d.mask];
+        const domain = defined(domainAssertion(n.conclusion), "domainAssertion");
+        return [domain.cell, domain.mask];
       }),
     );
     requireProof(
-      domains.get(p.target.cell)! & symbolMask(p.target.symbol),
+      defined(domains.get(pattern.target.cell), "domain") & symbolMask(pattern.target.symbol),
       "absent-subset-count-target",
     );
     const scopes = sources.slice(1 + local.length).map((n) => n.conclusion);
@@ -69,45 +76,53 @@ export class SubsetCountChecker {
       scopes.length >= 1 &&
         scopes.length <= 4 &&
         scopes.every(
-          (s) =>
-            s.kind === "all-different" &&
-            s.cells.length > 0 &&
-            s.cells.every((c) => local.includes(c)),
+          (scope) =>
+            scope.kind === "all-different" &&
+            scope.cells.length > 0 &&
+            scope.cells.every((cell) => local.includes(cell)),
         ) &&
-        new Set(scopes.map((s) => (s.kind === "all-different" ? s.cells.join() : ""))).size ===
-          scopes.length,
+        new Set(scopes.map((scope) => (scope.kind === "all-different" ? scope.cells.join() : "")))
+          .size === scopes.length,
       "invalid-subset-count-scopes",
     );
-    const groups = scopes.map((s) => {
-      requireProof(s.kind === "all-different", "invalid-subset-count-scopes");
-      return s.cells;
+    const groups = scopes.map((scope) => {
+      requireProof(scope.kind === "all-different", "invalid-subset-count-scopes");
+      return scope.cells;
     });
-    const union = p.cells.reduce((mask, c) => mask | domains.get(c)!, 0),
-      symbols = context.view.assembly.problem.symbols.filter((s) => union & symbolMask(s));
+    const union = pattern.cells.reduce(
+        (mask, cell) => mask | defined(domains.get(cell), "domain"),
+        0,
+      ),
+      symbols = context.view.assembly.problem.symbols.filter(
+        (symbol) => union & symbolMask(symbol),
+      );
     requireProof(
       symbols.length >= 1 &&
         symbols.length <= 9 &&
-        sameValue(p.symbols, symbols) &&
-        Array.isArray(p.capacities) &&
-        p.capacities.length === symbols.length &&
-        p.capacities.every((n) => Number.isSafeInteger(n) && n >= 0 && n <= p.cells.length),
+        sameValue(pattern.symbols, symbols) &&
+        Array.isArray(pattern.capacities) &&
+        pattern.capacities.length === symbols.length &&
+        pattern.capacities.every(
+          (n) => Number.isSafeInteger(n) && n >= 0 && n <= pattern.cells.length,
+        ),
       "incomplete-subset-count-symbols",
     );
     requireProof((context.workspaceRemaining ?? 0) >= 4096, "subset-count-workspace-limit");
-    const masks = p.cells.map((c) =>
-      c === p.target.cell
-        ? symbolMask(p.target.symbol)
-        : groups.some((g) => g.includes(c) && g.includes(p.target.cell))
-          ? domains.get(c)! & ~symbolMask(p.target.symbol)
-          : domains.get(c)!,
+    const target = pattern.target;
+    const masks = pattern.cells.map((cell) =>
+      cell === target.cell
+        ? symbolMask(target.symbol)
+        : groups.some((group) => group.includes(cell) && group.includes(target.cell))
+          ? defined(domains.get(cell), "domain") & ~symbolMask(target.symbol)
+          : defined(domains.get(cell), "domain"),
     );
     for (let digit = 0; digit < symbols.length; digit++) {
       let maximum = 0;
-      for (let subset = 0; subset < 2 ** p.cells.length; subset++) {
+      for (let subset = 0; subset < 2 ** pattern.cells.length; subset++) {
         yield 1;
         let size = 0,
           valid = true;
-        for (let i = 0; i < p.cells.length && valid; i++)
+        for (let i = 0; i < pattern.cells.length && valid; i++)
           if (subset & (1 << i)) {
             yield 1;
             size++;
@@ -118,7 +133,11 @@ export class SubsetCountChecker {
             for (let j = 0; j < i; j++)
               if (subset & (1 << j)) {
                 yield 1;
-                if (groups.some((g) => g.includes(p.cells[i]) && g.includes(p.cells[j]))) {
+                if (
+                  groups.some(
+                    (group) => group.includes(pattern.cells[i]) && group.includes(pattern.cells[j]),
+                  )
+                ) {
                   valid = false;
                   break;
                 }
@@ -126,10 +145,10 @@ export class SubsetCountChecker {
           }
         if (valid) maximum = Math.max(maximum, size);
       }
-      requireProof(p.capacities[digit] === maximum, "incorrect-subset-count-capacity");
+      requireProof(pattern.capacities[digit] === maximum, "incorrect-subset-count-capacity");
     }
     requireProof(
-      p.capacities.reduce((sum, n) => sum + n, 0) < p.cells.length &&
+      pattern.capacities.reduce((sum, n) => sum + n, 0) < pattern.cells.length &&
         sameValue(input.conclusion, { kind: "false" }),
       "invalid-subset-count-conclusion",
     );

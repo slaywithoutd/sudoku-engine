@@ -8,6 +8,7 @@ import {
 } from "./primitives";
 import type { CheckContext, CheckedInference, PrimitiveInput, Proposition } from "./types";
 import { symbolMask } from "../state/read";
+import { defined, optionalHead } from "../invariants";
 
 /** Scope reduction preserves exclusion only; it never establishes existence. */
 export class AllDifferentSubsetStrategy {
@@ -39,21 +40,23 @@ export function provedDomains(
   requireProof(
     domains.length === cells.length &&
       domains.every(Boolean) &&
-      new Set(domains.map((d) => d!.cell)).size === cells.length &&
-      domains.every((d) => cells.includes(d!.cell)),
+      new Set(domains.map((domain) => defined(domain, "domain").cell)).size === cells.length &&
+      domains.every((domain) => cells.includes(defined(domain, "domain").cell)),
     "incomplete-domain-evidence",
   );
-  return new Map(domains.map((d) => [d!.cell, d!.mask]));
+  return new Map(
+    domains.map((domain) => [defined(domain, "domain").cell, defined(domain, "domain").mask]),
+  );
 }
 
 export class SupportStrategy {
   readonly id = "support@1";
   check(input: PrimitiveInput, context: CheckContext): CheckedInference {
-    const [cover, ...sources] = premises(input, context, input.premises.length);
+    const [cover, ...sources] = optionalHead(premises(input, context, input.premises.length));
     requireProof(cover?.kind === "cover", "expected-cover");
     const domains = provedDomains(sources, cover.cells);
     const cells = cover.cells.filter(
-      (cell) => (domains.get(cell)! & symbolMask(cover.symbol)) !== 0,
+      (cell) => (defined(domains.get(cell), "domain") & symbolMask(cover.symbol)) !== 0,
     );
     requireProof(
       sameValue(input.conclusion, { kind: "cover", symbol: cover.symbol, cells }),
@@ -66,15 +69,15 @@ export class SupportStrategy {
 export class HallStrategy {
   readonly id = "hall@1";
   check(input: PrimitiveInput, context: CheckContext): CheckedInference {
-    const [scope, ...sources] = premises(input, context, input.premises.length);
+    const [scope, ...sources] = optionalHead(premises(input, context, input.premises.length));
     requireProof(scope?.kind === "all-different" && sources.length > 0, "expected-all-different");
     const domains = sources.map(domainAssertion);
     requireProof(
-      domains.every((d) => d && scope.cells.includes(d.cell)) &&
-        new Set(domains.map((d) => d!.cell)).size === domains.length,
+      domains.every((domain) => domain && scope.cells.includes(domain.cell)) &&
+        new Set(domains.map((domain) => defined(domain, "domain").cell)).size === domains.length,
       "invalid-hall-domains",
     );
-    const mask = domains.reduce((mask, d) => mask | d!.mask, 0);
+    const mask = domains.reduce((mask, domain) => mask | defined(domain, "domain").mask, 0);
     const size = context.view.assembly.problem.symbols.filter(
       (symbol) => mask & symbolMask(symbol),
     ).length;
@@ -88,7 +91,7 @@ export class HallStrategy {
           sameValue(claim, { kind: "literal", value: claim.value }) &&
           !claim.value.positive &&
           scope.cells.includes(claim.value.cell) &&
-          !domains.some((d) => d!.cell === claim.value.cell) &&
+          !domains.some((domain) => defined(domain, "domain").cell === claim.value.cell) &&
           (mask & symbolMask(claim.value.symbol)) !== 0;
     requireProof(valid, "invalid-hall-conclusion");
     return derived(input, context);
@@ -121,7 +124,7 @@ function countDomains(
   for (const [cell, coefficient] of coefficients)
     if (coefficient < 0)
       requireProof(
-        domains.has(cell) && !(domains.get(cell)! & symbolMask(symbol)),
+        domains.has(cell) && !(defined(domains.get(cell), "domain") & symbolMask(symbol)),
         "uncovered-count-incidence",
       );
 }
@@ -149,7 +152,7 @@ export class CoverCountStrategy {
     );
     const cursor = weightedIncidences(input, context, symbol, covers, capacities);
     let computed: { coefficients: Map<number, number>; bound: number; domainIds: Set<number> };
-    while (true) {
+    for (;;) {
       const next = cursor.next();
       if (next.done) {
         computed = next.value;
@@ -162,7 +165,7 @@ export class CoverCountStrategy {
       domainIds: Set<number>;
     };
     countDomains(
-      [...domainIds].map((id) => context.retained.get(id)!.conclusion),
+      [...domainIds].map((id) => defined(context.retained.get(id), "retained").conclusion),
       coefficients,
       symbol,
     );
@@ -198,7 +201,7 @@ export function* weightedIncidences(
     [capacities, 1],
   ] as const) {
     requireProof(
-      new Set(entries.map((e) => e.premise)).size === entries.length,
+      new Set(entries.map((term) => term.premise)).size === entries.length,
       "duplicate-count-premise",
     );
     for (const entry of entries) {

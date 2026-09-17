@@ -8,6 +8,7 @@ import {
 } from "./primitives";
 import type { CheckContext, CheckedInference, PrimitiveInput, ProofNode } from "./types";
 import { symbolMask } from "../state/read";
+import { defined } from "../invariants";
 
 export interface TableDefinition {
   readonly cells: readonly number[];
@@ -103,39 +104,46 @@ export class TableChecker {
     }
     if (table.operation === "join" || table.operation === "join-filter") {
       const [left, right] = table.children,
-        a = this.cells(left),
-        b = this.cells(right);
-      const shared = a.filter((cell) => b.includes(cell));
-      for (const l of this.rows(left)) {
-        if (l === null) {
+        leftCells = this.cells(left),
+        rightCells = this.cells(right);
+      const shared = leftCells.filter((cell) => rightCells.includes(cell));
+      for (const leftRow of this.rows(left)) {
+        if (leftRow === null) {
           yield null;
           continue;
         }
-        for (const r of this.rows(right)) {
-          if (r === null) {
+        for (const rightRow of this.rows(right)) {
+          if (rightRow === null) {
             yield null;
             continue;
           }
           yield null; // Every attempted pair, including an incompatible overlap.
-          if (!shared.every((cell) => l[a.indexOf(cell)] === r[b.indexOf(cell)])) continue;
+          if (
+            !shared.every(
+              (cell) => leftRow[leftCells.indexOf(cell)] === rightRow[rightCells.indexOf(cell)],
+            )
+          )
+            continue;
           const row = table.cells.map((cell) =>
-            a.includes(cell) ? l[a.indexOf(cell)] : r[b.indexOf(cell)],
+            leftCells.includes(cell)
+              ? leftRow[leftCells.indexOf(cell)]
+              : rightRow[rightCells.indexOf(cell)],
           );
           let valid = true;
           for (const constraint of table.constraints) {
-            const p = constraint.conclusion;
-            if (p.kind === "all-different") {
+            const proposition = constraint.conclusion;
+            if (proposition.kind === "all-different") {
               const seen = new Set<number>();
-              for (const cell of p.cells) {
+              for (const cell of proposition.cells) {
                 const value = row[table.cells.indexOf(cell)];
                 valid &&= !seen.has(value);
                 seen.add(value);
                 yield null;
               }
             } else {
-              requireProof(p.kind === "clause", "invalid-join-filter-constraint");
+              requireProof(proposition.kind === "clause", "invalid-join-filter-constraint");
               let satisfied = false;
-              for (const term of p.alternatives) {
+              for (const term of proposition.alternatives) {
                 satisfied ||=
                   (row[table.cells.indexOf(term.cell)] === term.symbol) === term.positive;
                 yield null;
@@ -160,16 +168,16 @@ export class TableChecker {
       const row = alternatives.map((values, index) => values[indexes[index]]);
       let valid = true;
       for (const constraint of table.constraints) {
-        const p = constraint.conclusion;
+        const proposition = constraint.conclusion;
         requireProof(
-          p.kind === "relation" || p.kind === "all-different",
+          proposition.kind === "relation" || proposition.kind === "all-different",
           "invalid-table-constraint",
         );
-        const values = p.cells.map((cell) => row[table.cells.indexOf(cell)]);
-        if (p.kind === "all-different") valid &&= new Set(values).size === values.length;
+        const values = proposition.cells.map((cell) => row[table.cells.indexOf(cell)]);
+        if (proposition.kind === "all-different") valid &&= new Set(values).size === values.length;
         else {
           let match = false;
-          for (const tuple of p.tuples) {
+          for (const tuple of proposition.tuples) {
             match ||= sameValue(values, tuple);
             yield null;
           }
@@ -196,7 +204,7 @@ export class TableChecker {
     let sourceScratch = 0,
       sourceDepth = 0;
     for (const id of input.premises) {
-      const source = context.retained.get(id)!;
+      const source = defined(context.retained.get(id), "retained");
       if (source.conclusion.kind === "table") {
         const definition = this.definition(source);
         sourceScratch = Math.max(sourceScratch, definition.scratchBytes ?? 0);
@@ -209,7 +217,7 @@ export class TableChecker {
         ? Math.max(sourceScratch, (sourceDepth + 2) * 4096 + input.premises.length * 256)
         : 0;
     requireProof((context.workspaceRemaining ?? 0) >= scratch, "table-workspace-limit");
-    const sources = input.premises.map((id) => context.retained.get(id)!);
+    const sources = input.premises.map((id) => defined(context.retained.get(id), "retained"));
     if (input.rule === "table-project@1") {
       requireProof(
         sources.length === 1 && sameValue(input.parameters, {}),
@@ -334,17 +342,27 @@ export class TableChecker {
         domainNodes.length === cells.length &&
           cells.every(
             (cell) =>
-              domainNodes.filter((source) => domainAssertion(source.conclusion)!.cell === cell)
-                .length === 1,
+              domainNodes.filter(
+                (source) =>
+                  defined(domainAssertion(source.conclusion), "domainAssertion").cell === cell,
+              ).length === 1,
           ),
         "incomplete-domain-evidence",
       );
       const domains = cells.map(
         (cell) =>
-          domainAssertion(
-            domainNodes.find((source) => domainAssertion(source.conclusion)!.cell === cell)!
-              .conclusion,
-          )!.mask,
+          defined(
+            domainAssertion(
+              defined(
+                domainNodes.find(
+                  (source) =>
+                    defined(domainAssertion(source.conclusion), "domainAssertion").cell === cell,
+                ),
+                "domainNode",
+              ).conclusion,
+            ),
+            "domainAssertion",
+          ).mask,
       );
       requireProof(
         box.every(
@@ -384,31 +402,31 @@ export class TableChecker {
       };
     } else if (input.rule === "table-union@1") {
       requireProof(sources.length === 2 && sameValue(input.parameters, {}), "invalid-table-union");
-      const [a, b] = sources.map((source) => this.definition(source));
+      const [left, right] = sources.map((source) => this.definition(source));
       requireProof(
-        !["join", "join-filter"].includes(a.operation) &&
-          !["join", "join-filter"].includes(b.operation) &&
-          sameValue(a.cells, b.cells) &&
-          a.sources.length === b.sources.length &&
-          a.sources.every((source, index) => source === b.sources[index]),
+        !["join", "join-filter"].includes(left.operation) &&
+          !["join", "join-filter"].includes(right.operation) &&
+          sameValue(left.cells, right.cells) &&
+          left.sources.length === right.sources.length &&
+          left.sources.every((source, index) => source === right.sources[index]),
         "mismatched-table-sources",
       );
-      const changed = a.box
-        .map((mask, index) => (mask !== b.box[index] ? index : -1))
+      const changed = left.box
+        .map((mask, index) => (mask !== right.box[index] ? index : -1))
         .filter((index) => index !== -1);
       requireProof(
-        changed.length === 1 && (a.box[changed[0]] & b.box[changed[0]]) === 0,
+        changed.length === 1 && (left.box[changed[0]] & right.box[changed[0]]) === 0,
         "invalid-table-partition",
       );
-      const box = a.box.map((mask, index) => mask | b.box[index]);
+      const box = left.box.map((mask, index) => mask | right.box[index]);
       definition = {
-        ...a,
+        ...left,
         box,
-        count: a.count + b.count,
-        complete: sameValue(box, a.domains),
+        count: left.count + right.count,
+        complete: sameValue(box, left.domains),
         operation: "union",
         children: sources,
-        depth: Math.max(a.depth, b.depth) + 1,
+        depth: Math.max(left.depth, right.depth) + 1,
       };
     } else {
       const filtered = input.rule === "table-join-filter@1";
@@ -421,27 +439,29 @@ export class TableChecker {
         constraints = sources.slice(2);
       children.forEach((source) => this.complete(source));
       const cells = [...new Set(children.flatMap((source) => [...this.cells(source)]))].sort(
-        (a, b) => a - b,
+        (left, right) => left - right,
       );
       requireProof(cells.length <= 16, "table-cell-limit");
       for (const source of constraints) {
-        const p = source.conclusion;
+        const proposition = source.conclusion;
         requireProof(
-          p.kind === "all-different"
-            ? p.cells.length > 0 &&
-                p.cells.every((cell, i) => cells.includes(cell) && (!i || cell > p.cells[i - 1])) &&
-                sameValue(p, { kind: "all-different", cells: p.cells })
-            : p.kind === "clause" &&
-                p.alternatives.length >= 2 &&
-                p.alternatives.length <= 64 &&
-                p.alternatives.every(
+          proposition.kind === "all-different"
+            ? proposition.cells.length > 0 &&
+                proposition.cells.every(
+                  (cell, i) => cells.includes(cell) && (!i || cell > proposition.cells[i - 1]),
+                ) &&
+                sameValue(proposition, { kind: "all-different", cells: proposition.cells })
+            : proposition.kind === "clause" &&
+                proposition.alternatives.length >= 2 &&
+                proposition.alternatives.length <= 64 &&
+                proposition.alternatives.every(
                   (term) => validLiteral(term, context) && cells.includes(term.cell),
                 ) &&
-                sameValue(p, clause(p.alternatives)),
+                sameValue(proposition, clause(proposition.alternatives)),
           "invalid-join-filter-constraint",
         );
-        if (p.kind === "clause") for (const _ of p.alternatives) yield 1;
-        if (p.kind === "all-different") for (const _ of p.cells) yield 1;
+        if (proposition.kind === "clause") for (const _ of proposition.alternatives) yield 1;
+        if (proposition.kind === "all-different") for (const _ of proposition.cells) yield 1;
         yield 1;
       }
       const depth =

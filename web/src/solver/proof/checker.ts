@@ -40,6 +40,8 @@ import type { ReadView } from "../state/types";
 import { checkScope } from "./assumptions";
 import type { TableDefinition } from "./tables";
 import { symbolMask } from "../state/read";
+import { defined, unverified } from "../invariants";
+import type { Effect } from "./types";
 
 const branchSources = new WeakMap<BranchCertificate, ReadView>();
 const branchNodes = new WeakMap<ProofNode, CheckedNodeAuthority>();
@@ -98,7 +100,11 @@ export function assertCheckedStepActive(step: CheckedStep, view: ReadView): void
     requireProof(authority === targetAuthority, "missing-unique-authority");
   }
   if (authority) requireProof(uniqueAuthorityOwns(authority, view), "revoked-unique-authority");
-  else requireProof(!step.consequences.some((c) => c.conditional), "missing-unique-authority");
+  else
+    requireProof(
+      !step.consequences.some((consequence) => consequence.conditional),
+      "missing-unique-authority",
+    );
 }
 
 /** Retention uses checker-issued objects, including exact imported dependencies. */
@@ -118,19 +124,19 @@ export function checkedNodeInference(node: ProofNode): CheckedInference | undefi
 /** Exact non-node bytes: bounded header plus separators between serialized nodes. */
 export function checkedHeaderBytes(step: CheckedStep): number {
   requireProof(isCheckedStep(step), "inauthentic-checked-step");
-  return stepUsage.get(step)!.headerBytes;
+  return defined(stepUsage.get(step), "stepUsage").headerBytes;
 }
 
 /** Exact successful codec size, including header and all node records. */
 export function checkedStepBytes(step: CheckedStep): number {
   requireProof(isCheckedStep(step), "inauthentic-checked-step");
-  return stepUsage.get(step)!.stepBytes;
+  return defined(stepUsage.get(step), "stepUsage").stepBytes;
 }
 
 /** Includes bookkeeping/duplicate visits which need not emit a public work yield. */
 export function checkedWorkUnits(step: CheckedStep): number {
   requireProof(isCheckedStep(step), "inauthentic-checked-step");
-  return stepUsage.get(step)!.workUnits;
+  return defined(stepUsage.get(step), "stepUsage").workUnits;
 }
 
 /**
@@ -151,12 +157,7 @@ export function checkedEffectState(
   requireProof(effects.length > 0, "unproductive-step");
   for (const effect of effects) {
     fields(effect, ["kind", "cell", "symbol"]);
-    requireProof(
-      (effect.kind === "place" || effect.kind === "remove") &&
-        view.assembly.problem.cells.includes(effect.cell) &&
-        view.assembly.problem.symbols.includes(effect.symbol),
-      "invalid-effect",
-    );
+    requireProof(validEffect(effect, view), "invalid-effect");
     const identity = `${effect.kind}:${effect.cell}:${effect.symbol}`;
     requireProof(!seen.has(identity), "duplicate-effect");
     seen.add(identity);
@@ -210,15 +211,19 @@ export function checkedEffectState(
       "missing-domain-consequence",
     );
   for (const item of consequences) {
-    const p = item.conclusion;
+    const proposition = item.conclusion;
     requireProof(
-      (p.kind === "literal" &&
-        seen.has(`${p.value.positive ? "place" : "remove"}:${p.value.cell}:${p.value.symbol}`)) ||
-        (p.kind === "domain" && cells.has(p.cell) && p.mask === domains[p.cell]),
+      (proposition.kind === "literal" &&
+        seen.has(
+          `${proposition.value.positive ? "place" : "remove"}:${proposition.value.cell}:${proposition.value.symbol}`,
+        )) ||
+        (proposition.kind === "domain" &&
+          cells.has(proposition.cell) &&
+          proposition.mask === domains[proposition.cell]),
       "extraneous-effect-root",
     );
   }
-  return { values, domains, cells: [...cells].sort((a, b) => a - b) };
+  return { values, domains, cells: [...cells].sort((left, right) => left - right) };
 }
 
 function sameState(left: StateKey, right: StateKey): boolean {
@@ -255,7 +260,7 @@ function copyBounded<T>(input: T, limit: number): { value: T; bytes: number } {
       charge(jsonByteLength(value));
       return value;
     }
-    requireProof(typeof value === "object" && value !== null, "invalid-proof-json");
+    requireProof(typeof value === "object", "invalid-proof-json");
     requireProof(!active.has(value), "cyclic-proof-json");
     active.add(value);
     const array = Array.isArray(value);
@@ -295,7 +300,10 @@ function copyBounded<T>(input: T, limit: number): { value: T; bytes: number } {
     for (const key of keys) {
       if (array && key === "length") continue;
       requireProof(typeof key === "string", "invalid-proof-json");
-      const descriptor = Object.getOwnPropertyDescriptor(value, key)!;
+      const descriptor = defined(
+        Object.getOwnPropertyDescriptor(value, key),
+        "getOwnPropertyDescriptor",
+      );
       requireProof(descriptor.enumerable && "value" in descriptor, "invalid-proof-json");
       if (array)
         requireProof(
@@ -336,8 +344,20 @@ function fields(value: object, names: readonly string[]): void {
   requireProof(sameValue(Object.keys(value).sort(), [...names].sort()), "invalid-proof-fields");
 }
 
+/** Untrusted effects are only place/remove on a problem cell and symbol. */
+function validEffect(effect: Effect, view: ReadView): boolean {
+  const claim = unverified(effect);
+  return (
+    (claim?.kind === "place" || claim?.kind === "remove") &&
+    typeof claim.cell === "number" &&
+    view.assembly.problem.cells.includes(claim.cell) &&
+    typeof claim.symbol === "number" &&
+    view.assembly.problem.symbols.includes(claim.symbol)
+  );
+}
+
 /** Validate envelope descriptors without evaluating getters or walking payloads. */
-function envelope(value: object, names: readonly string[]): void {
+function envelope(value: unknown, names: readonly string[]): void {
   requireProof(
     value !== null &&
       typeof value === "object" &&
@@ -348,7 +368,10 @@ function envelope(value: object, names: readonly string[]): void {
   requireProof(keys.length === names.length, "invalid-proof-fields");
   for (const key of keys) {
     requireProof(typeof key === "string" && names.includes(key), "invalid-proof-fields");
-    const descriptor = Object.getOwnPropertyDescriptor(value, key)!;
+    const descriptor = defined(
+      Object.getOwnPropertyDescriptor(value, key),
+      "getOwnPropertyDescriptor",
+    );
     requireProof(descriptor.enumerable && "value" in descriptor, "invalid-proof-json");
   }
 }
@@ -630,7 +653,7 @@ function* verifyGraph(
       const authority: CheckedNodeAuthority | undefined = original
         ? {
             state: original.state,
-            premises: originalPremises(node)!,
+            premises: defined(originalPremises(node), "originalPremises"),
             inference: Object.freeze({
               conclusion: original.proposition,
               openAssumptions: original.openAssumptions,
@@ -712,7 +735,7 @@ function* verifyGraph(
     const available = new Map<number, ProofNode>();
     for (const id of proof.imports) {
       requireProof(retained.has(id), "missing-proof-import");
-      available.set(id, retained.get(id)!);
+      available.set(id, defined(retained.get(id), "retained"));
     }
     const stagedNodes: ProofNode[] = [];
     for (const reference of captured.references) {
@@ -768,10 +791,10 @@ function* verifyGraph(
     const pending = [...proof.roots];
     while (pending.length > 0) {
       tick();
-      const id = pending.pop()!;
+      const id = defined(pending.pop(), "pending");
       if (reachable.has(id)) continue;
       reachable.add(id);
-      const node = available.get(id)!;
+      const node = defined(available.get(id), "available");
       if (!retained.has(id)) pending.push(...node.premises, ...node.scope);
       yield { kind: "work", units: 1 };
     }
@@ -780,7 +803,9 @@ function* verifyGraph(
       "unused-proof-node",
     );
     tick();
-    const consequences = Object.freeze(proof.roots.map((id) => inferences.get(id)!));
+    const consequences = Object.freeze(
+      proof.roots.map((id) => defined(inferences.get(id), "inference")),
+    );
     const assumption = admission === "branch" && proposal.technique === "branch-assumption@1";
     let resultScope = lexical;
     if (assumption) {
@@ -812,7 +837,10 @@ function* verifyGraph(
       admission === "named" ||
       (admission === "branch" && !assumption && proposal.technique !== "branch-graph@1")
     ) {
-      const scopeSlots = sourceView.assembly.allDifferent.reduce((n, h) => n + h.cells.length, 0);
+      const scopeSlots = sourceView.assembly.allDifferent.reduce(
+        (n, house) => n + house.cells.length,
+        0,
+      );
       const preparation =
         sourceView.assembly.problem.cells.length +
         4 * scopeSlots +
@@ -886,9 +914,11 @@ function* verifyGraph(
         yield { kind: "work", units: 1 };
         branchNodes.set(node, {
           state,
-          inference: inferences.get(node.id)!,
-          premises: Object.freeze(node.premises.map((id) => available.get(id)!)),
-          scopes: Object.freeze(node.scope.map((id) => available.get(id)!)),
+          inference: defined(inferences.get(node.id), "inference"),
+          premises: Object.freeze(
+            node.premises.map((id) => defined(available.get(id), "available")),
+          ),
+          scopes: Object.freeze(node.scope.map((id) => defined(available.get(id), "available"))),
           table: registry.tableDefinition(node),
         });
       }
@@ -903,14 +933,18 @@ function* verifyGraph(
       authenticCertificates.add(certificate);
       certificateImports.set(
         certificate,
-        new ImmutableMap(proof.imports.map((id) => [id, retained.get(id)!] as const)),
+        new ImmutableMap(
+          proof.imports.map((id) => [id, defined(retained.get(id), "retained")] as const),
+        ),
       );
       for (const node of stagedNodes)
         certificateAuthorities.set(node, {
           state,
-          inference: inferences.get(node.id)!,
-          premises: Object.freeze(node.premises.map((id) => available.get(id)!)),
-          scopes: Object.freeze(node.scope.map((id) => available.get(id)!)),
+          inference: defined(inferences.get(node.id), "inference"),
+          premises: Object.freeze(
+            node.premises.map((id) => defined(available.get(id), "available")),
+          ),
+          scopes: Object.freeze(node.scope.map((id) => defined(available.get(id), "available"))),
           table: registry.tableDefinition(node),
         });
       yield { kind: "verified", certificate };
@@ -936,16 +970,18 @@ function* verifyGraph(
     yield { kind: "work", units: proof.imports.length };
     stepImports.set(
       step,
-      new ImmutableMap(proof.imports.map((id) => [id, retained.get(id)!] as const)),
+      new ImmutableMap(
+        proof.imports.map((id) => [id, defined(retained.get(id), "retained")] as const),
+      ),
     );
     for (const node of stagedNodes) {
       tick();
       yield { kind: "work", units: 1 };
       acceptedNodes.set(node, {
         state,
-        inference: inferences.get(node.id)!,
-        premises: Object.freeze(node.premises.map((id) => available.get(id)!)),
-        scopes: Object.freeze(node.scope.map((id) => available.get(id)!)),
+        inference: defined(inferences.get(node.id), "inference"),
+        premises: Object.freeze(node.premises.map((id) => defined(available.get(id), "available"))),
+        scopes: Object.freeze(node.scope.map((id) => defined(available.get(id), "available"))),
         table: registry.tableDefinition(node),
       });
     }
@@ -984,7 +1020,9 @@ export function certificateImportsMatch(
 ): boolean {
   return (
     isCheckedCertificate(certificate) &&
-    [...certificateImports.get(certificate)!].every(([id, node]) => retained.get(id) === node)
+    [...defined(certificateImports.get(certificate), "certificateImport")].every(
+      ([id, node]) => retained.get(id) === node,
+    )
   );
 }
 

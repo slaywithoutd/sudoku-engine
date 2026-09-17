@@ -8,6 +8,7 @@ import type {
 } from "./types";
 import type { Proposition, ReadView } from "../state/types";
 import { symbolMask } from "../state/read";
+import { defined, unverified } from "../invariants";
 
 type Mode = "single" | "pair" | "triple" | "incompatibility";
 interface Parameters {
@@ -32,52 +33,57 @@ function scope(kind: number, n: number): number[] {
 export class TemplateCoverChecker {
   readonly id = "template-cover@1";
   *check(input: PrimitiveInput, context: CheckContext): Generator<number, CheckedInference> {
-    const p = input.parameters as unknown as Parameters,
+    const parameters = input.parameters as unknown as Parameters | undefined,
       problem = context.view.assembly.problem;
     requireProof(
-      p &&
-        typeof p === "object" &&
-        !Array.isArray(p) &&
-        shape(p, ["mode", "symbols", "templates", "supported", "tupleTests", "rounds"]),
+      parameters &&
+        typeof parameters === "object" &&
+        !Array.isArray(parameters) &&
+        shape(parameters, ["mode", "symbols", "templates", "supported", "tupleTests", "rounds"]),
       "invalid-template-parameters",
     );
     requireProof(
       problem.cells.length === 81 &&
         problem.symbols.length === 9 &&
-        problem.cells.every((c, i) => c === i) &&
-        problem.symbols.every((s, i) => s === i + 1),
+        problem.cells.every((cell, i) => cell === i) &&
+        problem.symbols.every((symbol, i) => symbol === i + 1),
       "template-out-of-profile",
     );
     requireProof(
-      Array.isArray(p.symbols) &&
-        p.symbols.length >= 1 &&
-        p.symbols.length <= (p.mode === "incompatibility" ? 9 : 3) &&
-        p.symbols.every(
-          (s, i) => Number.isInteger(s) && s >= 1 && s <= 9 && (!i || s > p.symbols[i - 1]),
+      Array.isArray(parameters.symbols) &&
+        parameters.symbols.length >= 1 &&
+        parameters.symbols.length <= (parameters.mode === "incompatibility" ? 9 : 3) &&
+        parameters.symbols.every(
+          (symbol, i) =>
+            Number.isInteger(symbol) &&
+            symbol >= 1 &&
+            symbol <= 9 &&
+            (!i || symbol > parameters.symbols[i - 1]),
         ) &&
-        (p.mode === "single"
-          ? p.symbols.length === 1
-          : p.mode === "pair"
-            ? p.symbols.length === 2
-            : p.mode === "triple"
-              ? p.symbols.length === 3
-              : p.mode === "incompatibility" && p.symbols.length >= 2),
+        (parameters.mode === "single"
+          ? parameters.symbols.length === 1
+          : parameters.mode === "pair"
+            ? parameters.symbols.length === 2
+            : parameters.mode === "triple"
+              ? parameters.symbols.length === 3
+              : unverified(parameters)?.mode === "incompatibility" &&
+                parameters.symbols.length >= 2),
       "invalid-template-mode",
     );
     requireProof(
-      Array.isArray(p.templates) &&
-        p.templates.length === p.symbols.length &&
-        Array.isArray(p.supported) &&
-        p.supported.length === p.symbols.length &&
-        Number.isInteger(p.tupleTests) &&
-        p.tupleTests >= 0 &&
-        p.tupleTests <= 100000 &&
-        Array.isArray(p.rounds) &&
-        p.rounds.length <= 140000,
+      Array.isArray(parameters.templates) &&
+        parameters.templates.length === parameters.symbols.length &&
+        Array.isArray(parameters.supported) &&
+        parameters.supported.length === parameters.symbols.length &&
+        Number.isInteger(parameters.tupleTests) &&
+        parameters.tupleTests >= 0 &&
+        parameters.tupleTests <= 100000 &&
+        Array.isArray(parameters.rounds) &&
+        parameters.rounds.length <= 140000,
       "invalid-template-lists",
     );
     let count = 0;
-    for (const relation of [...p.templates, ...p.supported]) {
+    for (const relation of [...parameters.templates, ...parameters.supported]) {
       requireProof(Array.isArray(relation) && relation.length <= 46, "invalid-template-chunks");
       let previous = -1,
         total = 0;
@@ -112,7 +118,7 @@ export class TemplateCoverChecker {
     const anchors = context.view.state.values.flatMap((symbol, cell) =>
       symbol ? [{ cell, symbol }] : [],
     );
-    const coverPacks = Math.ceil(p.symbols.length / 3),
+    const coverPacks = Math.ceil(parameters.symbols.length / 3),
       anchorStart = 4 + coverPacks;
     requireProof(
       input.premises.length === anchorStart + Math.ceil(anchors.length / 27) &&
@@ -127,7 +133,7 @@ export class TemplateCoverChecker {
         pack < 4
           ? 27
           : pack < anchorStart
-            ? Math.min(27, p.symbols.length * 9 - (pack - 4) * 27)
+            ? Math.min(27, parameters.symbols.length * 9 - (pack - 4) * 27)
             : Math.min(27, anchors.length - (pack - anchorStart) * 27);
       requireProof(
         node?.rule === "conjunction@1" &&
@@ -145,15 +151,15 @@ export class TemplateCoverChecker {
     }
     const domains: number[] = [];
     for (let cell = 0; cell < 81; cell++) {
-      const d = domainAssertion(sources[cell]);
+      const domain = domainAssertion(sources[cell]);
       requireProof(
-        d &&
-          d.cell === cell &&
-          Number.isInteger(d.mask) &&
-          d.mask === context.view.state.domains[cell],
+        domain &&
+          domain.cell === cell &&
+          Number.isInteger(domain.mask) &&
+          domain.mask === context.view.state.domains[cell],
         "invalid-template-domain",
       );
-      domains.push(d.mask);
+      domains.push(domain.mask);
     }
     for (let kind = 0; kind < 3; kind++)
       for (let n = 0; n < 9; n++)
@@ -164,10 +170,10 @@ export class TemplateCoverChecker {
           }),
           "invalid-template-house",
         );
-    for (let i = 0; i < p.symbols.length * 9; i++) {
+    for (let i = 0; i < parameters.symbols.length * 9; i++) {
       const expected = {
         kind: "cover",
-        symbol: p.symbols[Math.floor(i / 9)],
+        symbol: parameters.symbols[Math.floor(i / 9)],
         cells: scope(0, i % 9),
       };
       requireProof(sameValue(sources[108 + i], expected), "invalid-template-cover");
@@ -175,7 +181,7 @@ export class TemplateCoverChecker {
     for (let i = 0; i < anchors.length; i++) {
       const { cell, symbol } = anchors[i];
       requireProof(
-        sameValue(sources[108 + p.symbols.length * 9 + i], {
+        sameValue(sources[108 + parameters.symbols.length * 9 + i], {
           kind: "literal",
           value: { cell, symbol, positive: true },
         }) &&
@@ -189,31 +195,38 @@ export class TemplateCoverChecker {
         !problem.givens[cell] || context.view.state.values[cell] === problem.givens[cell],
         "invalid-template-clue",
       );
-    const lists = p.templates.map((chunks) => chunks.flat()),
-      positions = p.symbols.map(() => 0),
+    const lists = parameters.templates.map((chunks) => chunks.flat()),
+      positions = parameters.symbols.map(() => 0),
       columns = [0, 1, 2, 3, 4, 5, 6, 7, 8];
     let more = true;
     // Lexicographic full permutations differ from production occupancy DFS.
     while (more) {
       yield 1;
-      const boxes = new Set(columns.map((c, r) => Math.floor(r / 3) * 3 + Math.floor(c / 3)));
+      const boxes = new Set(
+        columns.map((cell, index) => Math.floor(index / 3) * 3 + Math.floor(cell / 3)),
+      );
       if (boxes.size === 9)
-        for (let s = 0; s < p.symbols.length; s++) {
+        for (let symbolIndex = 0; symbolIndex < parameters.symbols.length; symbolIndex++) {
           yield 1; // At most 81 mask/anchor checks between cooperative boundaries.
-          const bit = symbolMask(p.symbols[s]);
+          const bit = symbolMask(parameters.symbols[symbolIndex]);
           let legal = true;
           for (let cell = 0; cell < 81; cell++) {
             const selected = columns[Math.floor(cell / 9)] === cell % 9;
             if (
-              selected ? !(domains[cell] & bit) : context.view.state.values[cell] === p.symbols[s]
+              selected
+                ? !(domains[cell] & bit)
+                : context.view.state.values[cell] === parameters.symbols[symbolIndex]
             ) {
               legal = false;
               break;
             }
           }
           if (legal) {
-            const code = columns.reduce((n, c) => n * 9 + c, 0);
-            requireProof(lists[s][positions[s]++] === code, "incomplete-template-list");
+            const code = columns.reduce((n, cell) => n * 9 + cell, 0);
+            requireProof(
+              lists[symbolIndex][positions[symbolIndex]++] === code,
+              "incomplete-template-list",
+            );
           }
         }
       let i = 7;
@@ -223,8 +236,8 @@ export class TemplateCoverChecker {
         let j = 8;
         while (columns[j] <= columns[i]) j--;
         [columns[i], columns[j]] = [columns[j], columns[i]];
-        for (let a = i + 1, b = 8; a < b; a++, b--)
-          [columns[a], columns[b]] = [columns[b], columns[a]];
+        for (let left = i + 1, right = 8; left < right; left++, right--)
+          [columns[left], columns[right]] = [columns[right], columns[left]];
       }
     }
     requireProof(
@@ -253,46 +266,47 @@ export class TemplateCoverChecker {
       }
     }
     let tests = 0;
-    const compatible = (a: readonly number[], b: readonly number[]) =>
-      a.every((c, r) => c !== b[r]);
+    const compatible = (left: readonly number[], right: readonly number[]) =>
+      left.every((cell, index) => cell !== right[index]);
     const charge = () => {
       requireProof(tests < 100000, "template-tuple-limit");
       tests++;
     };
     let active = initial;
     const rounds: number[][] = [];
-    if (p.mode === "pair" || p.mode === "triple") {
+    if (parameters.mode === "pair" || parameters.mode === "triple") {
       const support = lists.map((list) => list.map(() => false));
-      for (let a = 0; a < rows[0].length; a++)
-        for (let b = 0; b < rows[1].length; b++) {
-          const third = p.mode === "triple" ? rows[2].length : 1;
-          for (let c = 0; c < third; c++) {
+      for (let left = 0; left < rows[0].length; left++)
+        for (let right = 0; right < rows[1].length; right++) {
+          const third = parameters.mode === "triple" ? rows[2].length : 1;
+          for (let cell = 0; cell < third; cell++) {
             charge();
             yield 1;
             if (
-              compatible(rows[0][a], rows[1][b]) &&
-              (p.mode !== "triple" ||
-                (compatible(rows[0][a], rows[2][c]) && compatible(rows[1][b], rows[2][c])))
+              compatible(rows[0][left], rows[1][right]) &&
+              (parameters.mode !== "triple" ||
+                (compatible(rows[0][left], rows[2][cell]) &&
+                  compatible(rows[1][right], rows[2][cell])))
             ) {
-              support[0][a] = support[1][b] = true;
-              if (p.mode === "triple") support[2][c] = true;
+              support[0][left] = support[1][right] = true;
+              if (parameters.mode === "triple") support[2][cell] = true;
             }
           }
         }
-      active = active.map((list, s) => list.filter((i) => support[s][i]));
-    } else if (p.mode === "incompatibility") {
+      active = active.map((list, symbolIndex) => list.filter((i) => support[symbolIndex][i]));
+    } else if (parameters.mode === "incompatibility") {
       for (;;) {
         const next = active.map(() => [] as number[]);
-        for (let s = 0; s < active.length; s++)
-          for (const i of active[s]) {
+        for (let symbolIndex = 0; symbolIndex < active.length; symbolIndex++)
+          for (const i of active[symbolIndex]) {
             let keep = true;
-            for (let t = 0; t < active.length; t++)
-              if (t !== s) {
+            for (let other = 0; other < active.length; other++)
+              if (other !== symbolIndex) {
                 let partner = false;
-                for (const j of active[t]) {
+                for (const j of active[other]) {
                   charge();
                   yield 1;
-                  if (compatible(rows[s][i], rows[t][j])) {
+                  if (compatible(rows[symbolIndex][i], rows[other][j])) {
                     partner = true;
                     break;
                   }
@@ -302,37 +316,42 @@ export class TemplateCoverChecker {
                   break;
                 }
               }
-            if (keep) next[s].push(i);
+            if (keep) next[symbolIndex].push(i);
           }
-        const removed = active.map((list, s) => list.length - next[s].length);
+        const removed = active.map((list, symbolIndex) => list.length - next[symbolIndex].length);
         active = next;
         if (removed.every((n) => n === 0)) break;
         rounds.push(removed);
       }
     }
-    const supported = active.map((list, s) => list.map((i) => lists[s][i]));
+    const supported = active.map((list, symbolIndex) => list.map((i) => lists[symbolIndex][i]));
     requireProof(
       sameValue(
-        p.supported.map((chunks) => chunks.flat()),
+        parameters.supported.map((chunks) => chunks.flat()),
         supported,
       ) &&
-        p.tupleTests === tests &&
-        sameValue(p.rounds, rounds),
+        parameters.tupleTests === tests &&
+        sameValue(parameters.rounds, rounds),
       "incomplete-template-overlay",
     );
-    const occurrences = p.symbols.map(() => Array<boolean>(81).fill(false));
-    for (let s = 0; s < active.length; s++)
-      for (const i of active[s]) {
+    const occurrences = parameters.symbols.map(() => Array<boolean>(81).fill(false));
+    for (let symbolIndex = 0; symbolIndex < active.length; symbolIndex++)
+      for (const i of active[symbolIndex]) {
         yield 1;
-        for (let r = 0; r < 9; r++) occurrences[s][r * 9 + rows[s][i][r]] = true;
+        for (let row = 0; row < 9; row++)
+          occurrences[symbolIndex][row * 9 + rows[symbolIndex][i][row]] = true;
       }
     const terms: Proposition[] = [];
     for (let cell = 0; cell < 81; cell++)
-      for (let s = 0; s < p.symbols.length; s++) {
+      for (let symbolIndex = 0; symbolIndex < parameters.symbols.length; symbolIndex++) {
         yield 1;
-        const symbol = p.symbols[s],
+        const symbol = parameters.symbols[symbolIndex],
           bit = symbolMask(symbol);
-        if (!context.view.state.values[cell] && domains[cell] & bit && !occurrences[s][cell])
+        if (
+          !context.view.state.values[cell] &&
+          domains[cell] & bit &&
+          !occurrences[symbolIndex][cell]
+        )
           terms.push({
             kind: "literal",
             value: { cell, symbol, positive: false },
@@ -352,7 +371,7 @@ export function checkTemplatePattern(
   _view: ReadView,
   available: ReadonlyMap<number, ProofNode>,
 ): void {
-  const p = proposal.pattern as unknown as {
+  const pattern = proposal.pattern as unknown as {
     kind: string;
     alias: string;
     mode: Mode;
@@ -360,24 +379,25 @@ export function checkTemplatePattern(
     certificate: number;
   };
   requireProof(
-    shape(p, ["kind", "alias", "mode", "symbols", "certificate"]) && p.kind === "templates",
+    shape(pattern, ["kind", "alias", "mode", "symbols", "certificate"]) &&
+      pattern.kind === "templates",
     "invalid-template-pattern",
   );
   const aliases =
-    p.mode === "single"
+    pattern.mode === "single"
       ? ["Per-digit templates"]
-      : p.mode === "incompatibility"
+      : pattern.mode === "incompatibility"
         ? ["Template incompatibility"]
         : ["Pattern overlay", "POM"];
-  requireProof(aliases.includes(p.alias), "invalid-template-alias");
+  requireProof(aliases.includes(pattern.alias), "invalid-template-alias");
   const certificates = proposal.proof.nodes.filter((n) => n.rule === "template-cover@1"),
     certificate = certificates[0];
   requireProof(
     certificates.length === 1 &&
-      certificate.id === p.certificate &&
+      certificate.id === pattern.certificate &&
       certificate.conclusion.kind === "and" &&
-      sameValue((certificate.parameters as unknown as Parameters).symbols, p.symbols) &&
-      (certificate.parameters as unknown as Parameters).mode === p.mode,
+      sameValue((certificate.parameters as unknown as Parameters).symbols, pattern.symbols) &&
+      (certificate.parameters as unknown as Parameters).mode === pattern.mode,
     "missing-template-certificate",
   );
   const expected = certificate.conclusion.terms.map((term) => {
@@ -390,20 +410,20 @@ export function checkTemplatePattern(
   );
   const seen = new Set<number>();
   for (const id of proposal.proof.roots) {
-    const root = available.get(id)!;
+    const root = defined(available.get(id), "available");
     if (root.conclusion.kind !== "literal") continue;
     const index = (root.parameters as { index?: number }).index;
     requireProof(
       root.rule === "conjunction@1" &&
         sameValue(root.premises, [certificate.id]) &&
         Number.isInteger(index) &&
-        index! >= 0 &&
-        index! < expected.length &&
+        defined(index, "index") >= 0 &&
+        defined(index, "index") < expected.length &&
         sameValue(root.parameters, { index }) &&
-        sameValue(root.conclusion, certificate.conclusion.terms[index!]),
+        sameValue(root.conclusion, certificate.conclusion.terms[defined(index, "index")]),
       "unproved-template-effect-root",
     );
-    seen.add(index!);
+    seen.add(defined(index, "index"));
   }
   requireProof(seen.size === expected.length, "missing-template-effect-root");
 }
