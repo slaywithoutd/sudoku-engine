@@ -22,6 +22,8 @@ export async function playString(page: Page, text: string): Promise<void> {
   await importText(page, text);
   await finishDraft(page);
   await page.getByRole("button", { name: "Play now", exact: true }).click();
+  // Callers read page.url(); make sure the Play route has actually loaded.
+  await expect(page).toHaveURL(/#\/play\//);
 }
 export async function openMenu(page: Page, item: string): Promise<void> {
   await page.getByRole("button", { name: "More actions", exact: true }).click();
