@@ -7946,6 +7946,13 @@ export const coverageEntries: readonly CoverageEntry[] = Object.freeze(
   ).map(freeze),
 );
 
+/** The catalogue row for a technique id; unknown ids are a programming error. */
+export function coverageEntry(id: string): CoverageEntry {
+  const entry = coverageEntries.find((row) => row.id === id);
+  if (!entry) throw Error(`unknown-coverage-entry:${id}`);
+  return entry;
+}
+
 /** Build gate: names, versions and evidence are checked against the closed catalogue. */
 export function validateCoverage(entries: readonly CoverageEntry[]): readonly string[] {
   const errors = new Set<string>();

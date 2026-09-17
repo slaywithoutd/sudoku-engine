@@ -2,11 +2,11 @@ import { matchingFacts } from "../state/source-index";
 import type { Json } from "../problem";
 import type { ReadView } from "../state/types";
 import type { DeductionProposal, Effect, ProofNode, Proposition } from "../proof/types";
-import type { Discovery, DiscoveryContext, TechniqueDescriptor } from "./types";
+import type { Discovery, DiscoveryContext, DiscoveryEvent, TechniqueDescriptor } from "./types";
 import { IndexInterrupted, type WorkspaceReservation } from "../indexes/workspace";
 import { clause } from "../proof/primitives";
 import { assertOwnedView } from "../state/candidates";
-import { coverageEntries } from "./manifest";
+import { coverageEntry } from "./manifest";
 import {
   fishHouse,
   fishNames,
@@ -15,17 +15,36 @@ import {
   type FishPattern,
 } from "./fish-grammar";
 import { houseCells, houseWithCells, symbolMask } from "../state/read";
+import { defined } from "../invariants";
 
 type Work = { kind: "work"; units: number };
+/** Running work total against the operation's allowance. */
+class WorkMeter {
+  used = 0;
+  constructor(readonly limit: number) {}
+  exceeded(units: number): boolean {
+    this.used += units;
+    return this.used > this.limit;
+  }
+}
 type Candidate = { pattern: FishPattern; effects: readonly Effect[] };
+type CountTerm = { premise: number; coefficient: number };
+/** What one fish component contributes to a cover-count root. */
+interface FishRequirement {
+  /** Cover incidence minus base incidence per cell. */
+  readonly coefficients: readonly number[];
+  readonly effects: readonly Effect[];
+  readonly covers: readonly CountTerm[];
+  readonly capacities: readonly CountTerm[];
+}
 const literal = (cell: number, symbol: number, positive: boolean): Proposition => ({
   kind: "literal",
   value: { cell, symbol, positive },
 });
 function classicScopes(view: ReadView) {
-  return view.assembly.allDifferent.filter((h) => {
+  return view.assembly.allDifferent.filter((house) => {
     try {
-      fishHouse(view, h.id);
+      fishHouse(view, house.id);
       return true;
     } catch {
       return false;
@@ -44,12 +63,19 @@ class FishSources {
     readonly lease: WorkspaceReservation,
   ) {}
   *prepare(): Generator<Work> {
-    for (const [id, f] of this.view.facts) {
+    for (const [id, fact] of this.view.facts) {
       yield { kind: "work", units: 1 };
       this.next = Math.max(this.next, id + 1);
-      const p = f.proposition;
-      if ((p.kind !== "cover" && p.kind !== "all-different") || f.openAssumptions.length) continue;
-      const key = sourceKey(p.cells, p.kind === "cover" ? p.symbol : 0);
+      const proposition = fact.proposition;
+      if (
+        (proposition.kind !== "cover" && proposition.kind !== "all-different") ||
+        fact.openAssumptions.length
+      )
+        continue;
+      const key = sourceKey(
+        proposition.cells,
+        proposition.kind === "cover" ? proposition.symbol : 0,
+      );
       if (!this.ids.has(key)) {
         this.lease.grow(1, 512);
         this.ids.set(key, id);
@@ -103,110 +129,24 @@ class FishCompiler {
     const parts =
       "components" in candidate.pattern ? candidate.pattern.components : [candidate.pattern];
     const effectRoots = new Map<number, number>();
-    for (const p of parts) {
-      const symbol = p.symbol,
-        b = Array(81).fill(0) as number[],
-        u = Array(81).fill(0) as number[];
-      for (const id of p.bases) for (const cell of houseCells(this.view, id)) b[cell]++;
-      for (const id of p.covers) for (const cell of houseCells(this.view, id)) u[cell]++;
-      const requirement = {
-        coefficients: u.map((v, c) => v - b[c]),
-        effects: candidate.effects.filter(
-          (e) =>
-            u[e.cell] > b[e.cell] &&
-            p.fins.every(
-              (fin) => fin !== e.cell && this.view.assembly.peers[e.cell].includes(fin),
-            ) &&
-            (p.alias !== "Cannibalistic fish" || b[e.cell] > 0),
-        ),
-      };
-      const covers = p.bases.map((id) => ({ premise: this.source(id, symbol), coefficient: 1 })),
-        capacities = p.covers.map((id) => ({ premise: this.source(id), coefficient: 1 }));
+    for (const part of parts) {
+      const requirement = this.requirementOf(part, candidate.effects);
       for (const effect of requirement.effects) {
         yield { kind: "work", units: 1 };
-        const assumption = p.fins.length
-            ? this.add("assume@1", [], literal(effect.cell, symbol, true))
-            : undefined,
-          scope = assumption === undefined ? [] : [assumption];
-        const domains = new Map<number, number>();
-        for (let c = 0; c < 81; c++)
-          if (requirement.coefficients[c] < 0) domains.set(c, this.view.state.domainFacts[c]);
-        for (const fin of p.fins) {
-          yield { kind: "work", units: 1 };
-          const house = houseWithCells(this.view, fin, effect.cell);
-          const weak = this.add(
-            "weak-link@1",
-            [this.source(house.id)],
-            clause([
-              { cell: fin, symbol, positive: false },
-              { cell: effect.cell, symbol, positive: false },
-            ]),
-            {},
-            scope,
-          );
-          const negative = this.add(
-            "resolution@1",
-            [assumption!, weak],
-            literal(fin, symbol, false),
-            {},
-            scope,
-          );
-          domains.set(
-            fin,
-            this.add(
-              "domain-restrict@1",
-              [this.view.state.domainFacts[fin], negative],
-              {
-                kind: "domain",
-                cell: fin,
-                mask: this.view.state.domains[fin] & ~symbolMask(symbol),
-              },
-              {},
-              scope,
-            ),
-          );
-        }
-        let root = this.add(
-          "cover-count@1",
-          [
-            ...covers.map((e) => e.premise),
-            ...capacities.map((e) => e.premise),
-            ...domains.values(),
-          ],
-          literal(effect.cell, symbol, false),
-          { symbol, covers, capacities },
-          scope,
-        );
-        if (assumption !== undefined) {
-          const conflict = this.add(
-            "contradiction@1",
-            [assumption, root],
-            { kind: "false" },
-            {},
-            scope,
-          );
-          root = this.add(
-            "discharge@1",
-            [assumption, conflict],
-            literal(effect.cell, symbol, false),
-          );
-        }
+        const root = yield* this.proveEffect(part, requirement, effect);
         this.roots.push(root);
         effectRoots.set(effect.cell, root);
       }
     }
-    for (const e of candidate.effects) {
+    for (const effect of candidate.effects) {
       yield { kind: "work", units: 1 };
+      const root = defined(effectRoots.get(effect.cell), "fish-effect-root");
       this.roots.push(
-        this.add(
-          "domain-restrict@1",
-          [this.view.state.domainFacts[e.cell], effectRoots.get(e.cell)!],
-          {
-            kind: "domain",
-            cell: e.cell,
-            mask: this.view.state.domains[e.cell] & ~symbolMask(e.symbol),
-          },
-        ),
+        this.add("domain-restrict@1", [this.view.state.domainFacts[effect.cell], root], {
+          kind: "domain",
+          cell: effect.cell,
+          mask: this.view.state.domains[effect.cell] & ~symbolMask(effect.symbol),
+        }),
       );
     }
     return {
@@ -217,10 +157,107 @@ class FishCompiler {
       proof: {
         state: this.view.state.key,
         nodes: this.nodes,
-        imports: [...this.imports].sort((a, b) => a - b),
+        imports: [...this.imports].sort((left, right) => left - right),
         roots: this.roots,
       },
     };
+  }
+  /** Cover-minus-base coefficients of one component and the effects it can justify. */
+  private requirementOf(part: FishComponent, effects: readonly Effect[]): FishRequirement {
+    const baseCount = Array(81).fill(0) as number[],
+      coverCount = Array(81).fill(0) as number[];
+    for (const id of part.bases) for (const cell of houseCells(this.view, id)) baseCount[cell]++;
+    for (const id of part.covers) for (const cell of houseCells(this.view, id)) coverCount[cell]++;
+    const seesEveryFin = (cell: number) =>
+      part.fins.every((fin) => fin !== cell && this.view.assembly.peers[cell].includes(fin));
+    return {
+      coefficients: coverCount.map((cover, cell) => cover - baseCount[cell]),
+      effects: effects.filter(
+        (effect) =>
+          coverCount[effect.cell] > baseCount[effect.cell] &&
+          seesEveryFin(effect.cell) &&
+          (part.alias !== "Cannibalistic fish" || baseCount[effect.cell] > 0),
+      ),
+      covers: part.bases.map((id) => ({ premise: this.source(id, part.symbol), coefficient: 1 })),
+      capacities: part.covers.map((id) => ({ premise: this.source(id), coefficient: 1 })),
+    };
+  }
+  /** One cover-count root for the effect; finned components assume the target
+   * first, exclude every fin through a shared house, and discharge. */
+  private *proveEffect(
+    part: FishComponent,
+    requirement: FishRequirement,
+    effect: Effect,
+  ): Generator<Work, number> {
+    const symbol = part.symbol;
+    const assumption = part.fins.length
+      ? this.add("assume@1", [], literal(effect.cell, symbol, true))
+      : undefined;
+    const scope = assumption === undefined ? [] : [assumption];
+    const domains = new Map<number, number>();
+    for (let cell = 0; cell < 81; cell++)
+      if (requirement.coefficients[cell] < 0) domains.set(cell, this.view.state.domainFacts[cell]);
+    if (assumption !== undefined)
+      for (const fin of part.fins) {
+        yield { kind: "work", units: 1 };
+        domains.set(fin, this.excludeFin(fin, effect.cell, symbol, assumption, scope));
+      }
+    let root = this.add(
+      "cover-count@1",
+      [
+        ...requirement.covers.map((entry) => entry.premise),
+        ...requirement.capacities.map((entry) => entry.premise),
+        ...domains.values(),
+      ],
+      literal(effect.cell, symbol, false),
+      { symbol, covers: requirement.covers, capacities: requirement.capacities },
+      scope,
+    );
+    if (assumption !== undefined) {
+      const conflict = this.add(
+        "contradiction@1",
+        [assumption, root],
+        { kind: "false" },
+        {},
+        scope,
+      );
+      root = this.add("discharge@1", [assumption, conflict], literal(effect.cell, symbol, false));
+    }
+    return root;
+  }
+  /** Under the assumed target, the fin cannot hold the symbol: a restricted domain fact. */
+  private excludeFin(
+    fin: number,
+    target: number,
+    symbol: number,
+    assumption: number,
+    scope: number[],
+  ): number {
+    const house = houseWithCells(this.view, fin, target);
+    const weak = this.add(
+      "weak-link@1",
+      [this.source(house.id)],
+      clause([
+        { cell: fin, symbol, positive: false },
+        { cell: target, symbol, positive: false },
+      ]),
+      {},
+      scope,
+    );
+    const negative = this.add(
+      "resolution@1",
+      [assumption, weak],
+      literal(fin, symbol, false),
+      {},
+      scope,
+    );
+    return this.add(
+      "domain-restrict@1",
+      [this.view.state.domainFacts[fin], negative],
+      { kind: "domain", cell: fin, mask: this.view.state.domains[fin] & ~symbolMask(symbol) },
+      {},
+      scope,
+    );
   }
 }
 
@@ -241,6 +278,42 @@ interface House {
   id: string;
   cells: readonly number[];
   support: readonly number[];
+}
+interface SymbolGeometry {
+  readonly symbol: number;
+  /** Cells whose domain still holds the symbol. */
+  readonly current: readonly number[];
+  readonly houses: readonly House[];
+  /** For each index into `current`, the other current cells it sees. */
+  readonly peers: readonly Set<number>[];
+}
+interface SiameseComponent {
+  readonly pattern: FishComponent;
+  readonly effects: readonly Effect[];
+  readonly shared: boolean;
+  readonly deferred: boolean;
+}
+/** Everything one base set shares across its cover sets. */
+interface SearchPass {
+  readonly n: number;
+  readonly equalEffects: boolean;
+  readonly sharedHouses: boolean;
+  readonly paired: boolean;
+  readonly deferred: boolean;
+  readonly simple: boolean;
+  readonly geometry: SymbolGeometry;
+  readonly bases: readonly House[];
+  readonly baseCount: readonly number[];
+  readonly parts: SiameseComponent[];
+  readonly pairLease: WorkspaceReservation;
+}
+const boxOf = (cell: number): number => Math.floor(cell / 27) * 3 + Math.floor((cell % 9) / 3);
+/** How many of the houses contain the cell. */
+function incidenceOf(houses: readonly House[], cell: number): number {
+  return houses.reduce((total, house) => total + Number(house.cells.includes(cell)), 0);
+}
+function sameEffectCells(left: readonly Effect[], right: readonly Effect[]): boolean {
+  return left.length === right.length && left.every((effect, i) => effect.cell === right[i].cell);
 }
 /** Owns deterministic service and closure for a finite set of family cursors. */
 export class FishCursorSet<T> {
@@ -273,12 +346,16 @@ class FishSearch {
     readonly maximum?: number,
   ) {}
   *ordered(houses: readonly House[], n: number): Generator<House[]> {
-    const preferred = houses.filter((h) => h.support.every((c) => !this.view.state.values[c])),
-      other = houses.filter((h) => !preferred.includes(h));
+    const preferred = houses.filter((house) =>
+        house.support.every((cell) => !this.view.state.values[cell]),
+      ),
+      other = houses.filter((house) => !preferred.includes(house));
     for (let count = 0; count <= n; count++)
-      for (const a of combinations(preferred, n - count))
-        for (const b of combinations(other, count))
-          yield [...a, ...b].sort((a, b) => a.id.localeCompare(b.id));
+      for (const preferredSet of combinations(preferred, n - count))
+        for (const otherSet of combinations(other, count))
+          yield [...preferredSet, ...otherSet].sort((left, right) =>
+            left.id.localeCompare(right.id),
+          );
   }
   /** Enumerate house sets, never candidate assignments. Every admissible count
    * must cover each base occurrence not visible to its target, and the target
@@ -299,7 +376,7 @@ class FishSearch {
       yield { kind: "work", units: 1 };
       if (
         this.view.state.values[current[target]] ||
-        base.some((v, i) => v > 1 && !peers[target].has(current[i]))
+        base.some((count, i) => count > 1 && !peers[target].has(current[i]))
       )
         continue;
       const required = current.flatMap((cell, i) =>
@@ -309,20 +386,23 @@ class FishSearch {
             ? [{ cell, count: base[i] }]
             : [],
       );
-      const options = required.map((r) =>
-        houses.map((h, i) => (h.cells.includes(r.cell) ? i : -1)).filter((i) => i >= 0),
+      const options = required.map((requirement) =>
+        houses
+          .map((house, i) => (house.cells.includes(requirement.cell) ? i : -1))
+          .filter((i) => i >= 0),
       );
       const visit = function* (chosen: number[], excluded: Set<number>): Generator<Work | House[]> {
         yield { kind: "work", units: 1 };
         let pivot = -1,
           best: number[] = [];
-        for (let r = 0; r < required.length; r++) {
-          const deficit = required[r].count - options[r].filter((i) => chosen.includes(i)).length;
+        for (let index = 0; index < required.length; index++) {
+          const deficit =
+            required[index].count - options[index].filter((i) => chosen.includes(i)).length;
           if (deficit <= 0) continue;
-          const remaining = options[r].filter((i) => !chosen.includes(i) && !excluded.has(i));
+          const remaining = options[index].filter((i) => !chosen.includes(i) && !excluded.has(i));
           if (remaining.length < deficit || chosen.length + deficit > n) return;
           if (pivot < 0 || remaining.length < best.length) {
-            pivot = r;
+            pivot = index;
             best = remaining;
           }
         }
@@ -331,7 +411,7 @@ class FishSearch {
             .map((_, i) => i)
             .filter((i) => !chosen.includes(i) && !excluded.has(i));
           for (const extra of combinations(available, n - chosen.length)) {
-            const selected = [...chosen, ...extra].sort((a, b) => a - b),
+            const selected = [...chosen, ...extra].sort((left, right) => left - right),
               key = selected.join();
             yield { kind: "work", units: 1 };
             if (seen.has(key)) continue;
@@ -368,6 +448,57 @@ class FishSearch {
         yield* new FishCursorSet(cursors).events();
       }
   }
+  /** Cells still holding `symbol`, the classic houses with their live support
+   * for it, and which of those cells see each other. `undefined` once every
+   * candidate cell is already placed. */
+  private symbolGeometry(symbol: number): SymbolGeometry | undefined {
+    const bit = symbolMask(symbol);
+    const current = this.view.assembly.problem.cells.filter(
+      (cell) => this.view.state.domains[cell] & bit,
+    );
+    if (current.every((cell) => this.view.state.values[cell])) return undefined;
+    // At most 27*9 cells and 81*81 peer flags; paid by the invocation lease.
+    const houses = classicScopes(this.view)
+      .filter((house) => this.sources.has(house.cells))
+      .map((house) => ({
+        id: house.id,
+        cells: house.cells,
+        support: house.cells.filter((cell) => this.view.state.domains[cell] & bit),
+      }))
+      .sort((left, right) => left.id.localeCompare(right.id));
+    const sees = (cell: number, other: number) =>
+      this.reaches
+        ? this.reaches(symbol, cell, other)
+        : this.view.assembly.allDifferent.some(
+            (house) => house.cells.includes(cell) && house.cells.includes(other),
+          );
+    const peers = current.map(
+      (cell) => new Set(current.filter((other) => cell !== other && sees(cell, other))),
+    );
+    return { symbol, current, houses, peers };
+  }
+  /** Base and cover candidates for one orientation; the second pass admits solved houses. */
+  private housePools(
+    houses: readonly House[],
+    symbol: number,
+    orientation: string,
+    deferred: boolean,
+    simple: boolean,
+  ): { basePool: readonly House[]; coverPool: readonly House[] } {
+    const available = deferred
+      ? houses
+      : houses.filter((house) => house.support.every((cell) => !this.view.state.values[cell]));
+    const basePool = available.filter(
+      (house) =>
+        this.sources.has(house.cells, symbol) &&
+        (!simple || house.id.startsWith(orientation + ":")),
+    );
+    const crossing = orientation === "row" ? "column" : "row";
+    const coverPool = simple
+      ? available.filter((house) => house.id.startsWith(crossing + ":"))
+      : available;
+    return { basePool, coverPool };
+  }
   /** A fair cursor per supported size avoids claiming later sizes exhausted
    * merely because smaller Siamese pairs consume the operation's allowance. */
   *sizePatterns(
@@ -384,199 +515,46 @@ class FishSearch {
       // symbol. The second pass includes every remaining combination exactly once.
       for (const deferred of [false, true])
         for (const symbol of this.view.assembly.problem.symbols) {
-          const bit = symbolMask(symbol),
-            current = this.view.assembly.problem.cells.filter(
-              (c) => this.view.state.domains[c] & bit,
-            );
-          if (current.every((c) => this.view.state.values[c])) continue;
-          // At most 27*9 cells and 81*81 peer flags; paid by the invocation lease.
-          const houses = classicScopes(this.view)
-            .filter((h) => this.sources.has(h.cells))
-            .map((h) => ({
-              id: h.id,
-              cells: h.cells,
-              support: h.cells.filter((c) => this.view.state.domains[c] & bit),
-            }))
-            .sort((a, b) => a.id.localeCompare(b.id));
-          const peers = current.map(
-            (c) =>
-              new Set(
-                current.filter(
-                  (d) =>
-                    c !== d &&
-                    (this.reaches
-                      ? this.reaches(symbol, c, d)
-                      : this.view.assembly.allDifferent.some(
-                          (h) => h.cells.includes(c) && h.cells.includes(d),
-                        )),
-                ),
-              ),
-          );
+          const geometry = this.symbolGeometry(symbol);
+          if (!geometry) continue;
           for (const orientation of simple ? ["row", "column"] : ["mixed"]) {
-            const available = deferred
-              ? houses
-              : houses.filter((h) => h.support.every((c) => !this.view.state.values[c]));
-            const basePool = available.filter(
-              (h) =>
-                this.sources.has(h.cells, symbol) &&
-                (!simple || h.id.startsWith(orientation + ":")),
-            );
-            const coverPool = simple
-              ? available.filter((h) =>
-                  h.id.startsWith((orientation === "row" ? "column" : "row") + ":"),
-                )
-              : available;
-            for (const bases of this.ordered(basePool, n)) {
+            const pools = this.housePools(geometry.houses, symbol, orientation, deferred, simple);
+            for (const bases of this.ordered(pools.basePool, n)) {
               yield { kind: "work", units: 1 };
-              const b = current.map((c) =>
-                bases.reduce((v, h) => v + Number(h.cells.includes(c)), 0),
-              );
-              if (!simple && b.some((v) => v > 1) !== overlap) continue;
+              const baseCount = geometry.current.map((cell) => incidenceOf(bases, cell));
+              if (!simple && baseCount.some((value) => value > 1) !== overlap) continue;
               // Siamese pairs retain only the current base set and release on each step.
-              const pairLease = this.context.workspace.reserve(0, 1024),
-                parts: {
-                  pattern: FishComponent;
-                  effects: readonly Effect[];
-                  shared: boolean;
-                  deferred: boolean;
-                }[] = [];
+              const pairLease = this.context.workspace.reserve(0, 1024);
+              const pass: SearchPass = {
+                n,
+                equalEffects,
+                sharedHouses,
+                paired,
+                deferred,
+                simple,
+                geometry,
+                bases,
+                baseCount,
+                parts: [],
+                pairLease,
+              };
               try {
                 const coverCursor = simple
-                  ? this.ordered(coverPool, n)
-                  : this.coverSets(coverPool, n, current, b, peers, pairLease);
+                  ? this.ordered(pools.coverPool, n)
+                  : this.coverSets(
+                      pools.coverPool,
+                      n,
+                      geometry.current,
+                      baseCount,
+                      geometry.peers,
+                      pairLease,
+                    );
                 for (const coverEvent of coverCursor) {
                   if (!Array.isArray(coverEvent)) {
                     yield coverEvent;
                     continue;
                   }
-                  const covers = coverEvent;
-                  yield { kind: "work", units: 1 };
-                  const selectedShared = bases.some((b) => covers.some((c) => b.id === c.id)),
-                    selectedDeferred = [...bases, ...covers].some((h) =>
-                      h.support.some((c) => this.view.state.values[c]),
-                    );
-                  // Later Siamese passes must retain earlier components too, so pairs
-                  // crossing an ordering partition are neither lost nor duplicated.
-                  if (
-                    !simple &&
-                    (this.family === "C09"
-                      ? !sharedHouses && selectedShared
-                      : selectedShared !== sharedHouses)
-                  )
-                    continue;
-                  if (deferred && !selectedDeferred && this.family !== "C09") continue;
-                  const u = current.map((c) =>
-                    covers.reduce((v, h) => v + Number(h.cells.includes(c)), 0),
-                  );
-                  const finIndexes = b.flatMap((v, i) =>
-                    v > 1 || (v > 0 && u[i] === 0) ? [i] : [],
-                  );
-                  if (finIndexes.length > (this.family === "C06" ? 0 : 4)) continue;
-                  const fins = finIndexes.map((i) => current[i]);
-                  if (
-                    this.family === "C07" &&
-                    (!fins.length ||
-                      new Set(fins.map((c) => Math.floor(c / 27) * 3 + Math.floor((c % 9) / 3)))
-                        .size !== 1)
-                  )
-                    continue;
-                  let effects = current.flatMap((cell, i) =>
-                    u[i] > b[i] &&
-                    !this.view.state.values[cell] &&
-                    finIndexes.every((j) => peers[i].has(current[j]))
-                      ? [{ kind: "remove" as const, cell, symbol }]
-                      : [],
-                  );
-                  if (!effects.length) continue;
-                  const baseIds = bases.map((h) => h.id),
-                    coverIds = covers.map((h) => h.id);
-                  const form = simple
-                    ? this.family === "C06"
-                      ? "basic"
-                      : bases.some((h) => h.support.filter((c) => !fins.includes(c)).length < 2)
-                        ? "sashimi"
-                        : "finned"
-                    : mixedFishForm(baseIds, coverIds);
-                  const alias = simple
-                    ? form === "basic"
-                      ? fishNames[n]
-                      : form === "finned"
-                        ? "Finned fish"
-                        : "Sashimi fish"
-                    : form === "franken"
-                      ? "Franken fish"
-                      : "Mutant fish";
-                  const incidence = simple
-                    ? {}
-                    : {
-                        incidence: Array.from(
-                          { length: 81 },
-                          (_, c) =>
-                            covers.reduce((v, h) => v + Number(h.cells.includes(c)), 0) -
-                            bases.reduce((v, h) => v + Number(h.cells.includes(c)), 0),
-                        ),
-                      };
-                  const pattern: FishComponent = {
-                    alias,
-                    form,
-                    size: n,
-                    symbol,
-                    bases: baseIds,
-                    covers: coverIds,
-                    fins,
-                    ...incidence,
-                  };
-                  if (this.family !== "C09") {
-                    yield { pattern, effects };
-                    continue;
-                  }
-                  const ownPass =
-                    selectedShared === sharedHouses && (!deferred || selectedDeferred);
-                  if (ownPass && !paired && finIndexes.some((i) => b[i] > 1))
-                    yield { pattern: { ...pattern, alias: "Endo-fin fish" }, effects };
-                  const cannibal = effects.filter((e) => b[current.indexOf(e.cell)] > 0);
-                  if (ownPass && !paired && cannibal.length)
-                    yield {
-                      pattern: { ...pattern, alias: "Cannibalistic fish" },
-                      effects: cannibal,
-                    };
-                  if (!paired) continue;
-                  for (const previous of parts) {
-                    yield { kind: "work", units: 1 };
-                    if (
-                      (previous.shared || selectedShared) !== sharedHouses ||
-                      (deferred && !previous.deferred && !selectedDeferred)
-                    )
-                      continue;
-                    if (new Set([...previous.pattern.fins, ...fins]).size > 4) continue;
-                    if (
-                      (previous.effects.length === effects.length &&
-                        previous.effects.every((e, i) => e.cell === effects[i].cell)) !==
-                      equalEffects
-                    )
-                      continue;
-                    const union = [
-                      ...new Map(
-                        [...previous.effects, ...effects].map((e) => [e.cell, e]),
-                      ).values(),
-                    ].sort((a, b) => a.cell - b.cell);
-                    yield {
-                      pattern: {
-                        alias: "Siamese fish",
-                        size: n,
-                        symbol,
-                        components: [previous.pattern, pattern],
-                      },
-                      effects: union,
-                    };
-                  }
-                  pairLease.grow(1, 8192);
-                  parts.push({
-                    pattern,
-                    effects,
-                    shared: selectedShared,
-                    deferred: selectedDeferred,
-                  });
+                  yield* this.coverPatterns(pass, coverEvent);
                 }
               } finally {
                 pairLease.dispose();
@@ -588,6 +566,133 @@ class FishSearch {
       scratch.dispose();
     }
   }
+  /** Candidates for one base/cover pair, plus Siamese pairings with earlier components. */
+  private *coverPatterns(pass: SearchPass, covers: readonly House[]): Generator<Work | Candidate> {
+    const { n, deferred, simple, geometry, bases, baseCount, parts } = pass;
+    const { symbol, current, peers } = geometry;
+    yield { kind: "work", units: 1 };
+    const selectedShared = bases.some((house) => covers.some((cover) => house.id === cover.id));
+    const selectedDeferred = [...bases, ...covers].some((house) =>
+      house.support.some((cell) => this.view.state.values[cell]),
+    );
+    // Later Siamese passes must retain earlier components too, so pairs
+    // crossing an ordering partition are neither lost nor duplicated.
+    if (
+      !simple &&
+      (this.family === "C09"
+        ? !pass.sharedHouses && selectedShared
+        : selectedShared !== pass.sharedHouses)
+    )
+      return;
+    if (deferred && !selectedDeferred && this.family !== "C09") return;
+    const coverCount = current.map((cell) => incidenceOf(covers, cell));
+    const finIndexes = baseCount.flatMap((count, i) =>
+      count > 1 || (count > 0 && coverCount[i] === 0) ? [i] : [],
+    );
+    if (finIndexes.length > (this.family === "C06" ? 0 : 4)) return;
+    const fins = finIndexes.map((i) => current[i]);
+    if (this.family === "C07" && (!fins.length || new Set(fins.map(boxOf)).size !== 1)) return;
+    const effects = current.flatMap((cell, i) =>
+      coverCount[i] > baseCount[i] &&
+      !this.view.state.values[cell] &&
+      finIndexes.every((j) => peers[i].has(current[j]))
+        ? [{ kind: "remove" as const, cell, symbol }]
+        : [],
+    );
+    if (!effects.length) return;
+    const pattern = this.describeComponent(n, symbol, bases, covers, fins, simple);
+    if (this.family !== "C09") {
+      yield { pattern, effects };
+      return;
+    }
+    const ownPass = selectedShared === pass.sharedHouses && (!deferred || selectedDeferred);
+    if (ownPass && !pass.paired && finIndexes.some((i) => baseCount[i] > 1))
+      yield { pattern: { ...pattern, alias: "Endo-fin fish" }, effects };
+    const cannibal = effects.filter((effect) => baseCount[current.indexOf(effect.cell)] > 0);
+    if (ownPass && !pass.paired && cannibal.length)
+      yield { pattern: { ...pattern, alias: "Cannibalistic fish" }, effects: cannibal };
+    if (!pass.paired) return;
+    const component: SiameseComponent = {
+      pattern,
+      effects,
+      shared: selectedShared,
+      deferred: selectedDeferred,
+    };
+    yield* this.siamesePairs(pass, component);
+    pass.pairLease.grow(1, 8192);
+    parts.push(component);
+  }
+  /** Pairs the component with every retained earlier component of the same base set. */
+  private *siamesePairs(
+    pass: SearchPass,
+    component: SiameseComponent,
+  ): Generator<Work | Candidate> {
+    const { pattern, effects } = component;
+    for (const previous of pass.parts) {
+      yield { kind: "work", units: 1 };
+      if (
+        (previous.shared || component.shared) !== pass.sharedHouses ||
+        (pass.deferred && !previous.deferred && !component.deferred)
+      )
+        continue;
+      if (new Set([...previous.pattern.fins, ...pattern.fins]).size > 4) continue;
+      if (sameEffectCells(previous.effects, effects) !== pass.equalEffects) continue;
+      const union = [
+        ...new Map(
+          [...previous.effects, ...effects].map((effect) => [effect.cell, effect]),
+        ).values(),
+      ].sort((left, right) => left.cell - right.cell);
+      yield {
+        pattern: {
+          alias: "Siamese fish",
+          size: pass.n,
+          symbol: pattern.symbol,
+          components: [previous.pattern, pattern],
+        },
+        effects: union,
+      };
+    }
+  }
+  /** Names the form of one component; mixed families also record cover-minus-base incidence. */
+  private describeComponent(
+    n: number,
+    symbol: number,
+    bases: readonly House[],
+    covers: readonly House[],
+    fins: readonly number[],
+    simple: boolean,
+  ): FishComponent {
+    const baseIds = bases.map((house) => house.id),
+      coverIds = covers.map((house) => house.id);
+    const sashimi = bases.some(
+      (house) => house.support.filter((cell) => !fins.includes(cell)).length < 2,
+    );
+    const form = simple
+      ? this.family === "C06"
+        ? "basic"
+        : sashimi
+          ? "sashimi"
+          : "finned"
+      : mixedFishForm(baseIds, coverIds);
+    const alias = simple
+      ? form === "basic"
+        ? fishNames[n]
+        : form === "finned"
+          ? "Finned fish"
+          : "Sashimi fish"
+      : form === "franken"
+        ? "Franken fish"
+        : "Mutant fish";
+    const incidence = simple
+      ? {}
+      : {
+          incidence: Array.from(
+            { length: 81 },
+            (_, cell) => incidenceOf(covers, cell) - incidenceOf(bases, cell),
+          ),
+        };
+    return { alias, form, size: n, symbol, bases: baseIds, covers: coverIds, fins, ...incidence };
+  }
 }
 
 class FishTechnique implements TechniqueDescriptor {
@@ -598,7 +703,7 @@ class FishTechnique implements TechniqueDescriptor {
   readonly assumptionPolicy: "unconditional" | "discharged";
   readonly bounds;
   constructor(readonly family: string) {
-    const row = coverageEntries.find((r) => r.id === family)!;
+    const row = coverageEntry(family);
     this.id = row.version;
     this.aliases = row.aliases;
     this.tier = row.tier;
@@ -620,17 +725,17 @@ class FishTechnique implements TechniqueDescriptor {
       matchingFacts(
         view,
         symbol ? { kind: "cover", cells, symbol } : { kind: "all-different", cells },
-      ).some((f) => !f.openAssumptions.length);
-    const houses = classicScopes(view).filter((h) => has(h.cells, 0)),
+      ).some((fact) => !fact.openAssumptions.length);
+    const houses = classicScopes(view).filter((house) => has(house.cells, 0)),
       simple = ["C06", "C07"].includes(this.family);
     const possible = view.assembly.problem.symbols.some((symbol) => {
-      const bases = houses.filter((h) => has(h.cells, symbol));
+      const bases = houses.filter((house) => has(house.cells, symbol));
       return simple
         ? ["row", "column"].some(
             (orientation) =>
-              bases.filter((h) => h.id.startsWith(orientation + ":")).length >= 2 &&
-              houses.filter((h) =>
-                h.id.startsWith((orientation === "row" ? "column" : "row") + ":"),
+              bases.filter((house) => house.id.startsWith(orientation + ":")).length >= 2 &&
+              houses.filter((house) =>
+                house.id.startsWith((orientation === "row" ? "column" : "row") + ":"),
               ).length >= 2,
           )
         : bases.length >= 2 && houses.length >= 2;
@@ -653,15 +758,14 @@ class FishTechnique implements TechniqueDescriptor {
       yield eligibility;
       return;
     }
-    let lease: WorkspaceReservation | undefined,
-      work = 0;
+    let lease: WorkspaceReservation | undefined;
+    const meter = new WorkMeter(context.limits.workUnits);
     try {
       lease = context.workspace.reserve(0, 262144);
       const sources = new FishSources(view, lease);
       for (const event of sources.prepare()) {
         context.workspace.checkpoint();
-        work += event.units;
-        if (work > context.limits.workUnits) {
+        if (meter.exceeded(event.units)) {
           yield { kind: "interrupted", reason: "work-limit" };
           return;
         }
@@ -671,47 +775,16 @@ class FishTechnique implements TechniqueDescriptor {
       for (const event of search.patterns()) {
         context.workspace.checkpoint();
         if ("kind" in event) {
-          work += event.units;
-          if (work > context.limits.workUnits) {
+          if (meter.exceeded(event.units)) {
             yield { kind: "interrupted", reason: "work-limit" };
             return;
           }
           yield event;
           continue;
         }
-        const compilation = context.workspace.reserve(0, 65536);
-        try {
-          const compiler = new FishCompiler(view, compilation, sources).compile(this.id, event);
-          let proposal: DeductionProposal;
-          try {
-            while (true) {
-              context.workspace.checkpoint();
-              const next = compiler.next();
-              if (next.done) {
-                proposal = next.value;
-                break;
-              }
-              work += next.value.units;
-              if (work > context.limits.workUnits) {
-                yield { kind: "interrupted", reason: "work-limit" };
-                return;
-              }
-              yield next.value;
-            }
-          } finally {
-            compiler.return(undefined as never);
-          }
-          if (
-            proposal.proof.nodes.length > context.limits.stepNodes ||
-            JSON.stringify(proposal).length * 2 > context.limits.stepBytes
-          ) {
-            yield { kind: "interrupted", reason: "proof-step-limit" };
-            return;
-          }
-          yield { kind: "proposal", proposal };
-        } finally {
-          compilation.dispose();
-        }
+        const proposal = yield* this.compileCandidate(view, context, sources, event, meter);
+        if (!proposal) return;
+        yield { kind: "proposal", proposal };
       }
       yield { kind: "exhausted" };
     } catch (error) {
@@ -721,7 +794,49 @@ class FishTechnique implements TechniqueDescriptor {
       lease?.dispose();
     }
   }
+  /** Compiles one candidate under its own lease; `undefined` after yielding an interruption. */
+  private *compileCandidate(
+    view: ReadView,
+    context: DiscoveryContext,
+    sources: FishSources,
+    candidate: Candidate,
+    meter: WorkMeter,
+  ): Generator<DiscoveryEvent, DeductionProposal | undefined> {
+    const compilation = context.workspace.reserve(0, 65536);
+    try {
+      const compiler = new FishCompiler(view, compilation, sources).compile(this.id, candidate);
+      let proposal: DeductionProposal;
+      try {
+        for (;;) {
+          context.workspace.checkpoint();
+          const next = compiler.next();
+          if (next.done) {
+            proposal = next.value;
+            break;
+          }
+          if (meter.exceeded(next.value.units)) {
+            yield { kind: "interrupted", reason: "work-limit" };
+            return undefined;
+          }
+          yield next.value;
+        }
+      } finally {
+        compiler.return(undefined as never);
+      }
+      if (
+        proposal.proof.nodes.length > context.limits.stepNodes ||
+        JSON.stringify(proposal).length * 2 > context.limits.stepBytes
+      ) {
+        yield { kind: "interrupted", reason: "proof-step-limit" };
+        return undefined;
+      }
+      return proposal;
+    } finally {
+      compilation.dispose();
+    }
+  }
 }
+
 export const fishTechniques: readonly TechniqueDescriptor[] = Object.freeze(
   ["C06", "C07", "C08", "C09"].map((id) => Object.freeze(new FishTechnique(id))),
 );
