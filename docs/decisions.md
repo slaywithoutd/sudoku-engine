@@ -1,6 +1,6 @@
 # Decision log
 
-Updated: 2026-09-14.
+Updated: 2026-09-17.
 
 Status vocabulary: **Confirmed** = explicit user requirement or answer; **Proposed** = recommendation awaiting an answer; **Superseded** = retained historical decision replaced by another entry.
 
@@ -897,3 +897,10 @@ Record each answer here with its rationale and consequences. If an answer change
 - Evidence: T19–T26 task commits, 27/27 development browser tests, 11/11 production smoke tests, 1,740/1,744 unit tests with four timeouts, and a 2/2 benchmark schema/dry-run. Typecheck, build and diff checks passed.
 - Decision: record the expanded implementation and its limits, but do not mark M2 complete or enable rollout. The four unit timeouts are inconclusive, and the required cold/warm/throttled resource calibration and several end-to-end contract paths remain outstanding.
 - Consequence: roadmap and README distinguish catalogue/algorithm evidence from runtime completion. Gameplay hints, variants and release approval remain outside this checkpoint.
+
+## D098 - Remove legacy Java/Spring prototype
+
+- Status: confirmed user instruction, 2026-09-17.
+- Decision: delete the original Java 17/Spring Boot prototype (`pom.xml`, Maven wrapper, `src/main/java`, `src/main/resources/static`, `src/test/java`), its `.gitattributes`, the Maven/STS/IntelliJ/NetBeans ignore rules and the baseline description `docs/current-application.md`.
+- Reason: the migration to the TypeScript application in `web/` is complete. The two codebases never shared code: `web/` has its own rule engine, storage and solver, and it never called the prototype's `/api/sudoku/*` endpoints. Keeping an unused build system in the repository misleads contributors about how the application is built and run.
+- Consequence: the repository is a single Vite/TypeScript project. Historical verification records that mention Spring or Maven remain as written; they describe the repository at the time they were produced.
