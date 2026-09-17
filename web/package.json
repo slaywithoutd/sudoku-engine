@@ -15,7 +15,9 @@
     "bench:solver": "playwright test -c playwright.benchmark.config.ts",
     "test:serve": "vite --host 127.0.0.1 --port 5174 --strictPort",
     "format": "prettier --write src tests \"*.config.ts\"",
-    "format:check": "prettier --check src tests \"*.config.ts\""
+    "format:check": "prettier --check src tests \"*.config.ts\"",
+    "lint:install": "npm install --prefix tooling/lint --no-audit --no-fund --loglevel=error",
+    "lint": "npm run lint:install && node tooling/lint/node_modules/eslint/bin/eslint.js ."
   },
   "devDependencies": {
     "@playwright/test": "1.63.0",
