@@ -1,6 +1,8 @@
 {
   "name": "sudoku-platform",
   "private": true,
+  "homepage": "https://my-sudoku-engine.vercel.app",
+  "license": "MIT",
   "type": "module",
   "scripts": {
     "dev": "vite",
