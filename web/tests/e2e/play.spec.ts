@@ -147,7 +147,9 @@ test("export game, copy puzzle and fullscreen are available from the game chrome
   expect(game.cells[2].value).toBe(4);
   await page.getByRole("button", { name: "Fullscreen", exact: true }).click();
   await expect(page.locator("html")).toHaveClass(/focus-mode/);
-  await expect(page.locator(".sidebar")).toBeHidden();
+  // Fullscreen minimizes the sidebar to its rail; it never removes it.
+  await expect(page.locator(".sidebar")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Expand sidebar", exact: true })).toBeVisible();
   await page.keyboard.press("F");
   await expect(page.locator("html")).not.toHaveClass(/focus-mode/);
 });

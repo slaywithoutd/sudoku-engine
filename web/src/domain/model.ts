@@ -125,6 +125,8 @@ export interface Settings {
   keypadHidden: boolean;
   /** Collapsed to the expand arrow rail; irrelevant while keypadHidden. */
   keypadCollapsed: boolean;
+  /** Main navigation shrunk to its icon rail; it never disappears entirely. */
+  sidebarCollapsed: boolean;
   /** Puts 7 8 9 on top instead of 1 2 3. */
   invertKeypad: boolean;
   showLabels: boolean;

@@ -6,9 +6,8 @@ import { completedDigits, conflictingCells, effectiveValues } from "../domain/cl
 import { el } from "./dom";
 import { deselectOnOutsidePointer, mountBoard, type BoardOverlay, type BoardView } from "./board";
 import { mountKeypad, type KeypadView } from "./keypad";
-import { bindGameKeys, copyCell, pasteCellAction, toggleFullscreen, type GameShell } from "./game";
+import { bindGameKeys, copyCell, pasteCellAction, type GameShell } from "./game";
 import { updateSetting } from "./settings-sections";
-import { iconButton, comboLabel } from "./components";
 
 export interface PuzzleSurface {
   board: BoardView;
@@ -76,8 +75,6 @@ export function mountPuzzleSurface(
     multiSelectMode = !multiSelectMode;
     render();
   };
-  const multiSelectToggle = iconButton("boxSelect", "Multi-select mode", toggleMultiSelect);
-  shell.actions.prepend(multiSelectToggle);
   const keypad = mountKeypad(shell.side, {
     mode: options.mode,
     settings: settings(),
@@ -88,6 +85,7 @@ export function mountPuzzleSurface(
       if (settings().keypadHidden) updateSetting(services, "keypadHidden", false);
     },
     onAutofill: options.onAutofill,
+    onMultiSelect: toggleMultiSelect,
   });
   const offOutside = deselectOnOutsidePointer(() => {
     if (options.state().selected >= 0) options.dispatch({ type: "select", index: -1 });
@@ -133,9 +131,6 @@ export function mountPuzzleSurface(
           if (paste) dispatch(paste);
           return !!paste;
         }
-        case "fullscreen":
-          toggleFullscreen();
-          return true;
         default:
           return false;
       }
@@ -155,11 +150,7 @@ export function mountPuzzleSurface(
     const count = selectionOf(state).length;
     selectionStatus.hidden = count < 2;
     selectionCount.textContent = `${count} cells selected`;
-    multiSelectToggle.setAttribute("aria-pressed", String(multiSelectMode));
-    const combo = comboLabel(s.shortcuts.multiSelect),
-      label = `Multi-select mode${multiSelectMode ? " (on)" : ""}`;
-    multiSelectToggle.setAttribute("aria-label", label);
-    multiSelectToggle.title = combo ? `${label} — ${combo}, or Ctrl+click a cell` : `${label} — Ctrl+click a cell`;
+    keypad.setMultiSelect(multiSelectMode);
   };
   render();
   return {
@@ -176,7 +167,6 @@ export function mountPuzzleSurface(
       board.destroy();
       keypad.destroy();
       boardHost.remove();
-      multiSelectToggle.remove();
       selectionStatus.remove();
     },
   };
