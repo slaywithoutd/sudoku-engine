@@ -29,10 +29,14 @@ const QUICK_SECTIONS: SectionId[] = ["board", "notes", "keypad", "timer", "compl
 export function openQuickSettings(services: ScreenServices, focus?: SectionId): void {
   const d = dialog("Game settings", { className: "settings-dialog" });
   const off = renderSettingsSections(d.body, services, QUICK_SECTIONS);
-  const all = button("All settings", () => {
-    d.close();
-    services.navigate({ screen: "settings" });
-  }, "ghost");
+  const all = button(
+    "All settings",
+    () => {
+      d.close();
+      services.navigate({ screen: "settings" });
+    },
+    "ghost",
+  );
   d.actions.append(all, button("Done", d.close, "primary"));
   d.node.addEventListener("close", () => {
     off();
@@ -40,10 +44,7 @@ export function openQuickSettings(services: ScreenServices, focus?: SectionId): 
   if (focus) d.body.querySelector(`#settings-${focus}`)?.scrollIntoView({ block: "start" });
 }
 
-export function mountSettings(
-  container: HTMLElement,
-  services: ScreenServices,
-): () => void {
+export function mountSettings(container: HTMLElement, services: ScreenServices): () => void {
   const page = el("div", undefined, "settings-page"),
     heading = el("div", undefined, "page-heading"),
     nav = el("nav", undefined, "settings-toc"),
@@ -58,7 +59,10 @@ export function mountSettings(
     link.addEventListener("click", (event) => {
       // Hash routing owns location.hash; scroll without navigating.
       event.preventDefault();
-      content.querySelector(`#settings-${id}`)?.scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" });
+      content.querySelector(`#settings-${id}`)?.scrollIntoView({
+        behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
+        block: "start",
+      });
     });
     links.set(id, link);
     nav.append(link);
@@ -67,7 +71,9 @@ export function mountSettings(
   container.append(page);
   const preview = mountLivePreview(content, services.controller.snapshot().settings);
   const off = renderSettingsSections(content, services, PAGE_SECTIONS);
-  const offPreview = services.controller.subscribe(() => preview.update(services.controller.snapshot().settings));
+  const offPreview = services.controller.subscribe(() =>
+    preview.update(services.controller.snapshot().settings),
+  );
 
   const backup = el("section", undefined, "settings-section"),
     file = el("input"),
@@ -85,7 +91,11 @@ export function mountSettings(
   );
   backup.append(
     el("h2", "Data & backup"),
-    el("p", "Backups contain every draft, puzzle, game, note and setting in this browser.", "field-hint"),
+    el(
+      "p",
+      "Backups contain every draft, puzzle, game, note and setting in this browser.",
+      "field-hint",
+    ),
     actions,
     error,
   );
@@ -138,7 +148,11 @@ export function mountSettings(
         notice = el("p", undefined, "error");
       let captured = services.controller.snapshot(),
         preview = previewRestore(captured, incoming, services.newId, false);
-      const restore = switchField({ label: "Restore settings from backup", checked: false, onChange: () => refresh() });
+      const restore = switchField({
+        label: "Restore settings from backup",
+        checked: false,
+        onChange: () => refresh(),
+      });
       const refresh = () => {
         captured = services.controller.snapshot();
         preview = previewRestore(captured, incoming, services.newId, restore.input.checked);
@@ -153,7 +167,8 @@ export function mountSettings(
           () => {
             if (services.controller.snapshot() !== captured) {
               refresh();
-              notice.textContent = "The library changed. Review the updated summary and apply again.";
+              notice.textContent =
+                "The library changed. Review the updated summary and apply again.";
               return;
             }
             services.controller.update(() => preview.data);

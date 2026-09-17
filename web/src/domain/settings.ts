@@ -13,23 +13,22 @@ import {
   type ShortcutAction,
 } from "./model";
 
-export const DEFAULT_SHORTCUTS: Readonly<Record<ShortcutAction, string>> =
-  Object.freeze({
-    toolValue: "Z",
-    toolCorner: "X",
-    toolCenter: "C",
-    toolColor: "V",
-    undo: "Ctrl+Z",
-    redo: "Ctrl+Y",
-    erase: "Delete",
-    deselect: "Escape",
-    autofill: "",
-    copyCell: "Ctrl+C",
-    pasteCell: "Ctrl+V",
-    pause: "P",
-    fullscreen: "F",
-    multiSelect: "M",
-  });
+export const DEFAULT_SHORTCUTS: Readonly<Record<ShortcutAction, string>> = Object.freeze({
+  toolValue: "Z",
+  toolCorner: "X",
+  toolCenter: "C",
+  toolColor: "V",
+  undo: "Ctrl+Z",
+  redo: "Ctrl+Y",
+  erase: "Delete",
+  deselect: "Escape",
+  autofill: "",
+  copyCell: "Ctrl+C",
+  pasteCell: "Ctrl+V",
+  pause: "P",
+  fullscreen: "F",
+  multiSelect: "M",
+});
 
 export function defaultSettings(): Settings {
   return {
@@ -94,10 +93,7 @@ export function normalizeSettings(
   raw: Record<string, unknown>,
   invalid: (message?: string) => never,
 ): Settings {
-  if (
-    typeof raw.showConflicts !== "boolean" ||
-    (raw.language !== "pt-BR" && raw.language !== "en")
-  )
+  if (typeof raw.showConflicts !== "boolean" || (raw.language !== "pt-BR" && raw.language !== "en"))
     invalid();
   const settings = defaultSettings();
   const target = settings as unknown as Record<string, unknown>;
@@ -106,23 +102,16 @@ export function normalizeSettings(
     const value = raw[key];
     if (value === undefined) continue;
     const choices = CHOICES[key];
-    if (choices ? !choices.includes(value) : typeof value !== "boolean")
-      invalid();
+    if (choices ? !choices.includes(value) : typeof value !== "boolean") invalid();
     target[key] = value;
   }
   if (raw.shortcuts !== undefined) {
     const shortcuts = raw.shortcuts;
-    if (
-      shortcuts === null ||
-      typeof shortcuts !== "object" ||
-      Array.isArray(shortcuts)
-    )
-      invalid();
+    if (shortcuts === null || typeof shortcuts !== "object" || Array.isArray(shortcuts)) invalid();
     for (const action of SHORTCUT_ACTIONS) {
       const combo = (shortcuts as Record<string, unknown>)[action];
       if (combo === undefined) continue;
-      if (typeof combo !== "string" || !SHORTCUT_PATTERN.test(combo))
-        invalid();
+      if (typeof combo !== "string" || !SHORTCUT_PATTERN.test(combo)) invalid();
       settings.shortcuts[action] = combo;
     }
   }

@@ -8,15 +8,9 @@ export function newDraft(services: ScreenServices): void {
   services.controller.update((data) => createDraft(data, id, services.now()));
   services.navigate({ screen: "create", id });
 }
-export function mountHome(
-  container: HTMLElement,
-  services: ScreenServices,
-): () => void {
+export function mountHome(container: HTMLElement, services: ScreenServices): () => void {
   const hero = el("section", undefined, "hero");
-  hero.append(
-    el("h1", "One number at a time."),
-    el("p", randomSplash(), "intro splash"),
-  );
+  hero.append(el("h1", "One number at a time."), el("p", randomSplash(), "intro splash"));
   const cards = el("div", undefined, "home-cards");
   const card = (name: string, iconName: IconName, text: string, onClick: () => void) => {
     const node = button("", onClick, "home-card");

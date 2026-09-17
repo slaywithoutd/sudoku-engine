@@ -1,10 +1,4 @@
-import type {
-  Digit,
-  NoteModifier,
-  Settings,
-  ShortcutAction,
-  Tool,
-} from "../domain/model";
+import type { Digit, NoteModifier, Settings, ShortcutAction, Tool } from "../domain/model";
 import { SHORTCUT_ACTIONS } from "../domain/model";
 export function digitFromEvent(event: KeyboardEvent): Digit | null {
   if (/^[1-9]$/.test(event.key)) return Number(event.key) as Digit;
@@ -80,14 +74,20 @@ export function keyIntent(
     const [dr, dc] = moves[event.key];
     return { kind: "move", dr, dc, extend: event.shiftKey };
   }
-  if (plain && !event.shiftKey && (event.code === "Numpad0" || ["0", "Backspace", "Delete"].includes(event.key)))
+  if (
+    plain &&
+    !event.shiftKey &&
+    (event.code === "Numpad0" || ["0", "Backspace", "Delete"].includes(event.key))
+  )
     return event.repeat ? null : { kind: "erase" };
   const digit = digitFromEvent(event);
   if (!digit || event.repeat) return null;
   const corner = held(event, settings.cornerModifier),
     center = held(event, settings.centerModifier);
   const extra =
-    ((event.ctrlKey || event.metaKey) && settings.cornerModifier !== "Control" && settings.centerModifier !== "Control") ||
+    ((event.ctrlKey || event.metaKey) &&
+      settings.cornerModifier !== "Control" &&
+      settings.centerModifier !== "Control") ||
     (event.altKey && settings.cornerModifier !== "Alt" && settings.centerModifier !== "Alt") ||
     (event.shiftKey && settings.cornerModifier !== "Shift" && settings.centerModifier !== "Shift");
   if (extra || (corner && center)) return null;

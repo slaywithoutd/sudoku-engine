@@ -1,10 +1,5 @@
 import { canonicalProblem, ProblemInputError } from "./problem";
-import type {
-  BranchId,
-  EngineProblem,
-  ProblemKey,
-  VersionId,
-} from "./problem";
+import type { BranchId, EngineProblem, ProblemKey, VersionId } from "./problem";
 
 export type SourceRef =
   | { kind: "manual" | "paste" }

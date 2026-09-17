@@ -1,4 +1,4 @@
-import {matchingFacts} from "../state/source-index";
+import { matchingFacts } from "../state/source-index";
 import type { ReadView, Literal } from "../state/types";
 import { assertOwnedView } from "../state/candidates";
 
@@ -59,7 +59,9 @@ export function buildCspVariables(view: ReadView): readonly CspVariable[] {
   }
   for (const house of view.assembly.allDifferent)
     for (const symbol of view.assembly.problem.symbols) {
-      const source = matchingFacts(view,{kind:"cover",symbol,cells:house.cells}).find(f=>!f.openAssumptions.length);
+      const source = matchingFacts(view, { kind: "cover", symbol, cells: house.cells }).find(
+        (f) => !f.openAssumptions.length,
+      );
       if (!source) continue;
       const alternatives = house.cells
         .filter((c) => view.state.domains[c] & (1 << (symbol - 1)))
@@ -70,27 +72,18 @@ export function buildCspVariables(view: ReadView): readonly CspVariable[] {
         house: house.id,
         symbol,
         alternatives,
-        premises: [
-          source.id,
-          ...house.cells.map((c) => view.state.domainFacts[c]),
-        ],
+        premises: [source.id, ...house.cells.map((c) => view.state.domainFacts[c])],
       });
     }
   return result;
 }
 
 /** A geometric conflict is a recipe; the compiler still supplies its true fact. */
-export function candidatesConflict(
-  view: ReadView,
-  a: Candidate,
-  b: Candidate,
-): boolean {
+export function candidatesConflict(view: ReadView, a: Candidate, b: Candidate): boolean {
   return a[0] === b[0]
     ? a[1] !== b[1]
     : a[1] === b[1] &&
-        view.assembly.allDifferent.some(
-          (h) => h.cells.includes(a[0]) && h.cells.includes(b[0]),
-        );
+        view.assembly.allDifferent.some((h) => h.cells.includes(a[0]) && h.cells.includes(b[0]));
 }
 
 /** Sudoku group geometry is a single digit in one box-line intersection. */
@@ -103,16 +96,13 @@ export function candidateGroup(view: ReadView, values: CandidateSet): boolean {
   )
     return false;
   const cells = values.map((v) => v[0]);
-  const contains = (h: { cells: readonly number[] }) =>
-    cells.every((c) => h.cells.includes(c));
+  const contains = (h: { cells: readonly number[] }) => cells.every((c) => h.cells.includes(c));
   return (
     view.assembly.allDifferent.some(
       (h) =>
         contains(h) &&
         h.cells.length === 9 &&
-        new Set(
-          h.cells.map((c) => Math.floor(c / 27) * 3 + Math.floor((c % 9) / 3)),
-        ).size === 1,
+        new Set(h.cells.map((c) => Math.floor(c / 27) * 3 + Math.floor((c % 9) / 3))).size === 1,
     ) &&
     view.assembly.allDifferent.some(
       (h) =>

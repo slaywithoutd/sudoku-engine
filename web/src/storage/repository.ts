@@ -15,8 +15,7 @@ export function openRepository(
   return new Promise((resolve, reject) => {
     const request = factory.open(name, 1);
     request.onblocked = onBlocked;
-    request.onerror = () =>
-      reject(request.error ?? new Error("Could not open your data."));
+    request.onerror = () => reject(request.error ?? new Error("Could not open your data."));
     request.onupgradeneeded = () => {
       request.result.createObjectStore("library");
     };
@@ -33,11 +32,8 @@ export function openRepository(
             store = tx.objectStore("library");
           let result: LibraryData | undefined, failure: unknown;
           tx.oncomplete = () =>
-            result
-              ? resolve(result)
-              : reject(new Error("The transaction did not complete."));
-          tx.onabort = () =>
-            reject(failure ?? tx.error ?? new Error("Could not save."));
+            result ? resolve(result) : reject(new Error("The transaction did not complete."));
+          tx.onabort = () => reject(failure ?? tx.error ?? new Error("Could not save."));
           tx.onerror = () => {
             failure ??= tx.error;
           };
@@ -45,9 +41,7 @@ export function openRepository(
           get.onsuccess = () => {
             try {
               const current =
-                get.result === undefined
-                  ? emptyLibrary()
-                  : validateLibrary(get.result);
+                get.result === undefined ? emptyLibrary() : validateLibrary(get.result);
               if (!data) {
                 result = current;
                 return;
@@ -66,8 +60,7 @@ export function openRepository(
         });
       resolve({
         load: () => transact("readonly"),
-        commit: async (data, expected) =>
-          transact("readwrite", validateLibrary(data), expected),
+        commit: async (data, expected) => transact("readwrite", validateLibrary(data), expected),
         close: () => db.close(),
       });
     };

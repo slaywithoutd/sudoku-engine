@@ -34,11 +34,7 @@ export function mountApplication(
     };
   root.classList.add("application");
   const sidebar = el("aside", undefined, "sidebar"),
-    brand = button(
-      "Sudoku Engine",
-      () => services.navigate({ screen: "home" }),
-      "brand",
-    ),
+    brand = button("Sudoku Engine", () => services.navigate({ screen: "home" }), "brand"),
     nav = el("nav"),
     main = el("main"),
     saveArea = el("div", undefined, "save-area"),
@@ -54,11 +50,21 @@ export function mountApplication(
   const navItems = (
     [
       { label: "Home", screen: "home", icon: "home", route: { screen: "home" } },
-      { label: "Library", screen: "library", icon: "library", route: { screen: "library", tab: "puzzles" } },
+      {
+        label: "Library",
+        screen: "library",
+        icon: "library",
+        route: { screen: "library", tab: "puzzles" },
+      },
       { label: "Solver", screen: "solve", icon: "solve", route: { screen: "solve" } },
       { label: "Help", screen: "help", icon: "help", route: { screen: "help" } },
       { label: "Settings", screen: "settings", icon: "settings", route: { screen: "settings" } },
-    ] as { label: string; screen: string; icon: IconName; route: Parameters<ScreenServices["navigate"]>[0] }[]
+    ] as {
+      label: string;
+      screen: string;
+      icon: IconName;
+      route: Parameters<ScreenServices["navigate"]>[0];
+    }[]
   ).map((item) => {
     const control = button("", () => services.navigate(item.route));
     control.setAttribute("aria-label", item.label);
@@ -77,7 +83,11 @@ export function mountApplication(
   // App-level controls: they live in the sidebar, outside any single screen,
   // so they behave the same everywhere and survive navigation.
   const tools = el("div", undefined, "sidebar-tools"),
-    sidebarToggle = button("", () => setSidebarCollapsed(!controller.snapshot().settings.sidebarCollapsed), "sidebar-toggle"),
+    sidebarToggle = button(
+      "",
+      () => setSidebarCollapsed(!controller.snapshot().settings.sidebarCollapsed),
+      "sidebar-toggle",
+    ),
     fullscreen = fullscreenButton("sidebar-fullscreen");
   tools.append(sidebarToggle, fullscreen);
   sidebar.append(brand, nav, tools, saveArea);
@@ -112,17 +122,16 @@ export function mountApplication(
     const settings = controller.snapshot().settings;
     applyAppearance(settings);
     const label = settings.sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar";
-    sidebarToggle.replaceChildren(icon(settings.sidebarCollapsed ? "sidebarOpen" : "sidebarClose"), el("span", label));
+    sidebarToggle.replaceChildren(
+      icon(settings.sidebarCollapsed ? "sidebarOpen" : "sidebarClose"),
+      el("span", label),
+    );
     sidebarToggle.setAttribute("aria-label", label);
     sidebarToggle.setAttribute("aria-expanded", String(!settings.sidebarCollapsed));
     sidebarToggle.title = label;
     const s = controller.status();
     status.textContent =
-      s.kind === "saved"
-        ? "Saved"
-        : s.kind === "saving"
-          ? "Saving…"
-          : "Not saved";
+      s.kind === "saved" ? "Saved" : s.kind === "saving" ? "Saving…" : "Not saved";
     retry.hidden = backup.hidden = error.hidden = s.kind !== "error";
     error.textContent = s.kind === "error" ? s.error.message : "";
   };
@@ -136,8 +145,7 @@ export function mountApplication(
     const game = r.screen === "create" || r.screen === "play" || r.screen === "solve";
     main.classList.toggle("editor-screen", game);
     for (const item of navItems) {
-      if (item.screen === r.screen)
-        item.control.setAttribute("aria-current", "page");
+      if (item.screen === r.screen) item.control.setAttribute("aria-current", "page");
       else item.control.removeAttribute("aria-current");
     }
     switch (r.screen) {

@@ -1,9 +1,6 @@
 import type { ReadView } from "../state/types";
 import type { Discovery, DiscoveryContext, TechniqueDescriptor } from "./types";
-import {
-  IndexInterrupted,
-  type WorkspaceReservation,
-} from "../indexes/workspace";
+import { IndexInterrupted, type WorkspaceReservation } from "../indexes/workspace";
 import { assertOwnedView, HypotheticalSession } from "../state/candidates";
 import { coverageEntries } from "./manifest";
 import {
@@ -27,9 +24,7 @@ import {
 import { forcingProofFits } from "./forcing-proof";
 
 type Work = { kind: "work"; units: number };
-export type GeneralizedSearchEvent =
-  | Work
-  | { kind: "plan"; plan: GeneralizedPlan };
+export type GeneralizedSearchEvent = Work | { kind: "plan"; plan: GeneralizedPlan };
 
 /** One bounded invocation owns accounting, including consumer time between yields. */
 export class GeneralizedRun {
@@ -40,24 +35,15 @@ export class GeneralizedRun {
   }
   tick(): void {
     this.context.workspace.checkpoint();
-    if (performance.now() >= this.deadline)
-      throw Error("generalized-time-limit");
-    if (++this.#work > this.context.limits.workUnits)
-      throw Error("generalized-work-limit");
+    if (performance.now() >= this.deadline) throw Error("generalized-time-limit");
+    if (++this.#work > this.context.limits.workUnits) throw Error("generalized-work-limit");
   }
   *proposal(view: ReadView, plan: GeneralizedPlan): Discovery {
     const lease = this.context.workspace.reserve(1, 5000000);
     let session: HypotheticalSession | undefined;
     try {
-      session = new HypotheticalSession(
-        view,
-        "generalized",
-        this.context.workspace,
-      );
-      for (const e of session.assume(
-        candidateLiteral(plan.target),
-        this.context.limits,
-      )) {
+      session = new HypotheticalSession(view, "generalized", this.context.workspace);
+      for (const e of session.assume(candidateLiteral(plan.target), this.context.limits)) {
         this.tick();
         if (e.kind === "work") yield e;
         else if (e.kind === "rejected") throw Error(e.code);
@@ -85,17 +71,11 @@ export function causalPositions(plan: GeneralizedPlan): boolean {
     if (needed.has(i)) continue;
     needed.add(i);
     const p = plan.positions[i];
-    for (const witness of [
-      p.leftConflict,
-      ...p.excluded.map((e) => e.conflictWith),
-    ]) {
+    for (const witness of [p.leftConflict, ...p.excluded.map((e) => e.conflictWith)]) {
       const j = plan.positions
         .slice(0, i)
         .findIndex(
-          (p) =>
-            p.right &&
-            JSON.stringify(members(p.right)) ===
-              JSON.stringify(members(witness)),
+          (p) => p.right && JSON.stringify(members(p.right)) === JSON.stringify(members(witness)),
         );
       if (j >= 0) pending.push(j);
     }
@@ -112,9 +92,7 @@ export function generalizedFeatures(plan: GeneralizedPlan): string {
     nonpredecessor = false;
   const target = JSON.stringify([plan.target]);
   for (const [i, p] of plan.positions.entries()) {
-    const previous = JSON.stringify(
-      i ? members(plan.positions[i - 1].right!) : [plan.target],
-    );
+    const previous = JSON.stringify(i ? members(plan.positions[i - 1].right!) : [plan.target]);
     nonpredecessor ||= JSON.stringify(members(p.leftConflict)) !== previous;
     if (i === plan.positions.length - 1) continue;
     for (const e of p.excluded) {
@@ -122,9 +100,7 @@ export function generalizedFeatures(plan: GeneralizedPlan): string {
       else t = true;
     }
   }
-  const groups = plan.positions.filter(
-    (p) => p.right && members(p.right).length > 1,
-  );
+  const groups = plan.positions.filter((p) => p.right && members(p.right).length > 1);
   return `${plan.grammar}:${plan.target}:${z}:${t}:${nonpredecessor}:${groups.length}:${Math.max(1, ...groups.map((p) => members(p.right!).length))}:${plan.source ?? ""}`;
 }
 
@@ -133,10 +109,7 @@ export function generalizedFeatures(plan: GeneralizedPlan): string {
  * rejected alternative under the selected z/t/general policy.
  */
 export class GeneralizedSearch {
-  readonly #locations = new Map<
-    string,
-    { variable: CspVariable; left: Candidate }[]
-  >();
+  readonly #locations = new Map<string, { variable: CspVariable; left: Candidate }[]>();
   constructor(
     readonly view: ReadView,
     readonly variables: readonly CspVariable[],
@@ -183,9 +156,7 @@ export class GeneralizedSearch {
   ): Generator<GeneralizedSearchEvent> {
     const targets = onlyTarget
       ? [onlyTarget]
-      : this.variables
-          .filter((v) => v.cell !== undefined)
-          .flatMap((v) => v.alternatives);
+      : this.variables.filter((v) => v.cell !== undefined).flatMap((v) => v.alternatives);
     for (let length = 1; length <= maximum; length++)
       for (const target of targets) {
         yield { kind: "work", units: 1 };
@@ -200,16 +171,11 @@ export class GeneralizedSearch {
     source?: { id: number; values: CandidateSet },
     consequence?: Candidate,
   ): Generator<GeneralizedSearchEvent> {
-    const rights: CandidateSet[] = [
-        [target],
-        ...positions.map((p) => members(p.right!)),
-      ],
+    const rights: CandidateSet[] = [[target], ...positions.map((p) => members(p.right!))],
       previous = rights.at(-1)!;
     const used = new Set([
       candidateKey(target),
-      ...positions.flatMap((p) =>
-        [p.left, ...members(p.right!)].map(candidateKey),
-      ),
+      ...positions.flatMap((p) => [p.left, ...members(p.right!)].map(candidateKey)),
     ]);
     const groups = positions.filter((p) => members(p.right!).length > 1).length;
     const withConflict = (value: Candidate, set: CandidateSet) =>
@@ -221,18 +187,10 @@ export class GeneralizedSearch {
       yield { kind: "work", units: 1 };
       const isOr = variable.id === "proved-or";
       const mayRevisit =
-        grammar === "g-whip" &&
-        previous.length > 1 &&
-        positions.at(-1)?.variable !== variable.id;
-      if (!mayRevisit && positions.some((p) => p.variable === variable.id))
-        continue;
+        grammar === "g-whip" && previous.length > 1 && positions.at(-1)?.variable !== variable.id;
+      if (!mayRevisit && positions.some((p) => p.variable === variable.id)) continue;
       if (grammar === "bivalue" && variable.alternatives.length !== 2) continue;
-      if (
-        grammar === "t" &&
-        positions.length === 0 &&
-        variable.alternatives.length !== 2
-      )
-        continue;
+      if (grammar === "t" && positions.length === 0 && variable.alternatives.length !== 2) continue;
       for (const left of variable.alternatives) {
         yield { kind: "work", units: 1 };
         if (used.has(candidateKey(left))) continue;
@@ -251,8 +209,7 @@ export class GeneralizedSearch {
               : grammar === "t"
                 ? rights.slice(1)
                 : rights;
-        const rejected: { literal: Candidate; conflictWith: CandidateSet }[] =
-            [],
+        const rejected: { literal: Candidate; conflictWith: CandidateSet }[] = [],
           survivors: Candidate[] = [];
         for (const value of variable.alternatives) {
           if (candidateKey(value) === candidateKey(left)) continue;
@@ -261,11 +218,7 @@ export class GeneralizedSearch {
           else survivors.push(value);
         }
         let closingCandidate: Candidate | undefined;
-        if (
-          grammar === "t" &&
-          survivors.length === 1 &&
-          withConflict(survivors[0], [target])
-        )
+        if (grammar === "t" && survivors.length === 1 && withConflict(survivors[0], [target]))
           closingCandidate = survivors[0];
         const terminal = survivors.length === 0 || !!closingCandidate;
         if (isOr && terminal) continue;
@@ -273,15 +226,10 @@ export class GeneralizedSearch {
           !terminal &&
           (survivors.some((v) => used.has(candidateKey(v))) ||
             (survivors.length > 1 &&
-              (grammar !== "g-whip" ||
-                groups === 4 ||
-                !candidateGroup(this.view, survivors))))
+              (grammar !== "g-whip" || groups === 4 || !candidateGroup(this.view, survivors))))
         )
           continue;
-        if (
-          !terminal &&
-          survivors.some((v) => rights.slice(1).some((r) => withConflict(v, r)))
-        )
+        if (!terminal && survivors.some((v) => rights.slice(1).some((r) => withConflict(v, r))))
           continue;
         if (
           !terminal &&
@@ -299,18 +247,12 @@ export class GeneralizedSearch {
           excluded: rejected,
           right: terminal ? null : survivors,
           ...(isOr ? { role: "or" as const } : {}),
-          ...(closingCandidate
-            ? { closingCandidate, closingConflict: target }
-            : {}),
+          ...(closingCandidate ? { closingCandidate, closingConflict: target } : {}),
         };
         const next = [...positions, position],
-          endpoint =
-            !terminal &&
-            survivors.every((v) => withConflict(consequence ?? target, [v]));
-        const enoughGroup =
-          grammar !== "g-whip" || groups > 0 || survivors.length > 1;
-        const enoughOr =
-          grammar !== "inserted-or-whip" || next.some((p) => p.role === "or");
+          endpoint = !terminal && survivors.every((v) => withConflict(consequence ?? target, [v]));
+        const enoughGroup = grammar !== "g-whip" || groups > 0 || survivors.length > 1;
+        const enoughOr = grammar !== "inserted-or-whip" || next.some((p) => p.role === "or");
         if (terminal || endpoint) {
           if (next.length === length && enoughGroup && enoughOr) {
             const plan: GeneralizedPlan = {
@@ -325,24 +267,14 @@ export class GeneralizedSearch {
           continue;
         }
         if (next.length < length)
-          yield* this.extend(
-            grammar,
-            target,
-            next,
-            length,
-            source,
-            consequence,
-          );
+          yield* this.extend(grammar, target, next, length, source, consequence);
       }
     }
   }
 }
 
-export function interruption(
-  error: unknown,
-): Discovery extends Generator<infer E> ? E : never {
-  if (error instanceof IndexInterrupted)
-    return { kind: "interrupted", reason: error.reason };
+export function interruption(error: unknown): Discovery extends Generator<infer E> ? E : never {
+  if (error instanceof IndexInterrupted) return { kind: "interrupted", reason: error.reason };
   if (error instanceof Error && error.message.endsWith("time-limit"))
     return { kind: "interrupted", reason: "time-limit" };
   if (error instanceof Error && error.message.endsWith("work-limit"))
@@ -368,14 +300,11 @@ export function* discoverGeneralized(
   try {
     run.tick();
     const storage = cspVariableReservation(view);
-    lease = context.workspace.reserve(
-      storage.entries,
-      storage.bytes + grammars.length * 250000,
-    );
+    lease = context.workspace.reserve(storage.entries, storage.bytes + grammars.length * 250000);
     const search = new GeneralizedSearch(view, buildCspVariables(view));
     cursors.push(...grammars.map((g) => search.plans(g)));
     while (cursors.length)
-      for (let i = 0; i < cursors.length; ) {
+      for (let i = 0; i < cursors.length;) {
         run.tick();
         const next = cursors[i].next();
         if (next.done) cursors.splice(i, 1);
@@ -435,13 +364,7 @@ export function generalizedDescriptor(
   };
 }
 export const generalizedTechniques = Object.freeze([
-  generalizedDescriptor("C25", (v, c) =>
-    discoverGeneralized(v, c, ["bivalue", "z"]),
-  ),
-  generalizedDescriptor("C26", (v, c) =>
-    discoverGeneralized(v, c, ["t", "whip"]),
-  ),
-  generalizedDescriptor("C27", (v, c) =>
-    discoverGeneralized(v, c, ["braid", "g-whip"]),
-  ),
+  generalizedDescriptor("C25", (v, c) => discoverGeneralized(v, c, ["bivalue", "z"])),
+  generalizedDescriptor("C26", (v, c) => discoverGeneralized(v, c, ["t", "whip"])),
+  generalizedDescriptor("C27", (v, c) => discoverGeneralized(v, c, ["braid", "g-whip"])),
 ]);

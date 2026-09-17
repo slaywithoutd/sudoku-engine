@@ -1,10 +1,6 @@
 import { describe, expect, test } from "vitest";
 import type { ClassicDefinition } from "../../../src/domain/model";
-import {
-  canonicalJson,
-  canonicalProblem,
-  normalizeClassic,
-} from "../../../src/solver/problem";
+import { canonicalJson, canonicalProblem, normalizeClassic } from "../../../src/solver/problem";
 import type { ConstraintInstance, Json } from "../../../src/solver/problem";
 import { makeSnapshot } from "../../../src/solver/snapshot";
 import { PUZZLE } from "../../fixtures";
@@ -205,12 +201,7 @@ describe("problem identity and snapshots", () => {
     expect(() => makeSnapshot(problem, { kind: "manual" }, "", 0)).toThrow();
     expect(() => makeSnapshot(problem, { kind: "paste" }, "snapshot-1", -1)).toThrow();
     expect(() =>
-      makeSnapshot(
-        problem,
-        { kind: "manual", extra: true } as never,
-        "snapshot-1",
-        0,
-      ),
+      makeSnapshot(problem, { kind: "manual", extra: true } as never, "snapshot-1", 0),
     ).toThrow();
   });
 });

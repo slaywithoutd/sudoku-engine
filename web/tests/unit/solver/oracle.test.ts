@@ -43,9 +43,7 @@ describe("independent count fixtures", () => {
       expect(result.witnesses).toHaveLength(fixture.expectedWitnesses);
       expect(result.exhausted).toBe(fixture.expectedExhausted);
       expect(result.interrupted).toBe(false);
-      expect(result.witnesses.every((witness) => checkGrid(givens, witness))).toBe(
-        true,
-      );
+      expect(result.witnesses.every((witness) => checkGrid(givens, witness))).toBe(true);
     },
   );
 
@@ -59,9 +57,7 @@ describe("independent count fixtures", () => {
 
     expect(two.exhausted).toBe(true);
     expect(two.witnesses).toHaveLength(2);
-    expect(two.witnesses.every((witness) => checkGrid(rectangleHoles, witness))).toBe(
-      true,
-    );
+    expect(two.witnesses.every((witness) => checkGrid(rectangleHoles, witness))).toBe(true);
   });
 });
 
@@ -187,9 +183,7 @@ describe("bounded exact-cover search", () => {
     [
       {
         givens: Array(81).fill(0),
-        domains: Array.from({ length: 81 }, (_, cell) =>
-          cell === 8 ? Number.NaN : 511,
-        ),
+        domains: Array.from({ length: 81 }, (_, cell) => (cell === 8 ? Number.NaN : 511)),
         limit: 1,
         maxNodes: 1,
       },
@@ -223,9 +217,7 @@ describe("bounded exact-cover search", () => {
     const sparseGivens = Array<number>(81);
     sparseGivens.fill(0);
     delete sparseGivens[8];
-    expect(() => oracle({ givens: sparseGivens, limit: 1, maxNodes: 1 })).toThrow(
-      "givens",
-    );
+    expect(() => oracle({ givens: sparseGivens, limit: 1, maxNodes: 1 })).toThrow("givens");
 
     const sparseDomains = Array<number>(81);
     sparseDomains.fill(511);
@@ -264,14 +256,11 @@ describe("independent complete-grid checker", () => {
     const order = [1, 2, 0, 4, 5, 3, 7, 8, 6];
     return values.map((_, cell) => values[Math.floor(cell / 9) * 9 + order[cell % 9]]);
   };
-  const permuteDigits = (values: number[]): number[] =>
-    values.map((value) => (value % 9) + 1);
+  const permuteDigits = (values: number[]): number[] => values.map((value) => (value % 9) + 1);
   const permuteBoxes = (values: number[]): number[] => {
     const bandOrder = [3, 4, 5, 6, 7, 8, 0, 1, 2];
     const stackOrder = [3, 4, 5, 6, 7, 8, 0, 1, 2];
-    return bandOrder.flatMap((row) =>
-      stackOrder.map((column) => values[row * 9 + column]),
-    );
+    return bandOrder.flatMap((row) => stackOrder.map((column) => values[row * 9 + column]));
   };
 
   test("accepts independent row, column, box, and digit permutations", () => {
@@ -302,8 +291,7 @@ describe("independent complete-grid checker", () => {
       complete.map((value, cell) => (cell === 0 ? 0 : value)),
       complete.slice(0, 80),
     ];
-    for (const mutation of mutations)
-      expect(checkGrid(Array(81).fill(0), mutation)).toBe(false);
+    for (const mutation of mutations) expect(checkGrid(Array(81).fill(0), mutation)).toBe(false);
 
     const wrongGiven = Array(81).fill(0);
     wrongGiven[0] = 4;

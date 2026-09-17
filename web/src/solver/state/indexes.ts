@@ -16,19 +16,52 @@ export class CandidateIndexes {
   readonly #incidence: readonly Incidence[];
   readonly #supports: ReadonlyMap<string, readonly number[]>;
 
-  constructor(assembly: Assembly, state: CandidateState, previous?: CandidateIndexes, changed?: readonly number[]) {
-    this.#incidence = (previous && previous.#incidence) ?? Object.freeze(assembly.problem.cells.map(cell => Object.freeze({
-      constraints: sorted(assembly.problem.constraints.filter(rule => rule.cells.includes(cell)).map(rule => rule.id)),
-      covers: sorted(assembly.covers.filter(cover => cover.cells.includes(cell)).map(cover => cover.id)),
-      relations: sorted(assembly.relations.filter(relation => relation.cells.includes(cell)).map(relation => relation.id)),
-    })));
-    const affected = changed && new Set(changed.flatMap(cell => this.#incidence[cell].covers));
-    this.#supports = new ImmutableMap([...assembly.covers].sort((a, b) => a.id < b.id ? -1 : a.id > b.id ? 1 : 0).map(cover => {
-      const old = previous && previous.#supports.get(cover.id);
-      const cells = old && affected && !affected.has(cover.id) ? old : Object.freeze(cover.cells
-        .filter(cell => (state.domains[cell] & (1 << (cover.symbol - 1))) !== 0).sort((a, b) => a - b));
-      return [cover.id, cells] as const;
-    }));
+  constructor(
+    assembly: Assembly,
+    state: CandidateState,
+    previous?: CandidateIndexes,
+    changed?: readonly number[],
+  ) {
+    this.#incidence =
+      (previous && previous.#incidence) ??
+      Object.freeze(
+        assembly.problem.cells.map((cell) =>
+          Object.freeze({
+            constraints: sorted(
+              assembly.problem.constraints
+                .filter((rule) => rule.cells.includes(cell))
+                .map((rule) => rule.id),
+            ),
+            covers: sorted(
+              assembly.covers
+                .filter((cover) => cover.cells.includes(cell))
+                .map((cover) => cover.id),
+            ),
+            relations: sorted(
+              assembly.relations
+                .filter((relation) => relation.cells.includes(cell))
+                .map((relation) => relation.id),
+            ),
+          }),
+        ),
+      );
+    const affected = changed && new Set(changed.flatMap((cell) => this.#incidence[cell].covers));
+    this.#supports = new ImmutableMap(
+      [...assembly.covers]
+        .sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0))
+        .map((cover) => {
+          const old = previous && previous.#supports.get(cover.id);
+          const cells =
+            old && affected && !affected.has(cover.id)
+              ? old
+              : Object.freeze(
+                  cover.cells
+                    .filter((cell) => (state.domains[cell] & (1 << (cover.symbol - 1))) !== 0)
+                    .sort((a, b) => a - b),
+                );
+          return [cover.id, cells] as const;
+        }),
+    );
     Object.freeze(this);
   }
 
@@ -40,9 +73,9 @@ export class CandidateIndexes {
 
   affected(cells: readonly number[]): Incidence {
     return Object.freeze({
-      constraints: sorted(cells.flatMap(cell => this.#incidence[cell].constraints)),
-      covers: sorted(cells.flatMap(cell => this.#incidence[cell].covers)),
-      relations: sorted(cells.flatMap(cell => this.#incidence[cell].relations)),
+      constraints: sorted(cells.flatMap((cell) => this.#incidence[cell].constraints)),
+      covers: sorted(cells.flatMap((cell) => this.#incidence[cell].covers)),
+      relations: sorted(cells.flatMap((cell) => this.#incidence[cell].relations)),
     });
   }
 }

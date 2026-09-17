@@ -10,7 +10,10 @@ export function utf8Length(text: string): number {
     else if (code < 0x800) bytes += 2;
     else if (code >= 0xd800 && code <= 0xdbff && i + 1 < text.length) {
       const next = text.charCodeAt(i + 1);
-      if (next >= 0xdc00 && next <= 0xdfff) { bytes += 4; i++; } else bytes += 3;
+      if (next >= 0xdc00 && next <= 0xdfff) {
+        bytes += 4;
+        i++;
+      } else bytes += 3;
     } else bytes += 3;
   }
   return bytes;

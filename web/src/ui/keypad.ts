@@ -47,7 +47,17 @@ export function mountKeypad(container: HTMLElement, options: KeypadOptions): Key
     colors = el("div", undefined, "keypad-colors"),
     actions = el("div", undefined, "keypad-actions");
   const toolKey = (value: Tool) =>
-    comboLabel(settings.shortcuts[value === "value" ? "toolValue" : value === "corner" ? "toolCorner" : value === "center" ? "toolCenter" : "toolColor"]);
+    comboLabel(
+      settings.shortcuts[
+        value === "value"
+          ? "toolValue"
+          : value === "corner"
+            ? "toolCorner"
+            : value === "center"
+              ? "toolCenter"
+              : "toolColor"
+      ],
+    );
   const tools = segmented<Tool>({
     label: "Input tool",
     items: TOOL_ITEMS.map((item) => ({ ...item, hint: `${item.label} (${toolKey(item.value)})` })),
@@ -55,20 +65,27 @@ export function mountKeypad(container: HTMLElement, options: KeypadOptions): Key
     onChange: (value) => options.onAction({ type: "tool", tool: value }),
     className: "tool-switch",
   });
-  const collapse = iconButton("chevronLeft", "Collapse keypad", options.onCollapse, "ghost keypad-collapse");
+  const collapse = iconButton(
+    "chevronLeft",
+    "Collapse keypad",
+    options.onCollapse,
+    "ghost keypad-collapse",
+  );
   const rail = iconButton("chevronRight", "Show keypad", options.onExpand, "keypad-rail");
   if (play) header.append(tools.node);
   else header.append(el("span", "Clues", "keypad-title"));
   header.append(collapse);
 
   const digitButtons = ([1, 2, 3, 4, 5, 6, 7, 8, 9] as Digit[]).map((digit) => {
-    const key = button(String(digit), (event) =>
-      options.onAction({
-        type: "digit",
-        digit,
-        // Mirror the keyboard: modifier-clicks write notes without switching tools.
-        tool: event.shiftKey ? "corner" : event.ctrlKey || event.metaKey ? "center" : tool,
-      }),
+    const key = button(
+      String(digit),
+      (event) =>
+        options.onAction({
+          type: "digit",
+          digit,
+          // Mirror the keyboard: modifier-clicks write notes without switching tools.
+          tool: event.shiftKey ? "corner" : event.ctrlKey || event.metaKey ? "center" : tool,
+        }),
       "digit-key",
     );
     key.dataset.digit = String(digit);
@@ -76,7 +93,11 @@ export function mountKeypad(container: HTMLElement, options: KeypadOptions): Key
     return key;
   });
   const colorButtons = COLOR_NAMES.map((name, index) => {
-    const swatch = button("", () => options.onAction({ type: "color", color: (index + 1) as CellColor }), "color-key");
+    const swatch = button(
+      "",
+      () => options.onAction({ type: "color", color: (index + 1) as CellColor }),
+      "color-key",
+    );
     swatch.dataset.color = String(index + 1);
     swatch.setAttribute("aria-label", `${name} (${index + 1})`);
     swatch.title = `${name} (${index + 1})`;
@@ -84,7 +105,12 @@ export function mountKeypad(container: HTMLElement, options: KeypadOptions): Key
     colors.append(swatch);
     return swatch;
   });
-  const clearColor = iconButton("close", "Remove color", () => options.onAction({ type: "color", color: 0 }), "color-key clear");
+  const clearColor = iconButton(
+    "close",
+    "Remove color",
+    () => options.onAction({ type: "color", color: 0 }),
+    "color-key clear",
+  );
   colors.append(clearColor);
 
   const erase = labeledButton("erase", "Erase", () => options.onAction({ type: "erase" })),
@@ -108,13 +134,19 @@ export function mountKeypad(container: HTMLElement, options: KeypadOptions): Key
       label = `Multi-select mode${multiSelectActive ? " (on)" : ""}`;
     multiSelect.setAttribute("aria-pressed", String(multiSelectActive));
     multiSelect.setAttribute("aria-label", label);
-    multiSelect.title = combo ? `${label} — ${combo}, or Ctrl+click a cell` : `${label} — Ctrl+click a cell`;
+    multiSelect.title = combo
+      ? `${label} — ${combo}, or Ctrl+click a cell`
+      : `${label} — Ctrl+click a cell`;
   };
   body.append(digits, colors, actions);
   node.append(header, body, rail);
   container.append(node);
 
-  const shortcutTitle = (b: HTMLButtonElement, text: string, action: keyof Settings["shortcuts"]) => {
+  const shortcutTitle = (
+    b: HTMLButtonElement,
+    text: string,
+    action: keyof Settings["shortcuts"],
+  ) => {
     const combo = comboLabel(settings.shortcuts[action]);
     b.title = combo ? `${text} (${combo})` : text;
   };
@@ -127,7 +159,11 @@ export function mountKeypad(container: HTMLElement, options: KeypadOptions): Key
       tools.set(tool);
       // "hidden" still shows the expand rail on touch screens (see CSS): with
       // no physical keyboard, there must always be some way back in.
-      node.dataset.state = settings.keypadHidden ? "hidden" : settings.keypadCollapsed ? "rail" : "expanded";
+      node.dataset.state = settings.keypadHidden
+        ? "hidden"
+        : settings.keypadCollapsed
+          ? "rail"
+          : "expanded";
       node.classList.toggle("calculator", settings.invertKeypad);
       node.dataset.tool = tool;
       colors.hidden = tool !== "color";
@@ -136,7 +172,10 @@ export function mountKeypad(container: HTMLElement, options: KeypadOptions): Key
         const digit = (index + 1) as Digit,
           done = settings.markCompletedDigits && completed.has(digit);
         key.classList.toggle("done", done);
-        key.setAttribute("aria-label", `${tool === "corner" ? "Corner note" : tool === "center" ? "Center note" : "Number"} ${digit}${done ? ", all placed" : ""}`);
+        key.setAttribute(
+          "aria-label",
+          `${tool === "corner" ? "Corner note" : tool === "center" ? "Center note" : "Number"} ${digit}${done ? ", all placed" : ""}`,
+        );
         key.disabled = disabled;
       });
       colorButtons.forEach((swatch) => (swatch.disabled = disabled));
@@ -149,7 +188,12 @@ export function mountKeypad(container: HTMLElement, options: KeypadOptions): Key
       shortcutTitle(undo, "Undo", "undo");
       shortcutTitle(redo, "Redo", "redo");
       shortcutTitle(erase, "Erase", "erase");
-      if (autofill) shortcutTitle(autofill, "Fill corner notes from row, column and box constraints", "autofill");
+      if (autofill)
+        shortcutTitle(
+          autofill,
+          "Fill corner notes from row, column and box constraints",
+          "autofill",
+        );
       syncMultiSelect();
     },
     setDisabled(value) {

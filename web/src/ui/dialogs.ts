@@ -16,7 +16,10 @@ export function dialog(
     actions = el("div", undefined, "actions");
   heading.id = crypto.randomUUID();
   node.setAttribute("aria-labelledby", heading.id);
-  header.append(heading, iconButton("close", "Close", () => close(), "ghost dialog-close"));
+  header.append(
+    heading,
+    iconButton("close", "Close", () => close(), "ghost dialog-close"),
+  );
   node.append(header);
   if (options.description) {
     const description = el("p", options.description, "dialog-description");
@@ -75,10 +78,7 @@ export function confirmDelete(name: string, apply: () => void): void {
     onConfirm: apply,
   });
 }
-export function renameDialog(
-  name: string,
-  apply: (name: string) => void,
-): void {
+export function renameDialog(name: string, apply: (name: string) => void): void {
   const d = dialog("Rename"),
     input = el("input"),
     form = el("form");

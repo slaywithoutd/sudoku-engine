@@ -1,16 +1,6 @@
-import {
-  canonicalJson,
-  canonicalProblem,
-  ProblemInputError,
-} from "../problem";
+import { canonicalJson, canonicalProblem, ProblemInputError } from "../problem";
 import { primitiveRegistry } from "../proof/primitives";
-import type {
-  CellId,
-  ConstraintId,
-  ConstraintInstance,
-  EngineProblem,
-  Json,
-} from "../problem";
+import type { CellId, ConstraintId, ConstraintInstance, EngineProblem, Json } from "../problem";
 import type {
   AllDifferent,
   AssemblyResult,
@@ -61,10 +51,7 @@ class ReadonlyMapView<K, V> implements ReadonlyMap<K, V> {
     return this.#store.values();
   }
 
-  forEach(
-    callbackfn: (value: V, key: K, map: ReadonlyMap<K, V>) => void,
-    thisArg?: unknown,
-  ): void {
+  forEach(callbackfn: (value: V, key: K, map: ReadonlyMap<K, V>) => void, thisArg?: unknown): void {
     for (const [key, value] of this.#store) callbackfn.call(thisArg, value, key, this);
   }
 
@@ -113,16 +100,14 @@ export class RuleRegistry {
         !hasRuleMethods(module)
       ) {
         issues.push(
-          issue(
-            "invalid-rule-module",
-            "$registry",
-            "registry contains an incomplete rule module",
-          ),
+          issue("invalid-rule-module", "$registry", "registry contains an incomplete rule module"),
         );
         continue;
       }
       if (entries.has(module.type)) {
-        issues.push(issue("duplicate-rule-type", "$registry", `duplicate rule type ${module.type}`));
+        issues.push(
+          issue("duplicate-rule-type", "$registry", `duplicate rule type ${module.type}`),
+        );
         continue;
       }
       entries.set(module.type, module);
@@ -141,7 +126,11 @@ export class RuleRegistry {
 
 function inputIssue(error: unknown): RuleIssue {
   if (error instanceof ProblemInputError) return issue(error.code, "$problem", error.message);
-  return issue("invalid-problem", "$problem", error instanceof Error ? error.message : String(error));
+  return issue(
+    "invalid-problem",
+    "$problem",
+    error instanceof Error ? error.message : String(error),
+  );
 }
 
 function normalizeRules(
@@ -196,8 +185,7 @@ function bootstrapRoots(problem: EngineProblem): ReadonlyMapView<ConstraintId, F
 
 function isDenseArray(value: unknown): value is readonly unknown[] {
   if (!Array.isArray(value)) return false;
-  for (let index = 0; index < value.length; index++)
-    if (!Object.hasOwn(value, index)) return false;
+  for (let index = 0; index < value.length; index++) if (!Object.hasOwn(value, index)) return false;
   return Reflect.ownKeys(value).every((key) => {
     if (key === "length") return true;
     if (typeof key !== "string" || !/^(0|[1-9]\d*)$/.test(key)) return false;
@@ -289,12 +277,12 @@ function validateCapabilities(
     )
   )
     issues.push(capabilityIssue(rule, "primitive IDs must be unique versioned identifiers"));
-  else if (capabilities.primitiveIds.some(id => !primitiveRegistry.has(id)))
+  else if (capabilities.primitiveIds.some((id) => !primitiveRegistry.has(id)))
     issues.push(
       issue(
         "unsupported-primitive",
         rule.id,
-        `no checker is registered for primitive ${capabilities.primitiveIds.find(id => !primitiveRegistry.has(id))}`,
+        `no checker is registered for primitive ${capabilities.primitiveIds.find((id) => !primitiveRegistry.has(id))}`,
       ),
     );
   return issues;

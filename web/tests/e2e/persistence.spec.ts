@@ -35,9 +35,7 @@ test("hidden notes, redo, reset and selection survive refresh and reopened page"
   try {
     const other = await isolated.newPage();
     await other.goto(url);
-    await expect(
-      other.getByText("Puzzle not found", { exact: true }),
-    ).toBeVisible();
+    await expect(other.getByText("Puzzle not found", { exact: true })).toBeVisible();
   } finally {
     await isolated.close();
   }

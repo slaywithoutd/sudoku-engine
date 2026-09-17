@@ -10,22 +10,30 @@ import type { UniqueAuthority } from "../conditional";
 
 /** Operation-owned resources; detectors neither create run budgets nor retain globals. */
 export interface DiscoveryContext {
-  readonly workspace: IndexWorkspace; readonly limits: Limits;
+  readonly workspace: IndexWorkspace;
+  readonly limits: Limits;
   /** Explicit operation-owned per-candidate-revision C33 exploration allowance. */
   readonly templates?: TemplateOperationContext;
   readonly uniqueAuthority?: UniqueAuthority;
 }
 
-export type DiscoveryEvent = { readonly kind: "work"; readonly units: number }
+export type DiscoveryEvent =
+  | { readonly kind: "work"; readonly units: number }
   | { readonly kind: "proposal"; readonly proposal: DeductionProposal }
   | { readonly kind: "exhausted" }
-  | { readonly kind: "excluded"; readonly reason:string; readonly dependencies:readonly Watch[] }
+  | { readonly kind: "excluded"; readonly reason: string; readonly dependencies: readonly Watch[] }
   | { readonly kind: "disabled"; readonly reason: "missing-unique-authority" }
-  | { readonly kind: "interrupted"; readonly reason: IndexInterruption | "proof-step-limit" | "work-limit" | "time-limit" };
+  | {
+      readonly kind: "interrupted";
+      readonly reason: IndexInterruption | "proof-step-limit" | "work-limit" | "time-limit";
+    };
 export type Discovery = Generator<DiscoveryEvent, void, void>;
 export interface TechniqueBounds {
-  readonly maxLength: number; readonly maxBranchDepth: number; readonly maxAlternatives: number;
-  readonly maxPatternCells: number; readonly maxSetSize: number;
+  readonly maxLength: number;
+  readonly maxBranchDepth: number;
+  readonly maxAlternatives: number;
+  readonly maxPatternCells: number;
+  readonly maxSetSize: number;
   readonly uniqueness?: {
     readonly maxTradeCells: number;
     readonly maxLoopCells: number;
@@ -34,25 +42,38 @@ export interface TechniqueBounds {
     readonly maxVirtualSubset: number;
   };
   readonly templates?: {
-    readonly maxTemplatesPerSymbol:number;
-    readonly maxOverlaySymbols:number;
-    readonly maxIncompatibilitySymbols:number;
-    readonly maxTupleTestsPerRevision:number;
+    readonly maxTemplatesPerSymbol: number;
+    readonly maxOverlaySymbols: number;
+    readonly maxIncompatibilitySymbols: number;
+    readonly maxTupleTestsPerRevision: number;
   };
 }
-export interface Estimate { readonly hit: number; readonly gain: number; readonly cost: number }
+export interface Estimate {
+  readonly hit: number;
+  readonly gain: number;
+  readonly cost: number;
+}
 export interface TechniqueDescriptor {
-  readonly id: VersionId; readonly aliases: readonly string[]; readonly tier: number;
-  readonly requires: readonly string[]; readonly assumptionPolicy: AssumptionPolicy;
+  readonly id: VersionId;
+  readonly aliases: readonly string[];
+  readonly tier: number;
+  readonly requires: readonly string[];
+  readonly assumptionPolicy: AssumptionPolicy;
   readonly bounds: TechniqueBounds;
   watches(view: ReadView): readonly Watch[];
-  eligible(view: ReadView): { readonly kind: "yes" } |
-    { readonly kind: "excluded"; readonly reason: string; readonly dependencies: readonly Watch[] };
+  eligible(view: ReadView):
+    | { readonly kind: "yes" }
+    | {
+        readonly kind: "excluded";
+        readonly reason: string;
+        readonly dependencies: readonly Watch[];
+      };
   estimate(view: ReadView): Estimate;
   discover(view: ReadView, context: DiscoveryContext): Discovery;
 }
 
-export type DetectorStatus = "pending" | "in-progress" | "found" | "exhausted" | "excluded" | "disabled" | "interrupted";
+export type DetectorStatus =
+  "pending" | "in-progress" | "found" | "exhausted" | "excluded" | "disabled" | "interrupted";
 /** Type-only scheduler handoff; resumable detector cursors are owned elsewhere. */
 export interface LedgerEntry {
   readonly technique: VersionId;

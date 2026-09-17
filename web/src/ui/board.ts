@@ -1,21 +1,12 @@
 import type { Digit, EditorContext, EditorState, Settings } from "../domain/model";
 import type { BoardAction } from "../domain/editor";
 import { selectionOf } from "../domain/editor";
-import {
-  conflictingCells,
-  effectiveValues,
-  noteConflicts,
-  peersOf,
-} from "../domain/classic";
+import { conflictingCells, effectiveValues, noteConflicts, peersOf } from "../domain/classic";
 import { el } from "./dom";
 
 export type BoardDisplay = Pick<
   Settings,
-  | "showConflicts"
-  | "showNoteConflicts"
-  | "highlightPeers"
-  | "highlightSameDigit"
-  | "showLabels"
+  "showConflicts" | "showNoteConflicts" | "highlightPeers" | "highlightSameDigit" | "showLabels"
 >;
 /** Presentation-only layers, used by the solver and correctness marks. */
 export interface BoardOverlay {
@@ -159,11 +150,21 @@ export function mountBoard(container: HTMLElement, options: BoardOptions): Board
   grid.append(lines);
   container.append(node);
 
-  const noteSpans = (target: HTMLElement, digits: readonly number[], slots: boolean, bad?: ReadonlySet<number>, removed?: ReadonlySet<number>) => {
+  const noteSpans = (
+    target: HTMLElement,
+    digits: readonly number[],
+    slots: boolean,
+    bad?: ReadonlySet<number>,
+    removed?: ReadonlySet<number>,
+  ) => {
     target.replaceChildren(
       ...digits.map((digit, k) => {
         const span = el("span", String(digit));
-        if (slots) span.dataset.slot = digits.length === 9 && !target.nextElementSibling?.childElementCount ? String(digit) : CORNER_SLOTS[k];
+        if (slots)
+          span.dataset.slot =
+            digits.length === 9 && !target.nextElementSibling?.childElementCount
+              ? String(digit)
+              : CORNER_SLOTS[k];
         if (bad?.has(digit)) span.classList.add("bad");
         if (removed?.has(digit)) span.classList.add("removed");
         return span;
@@ -171,7 +172,11 @@ export function mountBoard(container: HTMLElement, options: BoardOptions): Board
     );
   };
 
-  function update(next: EditorState, nextDisplay = display, nextOverlay: BoardOverlay = overlay): void {
+  function update(
+    next: EditorState,
+    nextDisplay = display,
+    nextOverlay: BoardOverlay = overlay,
+  ): void {
     state = next;
     display = nextDisplay;
     overlay = nextOverlay;
@@ -179,14 +184,14 @@ export function mountBoard(container: HTMLElement, options: BoardOptions): Board
     node.classList.toggle("with-labels", display.showLabels);
     const values = effectiveValues(state, options.context.givens),
       conflicts = new Set(display.showConflicts ? conflictingCells(values) : []),
-      badNotes = display.showNoteConflicts ? noteConflicts(values, state.cells) : new Map<number, Set<Digit>>(),
+      badNotes = display.showNoteConflicts
+        ? noteConflicts(values, state.cells)
+        : new Map<number, Set<Digit>>(),
       selected = state.selected,
       selection = new Set(selectionOf(state)),
       // Seen-cell highlighting covers every selected cell's row/column/box,
       // not just the primary one.
-      peers = new Set(
-        display.highlightPeers ? [...selection].flatMap((i) => [...peersOf(i)]) : [],
-      ),
+      peers = new Set(display.highlightPeers ? [...selection].flatMap((i) => [...peersOf(i)]) : []),
       selectedDigit = selected >= 0 ? values[selected] : 0;
     cells.forEach(({ cell, value, corner, center }, i) => {
       const cellState = state.cells[i],
@@ -201,7 +206,10 @@ export function mountBoard(container: HTMLElement, options: BoardOptions): Board
       cell.classList.toggle("conflict", conflicts.has(i));
       cell.classList.toggle("peer", peers.has(i) && !isSelected);
       cell.classList.toggle("primary-selected", i === selected && selection.size > 1);
-      cell.classList.toggle("same-digit", !!selectedDigit && !isSelected && display.highlightSameDigit && values[i] === selectedDigit);
+      cell.classList.toggle(
+        "same-digit",
+        !!selectedDigit && !isSelected && display.highlightSameDigit && values[i] === selectedDigit,
+      );
       cell.classList.toggle("correct", !!overlay.correct?.has(i));
       cell.classList.toggle("focus", !!overlay.focus?.has(i));
       cell.classList.toggle("area", !!overlay.area?.has(i));
@@ -211,8 +219,8 @@ export function mountBoard(container: HTMLElement, options: BoardOptions): Board
       else delete cell.dataset.color;
       const shown = placed ?? values[i];
       value.textContent = shown ? String(shown) : "";
-      const cornerDigits = shown ? [] : candidates ?? cellState.notes,
-        centerDigits = shown || candidates ? [] : cellState.center ?? [];
+      const cornerDigits = shown ? [] : (candidates ?? cellState.notes),
+        centerDigits = shown || candidates ? [] : (cellState.center ?? []);
       corner.hidden = !cornerDigits.length;
       center.hidden = !centerDigits.length;
       center.dataset.count = String(centerDigits.length);
@@ -220,13 +228,16 @@ export function mountBoard(container: HTMLElement, options: BoardOptions): Board
       noteSpans(corner, cornerDigits, !candidates, badNotes.get(i), removed);
       // With a full candidate set and no center notes, keep digits in keypad positions.
       if (candidates)
-        corner.querySelectorAll<HTMLElement>("span").forEach((span) => (span.dataset.slot = span.textContent!));
+        corner
+          .querySelectorAll<HTMLElement>("span")
+          .forEach((span) => (span.dataset.slot = span.textContent!));
       const parts = [`${ROWS[Math.floor(i / 9)]}${(i % 9) + 1}`, shown ? String(shown) : "empty"];
       if (given) parts.push("clue");
       if (conflicts.has(i)) parts.push("conflict");
       if (overlay.correct?.has(i)) parts.push("correct");
       if (placed !== undefined) parts.push("placed by this step");
-      if (!shown && cornerDigits.length) parts.push(`${candidates ? "candidates" : "corner notes"} ${cornerDigits.join(" ")}`);
+      if (!shown && cornerDigits.length)
+        parts.push(`${candidates ? "candidates" : "corner notes"} ${cornerDigits.join(" ")}`);
       if (removed?.size) parts.push(`eliminates ${[...removed].join(" ")}`);
       if (!shown && centerDigits.length) parts.push(`center notes ${centerDigits.join(" ")}`);
       if (cellState.color) parts.push(`color ${cellState.color}`);

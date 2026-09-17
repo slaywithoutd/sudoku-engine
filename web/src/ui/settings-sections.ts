@@ -89,7 +89,9 @@ function clampToViewport(panel: HTMLElement): void {
 }
 /** Drags `panel` by pointer gestures on `handle`, clamped to the viewport. */
 function makeDraggable(handle: HTMLElement, panel: HTMLElement): () => void {
-  let dragging = false, dx = 0, dy = 0;
+  let dragging = false,
+    dx = 0,
+    dy = 0;
   const down = (event: PointerEvent) => {
     // Let header buttons (minimize/close) handle their own clicks.
     if ((event.target as HTMLElement).closest("button")) return;
@@ -182,7 +184,11 @@ export function mountLivePreview(container: HTMLElement, initial: Settings): Liv
   };
 }
 
-export function updateSetting<K extends keyof Settings>(services: ScreenServices, key: K, value: Settings[K]): void {
+export function updateSetting<K extends keyof Settings>(
+  services: ScreenServices,
+  key: K,
+  value: Settings[K],
+): void {
   services.controller.update((data) =>
     data.settings[key] === value ? data : { ...data, settings: { ...data.settings, [key]: value } },
   );
@@ -208,13 +214,32 @@ export function renderSettingsSections(
 ): () => void {
   const refreshers: Refresher[] = [];
   const settings = () => services.controller.snapshot().settings;
-  const choice = <K extends keyof Settings>(key: K, label: string, items: { value: Settings[K] & (string | number); label: string }[], hint?: string) => {
-    const control = segmented({ label, items, value: settings()[key] as Settings[K] & (string | number), onChange: (value) => updateSetting(services, key, value as Settings[K]) });
+  const choice = <K extends keyof Settings>(
+    key: K,
+    label: string,
+    items: { value: Settings[K] & (string | number); label: string }[],
+    hint?: string,
+  ) => {
+    const control = segmented({
+      label,
+      items,
+      value: settings()[key] as Settings[K] & (string | number),
+      onChange: (value) => updateSetting(services, key, value as Settings[K]),
+    });
     refreshers.push((s) => control.set(s[key] as Settings[K] & (string | number)));
     return row(label, control.node, hint);
   };
-  const toggle = (key: { [K in keyof Settings]: Settings[K] extends boolean ? K : never }[keyof Settings], label: string, hint?: string) => {
-    const control = switchField({ label, hint, checked: settings()[key], onChange: (checked) => updateSetting(services, key, checked) });
+  const toggle = (
+    key: { [K in keyof Settings]: Settings[K] extends boolean ? K : never }[keyof Settings],
+    label: string,
+    hint?: string,
+  ) => {
+    const control = switchField({
+      label,
+      hint,
+      checked: settings()[key],
+      onChange: (checked) => updateSetting(services, key, checked),
+    });
     refreshers.push((s) => control.set(s[key]));
     return control.node;
   };
@@ -230,7 +255,10 @@ export function renderSettingsSections(
         radio.type = "radio";
         radio.name = name;
         radio.value = theme;
-        radio.addEventListener("change", () => radio.checked && updateSetting(services, "theme", theme));
+        radio.addEventListener(
+          "change",
+          () => radio.checked && updateSetting(services, "theme", theme),
+        );
         option.dataset.theme = theme;
         swatch.setAttribute("aria-hidden", "true");
         option.append(radio, swatch, el("span", capitalize(theme)));
@@ -239,7 +267,11 @@ export function renderSettingsSections(
       });
       refreshers.push((s) => radios.forEach((r) => (r.checked = r.value === s.theme)));
       return [
-        choice("colorMode", "Mode", COLOR_MODES.map((value) => ({ value, label: capitalize(value) }))),
+        choice(
+          "colorMode",
+          "Mode",
+          COLOR_MODES.map((value) => ({ value, label: capitalize(value) })),
+        ),
         row("Color", themes),
       ];
     },
@@ -252,11 +284,20 @@ export function renderSettingsSections(
       return [
         choice("textScale", "Text size", [...scales]),
         choice("digitScale", "Board digit size", [...scales]),
-        choice("palette", "Color vision", [
-          { value: "default", label: "Default" },
-          { value: "colorblind", label: "Color-blind safe" },
-        ], "Safe palette for red–green and blue–yellow color blindness"),
-        toggle("colorPatterns", "Patterns on cell colors", "Tell colors apart without relying on hue"),
+        choice(
+          "palette",
+          "Color vision",
+          [
+            { value: "default", label: "Default" },
+            { value: "colorblind", label: "Color-blind safe" },
+          ],
+          "Safe palette for red–green and blue–yellow color blindness",
+        ),
+        toggle(
+          "colorPatterns",
+          "Patterns on cell colors",
+          "Tell colors apart without relying on hue",
+        ),
         toggle("boldDigits", "Stronger digits", "Heavier digits with an outline"),
         toggle("highContrast", "High contrast", "Darker lines, text and highlights"),
         toggle("reduceMotion", "Reduce motion"),
@@ -270,27 +311,51 @@ export function renderSettingsSections(
     keypad: () => [
       toggle("keypadHidden", "Hide keypad", "A small arrow next to the board still brings it back"),
       toggle("invertKeypad", "Invert keyboard layout", "7 8 9 on top instead of 1 2 3"),
-      toggle("markCompletedDigits", "Mark completed digits", "Dim a number once all nine are placed"),
+      toggle(
+        "markCompletedDigits",
+        "Mark completed digits",
+        "Dim a number once all nine are placed",
+      ),
     ],
     notes: () => {
-      const modifiers = NOTE_MODIFIERS.map((value) => ({ value, label: value === "Control" ? comboLabel("Ctrl") : value }));
+      const modifiers = NOTE_MODIFIERS.map((value) => ({
+        value,
+        label: value === "Control" ? comboLabel("Ctrl") : value,
+      }));
       return [
-        toggle("showConflicts", "Warn on conflicting digits", "Mark digits that repeat in a row, column or box"),
-        toggle("showNoteConflicts", "Warn on conflicting notes", "Mark notes ruled out by a placed digit"),
+        toggle(
+          "showConflicts",
+          "Warn on conflicting digits",
+          "Mark digits that repeat in a row, column or box",
+        ),
+        toggle(
+          "showNoteConflicts",
+          "Warn on conflicting notes",
+          "Mark notes ruled out by a placed digit",
+        ),
         choice("cornerModifier", "Corner note key", modifiers, "Hold with a number"),
         choice("centerModifier", "Center note key", modifiers, "Hold with a number"),
       ];
     },
     timer: () => [
       toggle("showTimer", "Show timer", "Time is tracked even while hidden"),
-      choice("timerStart", "Start timer", [
-        { value: "immediately", label: "Immediately" },
-        { value: "first-move", label: "On first move" },
-      ], "For new games"),
+      choice(
+        "timerStart",
+        "Start timer",
+        [
+          { value: "immediately", label: "Immediately" },
+          { value: "first-move", label: "On first move" },
+        ],
+        "For new games",
+      ),
     ],
     completion: () => [
       toggle("checkOnFinish", "Check when the grid is full", "Otherwise, check from the game menu"),
-      toggle("markCorrectDigits", "Mark correct digits", "Only for puzzles with exactly one solution"),
+      toggle(
+        "markCorrectDigits",
+        "Mark correct digits",
+        "Only for puzzles with exactly one solution",
+      ),
     ],
     shortcuts: () => shortcutRows(services, refreshers),
     solver: () => [
@@ -302,11 +367,16 @@ export function renderSettingsSections(
         { value: 800, label: "Normal" },
         { value: 350, label: "Fast" },
       ]),
-      choice("solverTimeLimitS", "Time limit", [
-        { value: 15, label: "15 s" },
-        { value: 60, label: "1 min" },
-        { value: 180, label: "3 min" },
-      ], "Longer limits help very hard puzzles"),
+      choice(
+        "solverTimeLimitS",
+        "Time limit",
+        [
+          { value: 15, label: "15 s" },
+          { value: 60, label: "1 min" },
+          { value: 180, label: "3 min" },
+        ],
+        "Longer limits help very hard puzzles",
+      ),
     ],
   };
   for (const id of ids) {
@@ -347,7 +417,11 @@ function shortcutRows(services: ScreenServices, refreshers: Refresher[]): HTMLEl
   for (const action of SHORTCUT_ACTIONS) {
     const item = el("div", undefined, "setting-row shortcut-row"),
       label = el("span", SHORTCUT_LABELS[action], "field-label"),
-      record = button("", () => (recording?.action === action ? recording.stop() : start()), "shortcut-key");
+      record = button(
+        "",
+        () => (recording?.action === action ? recording.stop() : start()),
+        "shortcut-key",
+      );
     label.id = crypto.randomUUID();
     record.setAttribute("aria-describedby", label.id);
     buttons.set(action, record);
@@ -367,7 +441,10 @@ function shortcutRows(services: ScreenServices, refreshers: Refresher[]): HTMLEl
         const combo = comboFromEvent(event);
         if (!combo) return;
         const bare = !event.ctrlKey && !event.metaKey && !event.altKey;
-        if (bare && (/^[0-9]$/.test(combo.replace("Shift+", "")) || event.key.startsWith("Arrow"))) {
+        if (
+          bare &&
+          (/^[0-9]$/.test(combo.replace("Shift+", "")) || event.key.startsWith("Arrow"))
+        ) {
           message.textContent = "Numbers and arrow keys are reserved for the board.";
           return;
         }
@@ -392,13 +469,23 @@ function shortcutRows(services: ScreenServices, refreshers: Refresher[]): HTMLEl
       if (recording?.action === action) continue;
       const combo = comboLabel(s.shortcuts[action]);
       record.replaceChildren(combo ? el("kbd", combo) : el("span", "Not set", "muted"));
-      record.setAttribute("aria-label", `${SHORTCUT_LABELS[action]}: ${combo || "not set"}. Change`);
+      record.setAttribute(
+        "aria-label",
+        `${SHORTCUT_LABELS[action]}: ${combo || "not set"}. Change`,
+      );
     }
   });
-  const reset = button("Restore defaults", () => {
-    services.controller.update((data) => ({ ...data, settings: { ...data.settings, shortcuts: { ...DEFAULT_SHORTCUTS } } }));
-    message.textContent = "Default shortcuts restored.";
-  }, "ghost");
+  const reset = button(
+    "Restore defaults",
+    () => {
+      services.controller.update((data) => ({
+        ...data,
+        settings: { ...data.settings, shortcuts: { ...DEFAULT_SHORTCUTS } },
+      }));
+      message.textContent = "Default shortcuts restored.";
+    },
+    "ghost",
+  );
   const footer = el("div", undefined, "shortcut-footer");
   footer.append(message, reset);
   return [list, footer];

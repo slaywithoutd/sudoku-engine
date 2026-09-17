@@ -19,7 +19,10 @@ const services = {
       settings = transform({ settings }).settings;
       listeners.forEach((l) => l());
     },
-    subscribe: (listener: () => void) => (listeners.add(listener), () => listeners.delete(listener)),
+    subscribe: (listener: () => void) => (
+      listeners.add(listener),
+      () => listeners.delete(listener)
+    ),
   },
 } as unknown as ScreenServices;
 const container = document.querySelector<HTMLElement>("#board")!;

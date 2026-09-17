@@ -15,15 +15,9 @@ import {
   retainCheckedFacts,
 } from "../../../src/solver/state/candidates";
 import { assemble } from "../../../src/solver/rules/assemble";
-import {
-  canonicalProblem,
-  normalizeClassic,
-} from "../../../src/solver/problem";
+import { canonicalProblem, normalizeClassic } from "../../../src/solver/problem";
 import { AllDifferentRule } from "../../../src/solver/rules/all-different";
-import {
-  compileTemplates,
-  type TemplatePlan,
-} from "../../../src/solver/techniques/templates";
+import { compileTemplates, type TemplatePlan } from "../../../src/solver/techniques/templates";
 import { discoveryContext } from "../../solver/discovery-context";
 import { checkProposal } from "../../../src/solver/proof/checker";
 import { retainedProof } from "../../../src/solver/state/candidates";
@@ -45,10 +39,7 @@ import {
   independentTemplates,
 } from "../../solver/templates-independent";
 import type { ReadView } from "../../../src/solver/state/types";
-import {
-  coverageEntries,
-  validateCoverage,
-} from "../../../src/solver/techniques/manifest";
+import { coverageEntries, validateCoverage } from "../../../src/solver/techniques/manifest";
 import { existsSync } from "node:fs";
 
 // Independently enumerate ALL column permutations, then test boxes. No production helpers.
@@ -57,11 +48,7 @@ function independentEmptyGridTemplates(): number[] {
     columns: number[] = [];
   function visit() {
     if (columns.length === 9) {
-      if (
-        new Set(
-          columns.map((c, r) => Math.floor(r / 3) * 3 + Math.floor(c / 3)),
-        ).size === 9
-      )
+      if (new Set(columns.map((c, r) => Math.floor(r / 3) * 3 + Math.floor(c / 3))).size === 9)
         result.push(columns.reduce((n, c) => n * 9 + c, 0));
       return;
     }
@@ -89,8 +76,7 @@ function emptyView() {
   if (!a.ok) throw Error("assembly");
   return initialize(a.value, "primary");
 }
-const workspace = () =>
-  new IndexWorkspace({ entryLimit: 1000000, byteLimit: 256000000 });
+const workspace = () => new IndexWorkspace({ entryLimit: 1000000, byteLimit: 256000000 });
 test("compiler rejects a mode-incompatible alias before allocating", () => {
   const view = fixtureView(fixtures[0] as unknown as TechniqueFixture);
   const context = {
@@ -98,11 +84,7 @@ test("compiler rejects a mode-incompatible alias before allocating", () => {
     templates: new TemplateOperationContext(view),
   };
   expect(() => [
-    ...compileTemplates(
-      view,
-      { mode: "single", symbols: [1], alias: "POM" },
-      context,
-    ),
+    ...compileTemplates(view, { mode: "single", symbols: [1], alias: "POM" }, context),
   ]).toThrow("template-out-of-profile");
   expect(context.workspace.usage).toEqual({ entries: 0, bytes: 0 });
 });
@@ -111,8 +93,7 @@ test("complete empty-grid relation equals all 46656 independent column permutati
   expect(expected).toHaveLength(46656);
   const ws = workspace();
   let index: TemplateIndex | undefined;
-  for (const e of buildTemplates(emptyView(), 1, ws))
-    if (e.kind === "ready") index = e.value;
+  for (const e of buildTemplates(emptyView(), 1, ws)) if (e.kind === "ready") index = e.value;
   expect(index).toBeDefined();
   expect(index!.codes).toEqual(expected);
   index!.dispose();
@@ -194,45 +175,34 @@ test.each(fixtures)(
   200000,
 );
 
-const encode = (cells: readonly number[]) =>
-  cells.reduce((n, c) => n * 9 + (c % 9), 0);
+const encode = (cells: readonly number[]) => cells.reduce((n, c) => n * 9 + (c % 9), 0);
 function certificateData(proposal: DeductionProposal): any {
-  return proposal.proof.nodes.find((n) => n.rule === "template-cover@1")!
-    .parameters;
+  return proposal.proof.nodes.find((n) => n.rule === "template-cover@1")!.parameters;
 }
-test.each(fixtures)(
-  "$id matches independent source/support lists and tuple accounting",
-  (f) => {
-    const p = certificateData(compile(f)),
-      record = f.independentEnumeration as any;
-    for (let i = 0; i < f.expectedPattern.symbols.length; i++) {
-      const symbol = f.expectedPattern.symbols[i];
-      expect(p.templates[i].flat()).toEqual(
-        record.templates[symbol]
-          .map(encode)
-          .sort((a: number, b: number) => a - b),
-      );
-      expect(p.supported[i].flat()).toEqual(
-        record.supportedTemplates[symbol]
-          .map(encode)
-          .sort((a: number, b: number) => a - b),
-      );
-    }
-    expect(p.tupleTests).toBe(
-      f.expectedPattern.mode === "single" ? 0 : record.tupleTests,
+test.each(fixtures)("$id matches independent source/support lists and tuple accounting", (f) => {
+  const p = certificateData(compile(f)),
+    record = f.independentEnumeration as any;
+  for (let i = 0; i < f.expectedPattern.symbols.length; i++) {
+    const symbol = f.expectedPattern.symbols[i];
+    expect(p.templates[i].flat()).toEqual(
+      record.templates[symbol].map(encode).sort((a: number, b: number) => a - b),
     );
-    if (f.id === "C33-incompatibility")
-      expect(p.rounds).toEqual([
-        [2, 0, 4],
-        [0, 0, 2],
-      ]);
-    if (f.id === "C33-incompatibility-nine") expect(p.rounds).toHaveLength(4);
-    const independent = independentTemplates(f as unknown as TechniqueFixture);
-    expect(independent.effects).toEqual(compile(f).effects);
-    expect(independent.tests).toBe(p.tupleTests);
-    expect(independent.rounds).toEqual(p.rounds);
-  },
-);
+    expect(p.supported[i].flat()).toEqual(
+      record.supportedTemplates[symbol].map(encode).sort((a: number, b: number) => a - b),
+    );
+  }
+  expect(p.tupleTests).toBe(f.expectedPattern.mode === "single" ? 0 : record.tupleTests);
+  if (f.id === "C33-incompatibility")
+    expect(p.rounds).toEqual([
+      [2, 0, 4],
+      [0, 0, 2],
+    ]);
+  if (f.id === "C33-incompatibility-nine") expect(p.rounds).toHaveLength(4);
+  const independent = independentTemplates(f as unknown as TechniqueFixture);
+  expect(independent.effects).toEqual(compile(f).effects);
+  expect(independent.tests).toBe(p.tupleTests);
+  expect(independent.rounds).toEqual(p.rounds);
+});
 test.each(fixtures)(
   "$id independently assembled certificate checks and replays original clues",
   (f) => {
@@ -277,12 +247,7 @@ test("actual discovery fairly reaches single pair triple and iterative modes wit
   } finally {
     cursor.return();
   }
-  expect([...found.keys()].sort()).toEqual([
-    "incompatibility",
-    "pair",
-    "single",
-    "triple",
-  ]);
+  expect([...found.keys()].sort()).toEqual(["incompatibility", "pair", "single", "triple"]);
   expect(context.workspace.usage).toEqual({ entries: 0, bytes: 0 });
   for (const proposal of found.values()) {
     const terminal = checked(f, proposal);
@@ -355,10 +320,8 @@ test("triple projection contains all four exclusions beyond complete pair fixed 
         ...effect,
       }))
       .sort(
-        (
-          a: { cell: number; symbol: number },
-          b: { cell: number; symbol: number },
-        ) => a.cell - b.cell || a.symbol - b.symbol,
+        (a: { cell: number; symbol: number }, b: { cell: number; symbol: number }) =>
+          a.cell - b.cell || a.symbol - b.symbol,
       ),
   );
   expect(beyond).toHaveLength(4);
@@ -393,8 +356,7 @@ test.each(fixtures)(
       },
       (p: any) => {
         const root = p.proof.nodes.find(
-          (n: any) =>
-            p.proof.roots.includes(n.id) && n.conclusion.kind === "literal",
+          (n: any) => p.proof.roots.includes(n.id) && n.conclusion.kind === "literal",
         );
         const next = p.proof.nodes.at(-1).id + 1;
         p.proof.nodes.push({
@@ -441,9 +403,7 @@ test("unfinished second incompatibility round and unfinished triple crossproduct
 test("missing operation context is a configuration error before allocation", () => {
   const view = fixtureView(fixtures[0] as unknown as TechniqueFixture),
     context = discoveryContext();
-  const descriptor = getTechniques("classic-expanded@1").find(
-    (d) => d.id === "c33@1",
-  )!;
+  const descriptor = getTechniques("classic-expanded@1").find((d) => d.id === "c33@1")!;
   expect(descriptor.eligible(view)).toEqual({ kind: "yes" });
   expect(() => descriptor.discover(view, context).next()).toThrow(
     "missing-template-operation-context",
@@ -457,22 +417,17 @@ test.each([
   "workspaceBytes",
   "workUnits",
   "timeMs",
-] as const)(
-  "compiler %s overflow releases resources without returning effects",
-  (field) => {
-    const f = fixtures[0],
-      view = fixtureView(f as unknown as TechniqueFixture),
-      context = {
-        ...discoveryContext(),
-        templates: new TemplateOperationContext(view),
-      };
-    context.limits[field] = 0;
-    expect(() => [
-      ...compileTemplates(view, f.expectedPattern as TemplatePlan, context),
-    ]).toThrow();
-    expect(context.workspace.usage).toEqual({ entries: 0, bytes: 0 });
-  },
-);
+] as const)("compiler %s overflow releases resources without returning effects", (field) => {
+  const f = fixtures[0],
+    view = fixtureView(f as unknown as TechniqueFixture),
+    context = {
+      ...discoveryContext(),
+      templates: new TemplateOperationContext(view),
+    };
+  context.limits[field] = 0;
+  expect(() => [...compileTemplates(view, f.expectedPattern as TemplatePlan, context)]).toThrow();
+  expect(context.workspace.usage).toEqual({ entries: 0, bytes: 0 });
+});
 test("tuple overflow and restarts never publish an unfinished product", () => {
   const f = fixtures.find((f) => f.id === "C33-pair")!,
     view = fixtureView(f as unknown as TechniqueFixture),
@@ -482,9 +437,9 @@ test("tuple overflow and restarts never publish an unfinished product", () => {
     };
   for (let i = 0; i < 99999; i++) context.templates.consumeTuple(view);
   for (let restart = 0; restart < 2; restart++) {
-    expect(() => [
-      ...compileTemplates(view, f.expectedPattern as TemplatePlan, context),
-    ]).toThrow("template-tuple-limit");
+    expect(() => [...compileTemplates(view, f.expectedPattern as TemplatePlan, context)]).toThrow(
+      "template-tuple-limit",
+    );
     expect(context.templates.tupleTests).toBe(100000);
     expect(context.workspace.usage).toEqual({ entries: 0, bytes: 0 });
   }
@@ -503,9 +458,9 @@ test("work limit at the completed index transition still disposes the transferre
     templates: new TemplateOperationContext(view),
   };
   context.limits.workUnits = view.facts.size + indexWork;
-  expect(() => [
-    ...compileTemplates(view, f.expectedPattern as TemplatePlan, context),
-  ]).toThrow("work-limit");
+  expect(() => [...compileTemplates(view, f.expectedPattern as TemplatePlan, context)]).toThrow(
+    "work-limit",
+  );
   expect(context.workspace.usage).toEqual({ entries: 0, bytes: 0 });
 });
 
@@ -569,13 +524,11 @@ test("unplaced singletons stay in mask abstraction; applied placements require a
   expect(root.state.domains[effect.cell]).toBe(2 ** (effect.symbol - 1));
   let before: TemplateIndex | undefined, after: TemplateIndex | undefined;
   const ws = workspace();
-  for (const e of buildTemplates(root, effect.symbol, ws))
-    if (e.kind === "ready") before = e.value;
+  for (const e of buildTemplates(root, effect.symbol, ws)) if (e.kind === "ready") before = e.value;
   for (const e of buildTemplates(placed.view, effect.symbol, ws))
     if (e.kind === "ready") after = e.value;
   const contains = (code: number) =>
-    Math.floor(code / 9 ** (8 - Math.floor(effect.cell / 9))) % 9 ===
-    effect.cell % 9;
+    Math.floor(code / 9 ** (8 - Math.floor(effect.cell / 9))) % 9 === effect.cell % 9;
   expect(before!.codes.some((code) => !contains(code))).toBe(true);
   expect(after!.codes.every(contains)).toBe(true);
   before!.dispose();
@@ -586,11 +539,7 @@ test("unplaced singletons stay in mask abstraction; applied placements require a
     limits,
     templates: new TemplateOperationContext(placed.view),
   };
-  const cursor = compileTemplates(
-    placed.view,
-    { mode: "single", symbols: [1] },
-    context,
-  );
+  const cursor = compileTemplates(placed.view, { mode: "single", symbols: [1] }, context);
   let proposal: DeductionProposal | null = null;
   for (;;) {
     const n = cursor.next();
@@ -608,9 +557,7 @@ test("unplaced singletons stay in mask abstraction; applied placements require a
   expect(proposal!.proof.imports).toContain(positive);
   expect(retainedProof(placed.view).get(positive)!.rule).not.toBe("given@1");
   const bad = structuredClone(proposal!) as any,
-    certificate = bad.proof.nodes.find(
-      (n: any) => n.rule === "template-cover@1",
-    );
+    certificate = bad.proof.nodes.find((n: any) => n.rule === "template-cover@1");
   const anchorPacks = certificate.premises
     .slice(5)
     .map((id: number) => bad.proof.nodes.find((n: any) => n.id === id));
@@ -646,18 +593,13 @@ test("original anchor omission and forged replacement never authorize template e
     source = compile(f);
   for (const mode of ["omit", "forge"]) {
     const bad = structuredClone(source) as any,
-      certificate = bad.proof.nodes.find(
-        (n: any) => n.rule === "template-cover@1",
-      );
-    const pack = bad.proof.nodes.find(
-      (n: any) => n.id === certificate.premises[5],
-    );
+      certificate = bad.proof.nodes.find((n: any) => n.rule === "template-cover@1");
+    const pack = bad.proof.nodes.find((n: any) => n.id === certificate.premises[5]);
     if (mode === "omit") {
       pack.premises.pop();
       pack.conclusion.terms.pop();
     } else {
-      pack.conclusion.terms[0].value.symbol =
-        (pack.conclusion.terms[0].value.symbol % 9) + 1;
+      pack.conclusion.terms[0].value.symbol = (pack.conclusion.terms[0].value.symbol % 9) + 1;
     }
     expect(checked(f, bad)?.kind).toBe("rejected");
   }
@@ -769,25 +711,18 @@ test("read-only C33 verified-status projection has real evidence for every alias
   expect(
     validateCoverage(
       coverageEntries.map((e) =>
-        e.id === "C33"
-          ? { ...e, status: "independently-verified" as const }
-          : e,
+        e.id === "C33" ? { ...e, status: "independently-verified" as const } : e,
       ),
     ),
   ).toEqual([]);
   for (const evidence of entry.evidence) {
-    expect(
-      fixtures.some(
-        (f) => f.id === evidence.fixtureId && f.alias === evidence.alias,
-      ),
-    ).toBe(true);
-    expect(
-      existsSync(new URL(`../../../../${evidence.record}`, import.meta.url)),
-    ).toBe(true);
+    expect(fixtures.some((f) => f.id === evidence.fixtureId && f.alias === evidence.alias)).toBe(
+      true,
+    );
+    expect(existsSync(new URL(`../../../../${evidence.record}`, import.meta.url))).toBe(true);
   }
   expect(
-    getTechniques("classic-expanded@1").find((d) => d.id === "c33@1")!.bounds
-      .templates,
+    getTechniques("classic-expanded@1").find((d) => d.id === "c33@1")!.bounds.templates,
   ).toEqual({
     maxTemplatesPerSymbol: 46656,
     maxOverlaySymbols: 3,
@@ -836,13 +771,14 @@ test("complete 7776-template relation honestly interrupts its overlarge 16KiB wi
   index!.dispose();
   expect(independentTemplates(f).lists[0]).toHaveLength(7776);
   expect(independentTemplates(f).effects.length).toBeGreaterThan(0);
-  expect(() => [
-    ...compileTemplates(view, { mode: "single", symbols: [1] }, context),
-  ]).toThrow("proof-step-limit");
-  expect(context.workspace.usage).toEqual({ entries: 0, bytes: 0 });
-  expect(oracle({ givens: values, limit: 1, maxNodes: 1000000 })).toMatchObject(
-    { interrupted: false, witnesses: [expect.any(Array)] },
+  expect(() => [...compileTemplates(view, { mode: "single", symbols: [1] }, context)]).toThrow(
+    "proof-step-limit",
   );
+  expect(context.workspace.usage).toEqual({ entries: 0, bytes: 0 });
+  expect(oracle({ givens: values, limit: 1, maxNodes: 1000000 })).toMatchObject({
+    interrupted: false,
+    witnesses: [expect.any(Array)],
+  });
 });
 
 // These are primitive-level metadata inputs, not checked retained-node authority.
@@ -866,8 +802,7 @@ test.each([
         rules: fact.rules,
       });
     const anchor = [...view.facts.values()].find(
-      (fact) =>
-        fact.proposition.kind === "literal" && fact.proposition.value.positive,
+      (fact) => fact.proposition.kind === "literal" && fact.proposition.value.positive,
     )!;
     inferences.set(anchor.root, {
       conclusion: anchor.proposition,
@@ -920,8 +855,7 @@ test.each([
           openAssumptions: open,
         });
         expect(inferred.rules).toContain("test:conditional-anchor");
-        if (open.length)
-          expect(() => checkScope(node, context)).toThrow("escaped-assumption");
+        if (open.length) expect(() => checkScope(node, context)).toThrow("escaped-assumption");
       }
     }
     expect(template).toBeDefined();
@@ -938,9 +872,7 @@ test("authentic additional compatible rule assembly compiles and replays C33", (
     height: 9,
     givens: [...f.givens].map(Number),
   });
-  const cells = classic.givens
-    .flatMap((symbol, cell) => (symbol ? [cell] : []))
-    .slice(0, 2);
+  const cells = classic.givens.flatMap((symbol, cell) => (symbol ? [cell] : [])).slice(0, 2);
   const result = assemble(
     canonicalProblem({
       ...classic,
@@ -962,9 +894,7 @@ test("authentic additional compatible rule assembly compiles and replays C33", (
   let view = initialize(result.value, "primary");
   const prefix: DeductionProposal[] = [];
   for (const rule of view.assembly.problem.constraints) {
-    for (const event of view.assembly.modules
-      .get(rule.id)!
-      .propagate(view, rule)) {
+    for (const event of view.assembly.modules.get(rule.id)!.propagate(view, rule)) {
       if (event.kind !== "proposal") continue;
       const step = admitted(view, event.proposal);
       prefix.push(step.proposal);
@@ -972,9 +902,7 @@ test("authentic additional compatible rule assembly compiles and replays C33", (
     }
   }
   expect(
-    view.assembly.relations.some((relation) =>
-      relation.id.startsWith("extra:given-sum"),
-    ),
+    view.assembly.relations.some((relation) => relation.id.startsWith("extra:given-sum")),
   ).toBe(true);
   expect(view.state.domains).toEqual(f.preState.domains);
   expect(
@@ -1012,9 +940,7 @@ test.each(["missing", "familiar-id-wrong-cells"])(
       mode === "missing"
         ? classic.constraints.filter((rule) => rule.id !== "row:0")
         : classic.constraints.map((rule) =>
-            rule.id === "row:0"
-              ? { ...rule, cells: [0, 1, 2, 3, 4, 5, 6, 7, 9] }
-              : rule,
+            rule.id === "row:0" ? { ...rule, cells: [0, 1, 2, 3, 4, 5, 6, 7, 9] } : rule,
           );
     const result = assemble(canonicalProblem({ ...classic, constraints }), [
       new AllDifferentRule(),
@@ -1022,9 +948,7 @@ test.each(["missing", "familiar-id-wrong-cells"])(
     if (!result.ok) throw Error(JSON.stringify(result.issues));
     const view = initialize(result.value, "primary");
     if (mode !== "missing")
-      expect(
-        view.assembly.problem.constraints.some((rule) => rule.id === "row:0"),
-      ).toBe(true);
+      expect(view.assembly.problem.constraints.some((rule) => rule.id === "row:0")).toBe(true);
     expect(
       getTechniques("classic-expanded@1")
         .find((d) => d.id === "c33@1")!
@@ -1035,150 +959,145 @@ test.each(["missing", "familiar-id-wrong-cells"])(
       limits,
       templates: new TemplateOperationContext(view),
     };
-    expect(() => [
-      ...compileTemplates(view, { mode: "single", symbols: [1] }, context),
-    ]).toThrow("missing-template-geometry");
+    expect(() => [...compileTemplates(view, { mode: "single", symbols: [1] }, context)]).toThrow(
+      "missing-template-geometry",
+    );
     expect(context.workspace.usage).toEqual({ entries: 0, bytes: 0 });
   },
 );
 
-const wireMutations: { name: string; code: string; mutate(data: any): void }[] =
-  [
-    {
-      name: "empty chunk",
-      code: "invalid-template-chunks",
-      mutate: (d) => {
-        d.templates[0] = [[]];
-      },
+const wireMutations: { name: string; code: string; mutate(data: any): void }[] = [
+  {
+    name: "empty chunk",
+    code: "invalid-template-chunks",
+    mutate: (d) => {
+      d.templates[0] = [[]];
     },
-    {
-      name: "short nonfinal chunk",
-      code: "invalid-template-chunks",
-      mutate: (d) => {
-        const list = d.templates[0][0];
-        d.templates[0] = [list.slice(0, 1), list.slice(1)];
-      },
+  },
+  {
+    name: "short nonfinal chunk",
+    code: "invalid-template-chunks",
+    mutate: (d) => {
+      const list = d.templates[0][0];
+      d.templates[0] = [list.slice(0, 1), list.slice(1)];
     },
-    {
-      name: "too many chunks",
-      code: "invalid-template-chunks",
-      mutate: (d) => {
-        d.templates[0] = Array.from({ length: 47 }, () => [0]);
-      },
+  },
+  {
+    name: "too many chunks",
+    code: "invalid-template-chunks",
+    mutate: (d) => {
+      d.templates[0] = Array.from({ length: 47 }, () => [0]);
     },
-    {
-      name: "1025-code chunk",
-      code: "invalid-template-chunks",
-      mutate: (d) => {
-        d.templates[0] = [Array.from({ length: 1025 }, (_, i) => i)];
-      },
+  },
+  {
+    name: "1025-code chunk",
+    code: "invalid-template-chunks",
+    mutate: (d) => {
+      d.templates[0] = [Array.from({ length: 1025 }, (_, i) => i)];
     },
-    {
-      name: "duplicate across chunk boundary",
-      code: "invalid-template-code-order",
-      mutate: (d) => {
-        d.templates[0] = [Array.from({ length: 1024 }, (_, i) => i), [1023]];
-      },
+  },
+  {
+    name: "duplicate across chunk boundary",
+    code: "invalid-template-code-order",
+    mutate: (d) => {
+      d.templates[0] = [Array.from({ length: 1024 }, (_, i) => i), [1023]];
     },
-    {
-      name: "missing symbol list",
-      code: "invalid-template-lists",
-      mutate: (d) => {
-        d.templates.pop();
-      },
+  },
+  {
+    name: "missing symbol list",
+    code: "invalid-template-lists",
+    mutate: (d) => {
+      d.templates.pop();
     },
-    {
-      name: "extra supported symbol list",
-      code: "invalid-template-lists",
-      mutate: (d) => {
-        d.supported.push([]);
-      },
+  },
+  {
+    name: "extra supported symbol list",
+    code: "invalid-template-lists",
+    mutate: (d) => {
+      d.supported.push([]);
     },
-    {
-      name: "negative code",
-      code: "invalid-template-code-order",
-      mutate: (d) => {
-        d.templates[0][0][0] = -1;
-      },
+  },
+  {
+    name: "negative code",
+    code: "invalid-template-code-order",
+    mutate: (d) => {
+      d.templates[0][0][0] = -1;
     },
-    {
-      name: "duplicate supported code",
-      code: "invalid-template-code-order",
-      mutate: (d) => {
-        d.supported[0][0][1] = d.supported[0][0][0];
-      },
+  },
+  {
+    name: "duplicate supported code",
+    code: "invalid-template-code-order",
+    mutate: (d) => {
+      d.supported[0][0][1] = d.supported[0][0][0];
     },
-    {
-      name: "decode overflow",
-      code: "invalid-template-code-order",
-      mutate: (d) => {
-        d.templates[0][0][0] = 9 ** 9;
-      },
+  },
+  {
+    name: "decode overflow",
+    code: "invalid-template-code-order",
+    mutate: (d) => {
+      d.templates[0][0][0] = 9 ** 9;
     },
-    {
-      name: "duplicate code",
-      code: "invalid-template-code-order",
-      mutate: (d) => {
-        d.templates[0][0][1] = d.templates[0][0][0];
-      },
+  },
+  {
+    name: "duplicate code",
+    code: "invalid-template-code-order",
+    mutate: (d) => {
+      d.templates[0][0][1] = d.templates[0][0][0];
     },
-    {
-      name: "reverse order",
-      code: "invalid-template-code-order",
-      mutate: (d) => {
-        d.templates[0][0].reverse();
-      },
+  },
+  {
+    name: "reverse order",
+    code: "invalid-template-code-order",
+    mutate: (d) => {
+      d.templates[0][0].reverse();
     },
-    {
-      name: "decoded repeated column",
-      code: "incomplete-template-list",
-      mutate: (d) => {
-        d.templates[0][0][0] = 0;
-      },
+  },
+  {
+    name: "decoded repeated column",
+    code: "incomplete-template-list",
+    mutate: (d) => {
+      d.templates[0][0][0] = 0;
     },
-    {
-      name: "missing legal template",
-      code: "incomplete-template-list",
-      mutate: (d) => {
-        d.templates[0][0].pop();
-      },
+  },
+  {
+    name: "missing legal template",
+    code: "incomplete-template-list",
+    mutate: (d) => {
+      d.templates[0][0].pop();
     },
-    {
-      name: "extra in-range template",
-      code: "incomplete-template-list",
-      mutate: (d) => {
-        d.templates[0][0].push(9 ** 9 - 1);
-      },
+  },
+  {
+    name: "extra in-range template",
+    code: "incomplete-template-list",
+    mutate: (d) => {
+      d.templates[0][0].push(9 ** 9 - 1);
     },
-    {
-      name: "unsupported list count",
-      code: "incomplete-template-overlay",
-      mutate: (d) => {
-        d.supported[0][0].pop();
-      },
+  },
+  {
+    name: "unsupported list count",
+    code: "incomplete-template-overlay",
+    mutate: (d) => {
+      d.supported[0][0].pop();
     },
-    {
-      name: "negative tuple count",
-      code: "invalid-template-lists",
-      mutate: (d) => {
-        d.tupleTests = -1;
-      },
+  },
+  {
+    name: "negative tuple count",
+    code: "invalid-template-lists",
+    mutate: (d) => {
+      d.tupleTests = -1;
     },
-  ];
+  },
+];
 test.each(wireMutations)(
   "canonical wire rejects $name at $code below ordinary caps",
   ({ mutate, code }) => {
     const bad = structuredClone(
-      independentTemplateCertificate(
-        fixtures[0] as unknown as TechniqueFixture,
-      ),
+      independentTemplateCertificate(fixtures[0] as unknown as TechniqueFixture),
     );
     mutate(certificateData(bad));
     expect(
       Math.max(
-        ...bad.proof.nodes.map(
-          (node) => new TextEncoder().encode(JSON.stringify(node)).length,
-        ),
+        ...bad.proof.nodes.map((node) => new TextEncoder().encode(JSON.stringify(node)).length),
       ),
     ).toBeLessThan(16384);
     expect(checked(fixtures[0], bad)).toEqual({ kind: "rejected", code });
@@ -1188,22 +1107,15 @@ test.each(wireMutations)(
 // Insert authentic conjunction aliases without duplicate ordinary premises;
 // renumber only the new bundle so ordinary DAG admission reaches C33 sources.
 function renumberTemplateBundle(proposal: any): void {
-  const start = Math.min(
-    ...proposal.proof.nodes.map((node: ProofNode) => node.id),
-  );
+  const start = Math.min(...proposal.proof.nodes.map((node: ProofNode) => node.id));
   const ids = new Map<number, number>(
-    proposal.proof.nodes.map((node: ProofNode, i: number) => [
-      node.id,
-      start + i,
-    ]),
+    proposal.proof.nodes.map((node: ProofNode, i: number) => [node.id, start + i]),
   );
   for (const node of proposal.proof.nodes) {
     node.id = ids.get(node.id)!;
     node.premises = node.premises.map((id: number) => ids.get(id) ?? id);
   }
-  proposal.proof.roots = proposal.proof.roots.map(
-    (id: number) => ids.get(id) ?? id,
-  );
+  proposal.proof.roots = proposal.proof.roots.map((id: number) => ids.get(id) ?? id);
 }
 const sourceMutations = [
   {
@@ -1308,9 +1220,7 @@ test.each(sourceMutations)(
   ({ pack: packIndex, action, code }) => {
     const f = fixtures[0] as unknown as TechniqueFixture;
     const bad = structuredClone(independentTemplateCertificate(f)) as any;
-    const certificate = bad.proof.nodes.find(
-      (node: ProofNode) => node.rule === "template-cover@1",
-    );
+    const certificate = bad.proof.nodes.find((node: ProofNode) => node.rule === "template-cover@1");
     const pack = bad.proof.nodes.find(
       (node: ProofNode) => node.id === certificate.premises[packIndex],
     );
@@ -1334,8 +1244,7 @@ test.each(sourceMutations)(
       pack.conclusion.terms.push(extra.claim);
     } else {
       const selected = action === "duplicate" ? 1 : 0;
-      const next =
-        Math.max(...bad.proof.nodes.map((node: ProofNode) => node.id)) + 1;
+      const next = Math.max(...bad.proof.nodes.map((node: ProofNode) => node.id)) + 1;
       const inner: ProofNode = {
         id: next,
         rule: "conjunction@1",

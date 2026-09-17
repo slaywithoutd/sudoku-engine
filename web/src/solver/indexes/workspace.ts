@@ -5,11 +5,14 @@ import type { StateKey } from "../snapshot";
 import type { Watch } from "../state/events";
 
 export type IndexInterruption = "cancelled" | "workspace-entry-limit" | "workspace-byte-limit";
-export type IndexEvent<T> = { readonly kind: "work"; readonly units: number }
+export type IndexEvent<T> =
+  | { readonly kind: "work"; readonly units: number }
   | { readonly kind: "ready"; readonly value: T }
   | { readonly kind: "interrupted"; readonly reason: IndexInterruption };
 export class IndexInterrupted extends Error {
-  constructor(readonly reason: IndexInterruption) { super(reason); }
+  constructor(readonly reason: IndexInterruption) {
+    super(reason);
+  }
 }
 
 /**
@@ -26,21 +29,33 @@ export class IndexWorkspace {
   constructor(options: { entryLimit: number; byteLimit: number; cancelled?: () => boolean }) {
     for (const value of [options.entryLimit, options.byteLimit])
       if (!Number.isSafeInteger(value) || value < 0) throw Error("invalid-index-limit");
-    this.#entryLimit = options.entryLimit; this.#byteLimit = options.byteLimit;
+    this.#entryLimit = options.entryLimit;
+    this.#byteLimit = options.byteLimit;
     this.#cancelled = options.cancelled ?? (() => false);
   }
   get usage(): { readonly entries: number; readonly bytes: number } {
     return Object.freeze({ entries: this.#entries, bytes: this.#bytes });
   }
-  checkpoint(): void { if (this.#cancelled()) throw new IndexInterrupted("cancelled"); }
+  checkpoint(): void {
+    if (this.#cancelled()) throw new IndexInterrupted("cancelled");
+  }
   /** Reservation works for non-index run consumers as well; no hidden budget. */
   reserve(entries: number, bytes: number): WorkspaceReservation {
-    const reservation = new WorkspaceReservation((entries, bytes) => {
-      this.checkpoint();
-      if (this.#entries + entries > this.#entryLimit) throw new IndexInterrupted("workspace-entry-limit");
-      if (this.#bytes + bytes > this.#byteLimit) throw new IndexInterrupted("workspace-byte-limit");
-      this.#entries += entries; this.#bytes += bytes;
-    }, (entries, bytes) => { this.#entries -= entries; this.#bytes -= bytes; });
+    const reservation = new WorkspaceReservation(
+      (entries, bytes) => {
+        this.checkpoint();
+        if (this.#entries + entries > this.#entryLimit)
+          throw new IndexInterrupted("workspace-entry-limit");
+        if (this.#bytes + bytes > this.#byteLimit)
+          throw new IndexInterrupted("workspace-byte-limit");
+        this.#entries += entries;
+        this.#bytes += bytes;
+      },
+      (entries, bytes) => {
+        this.#entries -= entries;
+        this.#bytes -= bytes;
+      },
+    );
     reservation.grow(entries, bytes);
     return reservation;
   }
@@ -48,17 +63,25 @@ export class IndexWorkspace {
 
 /** A lease releases exactly its own reservations, once, including on failure. */
 export class WorkspaceReservation {
-  #entries = 0; #bytes = 0; #disposed = false;
-  constructor(private readonly allocate: (entries: number, bytes: number) => void,
-    private readonly release: (entries: number, bytes: number) => void) {}
+  #entries = 0;
+  #bytes = 0;
+  #disposed = false;
+  constructor(
+    private readonly allocate: (entries: number, bytes: number) => void,
+    private readonly release: (entries: number, bytes: number) => void,
+  ) {}
   grow(entries: number, bytes: number): void {
     if (this.#disposed) throw Error("disposed-reservation");
-    if (![entries, bytes].every(n => Number.isSafeInteger(n) && n >= 0)) throw Error("invalid-index-reservation");
-    this.allocate(entries, bytes); this.#entries += entries; this.#bytes += bytes;
+    if (![entries, bytes].every((n) => Number.isSafeInteger(n) && n >= 0))
+      throw Error("invalid-index-reservation");
+    this.allocate(entries, bytes);
+    this.#entries += entries;
+    this.#bytes += bytes;
   }
   dispose(): void {
     if (this.#disposed) return;
-    this.release(this.#entries, this.#bytes); this.#disposed = true;
+    this.release(this.#entries, this.#bytes);
+    this.#disposed = true;
   }
 }
 
@@ -72,9 +95,14 @@ export interface IndexEntry {
 }
 const watches: readonly Watch[] = Object.freeze([Object.freeze({ kind: "all" as const })]);
 export function evidence(view: ReadView, premises: readonly FactId[]): IndexEntry {
-  const premiseFacts = Object.freeze(premises.map(id => view.facts.get(id)!));
-  return { state: view.state.key, premises: Object.freeze([...premises]), premiseFacts,
-    conditional: premiseFacts.some(fact => fact.conditional), watches };
+  const premiseFacts = Object.freeze(premises.map((id) => view.facts.get(id)!));
+  return {
+    state: view.state.key,
+    premises: Object.freeze([...premises]),
+    premiseFacts,
+    conditional: premiseFacts.some((fact) => fact.conditional),
+    watches,
+  };
 }
 /** Only freshly created bounded records are passed here, never a ReadView. */
 export function freezeRecord<T>(value: T): T {
@@ -95,16 +123,30 @@ export function freezeRecord<T>(value: T): T {
 export class OwnedIndex<E extends IndexEntry> {
   #source: ReadView | undefined;
   #entries: readonly E[];
-  constructor(source: ReadView, entries: E[], private readonly reservation: WorkspaceReservation) {
-    this.#source = source; this.#entries = Object.freeze(entries);
+  constructor(
+    source: ReadView,
+    entries: E[],
+    private readonly reservation: WorkspaceReservation,
+  ) {
+    this.#source = source;
+    this.#entries = Object.freeze(entries);
   }
   protected get source(): ReadView {
-    if (!this.#source) throw Error("disposed-index"); return this.#source;
+    if (!this.#source) throw Error("disposed-index");
+    return this.#source;
   }
-  get entries(): readonly E[] { this.source; return this.#entries; }
+  get entries(): readonly E[] {
+    this.source;
+    return this.#entries;
+  }
   accepts(key: StateKey): boolean {
     const before = this.#source?.state.key;
-    return !!before && before.problemKey === key.problemKey && before.branch === key.branch && before.revision === key.revision;
+    return (
+      !!before &&
+      before.problemKey === key.problemKey &&
+      before.branch === key.branch &&
+      before.revision === key.revision
+    );
   }
   /**
    * Exact fact-map identity is constant work. Different proof prefixes require
@@ -112,16 +154,27 @@ export class OwnedIndex<E extends IndexEntry> {
    * Callback interruption propagates; it is never relabeled a mismatch.
    */
   acceptsView(view: ReadView, charge?: (units: number) => void): boolean {
-    try { assertOwnedView(view); } catch { return false; }
+    try {
+      assertOwnedView(view);
+    } catch {
+      return false;
+    }
     const source = this.#source;
-    if (!source || !this.accepts(view.state.key) || source.assembly !== view.assembly ||
-      source.state.domains !== view.state.domains || source.state.domainFacts !== view.state.domainFacts) return false;
+    if (
+      !source ||
+      !this.accepts(view.state.key) ||
+      source.assembly !== view.assembly ||
+      source.state.domains !== view.state.domains ||
+      source.state.domainFacts !== view.state.domainFacts
+    )
+      return false;
     if (source.facts === view.facts) return true;
     if (!charge) return false;
-    for (const entry of this.#entries) for (const premise of entry.premiseFacts) {
-      charge(1);
-      if (view.facts.get(premise.id) !== premise) return false;
-    }
+    for (const entry of this.#entries)
+      for (const premise of entry.premiseFacts) {
+        charge(1);
+        if (view.facts.get(premise.id) !== premise) return false;
+      }
     return true;
   }
   /**
@@ -133,13 +186,17 @@ export class OwnedIndex<E extends IndexEntry> {
     return this.acceptsView(view) && this.source.facts === view.facts;
   }
   dispose(): void {
-    this.#source = undefined; this.#entries = []; this.reservation.dispose();
+    this.#source = undefined;
+    this.#entries = [];
+    this.reservation.dispose();
   }
 }
 
 /** Every extension resumes through cancellation before doing more work. */
 export function* work(workspace: IndexWorkspace): Generator<{ kind: "work"; units: number }> {
-  workspace.checkpoint(); yield { kind: "work", units: 1 }; workspace.checkpoint();
+  workspace.checkpoint();
+  yield { kind: "work", units: 1 };
+  workspace.checkpoint();
 }
 
 /**
@@ -151,22 +208,31 @@ export function* work(workspace: IndexWorkspace): Generator<{ kind: "work"; unit
 export function reserveRecord(reservation: WorkspaceReservation, slots: number): void {
   reservation.grow(1, 1024 + 128 * slots);
 }
-export function* buildIndex<T extends { dispose(): void }>(view: ReadView, workspace: IndexWorkspace,
-  produce: (reservation: WorkspaceReservation) => Generator<{ kind: "work"; units: number }, T>): Generator<IndexEvent<T>> {
+export function* buildIndex<T extends { dispose(): void }>(
+  view: ReadView,
+  workspace: IndexWorkspace,
+  produce: (reservation: WorkspaceReservation) => Generator<{ kind: "work"; units: number }, T>,
+): Generator<IndexEvent<T>> {
   assertOwnedView(view); // Gate before any caller-controlled field access.
-  let scratch: WorkspaceReservation | undefined, retained: WorkspaceReservation | undefined, published = false;
+  let scratch: WorkspaceReservation | undefined,
+    retained: WorkspaceReservation | undefined,
+    published = false;
   try {
     scratch = workspace.reserve(0, 65536);
     retained = workspace.reserve(0, 1024);
     const value = yield* produce(retained);
-    workspace.checkpoint(); scratch.dispose(); published = true;
+    workspace.checkpoint();
+    scratch.dispose();
+    published = true;
     yield { kind: "ready", value };
   } catch (error) {
     if (!(error instanceof IndexInterrupted)) throw error;
-    scratch?.dispose(); retained?.dispose();
+    scratch?.dispose();
+    retained?.dispose();
     yield { kind: "interrupted", reason: error.reason };
   } finally {
-    scratch?.dispose(); if (!published) retained?.dispose();
+    scratch?.dispose();
+    if (!published) retained?.dispose();
   }
 }
 
@@ -176,26 +242,41 @@ export function* buildIndex<T extends { dispose(): void }>(view: ReadView, works
  * Conditional closed sources remain usable only with their inherited taint.
  * A standalone CertificateSession cannot supply this owned-view iterator.
  */
-export function* provedSources(view: ReadView, workspace: IndexWorkspace):
-Generator<{ kind: "work"; units: number } | { kind: "source"; fact: Fact }> {
+export function* provedSources(
+  view: ReadView,
+  workspace: IndexWorkspace,
+): Generator<{ kind: "work"; units: number } | { kind: "source"; fact: Fact }> {
   assertOwnedView(view);
   for (const fact of view.facts.values()) {
     yield* work(workspace);
-    if ((fact.proposition.kind === "all-different" || fact.proposition.kind === "cover" ||
-      fact.proposition.kind === "relation") && branchAllowsFact(view, fact))
+    if (
+      (fact.proposition.kind === "all-different" ||
+        fact.proposition.kind === "cover" ||
+        fact.proposition.kind === "relation") &&
+      branchAllowsFact(view, fact)
+    )
       yield { kind: "source", fact };
   }
 }
 
 /** Size-first lexicographic enumeration, constant <=5-depth scratch. */
-export function* combinations(cells: readonly number[], maximum: number, workspace: IndexWorkspace):
-Generator<{ kind: "work"; units: number } | { kind: "members"; cells: number[] }> {
-  function* extend(chosen: number[], start: number, size: number):
-  Generator<{ kind: "work"; units: number } | { kind: "members"; cells: number[] }> {
-    if (chosen.length === size) { yield { kind: "members", cells: chosen }; return; }
+export function* combinations(
+  cells: readonly number[],
+  maximum: number,
+  workspace: IndexWorkspace,
+): Generator<{ kind: "work"; units: number } | { kind: "members"; cells: number[] }> {
+  function* extend(
+    chosen: number[],
+    start: number,
+    size: number,
+  ): Generator<{ kind: "work"; units: number } | { kind: "members"; cells: number[] }> {
+    if (chosen.length === size) {
+      yield { kind: "members", cells: chosen };
+      return;
+    }
     for (let i = start; i <= cells.length - (size - chosen.length); i++) {
       yield* work(workspace);
-      yield* extend([...chosen, cells[i]], i+1, size);
+      yield* extend([...chosen, cells[i]], i + 1, size);
     }
   }
   for (let size = 1; size <= Math.min(maximum, cells.length); size++) yield* extend([], 0, size);

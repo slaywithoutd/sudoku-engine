@@ -2,11 +2,7 @@ import type { ReadView, Literal } from "../state/types";
 import type { DeductionProposal, Effect } from "../proof/types";
 import type { WorkspaceReservation } from "../indexes/workspace";
 import { proposedClause } from "../proof/builder";
-import {
-  ForcingProof,
-  type ForcingLink,
-  type PathCertificate,
-} from "./forcing-proof";
+import { ForcingProof, type ForcingLink, type PathCertificate } from "./forcing-proof";
 import {
   GeneralizedProof,
   type GeneralizedPlan,
@@ -54,20 +50,13 @@ export function compileOrForcing(
     branches: OrBranchCertificate[] = [];
   for (const branch of plan.branches) {
     b.scope = [];
-    const assumption = b.add(
-      "assume@1",
-      [],
-      proposedClause([branch.assumption]),
-    );
+    const assumption = b.add("assume@1", [], proposedClause([branch.assumption]));
     b.scope = [assumption];
     let result: number,
       generalized: OrBranchCertificate["generalized"] = null;
     const paths = (branch.paths ?? []).map((path) => b.path(assumption, path));
     if (branch.generalized) {
-      generalized = new GeneralizedProof(view, b).positions(
-        branch.generalized,
-        assumption,
-      );
+      generalized = new GeneralizedProof(view, b).positions(branch.generalized, assumption);
       result = generalized.contradiction;
     } else
       result =
@@ -87,8 +76,7 @@ export function compileOrForcing(
       (a, b) =>
         a.branch.assumption.cell - b.branch.assumption.cell ||
         a.branch.assumption.symbol - b.branch.assumption.symbol ||
-        Number(a.branch.assumption.positive) -
-          Number(b.branch.assumption.positive),
+        Number(a.branch.assumption.positive) - Number(b.branch.assumption.positive),
     );
   const root = b.add(
     "cases@1",

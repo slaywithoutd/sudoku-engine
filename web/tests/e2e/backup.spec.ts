@@ -17,9 +17,7 @@ test("download and restore skip identical records, copy conflicts, reject invali
   await page.keyboard.press("5");
   await openSettings(page);
   const promise = page.waitForEvent("download");
-  await page
-    .getByRole("button", { name: "Export backup", exact: true })
-    .click();
+  await page.getByRole("button", { name: "Export backup", exact: true }).click();
   const download = await promise;
   expect(download.suggestedFilename()).toMatch(/^sudoku-backup-.*\.json$/);
   const file = await download.path();
@@ -42,14 +40,10 @@ test("download and restore skip identical records, copy conflicts, reject invali
   await openLibrary(page);
   await page.getByRole("button", { name: /^Drafts/ }).click();
   await expect(page.getByRole("article")).toHaveCount(2);
-  await expect(
-    page.getByText("<img src=x onerror=alert(1)>", { exact: true }),
-  ).toBeVisible();
+  await expect(page.getByText("<img src=x onerror=alert(1)>", { exact: true })).toBeVisible();
   await expect(page.locator("main img")).toHaveCount(0);
 });
-test("restore settings is opt-in and malformed data never partially imports", async ({
-  page,
-}) => {
+test("restore settings is opt-in and malformed data never partially imports", async ({ page }) => {
   await page.goto("/");
   await openSettings(page);
   const data = {
@@ -67,23 +61,17 @@ test("restore settings is opt-in and malformed data never partially imports", as
   };
   await upload(page, data);
   await page.getByRole("button", { name: "Apply import", exact: true }).click();
-  await expect(
-    page.getByRole("switch", { name: "Warn on conflicting digits" }),
-  ).not.toBeChecked();
+  await expect(page.getByRole("switch", { name: "Warn on conflicting digits" })).not.toBeChecked();
   await upload(page, data);
   await page.getByRole("switch", { name: "Restore settings from backup" }).check();
   await page.getByRole("button", { name: "Apply import", exact: true }).click();
-  await expect(
-    page.getByRole("switch", { name: "Warn on conflicting digits" }),
-  ).toBeChecked();
+  await expect(page.getByRole("switch", { name: "Warn on conflicting digits" })).toBeChecked();
   await upload(page, {
     ...data,
     data: { ...data.data, sessions: { missing: {} } },
   });
   await expect(page.getByRole("alert")).toBeVisible();
-  await expect(
-    page.getByRole("switch", { name: "Warn on conflicting digits" }),
-  ).toBeChecked();
+  await expect(page.getByRole("switch", { name: "Warn on conflicting digits" })).toBeChecked();
 });
 test("conflicting session restore copies its puzzle branch and preserves hidden notes and redo", async ({
   page,
@@ -97,9 +85,7 @@ test("conflicting session restore copies its puzzle branch and preserves hidden 
   const url = page.url();
   await openSettings(page);
   const promise = page.waitForEvent("download");
-  await page
-    .getByRole("button", { name: "Export backup", exact: true })
-    .click();
+  await page.getByRole("button", { name: "Export backup", exact: true }).click();
   const file = await (await promise).path();
   if (!file) throw new Error("Missing download");
   await page.goto(url);
@@ -128,15 +114,11 @@ test("a save completing under a restore preview requires an updated summary ackn
   page,
 }) => {
   await page.goto("/tests/browser/failure.html");
-  await page
-    .getByRole("button", { name: "Allow test saves", exact: true })
-    .click();
+  await page.getByRole("button", { name: "Allow test saves", exact: true }).click();
   await page.getByRole("button", { name: "Create", exact: true }).click();
   await saved(page);
   await openSettings(page);
-  await page
-    .getByRole("button", { name: "Pause test saves", exact: true })
-    .click();
+  await page.getByRole("button", { name: "Pause test saves", exact: true }).click();
   await page.getByRole("switch", { name: "Warn on conflicting digits" }).check();
   await upload(page, {
     format: "sudoku-engine-backup",
@@ -158,7 +140,5 @@ test("a save completing under a restore preview requires an updated summary ackn
   await expect(page.getByRole("dialog")).toContainText("The library changed");
   await page.getByRole("button", { name: "Apply import", exact: true }).click();
   await expect(page.getByRole("dialog")).toHaveCount(0);
-  await expect(
-    page.getByRole("switch", { name: "Warn on conflicting digits" }),
-  ).toBeChecked();
+  await expect(page.getByRole("switch", { name: "Warn on conflicting digits" })).toBeChecked();
 });

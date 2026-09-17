@@ -121,7 +121,10 @@ export function mountPuzzleSurface(
         case "toolCenter":
         case "toolColor":
           if (options.mode !== "play") return false;
-          dispatch({ type: "tool", tool: action === "toolValue" ? "value" : (action.slice(4).toLowerCase() as "corner") });
+          dispatch({
+            type: "tool",
+            tool: action === "toolValue" ? "value" : (action.slice(4).toLowerCase() as "corner"),
+          });
           return true;
         case "copyCell":
           // Leave text copying to the browser when no cell is selected.
@@ -173,13 +176,19 @@ export function mountPuzzleSurface(
 }
 
 /** "30 clues" or "3 conflicts" chip for Create and Solve. */
-export function clueSummary(state: EditorState): { text: string; conflicts: number; clues: number } {
+export function clueSummary(state: EditorState): {
+  text: string;
+  conflicts: number;
+  clues: number;
+} {
   const values = state.cells.map((c) => c.value),
     conflicts = conflictingCells(values).length,
     clues = values.filter(Boolean).length;
   return {
     clues,
     conflicts,
-    text: conflicts ? `${conflicts} cells in conflict` : `${clues} ${clues === 1 ? "clue" : "clues"}`,
+    text: conflicts
+      ? `${conflicts} cells in conflict`
+      : `${clues} ${clues === 1 ? "clue" : "clues"}`,
   };
 }

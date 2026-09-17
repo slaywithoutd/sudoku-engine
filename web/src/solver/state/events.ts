@@ -5,7 +5,8 @@ import { sameValue } from "../proof/primitives";
 import type { Ledger } from "../techniques/types";
 export type { Ledger, LedgerEntry, DetectorStatus } from "../techniques/types";
 
-export type Watch = { readonly kind: "cell"; readonly cell: CellId }
+export type Watch =
+  | { readonly kind: "cell"; readonly cell: CellId }
   | { readonly kind: "cover" | "relation" | "constraint"; readonly id: string }
   | { readonly kind: "graph" | "all" };
 export interface ChangeSet {
@@ -23,13 +24,20 @@ export interface ChangeSet {
 }
 function affected(watch: Watch, changes: ChangeSet): boolean {
   switch (watch.kind) {
-    case "all": return true;
-    case "graph": return changes.graphChanged;
-    case "cell": return changes.cells.includes(watch.cell);
-    case "cover": return !!changes.sourceChanged || changes.coverIds.includes(watch.id);
-    case "relation": return !!changes.sourceChanged || changes.relationIds.includes(watch.id);
-    case "constraint": return changes.constraintIds.includes(watch.id);
-    default: return true;
+    case "all":
+      return true;
+    case "graph":
+      return changes.graphChanged;
+    case "cell":
+      return changes.cells.includes(watch.cell);
+    case "cover":
+      return !!changes.sourceChanged || changes.coverIds.includes(watch.id);
+    case "relation":
+      return !!changes.sourceChanged || changes.relationIds.includes(watch.id);
+    case "constraint":
+      return changes.constraintIds.includes(watch.id);
+    default:
+      return true;
   }
 }
 
@@ -40,13 +48,21 @@ function affected(watch: Watch, changes: ChangeSet): boolean {
  */
 export function invalidate(changes: ChangeSet, ledger: Ledger): Ledger {
   const after = Object.freeze({ ...changes.after });
-  return Object.freeze(ledger.map(entry => {
-    const keep = sameValue(entry.state, changes.before) &&
-      (entry.status === "exhausted" || entry.status === "excluded") && entry.dependencies.length > 0 &&
-      !entry.dependencies.some(watch => affected(watch, changes));
-    const { reason, ...base } = entry;
-    return Object.freeze({ ...base, state: after, status: keep ? entry.status : "pending",
-      dependencies: Object.freeze(entry.dependencies.map(watch => Object.freeze({ ...watch }))),
-      ...(keep && reason !== undefined ? { reason } : {}) });
-  }));
+  return Object.freeze(
+    ledger.map((entry) => {
+      const keep =
+        sameValue(entry.state, changes.before) &&
+        (entry.status === "exhausted" || entry.status === "excluded") &&
+        entry.dependencies.length > 0 &&
+        !entry.dependencies.some((watch) => affected(watch, changes));
+      const { reason, ...base } = entry;
+      return Object.freeze({
+        ...base,
+        state: after,
+        status: keep ? entry.status : "pending",
+        dependencies: Object.freeze(entry.dependencies.map((watch) => Object.freeze({ ...watch }))),
+        ...(keep && reason !== undefined ? { reason } : {}),
+      });
+    }),
+  );
 }

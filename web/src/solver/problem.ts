@@ -4,12 +4,7 @@ export type CellId = number;
 export type SymbolId = number;
 export type Mask = number;
 export type Json =
-  | null
-  | boolean
-  | number
-  | string
-  | readonly Json[]
-  | { readonly [key: string]: Json };
+  null | boolean | number | string | readonly Json[] | { readonly [key: string]: Json };
 export type VersionId = string;
 export type ConstraintId = string;
 export type BranchId = string;
@@ -65,11 +60,7 @@ function assertPlainObject(
     fail("invalid-json", `${label} must be a plain JSON object`);
   for (const key of Reflect.ownKeys(value)) {
     const descriptor = Object.getOwnPropertyDescriptor(value, key)!;
-    if (
-      typeof key !== "string" ||
-      !descriptor.enumerable ||
-      !("value" in descriptor)
-    )
+    if (typeof key !== "string" || !descriptor.enumerable || !("value" in descriptor))
       fail("invalid-json", `${label} contains a non-JSON property`);
   }
 }
@@ -82,8 +73,7 @@ function assertFields(
 ): void {
   const allowedSet = new Set(allowed);
   const unknown = Object.keys(value).find((key) => !allowedSet.has(key));
-  if (unknown !== undefined)
-    fail("unknown-field", `${label} contains unknown field ${unknown}`);
+  if (unknown !== undefined) fail("unknown-field", `${label} contains unknown field ${unknown}`);
   const missing = required.find((key) => !Object.hasOwn(value, key));
   if (missing !== undefined) fail("missing-field", `${label} is missing ${missing}`);
 }
@@ -108,8 +98,7 @@ function assertDenseArray(value: unknown, label: string): asserts value is unkno
 }
 
 function normalizeJsonValue(value: unknown, path: string, active: WeakSet<object>): Json {
-  if (value === null || typeof value === "boolean" || typeof value === "string")
-    return value;
+  if (value === null || typeof value === "boolean" || typeof value === "string") return value;
   if (typeof value === "number") {
     if (!Number.isFinite(value)) fail("invalid-json", `${path} must be finite`);
     return Object.is(value, -0) ? 0 : value;
@@ -165,7 +154,12 @@ function integerArray(value: unknown, label: string): number[] {
 function normalizeConstraint(value: unknown, index: number): ConstraintInstance {
   const label = `constraints[${index}]`;
   assertPlainObject(value, label);
-  assertFields(value, ["id", "type", "cells", "parameters"], ["id", "type", "cells", "parameters"], label);
+  assertFields(
+    value,
+    ["id", "type", "cells", "parameters"],
+    ["id", "type", "cells", "parameters"],
+    label,
+  );
   if (typeof value.id !== "string" || !CONSTRAINT_ID.test(value.id))
     fail("invalid-constraint-id", `${label}.id is invalid`);
   if (typeof value.type !== "string" || !VERSION_ID.test(value.type))
@@ -226,7 +220,9 @@ export function canonicalProblem(input: unknown): EngineProblem {
   const constraints = input.constraints
     .map(normalizeConstraint)
     .sort((left, right) => compareText(left.id, right.id));
-  const duplicate = constraints.find((constraint, index) => constraint.id === constraints[index - 1]?.id);
+  const duplicate = constraints.find(
+    (constraint, index) => constraint.id === constraints[index - 1]?.id,
+  );
   if (duplicate) fail("duplicate-constraint-id", `duplicate constraint ID ${duplicate.id}`);
   for (const constraint of constraints)
     if (constraint.cells.some((cell) => !cells.includes(cell)))
@@ -282,8 +278,7 @@ export function normalizeClassic(input: unknown): EngineProblem {
         type: "all-different@1",
         cells: Array.from(
           { length: 9 },
-          (_, offset) =>
-            (boxRow + Math.floor(offset / 3)) * 9 + boxColumn + (offset % 3),
+          (_, offset) => (boxRow + Math.floor(offset / 3)) * 9 + boxColumn + (offset % 3),
         ),
         parameters: {},
       },

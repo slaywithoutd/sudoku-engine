@@ -26,29 +26,17 @@ test("finish archives authoring; resume and edit-copy preserve puzzle/session", 
   expect(() => renameRecord(d, "draft", "d1", "changed", NOW)).toThrow();
 });
 test("conflicts block Finish, empty draft may finish, duplicate IDs reject", () => {
-  const d = createDraft(
-    emptyLibrary(),
-    "d",
-    NOW,
-    parsePuzzleString("11" + "0".repeat(79)),
-  );
+  const d = createDraft(emptyLibrary(), "d", NOW, parsePuzzleString("11" + "0".repeat(79)));
   expect(() => finishDraft(d, "d", "p", NOW)).toThrow();
   expect(() => createDraft(d, "d", NOW)).toThrow();
   expect(
-    Object.keys(
-      finishDraft(createDraft(emptyLibrary(), "d", NOW), "d", "p", NOW).puzzles,
-    ),
+    Object.keys(finishDraft(createDraft(emptyLibrary(), "d", NOW), "d", "p", NOW).puzzles),
   ).toEqual(["p"]);
   expect(() => finishDraft(d, "missing", "p", NOW)).toThrow();
 });
 test("delete removes session/archive, drops provenance and preserves active copy clues", () => {
   let d = startPlay(
-    finishDraft(
-      createDraft(emptyLibrary(), "d", NOW, parsePuzzleString(PUZZLE)),
-      "d",
-      "p",
-      NOW,
-    ),
+    finishDraft(createDraft(emptyLibrary(), "d", NOW, parsePuzzleString(PUZZLE)), "d", "p", NOW),
     "p",
     NOW,
   );

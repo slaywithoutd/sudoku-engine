@@ -9,7 +9,10 @@ import { SHORTCUT_LABELS } from "./settings-sections";
 export function mountHelp(container: HTMLElement, services: ScreenServices): () => void {
   const page = el("div", undefined, "help-page");
   const heading = el("div", undefined, "page-heading");
-  heading.append(el("h1", "Help"), button("Shortcut settings", () => services.navigate({ screen: "settings" })));
+  heading.append(
+    el("h1", "Help"),
+    button("Shortcut settings", () => services.navigate({ screen: "settings" })),
+  );
   page.append(heading);
   const section = (title: string, ...children: (HTMLElement | string)[]) => {
     const node = el("section", undefined, "help-section");
@@ -27,20 +30,41 @@ export function mountHelp(container: HTMLElement, services: ScreenServices): () 
   section(
     "Entering digits",
     list([
-      ["Select", "Click or tap a cell, or use the arrow keys. Click the selected cell again, click outside the board or press Esc to clear the selection."],
+      [
+        "Select",
+        "Click or tap a cell, or use the arrow keys. Click the selected cell again, click outside the board or press Esc to clear the selection.",
+      ],
       ["Digits", "Type 1–9 or use the keypad. Entering the same digit again removes it."],
-      ["Erase", "Delete, Backspace or 0 erases in layers: the digit first, then notes, then the color."],
+      [
+        "Erase",
+        "Delete, Backspace or 0 erases in layers: the digit first, then notes, then the color.",
+      ],
       ["Undo", "Every edit can be undone, including Restart and Fill notes."],
     ]),
   );
   section(
     "Notes and colors",
     list([
-      ["Corner notes", `Hold ${modifier(settings.cornerModifier)} with a digit, or pick the Corner tool. They fill the corners, then the edges.`],
-      ["Center notes", `Hold ${modifier(settings.centerModifier)} with a digit, or pick the Center tool.`],
-      ["Colors", "Pick the Color tool, then 1–6. Turn on patterns in Settings → Accessibility to tell colors apart without hue."],
-      ["Fill notes", "Writes every candidate allowed by the cell's row, column and box. It never uses the solution."],
-      ["Copy and paste", "Copying a cell keeps its digit, notes and color. Pasting never changes a clue."],
+      [
+        "Corner notes",
+        `Hold ${modifier(settings.cornerModifier)} with a digit, or pick the Corner tool. They fill the corners, then the edges.`,
+      ],
+      [
+        "Center notes",
+        `Hold ${modifier(settings.centerModifier)} with a digit, or pick the Center tool.`,
+      ],
+      [
+        "Colors",
+        "Pick the Color tool, then 1–6. Turn on patterns in Settings → Accessibility to tell colors apart without hue.",
+      ],
+      [
+        "Fill notes",
+        "Writes every candidate allowed by the cell's row, column and box. It never uses the solution.",
+      ],
+      [
+        "Copy and paste",
+        "Copying a cell keeps its digit, notes and color. Pasting never changes a clue.",
+      ],
     ]),
   );
   section(
@@ -56,7 +80,10 @@ export function mountHelp(container: HTMLElement, services: ScreenServices): () 
     "Solver",
     list([
       ["Analyze", "Result, solution count and statistics for the whole run."],
-      ["Explain", "Step through each deduction: highlighted cells show what it reasons about, struck-through candidates show what it removes."],
+      [
+        "Explain",
+        "Step through each deduction: highlighted cells show what it reasons about, struck-through candidates show what it removes.",
+      ],
     ]),
     "Solving happens in the background and does not change your saved puzzles.",
   );

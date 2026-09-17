@@ -1,8 +1,4 @@
-import type {
-  DeductionProposal,
-  ProofNode,
-  Proposition,
-} from "../../src/solver/proof/types";
+import type { DeductionProposal, ProofNode, Proposition } from "../../src/solver/proof/types";
 import { fixtureView, type TechniqueFixture } from "./acceptance";
 
 /** Test-only mathematics: permutations and BigInt intersection, no engine helpers. */
@@ -16,9 +12,7 @@ export function independentGeometry(): number[][] {
       if (
         [0, 3, 6].every(
           (start) =>
-            new Set(
-              columns.slice(start, start + 3).map((c) => Math.floor(c / 3)),
-            ).size === 3,
+            new Set(columns.slice(start, start + 3).map((c) => Math.floor(c / 3))).size === 3,
         )
       )
         output.push(columns.map((c, r) => r * 9 + c));
@@ -45,17 +39,12 @@ export function independentTemplates(f: TechniqueFixture) {
   const lists = plan.symbols.map((symbol) =>
     independentGeometry().filter(
       (cells) =>
-        cells.every(
-          (c) =>
-            Math.floor(f.preState.domains[c] / 2 ** (symbol - 1)) % 2 === 1,
-        ) &&
+        cells.every((c) => Math.floor(f.preState.domains[c] / 2 ** (symbol - 1)) % 2 === 1) &&
         f.preState.values.every((v, c) => v !== symbol || cells.includes(c)),
     ),
   );
   const masks = lists.map((list) =>
-    list.map((cells) =>
-      cells.reduce((mask, c) => mask | (1n << BigInt(c)), 0n),
-    ),
+    list.map((cells) => cells.reduce((mask, c) => mask | (1n << BigInt(c)), 0n)),
   );
   let live = masks.map((list) => list.map((_, i) => i)),
     tests = 0,
@@ -111,9 +100,7 @@ export function independentTemplates(f: TechniqueFixture) {
     for (let s = 0; s < plan.symbols.length; s++)
       if (
         !f.preState.values[cell] &&
-        Math.floor(f.preState.domains[cell] / 2 ** (plan.symbols[s] - 1)) %
-          2 ===
-          1 &&
+        Math.floor(f.preState.domains[cell] / 2 ** (plan.symbols[s] - 1)) % 2 === 1 &&
         !supported[s].some((t) => t.includes(cell))
       )
         effects.push({ kind: "remove", cell, symbol: plan.symbols[s] });
@@ -133,12 +120,7 @@ export function independentTemplateCertificate(
     roots: number[] = [];
   let next = 0;
   for (const fact of view.facts.values()) next = Math.max(next, fact.root + 1);
-  function add(
-    rule: string,
-    premises: number[],
-    conclusion: Proposition,
-    parameters: any = {},
-  ) {
+  function add(rule: string, premises: number[], conclusion: Proposition, parameters: any = {}) {
     const id = next++;
     nodes.push({ id, rule, premises, conclusion, parameters, scope: [] });
     return id;
@@ -158,19 +140,16 @@ export function independentTemplateCertificate(
       (f) =>
         !f.openAssumptions.length &&
         (!f.conditional || !!acceptedView) &&
-        JSON.stringify(canonical(f.proposition)) ===
-          JSON.stringify(canonical(claim)),
+        JSON.stringify(canonical(f.proposition)) === JSON.stringify(canonical(claim)),
     );
     if (!source) throw Error("independent-template-source-missing");
     return source.root;
   }
   const groups: number[][] = [[], [], [], []],
     covers: number[] = [];
-  for (let c = 0; c < 81; c++)
-    groups[Math.floor(c / 27)].push(view.state.domainFacts[c]);
+  for (let c = 0; c < 81; c++) groups[Math.floor(c / 27)].push(view.state.domainFacts[c]);
   const row = (n: number) => Array.from({ length: 9 }, (_, i) => n * 9 + i);
-  for (let r = 0; r < 9; r++)
-    groups[3].push(fact({ kind: "all-different", cells: row(r) }));
+  for (let r = 0; r < 9; r++) groups[3].push(fact({ kind: "all-different", cells: row(r) }));
   for (let c = 0; c < 9; c++)
     groups[3].push(
       fact({
@@ -184,18 +163,13 @@ export function independentTemplateCertificate(
         kind: "all-different",
         cells: Array.from(
           { length: 9 },
-          (_, i) =>
-            (Math.floor(b / 3) * 3 + Math.floor(i / 3)) * 9 +
-            (b % 3) * 3 +
-            (i % 3),
+          (_, i) => (Math.floor(b / 3) * 3 + Math.floor(i / 3)) * 9 + (b % 3) * 3 + (i % 3),
         ),
       }),
     );
   for (const symbol of plan.symbols)
-    for (let r = 0; r < 9; r++)
-      covers.push(fact({ kind: "cover", cells: row(r), symbol }));
-  for (let i = 0; i < covers.length; i += 27)
-    groups.push(covers.slice(i, i + 27));
+    for (let r = 0; r < 9; r++) covers.push(fact({ kind: "cover", cells: row(r), symbol }));
+  for (let i = 0; i < covers.length; i += 27) groups.push(covers.slice(i, i + 27));
   const anchors: number[] = [];
   for (let c = 0; c < 81; c++)
     if (view.state.values[c])
@@ -205,8 +179,7 @@ export function independentTemplateCertificate(
           value: { cell: c, symbol: view.state.values[c], positive: true },
         }),
       );
-  for (let i = 0; i < anchors.length; i += 27)
-    groups.push(anchors.slice(i, i + 27));
+  for (let i = 0; i < anchors.length; i += 27) groups.push(anchors.slice(i, i + 27));
   const packs = groups.map((ids) => {
     ids.forEach((id) => imports.add(id));
     return add("conjunction@1", ids, {
@@ -217,8 +190,7 @@ export function independentTemplateCertificate(
   const pack = (list: number[][]) => {
     const codes = list.map(encodeTemplate),
       result: number[][] = [];
-    for (let i = 0; i < codes.length; i += 1024)
-      result.push(codes.slice(i, i + 1024));
+    for (let i = 0; i < codes.length; i += 1024) result.push(codes.slice(i, i + 1024));
     return result;
   };
   const terms: Proposition[] = math.effects.map(({ cell, symbol }) => ({

@@ -2,17 +2,8 @@ import type { ReadView, Proposition } from "../state/types";
 import { jsonByteLength } from "../utf8";
 import type { DiscoveryContext, Discovery, TechniqueDescriptor } from "./types";
 import type { DeductionProposal, Effect } from "../proof/types";
-import {
-  buildTemplates,
-  TemplateIndex,
-  TemplateLimit,
-  templateCells,
-} from "../indexes/templates";
-import {
-  IndexInterrupted,
-  type WorkspaceReservation,
-  work,
-} from "../indexes/workspace";
+import { buildTemplates, TemplateIndex, TemplateLimit, templateCells } from "../indexes/templates";
+import { IndexInterrupted, type WorkspaceReservation, work } from "../indexes/workspace";
 import { assertOwnedView, retainedProof } from "../state/candidates";
 import { ForcingProof } from "./forcing-proof";
 import { coverageEntries } from "./manifest";
@@ -21,17 +12,11 @@ import { sameValue, domainAssertion } from "../proof/primitives";
 export interface TemplatePlan {
   readonly mode: "single" | "pair" | "triple" | "incompatibility";
   readonly symbols: readonly number[];
-  readonly alias?:
-    | "Per-digit templates"
-    | "Pattern overlay"
-    | "POM"
-    | "Template incompatibility";
+  readonly alias?: "Per-digit templates" | "Pattern overlay" | "POM" | "Template incompatibility";
 }
 type Work = { kind: "work"; units: number };
 class TemplateInterrupted extends Error {
-  constructor(
-    readonly reason: "proof-step-limit" | "work-limit" | "time-limit",
-  ) {
+  constructor(readonly reason: "proof-step-limit" | "work-limit" | "time-limit") {
     super(reason);
   }
 }
@@ -69,10 +54,8 @@ function geometry(kind: number, n: number): number[] {
   return cells;
 }
 function sourceKey(p: Proposition): string | undefined {
-  if (p.kind === "all-different" && p.cells.length === 9)
-    return `a:${p.cells.join(",")}`;
-  if (p.kind === "cover" && p.cells.length === 9)
-    return `c:${p.symbol}:${p.cells.join(",")}`;
+  if (p.kind === "all-different" && p.cells.length === 9) return `a:${p.cells.join(",")}`;
+  if (p.kind === "cover" && p.cells.length === 9) return `c:${p.symbol}:${p.cells.join(",")}`;
   return undefined;
 }
 function planValid(p: TemplatePlan): boolean {
@@ -88,8 +71,7 @@ function planValid(p: TemplatePlan): boolean {
     p.symbols.length >= 1 &&
     p.symbols.length <= (p.mode === "incompatibility" ? 9 : 3) &&
     p.symbols.every(
-      (s, i) =>
-        Number.isInteger(s) && s >= 1 && s <= 9 && (!i || s > p.symbols[i - 1]),
+      (s, i) => Number.isInteger(s) && s >= 1 && s <= 9 && (!i || s > p.symbols[i - 1]),
     ) &&
     (p.mode === "single"
       ? p.symbols.length === 1
@@ -102,8 +84,7 @@ function planValid(p: TemplatePlan): boolean {
 }
 const chunk = (codes: readonly number[]) => {
   const result: number[][] = [];
-  for (let i = 0; i < codes.length; i += 1024)
-    result.push(codes.slice(i, i + 1024));
+  for (let i = 0; i < codes.length; i += 1024) result.push(codes.slice(i, i + 1024));
   return result;
 };
 const bytes = jsonByteLength;
@@ -147,25 +128,19 @@ function* overlay(
     }
   }
   const rounds: number[][] = [];
-  const compatible = (a: readonly number[], b: readonly number[]) =>
-    !a.some((c, r) => c === b[r]);
+  const compatible = (a: readonly number[], b: readonly number[]) => !a.some((c, r) => c === b[r]);
   if (plan.mode === "pair" || plan.mode === "triple") {
     const seen = rows.map((list) => list.map(() => false));
     for (const a of active[0])
       for (const b of active[1])
-        for (
-          let c = 0;
-          c < (plan.mode === "triple" ? rows[2].length : 1);
-          c++
-        ) {
+        for (let c = 0; c < (plan.mode === "triple" ? rows[2].length : 1); c++) {
           op.consumeTuple(view);
           tupleTests++;
           yield* work(context.workspace);
           if (
             compatible(rows[0][a], rows[1][b]) &&
             (plan.mode !== "triple" ||
-              (compatible(rows[0][a], rows[2][c]) &&
-                compatible(rows[1][b], rows[2][c])))
+              (compatible(rows[0][a], rows[2][c]) && compatible(rows[1][b], rows[2][c])))
           ) {
             seen[0][a] = seen[1][b] = true;
             if (plan.mode === "triple") seen[2][c] = true;
@@ -217,11 +192,7 @@ function* overlay(
       yield* work(context.workspace);
       const symbol = plan.symbols[s],
         bit = 1 << (symbol - 1);
-      if (
-        !view.state.values[cell] &&
-        view.state.domains[cell] & bit &&
-        !occurs[s][cell]
-      )
+      if (!view.state.values[cell] && view.state.domains[cell] & bit && !occurs[s][cell])
         effects.push({ kind: "remove", cell, symbol });
     }
   return {
@@ -294,8 +265,7 @@ function* compile(
         if (id === undefined) throw Error("missing-template-cover");
         covers.push(id);
       }
-    for (let i = 0; i < covers.length; i += 27)
-      groups.push(covers.slice(i, i + 27));
+    for (let i = 0; i < covers.length; i += 27) groups.push(covers.slice(i, i + 27));
     const anchors: number[] = [];
     for (let cell = 0; cell < 81; cell++)
       if (view.state.values[cell]) {
@@ -303,8 +273,7 @@ function* compile(
         if (id === undefined) throw Error("missing-template-anchor");
         anchors.push(id);
       }
-    for (let i = 0; i < anchors.length; i += 27)
-      groups.push(anchors.slice(i, i + 27));
+    for (let i = 0; i < anchors.length; i += 27) groups.push(anchors.slice(i, i + 27));
     const indexes: TemplateIndex[] = [];
     for (const symbol of plan.symbols) {
       const ready = cached?.get(symbol);
@@ -317,8 +286,7 @@ function* compile(
         if (event.kind === "ready") {
           owned.push(event.value);
           indexes.push(event.value);
-        } else if (event.kind === "interrupted")
-          throw new IndexInterrupted(event.reason);
+        } else if (event.kind === "interrupted") throw new IndexInterrupted(event.reason);
         else yield event;
       }
     }
@@ -338,8 +306,7 @@ function* compile(
     }));
     lease.grow(
       0,
-      indexes.reduce((n, i) => n + i.codes.length, 0) * 64 +
-        result.effects.length * 1024,
+      indexes.reduce((n, i) => n + i.codes.length, 0) * 64 + result.effects.length * 1024,
     );
     const certificate = builder.add(
       "template-cover@1",
@@ -453,10 +420,7 @@ export function* compileTemplates(
 }
 
 /** Shared nine digit relations, four fixed search cursors; round-robin fairness. */
-export function* discoverTemplates(
-  view: ReadView,
-  context: DiscoveryContext,
-): Discovery {
+export function* discoverTemplates(view: ReadView, context: DiscoveryContext): Discovery {
   operation(view, context);
   const eligibility = templateTechniques[0].eligible(view);
   if (eligibility.kind === "excluded") {
@@ -465,9 +429,7 @@ export function* discoverTemplates(
   }
   const indexes = new Map<number, TemplateIndex>(),
     budget = new TemplateWork(context);
-  const jobs: Generator<
-    Work | { kind: "proposal"; proposal: DeductionProposal }
-  >[] = [];
+  const jobs: Generator<Work | { kind: "proposal"; proposal: DeductionProposal }>[] = [];
   let root: WorkspaceReservation | undefined;
   const dispose = () => {
     for (const job of jobs) job.return(undefined);
@@ -482,8 +444,7 @@ export function* discoverTemplates(
       for (const event of buildTemplates(view, symbol, context.workspace)) {
         if (event.kind === "ready")
           indexes.set(symbol, event.value); // Acquire before any throwing accounting boundary.
-        else if (event.kind === "interrupted")
-          throw new IndexInterrupted(event.reason);
+        else if (event.kind === "interrupted") throw new IndexInterrupted(event.reason);
         else {
           budget.charge(event.units);
           yield event;
@@ -515,8 +476,7 @@ export function* discoverTemplates(
       for (let a = 1; a <= 9; a++)
         for (let b = a + 1; b <= 9; b++) {
           if (mode !== "triple") yield { mode, symbols: [a, b] };
-          if (mode !== "pair")
-            for (let c = b + 1; c <= 9; c++) yield { mode, symbols: [a, b, c] };
+          if (mode !== "pair") for (let c = b + 1; c <= 9; c++) yield { mode, symbols: [a, b, c] };
         }
     }
     function* job(
@@ -540,7 +500,7 @@ export function* discoverTemplates(
     for (const mode of ["single", "pair", "triple", "incompatibility"] as const)
       jobs.push(job(mode));
     while (jobs.length)
-      for (let i = 0; i < jobs.length; ) {
+      for (let i = 0; i < jobs.length;) {
         const next = jobs[i].next();
         if (next.done) {
           jobs.splice(i, 1);
@@ -554,15 +514,9 @@ export function* discoverTemplates(
     yield { kind: "exhausted" };
   } catch (error) {
     dispose();
-    if (
-      error instanceof IndexInterrupted ||
-      error instanceof TemplateInterrupted
-    )
+    if (error instanceof IndexInterrupted || error instanceof TemplateInterrupted)
       yield { kind: "interrupted", reason: error.reason };
-    else if (
-      error instanceof TemplateLimit &&
-      error.reason === "template-tuple-limit"
-    )
+    else if (error instanceof TemplateLimit && error.reason === "template-tuple-limit")
       yield { kind: "interrupted", reason: "work-limit" };
     else throw error;
   } finally {
@@ -571,57 +525,53 @@ export function* discoverTemplates(
 }
 
 const entry = coverageEntries.find((e) => e.id === "C33")!;
-export const templateTechniques: readonly TechniqueDescriptor[] = Object.freeze(
-  [
-    Object.freeze({
-      id: entry.version,
-      aliases: entry.aliases,
-      tier: entry.tier,
-      requires: entry.capabilities,
-      assumptionPolicy: entry.assumptionPolicy,
-      bounds: Object.freeze({
-        maxLength: 0,
-        maxBranchDepth: 0,
-        maxAlternatives: 9,
-        maxPatternCells: 81,
-        maxSetSize: 3,
-        templates: Object.freeze({
-          maxTemplatesPerSymbol: 46656,
-          maxOverlaySymbols: 3,
-          maxIncompatibilitySymbols: 9,
-          maxTupleTestsPerRevision: 100000,
-        }),
+export const templateTechniques: readonly TechniqueDescriptor[] = Object.freeze([
+  Object.freeze({
+    id: entry.version,
+    aliases: entry.aliases,
+    tier: entry.tier,
+    requires: entry.capabilities,
+    assumptionPolicy: entry.assumptionPolicy,
+    bounds: Object.freeze({
+      maxLength: 0,
+      maxBranchDepth: 0,
+      maxAlternatives: 9,
+      maxPatternCells: 81,
+      maxSetSize: 3,
+      templates: Object.freeze({
+        maxTemplatesPerSymbol: 46656,
+        maxOverlaySymbols: 3,
+        maxIncompatibilitySymbols: 9,
+        maxTupleTestsPerRevision: 100000,
       }),
-      watches: (_view: ReadView) => Object.freeze([{ kind: "all" as const }]),
-      eligible(view: ReadView) {
-        assertOwnedView(view);
-        // Synchronous eligibility visits bounded assembled capabilities only.
-        // Exact accepted source reconstruction belongs to the charged compiler.
-        const facts = new Set<string>();
-        for (const scope of view.assembly.allDifferent)
-          if (scope.cells.length === 9) facts.add(`a:${scope.cells.join(",")}`);
-        for (const cover of view.assembly.covers)
-          if (cover.cells.length === 9)
-            facts.add(`c:${cover.symbol}:${cover.cells.join(",")}`);
-        let valid =
-          view.assembly.problem.cells.length === 81 &&
-          view.assembly.problem.symbols.length === 9;
-        for (let kind = 0; kind < 3; kind++)
-          for (let n = 0; n < 9; n++)
-            if (!facts.has(`a:${geometry(kind, n).join(",")}`)) valid = false;
-        for (let s = 1; s <= 9; s++)
-          for (let n = 0; n < 9; n++)
-            if (!facts.has(`c:${s}:${geometry(0, n).join(",")}`)) valid = false;
-        return valid
-          ? { kind: "yes" as const }
-          : {
-              kind: "excluded" as const,
-              reason: "missing-template-geometry",
-              dependencies: [{ kind: "all" as const }],
-            };
-      },
-      estimate: (_view: ReadView) => ({ hit: 1, gain: 1, cost: 100000 }),
-      discover: discoverTemplates,
     }),
-  ],
-);
+    watches: (_view: ReadView) => Object.freeze([{ kind: "all" as const }]),
+    eligible(view: ReadView) {
+      assertOwnedView(view);
+      // Synchronous eligibility visits bounded assembled capabilities only.
+      // Exact accepted source reconstruction belongs to the charged compiler.
+      const facts = new Set<string>();
+      for (const scope of view.assembly.allDifferent)
+        if (scope.cells.length === 9) facts.add(`a:${scope.cells.join(",")}`);
+      for (const cover of view.assembly.covers)
+        if (cover.cells.length === 9) facts.add(`c:${cover.symbol}:${cover.cells.join(",")}`);
+      let valid =
+        view.assembly.problem.cells.length === 81 && view.assembly.problem.symbols.length === 9;
+      for (let kind = 0; kind < 3; kind++)
+        for (let n = 0; n < 9; n++)
+          if (!facts.has(`a:${geometry(kind, n).join(",")}`)) valid = false;
+      for (let s = 1; s <= 9; s++)
+        for (let n = 0; n < 9; n++)
+          if (!facts.has(`c:${s}:${geometry(0, n).join(",")}`)) valid = false;
+      return valid
+        ? { kind: "yes" as const }
+        : {
+            kind: "excluded" as const,
+            reason: "missing-template-geometry",
+            dependencies: [{ kind: "all" as const }],
+          };
+    },
+    estimate: (_view: ReadView) => ({ hit: 1, gain: 1, cost: 100000 }),
+    discover: discoverTemplates,
+  }),
+]);

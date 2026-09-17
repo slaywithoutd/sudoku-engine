@@ -3,21 +3,10 @@ import type { DeductionProposal } from "../proof/types";
 import type { WorkspaceReservation } from "../indexes/workspace";
 import { proposedClause } from "../proof/builder";
 import { ForcingProof } from "./forcing-proof";
-import {
-  candidateLiteral,
-  members,
-  type Candidate,
-  type CandidateSet,
-} from "./csp-variables";
+import { candidateLiteral, members, type Candidate, type CandidateSet } from "./csp-variables";
 
 export type GeneralizedGrammar =
-  | "bivalue"
-  | "z"
-  | "t"
-  | "whip"
-  | "braid"
-  | "g-whip"
-  | "inserted-or-whip";
+  "bivalue" | "z" | "t" | "whip" | "braid" | "g-whip" | "inserted-or-whip";
 export interface GeneralizedPosition {
   readonly variable: string;
   readonly alternatives: CandidateSet;
@@ -100,11 +89,7 @@ export class GeneralizedProof {
       this.builder.scope = scope;
     }
   }
-  exclude(
-    value: Candidate,
-    witness: CandidateSet,
-    root: number,
-  ): ExclusionProof {
+  exclude(value: Candidate, witness: CandidateSet, root: number): ExclusionProof {
     const b = this.builder,
       weak: number[] = [],
       reductions: number[] = [];
@@ -142,19 +127,14 @@ export class GeneralizedProof {
     return { weak, reductions, result };
   }
   /** Compile one lexical target assumption, or an existing OR case assumption. */
-  positions(
-    plan: GeneralizedPlan,
-    assumption: number,
-  ): Omit<GeneralizedCertificate, "root"> {
+  positions(plan: GeneralizedPlan, assumption: number): Omit<GeneralizedCertificate, "root"> {
     const b = this.builder,
       prior: { values: CandidateSet; root: number }[] = [
         { values: [plan.target], root: assumption },
       ],
       positions: PositionProof[] = [];
     const witnessRoot = (values: CandidateSet) => {
-      const found = prior.find(
-        (p) => JSON.stringify(p.values) === JSON.stringify(values),
-      );
+      const found = prior.find((p) => JSON.stringify(p.values) === JSON.stringify(values));
       if (!found) throw Error("missing-earlier-right");
       return found.root;
     };
@@ -173,31 +153,20 @@ export class GeneralizedProof {
           : []),
       ];
       const exclusions = rejected.map((e) =>
-        this.exclude(
-          e.literal,
-          members(e.conflictWith),
-          witnessRoot(members(e.conflictWith)),
-        ),
+        this.exclude(e.literal, members(e.conflictWith), witnessRoot(members(e.conflictWith))),
       );
       let result = cover;
       const reductions: number[] = [];
       if (position.right === null) {
         const order = position.alternatives.map((v) =>
-          rejected.findIndex(
-            (e) => JSON.stringify(e.literal) === JSON.stringify(v),
-          ),
+          rejected.findIndex((e) => JSON.stringify(e.literal) === JSON.stringify(v)),
         );
-        result = b.add(
-          "contradiction@1",
-          [cover, ...order.map((i) => exclusions[i].result)],
-          { kind: "false" },
-        );
+        result = b.add("contradiction@1", [cover, ...order.map((i) => exclusions[i].result)], {
+          kind: "false",
+        });
       } else {
         let remaining = [...position.alternatives];
-        for (const [i, excluded] of [
-          { literal: position.left },
-          ...position.excluded,
-        ].entries()) {
+        for (const [i, excluded] of [{ literal: position.left }, ...position.excluded].entries()) {
           remaining = remaining.filter(
             (v) => JSON.stringify(v) !== JSON.stringify(excluded.literal),
           );
@@ -216,11 +185,7 @@ export class GeneralizedProof {
       closing: ExclusionProof | null = null;
     if (plan.positions.at(-1)!.right !== null) {
       const last = prior.at(-1)!;
-      closing = this.exclude(
-        plan.consequence ?? plan.target,
-        last.values,
-        last.root,
-      );
+      closing = this.exclude(plan.consequence ?? plan.target, last.values, last.root);
       contradiction = plan.consequence
         ? closing.result
         : b.add("contradiction@1", [assumption, closing.result], {
@@ -239,11 +204,7 @@ export function compileGeneralized(
 ): DeductionProposal {
   const compiler = new GeneralizedProof(view, new ForcingProof(view, lease)),
     b = compiler.builder;
-  const assumption = b.add(
-    "assume@1",
-    [],
-    proposedClause([candidateLiteral(plan.target)]),
-  );
+  const assumption = b.add("assume@1", [], proposedClause([candidateLiteral(plan.target)]));
   b.scope = [assumption];
   const certificate = compiler.positions(plan, assumption);
   b.scope = [];

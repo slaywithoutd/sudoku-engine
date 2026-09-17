@@ -95,41 +95,90 @@ export class AllDifferentRule implements RuleModule {
   }
 
   *propagate(view: ReadView, rule: ConstraintInstance): Discovery {
-    const builder = new CertificateBuilder(view), seen = new Set<string>();
-    for (const source of rule.cells) for (const cell of rule.cells) {
-      yield { kind: "work", units: 1 };
-      const symbol = view.state.values[source];
-      if (source === cell || !symbol || view.state.values[cell] || !(view.state.domains[cell] & (1 << (symbol-1)))) continue;
-      if (seen.has(`${cell}:${symbol}`)) continue;
-      seen.add(`${cell}:${symbol}`);
-      const fact = [...view.facts.values()].find(f => f.proposition.kind === "literal" && f.proposition.value.positive &&
-        f.proposition.value.cell === source && f.proposition.value.symbol === symbol && !f.conditional && !f.openAssumptions.length);
-      if (!fact) throw Error("missing-value-evidence");
-      builder.peer(fact.root, source, cell, symbol, rule.cells);
-    }
-    if (seen.size) yield { kind: "proposal", proposal: builder.finish("rule-propagation@1", { kind: "propagation" }) };
+    const builder = new CertificateBuilder(view),
+      seen = new Set<string>();
+    for (const source of rule.cells)
+      for (const cell of rule.cells) {
+        yield { kind: "work", units: 1 };
+        const symbol = view.state.values[source];
+        if (
+          source === cell ||
+          !symbol ||
+          view.state.values[cell] ||
+          !(view.state.domains[cell] & (1 << (symbol - 1)))
+        )
+          continue;
+        if (seen.has(`${cell}:${symbol}`)) continue;
+        seen.add(`${cell}:${symbol}`);
+        const fact = [...view.facts.values()].find(
+          (f) =>
+            f.proposition.kind === "literal" &&
+            f.proposition.value.positive &&
+            f.proposition.value.cell === source &&
+            f.proposition.value.symbol === symbol &&
+            !f.conditional &&
+            !f.openAssumptions.length,
+        );
+        if (!fact) throw Error("missing-value-evidence");
+        builder.peer(fact.root, source, cell, symbol, rule.cells);
+      }
+    if (seen.size)
+      yield {
+        kind: "proposal",
+        proposal: builder.finish("rule-propagation@1", { kind: "propagation" }),
+      };
     yield { kind: "exhausted" };
   }
 
   checkPrimitive(input: PrimitiveInput, context: CheckContext): CheckedInference {
     const problem = context.view.assembly.problem;
-    const id = input.conclusion.kind === "rule" ? input.conclusion.constraintId :
-      (input.parameters as { constraintId?: string } | null)?.constraintId;
-    const rule = problem.constraints.find(rule => rule.id === id);
-    requireProof(rule?.type === this.type && this.validate(problem, rule).length === 0, "invalid-rule-instance");
+    const id =
+      input.conclusion.kind === "rule"
+        ? input.conclusion.constraintId
+        : (input.parameters as { constraintId?: string } | null)?.constraintId;
+    const rule = problem.constraints.find((rule) => rule.id === id);
+    requireProof(
+      rule?.type === this.type && this.validate(problem, rule).length === 0,
+      "invalid-rule-instance",
+    );
     if (input.rule === "rule-instance@1") {
-      requireProof(input.premises.length === 0 && sameValue(input.parameters, {}) &&
-        sameValue(input.conclusion, { kind: "rule", constraintId: rule.id }), "invalid-rule-root");
+      requireProof(
+        input.premises.length === 0 &&
+          sameValue(input.parameters, {}) &&
+          sameValue(input.conclusion, { kind: "rule", constraintId: rule.id }),
+        "invalid-rule-root",
+      );
     } else {
-      requireProof(sameValue(input.parameters, { constraintId: rule.id }), "invalid-capability-parameters");
-      requireProof(input.premises.length === 1 && sameValue(
-        context.retained.get(input.premises[0])?.conclusion, { kind: "rule", constraintId: rule.id }), "missing-rule-premise");
+      requireProof(
+        sameValue(input.parameters, { constraintId: rule.id }),
+        "invalid-capability-parameters",
+      );
+      requireProof(
+        input.premises.length === 1 &&
+          sameValue(context.retained.get(input.premises[0])?.conclusion, {
+            kind: "rule",
+            constraintId: rule.id,
+          }),
+        "missing-rule-premise",
+      );
       if (input.rule === "all-different@1") {
-        requireProof(sameValue(input.conclusion, { kind: "all-different", cells: rule.cells }), "invalid-all-different-scope");
+        requireProof(
+          sameValue(input.conclusion, { kind: "all-different", cells: rule.cells }),
+          "invalid-all-different-scope",
+        );
       } else {
-        requireProof(input.rule === "cover@1" && input.conclusion.kind === "cover" &&
-          problem.symbols.includes(input.conclusion.symbol) && rule.cells.length === problem.symbols.length &&
-          sameValue(input.conclusion, { kind: "cover", symbol: input.conclusion.symbol, cells: rule.cells }), "invalid-cover-scope");
+        requireProof(
+          input.rule === "cover@1" &&
+            input.conclusion.kind === "cover" &&
+            problem.symbols.includes(input.conclusion.symbol) &&
+            rule.cells.length === problem.symbols.length &&
+            sameValue(input.conclusion, {
+              kind: "cover",
+              symbol: input.conclusion.symbol,
+              cells: rule.cells,
+            }),
+          "invalid-cover-scope",
+        );
       }
     }
     return inference(input, [rule.id]);

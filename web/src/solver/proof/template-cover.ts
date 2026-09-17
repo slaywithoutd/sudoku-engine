@@ -1,9 +1,4 @@
-import {
-  derived,
-  domainAssertion,
-  requireProof,
-  sameValue,
-} from "./primitives";
+import { derived, domainAssertion, requireProof, sameValue } from "./primitives";
 import type {
   CheckContext,
   CheckedInference,
@@ -22,40 +17,27 @@ interface Parameters {
   tupleTests: number;
   rounds: number[][];
 }
-const shape = (value: object, keys: string[]) =>
-  sameValue(Object.keys(value).sort(), keys.sort());
+const shape = (value: object, keys: string[]) => sameValue(Object.keys(value).sort(), keys.sort());
 function scope(kind: number, n: number): number[] {
   return Array.from({ length: 9 }, (_, i) =>
     kind === 0
       ? n * 9 + i
       : kind === 1
         ? i * 9 + n
-        : (Math.floor(n / 3) * 3 + Math.floor(i / 3)) * 9 +
-          (n % 3) * 3 +
-          (i % 3),
+        : (Math.floor(n / 3) * 3 + Math.floor(i / 3)) * 9 + (n % 3) * 3 + (i % 3),
   );
 }
 /** Independent complete cover checker; no index, detector or compiler imports. */
 export class TemplateCoverChecker {
   readonly id = "template-cover@1";
-  *check(
-    input: PrimitiveInput,
-    context: CheckContext,
-  ): Generator<number, CheckedInference> {
+  *check(input: PrimitiveInput, context: CheckContext): Generator<number, CheckedInference> {
     const p = input.parameters as unknown as Parameters,
       problem = context.view.assembly.problem;
     requireProof(
       p &&
         typeof p === "object" &&
         !Array.isArray(p) &&
-        shape(p, [
-          "mode",
-          "symbols",
-          "templates",
-          "supported",
-          "tupleTests",
-          "rounds",
-        ]),
+        shape(p, ["mode", "symbols", "templates", "supported", "tupleTests", "rounds"]),
       "invalid-template-parameters",
     );
     requireProof(
@@ -70,11 +52,7 @@ export class TemplateCoverChecker {
         p.symbols.length >= 1 &&
         p.symbols.length <= (p.mode === "incompatibility" ? 9 : 3) &&
         p.symbols.every(
-          (s, i) =>
-            Number.isInteger(s) &&
-            s >= 1 &&
-            s <= 9 &&
-            (!i || s > p.symbols[i - 1]),
+          (s, i) => Number.isInteger(s) && s >= 1 && s <= 9 && (!i || s > p.symbols[i - 1]),
         ) &&
         (p.mode === "single"
           ? p.symbols.length === 1
@@ -99,10 +77,7 @@ export class TemplateCoverChecker {
     );
     let count = 0;
     for (const relation of [...p.templates, ...p.supported]) {
-      requireProof(
-        Array.isArray(relation) && relation.length <= 46,
-        "invalid-template-chunks",
-      );
+      requireProof(Array.isArray(relation) && relation.length <= 46, "invalid-template-chunks");
       let previous = -1,
         total = 0;
       for (let i = 0; i < relation.length; i++) {
@@ -117,10 +92,7 @@ export class TemplateCoverChecker {
         for (const code of chunk) {
           yield 1;
           requireProof(
-            Number.isInteger(code) &&
-              code >= 0 &&
-              code < 9 ** 9 &&
-              code > previous,
+            Number.isInteger(code) && code >= 0 && code < 9 ** 9 && code > previous,
             "invalid-template-code-order",
           );
           previous = code;
@@ -197,10 +169,7 @@ export class TemplateCoverChecker {
         symbol: p.symbols[Math.floor(i / 9)],
         cells: scope(0, i % 9),
       };
-      requireProof(
-        sameValue(sources[108 + i], expected),
-        "invalid-template-cover",
-      );
+      requireProof(sameValue(sources[108 + i], expected), "invalid-template-cover");
     }
     for (let i = 0; i < anchors.length; i++) {
       const { cell, symbol } = anchors[i];
@@ -216,8 +185,7 @@ export class TemplateCoverChecker {
     }
     for (let cell = 0; cell < 81; cell++)
       requireProof(
-        !problem.givens[cell] ||
-          context.view.state.values[cell] === problem.givens[cell],
+        !problem.givens[cell] || context.view.state.values[cell] === problem.givens[cell],
         "invalid-template-clue",
       );
     const lists = p.templates.map((chunks) => chunks.flat()),
@@ -227,9 +195,7 @@ export class TemplateCoverChecker {
     // Lexicographic full permutations differ from production occupancy DFS.
     while (more) {
       yield 1;
-      const boxes = new Set(
-        columns.map((c, r) => Math.floor(r / 3) * 3 + Math.floor(c / 3)),
-      );
+      const boxes = new Set(columns.map((c, r) => Math.floor(r / 3) * 3 + Math.floor(c / 3)));
       if (boxes.size === 9)
         for (let s = 0; s < p.symbols.length; s++) {
           yield 1; // At most 81 mask/anchor checks between cooperative boundaries.
@@ -238,9 +204,7 @@ export class TemplateCoverChecker {
           for (let cell = 0; cell < 81; cell++) {
             const selected = columns[Math.floor(cell / 9)] === cell % 9;
             if (
-              selected
-                ? !(domains[cell] & bit)
-                : context.view.state.values[cell] === p.symbols[s]
+              selected ? !(domains[cell] & bit) : context.view.state.values[cell] === p.symbols[s]
             ) {
               legal = false;
               break;
@@ -248,10 +212,7 @@ export class TemplateCoverChecker {
           }
           if (legal) {
             const code = columns.reduce((n, c) => n * 9 + c, 0);
-            requireProof(
-              lists[s][positions[s]++] === code,
-              "incomplete-template-list",
-            );
+            requireProof(lists[s][positions[s]++] === code, "incomplete-template-list");
           }
         }
       let i = 7;
@@ -310,8 +271,7 @@ export class TemplateCoverChecker {
             if (
               compatible(rows[0][a], rows[1][b]) &&
               (p.mode !== "triple" ||
-                (compatible(rows[0][a], rows[2][c]) &&
-                  compatible(rows[1][b], rows[2][c])))
+                (compatible(rows[0][a], rows[2][c]) && compatible(rows[1][b], rows[2][c])))
             ) {
               support[0][a] = support[1][b] = true;
               if (p.mode === "triple") support[2][c] = true;
@@ -363,8 +323,7 @@ export class TemplateCoverChecker {
     for (let s = 0; s < active.length; s++)
       for (const i of active[s]) {
         yield 1;
-        for (let r = 0; r < 9; r++)
-          occurrences[s][r * 9 + rows[s][i][r]] = true;
+        for (let r = 0; r < 9; r++) occurrences[s][r * 9 + rows[s][i][r]] = true;
       }
     const terms: Proposition[] = [];
     for (let cell = 0; cell < 81; cell++)
@@ -372,11 +331,7 @@ export class TemplateCoverChecker {
         yield 1;
         const symbol = p.symbols[s],
           bit = 1 << (symbol - 1);
-        if (
-          !context.view.state.values[cell] &&
-          domains[cell] & bit &&
-          !occurrences[s][cell]
-        )
+        if (!context.view.state.values[cell] && domains[cell] & bit && !occurrences[s][cell])
           terms.push({
             kind: "literal",
             value: { cell, symbol, positive: false },
@@ -404,8 +359,7 @@ export function checkTemplatePattern(
     certificate: number;
   };
   requireProof(
-    shape(p, ["kind", "alias", "mode", "symbols", "certificate"]) &&
-      p.kind === "templates",
+    shape(p, ["kind", "alias", "mode", "symbols", "certificate"]) && p.kind === "templates",
     "invalid-template-pattern",
   );
   const aliases =
@@ -415,26 +369,18 @@ export function checkTemplatePattern(
         ? ["Template incompatibility"]
         : ["Pattern overlay", "POM"];
   requireProof(aliases.includes(p.alias), "invalid-template-alias");
-  const certificates = proposal.proof.nodes.filter(
-      (n) => n.rule === "template-cover@1",
-    ),
+  const certificates = proposal.proof.nodes.filter((n) => n.rule === "template-cover@1"),
     certificate = certificates[0];
   requireProof(
     certificates.length === 1 &&
       certificate.id === p.certificate &&
       certificate.conclusion.kind === "and" &&
-      sameValue(
-        (certificate.parameters as unknown as Parameters).symbols,
-        p.symbols,
-      ) &&
+      sameValue((certificate.parameters as unknown as Parameters).symbols, p.symbols) &&
       (certificate.parameters as unknown as Parameters).mode === p.mode,
     "missing-template-certificate",
   );
   const expected = certificate.conclusion.terms.map((term) => {
-    requireProof(
-      term.kind === "literal" && !term.value.positive,
-      "invalid-template-certificate",
-    );
+    requireProof(term.kind === "literal" && !term.value.positive, "invalid-template-certificate");
     return { kind: "remove", cell: term.value.cell, symbol: term.value.symbol };
   });
   requireProof(
