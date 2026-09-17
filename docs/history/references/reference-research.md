@@ -1,5 +1,7 @@
 # Reference research
 
+_Historical record, kept as written on 2026-09-12. Branch and worktree names it mentions no longer exist; everything is on `master`._
+
 Checked: 2026-09-12. Scope: initial product/design research from primary sources. This is not an exhaustive interaction audit. Current findings came from published help, project documentation, and production source inspection; no interactive browser session was performed.
 
 ## SudokuPad

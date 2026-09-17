@@ -1,6 +1,8 @@
 # T19 implementation evidence at the user-requested pause
 
-Recorded 2026-09-14. Implementation `bcf48129e16eedde290bf3b250d9f0af966f6936` is committed, but **T19 has not passed independent review**. The user requested documentation and a stop while review was in progress. Three reproduced review issues remain unfixed; a fourth accounting concern is unresolved. See the [pause and resume handoff](../m2-resume-handoff.md) before continuing. This is a durable copy of the implementer report, preserving its test evidence and limitations; it is not a release approval.
+_Historical record, kept as written on 2026-09-14. Branch and worktree names it mentions no longer exist; everything is on `master`._
+
+Recorded 2026-09-14. Implementation `bcf48129e16eedde290bf3b250d9f0af966f6936` is committed, but **T19 has not passed independent review**. The user requested documentation and a stop while review was in progress. Three reproduced review issues remain unfixed; a fourth accounting concern is unresolved. See the [pause and resume handoff](../decisions.md#d096---user-requested-implementation-pause-and-durable-handoff) before continuing. This is a durable copy of the implementer report, preserving its test evidence and limitations; it is not a release approval.
 
 ---
 

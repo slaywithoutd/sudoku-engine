@@ -1,5 +1,7 @@
 # M2 engine contracts
 
+_Historical record, kept as written on 2026-09-12. Branch and worktree names it mentions no longer exist; everything is on `master`._
+
 **Approval update:** The user approved this design at `0e98c2b` and authorized implementation under D065/D066. The detailed contracts are approved; benchmarks and runtime acceptance remain required.
 
 Date: 2026-09-12. Status: **approved technical contracts; implementation in progress**. Companion to the [expanded design](2026-09-12-m2-engine-expansion-design.md), [coverage matrix](2026-09-12-m2-technique-coverage.md), [screen/evidence specification](2026-09-12-m2-classic-solver-design.md) and [implementation plan](../plans/2026-09-12-m2-classic-solver.md). Contracts here replace earlier sketches. Numerical choices are proposed, unmeasured profile parameters.

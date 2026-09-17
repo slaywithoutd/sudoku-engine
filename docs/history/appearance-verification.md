@@ -1,6 +1,8 @@
 # Appearance verification
 
-Date: 2026-09-12. Status: implemented and verified. Decision: [D058](decisions.md#d058--light-and-dark-modes-with-five-pastel-themes).
+_Historical record, kept as written on 2026-09-12. Branch and worktree names it mentions no longer exist; everything is on `master`._
+
+Date: 2026-09-12. Status: implemented and verified. Decision: [D058](../decisions.md#d058--light-and-dark-modes-with-five-pastel-themes).
 
 ## Completed behavior
 

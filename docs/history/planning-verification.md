@@ -1,5 +1,7 @@
 # Planning verification
 
+_Historical record, kept as written on 2026-09-12. Branch and worktree names it mentions no longer exist; everything is on `master`._
+
 Checked: 2026-09-12. This verifies the planning artifacts, not an implemented application.
 
 ## Evidence

@@ -1,5 +1,7 @@
 # M2 solver benchmark record
 
+_Historical record, kept as written on 2026-09-15. Branch and worktree names it mentions no longer exist; everything is on `master`._
+
 Corpus: `web/tests/solver/bench/corpus.json`, schema 1. Calibration and held-out
 partitions are disjoint by ID and source group. The committed harness validates
 the partition/policy schema and performs a production-browser dry run.

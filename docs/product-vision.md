@@ -22,7 +22,7 @@ Notes: entering a full-size value hides that cell's notes without deleting them;
 
 Navigation: arrows wrap to the opposite edge within the same row or column. Given clues are selectable but locked during play; navigation does not skip them.
 
-Technology: after requesting a best-fit proposal with no stack preference, the user approved the browser-first architecture in Round 5 Q31: TypeScript + Vite, plain TypeScript views, IndexedDB for state/history, and a worker for later solving. The existing Java/Spring implementation will be migrated during implementation. Domain state, views, persistence, rules, and solving have separate boundaries.
+Technology: after requesting a best-fit proposal with no stack preference, the user approved the browser-first architecture in Round 5 Q31: TypeScript + Vite, plain TypeScript views, IndexedDB for state/history, and a worker for later solving. The original Java prototype was migrated to this stack and later removed (D098). Domain state, views, persistence, rules, and solving have separate boundaries.
 
 Initial launch: run locally on the user's PC and access through localhost. A hosted deployment is not required for the first version.
 

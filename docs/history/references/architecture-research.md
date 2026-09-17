@@ -1,5 +1,7 @@
 # Architecture research and stack options
 
+_Historical record, kept as written on 2026-09-12. Branch and worktree names it mentions no longer exist; everything is on `master`._
+
 Checked: 2026-09-12. Status: research record. The browser-first recommendation was subsequently adopted in Round 5 Q31/D037; the authoritative design is `../superpowers/specs/2026-09-12-platform-design.md`. Sources are official project documentation and MDN browser documentation. No performance benchmarks were run.
 
 ## Recommendation for discussion

@@ -1,5 +1,7 @@
 # Sudoku Engine layout update
 
+_Historical record, kept as written on 2026-09-12. Branch and worktree names it mentions no longer exist; everything is on `master`._
+
 Date: 2026-09-12. Status: implemented and verified.
 
 ## User-approved design

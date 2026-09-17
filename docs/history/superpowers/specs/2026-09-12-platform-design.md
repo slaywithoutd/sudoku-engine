@@ -1,5 +1,7 @@
 # Sudoku platform architecture
 
+_Historical record, kept as written on 2026-09-12. Branch and worktree names it mentions no longer exist; everything is on `master`._
+
 Date: 2026-09-12. Status: APPROVED architecture under Q31/D037, refined by D038–D044. First-release behavior is implemented and verified in `web/`; later subsystem details have explicit roadmap checkpoints. Confirmed decisions are in `../../decisions.md`; actual first-release evidence is in [release verification](../../release-verification.md).
 
 ## Product and delivery order

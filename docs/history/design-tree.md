@@ -1,5 +1,7 @@
 # Design tree and interview
 
+_Historical record, kept as written on 2026-09-12. Branch and worktree names it mentions no longer exist; everything is on `master`._
+
 Updated: 2026-09-12. All five rounds and all 38 questions are answered. Architecture and first-release behavior are approved; later detail is explicitly deferred under D044. This file preserves interview history; the specifications and roadmap carry current requirements.
 
 ## Round 1: independent decisions available now

@@ -1,6 +1,6 @@
 # Sudoku platform roadmap
 
-Updated: 2026-09-15. Status: **M1a + M1b implemented and verified**. **M2 design is approved and implementation review reached T27, but M2 is not release-complete.** See [implementation progress](m2-implementation-progress.md) and [M2 solver verification](m2-solver-verification.md). M2 direction is D046–D057; completed planning and proposed choices are D059–D064.
+Updated: 2026-09-17. M1 and M2 are merged on master; the solver ships in the app (Analyze/Explain). Benchmark calibration of solver resource defaults is still open. M2 direction is D046–D057; completed planning and proposed choices are D059–D064; integration is D099.
 
 ## Delivery sequence
 
@@ -8,7 +8,7 @@ Updated: 2026-09-15. Status: **M1a + M1b implemented and verified**. **M2 design
 | --- | --- | --- | --- |
 | M1a | Classic creator, autosaved drafts, manual/string entry, conflict checks, Finish into personal library. | Conflicting drafts survive reopen; Finish rejects conflicts; finished definitions are immutable. | Approved first-release specification and detailed plan. |
 | M1b | Classic play, notes, arrows, undo/redo, personal library, settings, JSON backups. First usable release includes M1a + M1b. | First-release acceptance checks and a local startup guide pass. | Approved first-release specification and detailed plan. |
-| M2 | Broad classic deduction engine, Explain/Analyze modes, independent count evidence and expandable proofs; shared constraint interfaces designed now. | All 33 primary/five conditional coverage rows accepted at declared bounds; independent proofs/counts, fair scheduling, identified fallback, bounded transport/Cancel, measured budgets and no false Perfect. | [Concrete contracts](superpowers/specs/2026-09-12-m2-engine-contracts.md), [coverage matrix](superpowers/specs/2026-09-12-m2-technique-coverage.md) and [complete 27-task plan](superpowers/plans/2026-09-12-m2-classic-solver.md) are approved; execution/acceptance tracked in the implementation record. No gameplay hints yet. |
+| M2 | Broad classic deduction engine, Explain/Analyze modes, independent count evidence and expandable proofs; shared constraint interfaces designed now. | All 33 primary/five conditional coverage rows accepted at declared bounds; independent proofs/counts, fair scheduling, identified fallback, bounded transport/Cancel, measured budgets and no false Perfect. | [Concrete contracts](history/superpowers/specs/2026-09-12-m2-engine-contracts.md), [coverage matrix](history/superpowers/specs/2026-09-12-m2-technique-coverage.md) and [complete 27-task plan](history/superpowers/plans/2026-09-12-m2-classic-solver.md) are approved; execution/acceptance tracked in the implementation record. No gameplay hints yet. |
 | M3 | Classic construction assistant. | Existing clues preserved; additions-only proposal; target evidence; honest removability status; applying proposal undoable. | Define target evaluator and irreducibility evidence, resource budgets, deterministic/randomized construction, and impossible input handling. |
 | M4 | Diagonal, killer, and thermometer creation/play on classic 9×9; combinable constraints. | Rule definitions round-trip; graphics match declared semantics; support limitations visible. | Set exact variant semantics, editing gestures, overlaps/coverage, capability display, and file version migration. |
 | M5 | Solver support for the initial variants and their supported combinations. | Exact and logical fixtures for individual/mixed constraints; trace replay; unsupported rules never ignored in full-puzzle claims. | Define shared propagation, mixed-rule techniques, soundness checks, and performance budgets. |
@@ -21,12 +21,15 @@ After M5, the following branches have design dependencies but no user-approved t
 | Later branch | Prerequisite | Intended capability | Decisions deferred to its checkpoint |
 | --- | --- | --- | --- |
 | Variant construction assistance | M3 + M5 | Complete variant puzzles while preserving mandatory elements. | Locks for lines/cages/clues; allowed additions/edits; aesthetics; quality verification for mixed constraints. |
-| Expanded gameplay | M1; rule-aware assistance may require M5 | Centre notes, colours, multi-selection, optional automatic note cleanup, richer configurable controls. | Default shortcuts, note layers, drag semantics, palettes, accessibility, themes, timers and other desired options. |
 | Richer personal library/interoperability | M1; variants for variant round-trips | Rich metadata, multiple attempts, import/export with external editors, more library organization. | Format compatibility, lossless/partial import status, attribution, identity/versioning, search/tags, history retention. |
 | Custom geometry and symbol domains | M4/M5 architecture | Custom sizes, regions, symbols, classic-rule opt-outs, unusual/overlapping layouts. | Cell topology, numerical versus symbolic meaning, disconnected/overlapping cells, solver capability boundaries, serialization versions. |
 | Custom-rule authoring/plugin system | Rule registry from M4/M5 | Written rules playable before engine support; structured semantics and reusable extensions. | Supported rule primitives, parameters, validation, capabilities, plugin compatibility and extension execution. |
 | AI-assisted rule development | Tested rule/plugin contracts | Rule text → examples → generated proposal → tests → user review → trusted registry. | Provider/cost, ambiguity handling, test independence, restricted execution, review UI, approval audit and version changes. |
 | Community sharing/explore | Stable puzzle identity/export and capability labels | Accounts, publication, discovery, collections, shared puzzles. | Hosting, authentication, ownership/attribution, moderation, privacy, ranking/search, sync, backups and cost. |
+
+### Delivered after M1
+
+The "expanded gameplay" branch was delivered by the [UX overhaul of 2026-09-16](ux-overhaul-2026-09-16.md): center notes, six cell colors with color-blind patterns, multi-selection, Fill notes, configurable controls and shortcuts, light/dark and pastel themes, and the timer options. Optional automatic note cleanup and rule-aware assistance remain open and may depend on M5.
 
 ## Quality contract across stages
 
@@ -57,11 +60,11 @@ For Perfect minimality, define the verification contract at M3 before promising 
 
 ## First release and continuation
 
-M1 is complete under the [approved behavior specification](superpowers/specs/2026-09-12-first-release-design.md) and [implementation plan](superpowers/plans/2026-09-12-first-release.md), with D053/D058 refinements. **Execute and independently verify the approved expanded M2 plan.** Expanded technique coverage and runtime integration remain in progress; M2–M6 and later branches remain product direction, not work included in M1.
+M1 is complete under the [approved behavior specification](history/superpowers/specs/2026-09-12-first-release-design.md) and [implementation plan](history/superpowers/plans/2026-09-12-first-release.md), with D053/D058 refinements. **Execute and independently verify the approved expanded M2 plan.** Expanded technique coverage and runtime integration remain in progress; M2–M6 and later branches remain product direction, not work included in M1.
 
 M2 implementation batches preserve the full bounded target: oracle/contracts/shared proofs → foundation → graph/short patterns/fish → coloring/chains/ALS → combinations/forcing/generalized/specialized/templates → conditional techniques → scheduling/orchestration → bounded worker/controller/UI → independent integration and benchmark gates. Intermediate batches are reviewable; completing the first six techniques does not complete M2. No universal technique completeness is promised.
 
-T01-T18 are implemented and independently reviewed, covering all bounded C01-C33 and U01-U05 families. T18 passes through `5a19be1`, including authentic conditional OR/template source reuse, original-clue replay, permanent taint and cancellation authority. The final covering/fix checks passed; the earlier complete broad run had 1,656 passes and 33 test timeouts. [Implementation progress](m2-implementation-progress.md) preserves exact verification history and limits.
+T01-T18 are implemented and independently reviewed, covering all bounded C01-C33 and U01-U05 families. T18 passes through `5a19be1`, including authentic conditional OR/template source reuse, original-clue replay, permanent taint and cancellation authority. The final covering/fix checks passed; the earlier complete broad run had 1,656 passes and 33 test timeouts. [Implementation progress](history/m2-implementation-progress.md) preserves exact verification history and limits.
 
 All 38 rows have complete independently verified catalogue evidence after the reviewed pre-T19 closure at `18c103c`. Six earlier minor fixture, descriptor and regression follow-ups remain assigned to T25. Scheduling, worker/controller/UI integration, final whole-suite acceptance and browser calibration remain required before M2 becomes available. Conditional paths remain separate and cannot qualify for Perfect.
 
@@ -70,6 +73,6 @@ Remaining empirical gates are cost tables, proposed 70% human-phase share, confi
 At each later checkpoint: read the decision log, inspect the implemented state, research any changing tool/format behavior, settle that stage's deferred choices, write its specification and implementation plan, and record results in this folder. Preserve earlier user decisions unless the user changes them.
 
 
-## M2 final review checkpoint (2026-09-15)
+## M2 status (2026-09-17)
 
-T01-T26 have task commits and the T27 verification record is written. Catalogue evidence remains independently reviewed, but the full unit gate has four timeouts, benchmark calibration was not run, and runtime contract coverage is incomplete. M2 is not available in the application and must not be marked complete. See [M2 solver verification](m2-solver-verification.md) for exact results and follow-up.
+M2 is integrated on `master` and the solver is available in the application: one engine run in Explain mode, presented as Analyze (summary) or Explain (step by step). Rollout of the engine's Analyze mode and of confined rollout remains off by default (D063), and the time/work/proof defaults have not been calibrated; the required cold/warm/throttled matrix is described in the [benchmark record](history/m2-solver-benchmarks.md). See D099 for the integration decision and [M2 solver verification](history/m2-solver-verification.md) for the last full evidence run before integration.

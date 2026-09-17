@@ -2,7 +2,7 @@
 
 `fireworksTechniques` registers `c29@1`. `Fireworks`, `Triple Fireworks`, and
 `Quadruple Fireworks` use the exact finite
-[matrix profile](../../superpowers/specs/2026-09-12-m2-technique-coverage.md).
+[matrix profile](../../history/superpowers/specs/2026-09-12-m2-technique-coverage.md).
 The triple has one intersection and two outside-box wings. The canonical quad
 has two opposite intersections, the same two wings, and disjoint symbol pairs.
 It is the conjunction of two double fireworks. These names and geometry follow

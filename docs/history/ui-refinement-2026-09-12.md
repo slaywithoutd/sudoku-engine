@@ -1,6 +1,8 @@
 # UI refinement verification
 
-Date: 2026-09-12. Status: implemented and verified. Decision: [D053](decisions.md#d053--english-interface-fixed-note-positions-and-repeat-value-erasing).
+_Historical record, kept as written on 2026-09-12. Branch and worktree names it mentions no longer exist; everything is on `master`._
+
+Date: 2026-09-12. Status: implemented and verified. Decision: [D053](../decisions.md#d053--english-interface-fixed-note-positions-and-repeat-value-erasing).
 
 ## Completed requests
 

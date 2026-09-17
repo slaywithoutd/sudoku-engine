@@ -1,5 +1,7 @@
 # First Usable Release Implementation Plan
 
+_Historical record, kept as written on 2026-09-12. Branch and worktree names it mentions no longer exist; everything is on `master`._
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking. Follow the active session's delegation rules; inline execution is sufficient and does not require adding agents.
 
 **Goal:** Deliver the approved local classic Sudoku creator/player with a personal library, durable undo/redo, and JSON backups.
@@ -10,7 +12,7 @@
 
 **Spec:** [Approved first-release behavior](../specs/2026-09-12-first-release-design.md) and [platform architecture](../specs/2026-09-12-platform-design.md).
 
-**Status:** COMPLETE, 2026-09-12. All ten tasks were implemented on local branch release/first-release, based on 7c9512b. Verified implementation commit: 66b8381. Clean install, typecheck, 54 unit/storage/controller tests, production build and 20 Chromium tests passed. See [actual release evidence](../../release-verification.md) and [resume handoff](../../README.md). The steps and examples below retain the execution contract; checked boxes record completed work.
+**Status:** COMPLETE, 2026-09-12. All ten tasks were implemented on local branch release/first-release, based on 7c9512b. Verified implementation commit: 66b8381. Clean install, typecheck, 54 unit/storage/controller tests, production build and 20 Chromium tests passed. See [actual release evidence](../../release-verification.md) and [resume handoff](../../../README.md). The steps and examples below retain the execution contract; checked boxes record completed work.
 
 ## Global Constraints
 
@@ -35,7 +37,7 @@
 
 ## Repository baseline and file map
 
-Inspected baseline: commit `a45d465`, Java 17/Spring Boot static frontend in `src/main/resources/static/`, classic validators under `src/main/java/com/sudoku/validation/`, no checked-in solver or persistent puzzle data. See [baseline](../../current-application.md).
+Inspected baseline: commit `a45d465`, Java 17/Spring Boot static frontend in `src/main/resources/static/`, classic validators under `src/main/java/com/sudoku/validation/`, no checked-in solver or persistent puzzle data. See [baseline](../../../decisions.md#d098---remove-legacy-javaspring-prototype).
 
 Read any current `AGENTS.md` and inspect `git status --short` before execution. Recheck the actual baseline if another chat has made changes. Create an isolated working branch/worktree at execution time if needed, using the applicable skill; do not mix unrelated edits into task commits.
 

@@ -1,5 +1,7 @@
 # Expanded M2 design verification
 
+_Historical record, kept as written on 2026-09-12. Branch and worktree names it mentions no longer exist; everything is on `master`._
+
 Date: 2026-09-12. Scope: documentation and planning only, under D046/D059. The solver is not implemented; application test counts in other records are historical application evidence.
 
 ## Inspected baseline and preserved work

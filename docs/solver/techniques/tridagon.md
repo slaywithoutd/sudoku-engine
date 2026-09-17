@@ -2,7 +2,7 @@
 
 `tridagonTechniques` registers `c32@1` for `Tridagon`, `Thor's Hammer`,
 `Degenerate Tridagon`, and `Tridagon guardians`. The
-[matrix](../../superpowers/specs/2026-09-12-m2-technique-coverage.md) fixes four
+[matrix](../../history/superpowers/specs/2026-09-12-m2-technique-coverage.md) fixes four
 boxes in a two-band/two-stack rectangle, three cells in each box, three core
 symbols, and at most four guardian occurrences. The terminology follows
 [SudokuWiki: Tridagons](https://www.sudokuwiki.org/Tridagons), consulted

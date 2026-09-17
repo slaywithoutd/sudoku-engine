@@ -1,6 +1,6 @@
 # Engine architecture and coding guide
 
-M2 implementation follows the approved [engine contracts](../superpowers/specs/2026-09-12-m2-engine-contracts.md) and [implementation plan](../superpowers/plans/2026-09-12-m2-classic-solver.md). This guide records the object-oriented approach requested under D066; consult [progress](../m2-implementation-progress.md) for what currently exists.
+M2 implementation follows the approved [engine contracts](../history/superpowers/specs/2026-09-12-m2-engine-contracts.md) and [implementation plan](../history/superpowers/plans/2026-09-12-m2-classic-solver.md). This guide records the object-oriented approach requested under D066; consult [progress](../history/m2-implementation-progress.md) for what currently exists.
 
 ## Responsibility and pattern choices
 
@@ -97,7 +97,7 @@ C20/C21 separate `SueDeCoqSearch`, `AlignedExclusionSearch`, `SubsetCountingSear
 
 ## Forcing-session integration
 
-The T14 [forcing guide](techniques/forcing.md) records the actual `HypotheticalSession`, `BranchCertificate`, `ForcingProof` and graph/lineage responsibilities. These objects compose the existing checker and basic technique strategies. Session labels are display metadata; exact source publications, node objects and lexical ancestry establish branch ownership. A completed parent proof must discharge temporary assumptions and pass ordinary checking before changing primary candidates. T14's independent review and any corrections are tracked in [implementation progress](../m2-implementation-progress.md).
+The T14 [forcing guide](techniques/forcing.md) records the actual `HypotheticalSession`, `BranchCertificate`, `ForcingProof` and graph/lineage responsibilities. These objects compose the existing checker and basic technique strategies. Session labels are display metadata; exact source publications, node objects and lexical ancestry establish branch ownership. A completed parent proof must discharge temporary assumptions and pass ordinary checking before changing primary candidates. T14's independent review and any corrections are tracked in [implementation progress](../history/m2-implementation-progress.md).
 
 `DiscoveryEvent` distinguishes a checker time allowance from a whole invocation deadline, and reports `time-limit` explicitly. Callers must preserve that distinction and all other interruption reasons through future scheduling and worker integration. A consumer that checks a yielded proof still consumes wall-clock time within the originating invocation. Neither a larger test harness allowance nor a bounded proof fixture validates the proposed production timing defaults.
 

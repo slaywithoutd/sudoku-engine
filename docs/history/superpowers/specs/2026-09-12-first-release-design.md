@@ -1,5 +1,7 @@
 # First usable release: approved behavior
 
+_Historical record, kept as written on 2026-09-12. Branch and worktree names it mentions no longer exist; everything is on `master`._
+
 Date: 2026-09-12. Status: APPROVED by Q32/D038. All behavior defaults below were accepted by the user. First-release implementation and verification are complete; see [release evidence](../../release-verification.md). The behavior below remains the approved contract.
 
 ## Confirmed scope

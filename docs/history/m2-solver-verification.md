@@ -1,5 +1,7 @@
 # M2 solver verification
 
+_Historical record, kept as written on 2026-09-15. Branch and worktree names it mentions no longer exist; everything is on `master`._
+
 Updated: 2026-09-15. This record covers the isolated `feat/m2-engine` worktree and is not a release approval.
 
 ## Result

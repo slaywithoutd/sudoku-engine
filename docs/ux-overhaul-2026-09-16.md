@@ -1,6 +1,8 @@
 # UX overhaul — 2026-09-16
 
-Branch `feat/ux-overhaul`, based on the `feat/m2-engine` checkpoint `18689e2`.
+Merged into `master` on 2026-09-17.
+
+The global layout work that followed (commit `37aed22`) belongs to the same overhaul: application-wide fullscreen that survives navigation, a sidebar that collapses to a rail, and a responsive game grid that fits the board, keypad and actions at every proportion.
 
 ## Principles applied
 
@@ -26,4 +28,4 @@ The product assumes players already know Sudoku. Game screens show the board, a 
 
 ## Verification
 
-See the commit history on the branch; the E2E suites cover deselection, note layers, colors, copy/paste, Fill notes, timer accounting (with a fake clock and simulated hidden pages), settings, shortcuts, import files, Library → Solver and Explain navigation.
+The E2E suites under `web/tests/e2e/` cover deselection, note layers, colors, copy/paste, Fill notes, timer accounting (with a fake clock and simulated hidden pages), settings, shortcuts, import files, Library → Solver and Explain navigation.

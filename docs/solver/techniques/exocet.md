@@ -2,7 +2,7 @@
 
 `exocetTechniques` registers `c31@1`. `Exocet` means the bounded Junior form;
 `Junior Exocet` and `Double Exocet` have their own complete named certificates.
-The [matrix](../../superpowers/specs/2026-09-12-m2-technique-coverage.md) is the
+The [matrix](../../history/superpowers/specs/2026-09-12-m2-technique-coverage.md) is the
 binding profile. Primary terminology references are
 [Exocet](https://www.sudokuwiki.org/Exocet) and
 [Double Exocet](https://www.sudokuwiki.org/Double_Exocet), consulted 2026-09-14.

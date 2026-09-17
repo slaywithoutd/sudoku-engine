@@ -424,7 +424,7 @@ Record each answer here with its rationale and consequences. If an answer change
 - Confirmed scope: browser-first TypeScript/Vite/plain views/IndexedDB; worker execution; human-first baseline singles/intersections/pairs; ordered expandable trace and solved board; separate evidence-backed count classification; configurable limits/Cancel with honest incomplete status; isolated snapshot with no play-progress overwrite. Search-assisted completion cannot certify Perfect. Hints wait for M5; construction, variants, community and AI are outside M2.
 - Repository inspection: clean `release/first-release` at `2507adc`, no applicable AGENTS.md; documentation branch `docs/m2-solver-design` preserves that release head.
 - Later inspection: concurrent uncommitted UI/layout changes appeared under `web/`; they were preserved and excluded from the M2 documentation commits. The spec/plan account for the observed sidebar and optional board controls container without approving or reverting that work.
-- Deliverables: [M2 specification](superpowers/specs/2026-09-12-m2-classic-solver-design.md) and [implementation plan](superpowers/plans/2026-09-12-m2-classic-solver.md). D047–D052 are recommendations, not newly confirmed user behavior.
+- Deliverables: [M2 specification](history/superpowers/specs/2026-09-12-m2-classic-solver-design.md) and [implementation plan](history/superpowers/plans/2026-09-12-m2-classic-solver.md). D047–D052 are recommendations, not newly confirmed user behavior.
 
 ## D047 — Temporary original-clue solver workspace
 
@@ -485,7 +485,7 @@ Record each answer here with its rationale and consequences. If an answer change
 - Input: in value-entry mode, entering the selected cell's current editable digit again is an erase action. Retain hidden notes, record an undoable erase and support redo. This applies to pointer buttons and keyboard/numpad input in creator/player. Givens remain locked; the Notes tool continues to operate only on empty cells. Ignore repeated numeric keydown events so holding a key cannot oscillate values.
 - Compatibility: new/in-memory settings use `language: "en"`; the shared library/backup validator accepts both legacy `pt-BR` and `en`, normalizing to `en`. Keep the version-1 record graph, names and histories intact. No bulk renaming of existing records. Earlier releases may not accept newly exported English-language backups; backward reading in the current release is covered.
 - Precedence: this user instruction supersedes earlier Portuguese UI requirements, including Portuguese labels/examples in pending M2 documents. It does not authorize solver implementation or change the remaining M2 recommendations.
-- Evidence: [UI refinement verification](ui-refinement-2026-09-12.md). Squircle CSS is verified in Chromium; unsupported browsers retain rounded corners.
+- Evidence: [UI refinement verification](history/ui-refinement-2026-09-12.md). Squircle CSS is verified in Chromium; unsupported browsers retain rounded corners.
 - User follow-up: inset the cell squircle by 5% on every edge so its contour looks intentional. Apply the gap to hover, selection, focus and conflict backgrounds while preserving the full rectangular hit area, centered digits and fixed note positions.
 
 ## D054 — Broaden the solver into a researched deduction engine
@@ -494,7 +494,7 @@ Record each answer here with its rationale and consequences. If an answer change
 - Source: user objected to limiting the solver to the six baseline techniques, requested research and inclusion of logical deduction techniques, and proposed board/technique scoring inspired by chess engines. The user also requires the architecture to anticipate interacting constraints now.
 - Decision: expand the design target beyond the initial kernel to an explicit technique-family/alias/coverage catalogue; investigate adaptive scheduling and choosing useful deductions. Do not silently substitute the original small M2 scope for this request. The future variant UI remains in its existing milestones, but the shared constraint/proof boundary belongs in the engine design now.
 - Consequence: D048's fixed-only scope/order and the initial ten-task plan were superseded by the expanded contracts and 27-task plan under D059. Preserve their isolation/count/cancellation safeguards. “All techniques” is a coverage goal, not an unverified universal completeness claim; state supported families and finite proof/search bounds explicitly.
-- Research artifact: [expanded engine proposal](superpowers/specs/2026-09-12-m2-engine-expansion-design.md), including primary-source findings, catalogue, scheduler alternatives, mixed-constraint contracts and planning impact.
+- Research artifact: [expanded engine proposal](history/superpowers/specs/2026-09-12-m2-engine-expansion-design.md), including primary-source findings, catalogue, scheduler alternatives, mixed-constraint contracts and planning impact.
 
 ## D055 — Explain and Analyze modes, defaulting to Explain
 
@@ -529,15 +529,15 @@ Record each answer here with its rationale and consequences. If an answer change
 - Presentation: soft tinted surfaces and pastel accents with readable text, shared across the sidebar, board, controls, fields, dialogs, feedback and recovery states. Preserve the inset squircles and grid geometry. Radio groups have text labels, visible selected/focus indicators and native keyboard navigation.
 - Persistence: `settings.colorMode` and `settings.theme` use the existing atomic IndexedDB save path. Changes apply immediately to the document root. Version-1 libraries/backups without either field receive its default; explicit invalid values are rejected. Names, puzzle data and histories are preserved. Existing backup settings opt-in also controls appearance restoration.
 - Scope: appearance only; preserve the separate M2 design work and legacy Spring files. No solver functionality or appearance-specific storage service was added.
-- Evidence: [appearance verification](appearance-verification.md).
+- Evidence: [appearance verification](history/appearance-verification.md).
 
 ## D059 — Complete expanded M2 planning, preserve newer work
 
 - Status: Confirmed planning authorization, 2026-09-12; proposed technical details remain subject to review.
 - Source: user's continuation explicitly requested inspection, completed design/interfaces/coverage/plan, consistent Markdown, verification and focused local commits; design and planning only.
 - Inspection: clean `docs/m2-solver-design` at `80471d2`, preserving expanded research `24e0d25` and newer D058 appearance implementation; no applicable AGENTS.md. Current application/test/configuration and verification records were read.
-- Deliverables: [revised screen specification](superpowers/specs/2026-09-12-m2-classic-solver-design.md), [research rationale](superpowers/specs/2026-09-12-m2-engine-expansion-design.md), [concrete contracts](superpowers/specs/2026-09-12-m2-engine-contracts.md), [coverage matrix](superpowers/specs/2026-09-12-m2-technique-coverage.md), [complete 27-task plan](superpowers/plans/2026-09-12-m2-classic-solver.md). These replace the old six-technique/ten-task contracts.
-- Gate: no solver code before explicit design approval; no repeated first-release interview. Current [planning verification](m2-design-verification.md) checks documentation, not solver runtime.
+- Deliverables: [revised screen specification](history/superpowers/specs/2026-09-12-m2-classic-solver-design.md), [research rationale](history/superpowers/specs/2026-09-12-m2-engine-expansion-design.md), [concrete contracts](history/superpowers/specs/2026-09-12-m2-engine-contracts.md), [coverage matrix](history/superpowers/specs/2026-09-12-m2-technique-coverage.md), [complete 27-task plan](history/superpowers/plans/2026-09-12-m2-classic-solver.md). These replace the old six-technique/ten-task contracts.
+- Gate: no solver code before explicit design approval; no repeated first-release interview. Current [planning verification](history/m2-design-verification.md) checks documentation, not solver runtime.
 
 ## D060 — Finite broad coverage and proof-family acceptance
 
@@ -591,7 +591,7 @@ Record each answer here with its rationale and consequences. If an answer change
 - Source: explicit approval of the completed expanded design and implementation plan at `0e98c2b`, followed by permission to start implementing.
 - Decision: execute the approved 27-task plan and its bounded 38-row coverage contract, preserving existing application work and all evidence/isolation safeguards. Earlier design-only gates are satisfied by this approval; historical planning records remain historical evidence.
 - Workspace: isolated `.worktrees/m2-engine` on `feat/m2-engine`, based on `f3eb4ac` (approved planning plus workspace ignore rules); the original checkout retains `docs/m2-solver-design`.
-- Progress and runtime evidence: [M2 implementation record](m2-implementation-progress.md). Task completion requires actual tests and review; approval does not make any technique implemented or verified.
+- Progress and runtime evidence: [M2 implementation record](history/m2-implementation-progress.md). Task completion requires actual tests and review; approval does not make any technique implemented or verified.
 
 ## D066 — Document engine reasoning and use purposeful object-oriented design
 
@@ -607,7 +607,7 @@ Record each answer here with its rationale and consequences. If an answer change
 - Root preflight enforces at most 81 cells, nine symbols, 256 declared rules, 256 all-different capabilities, 2,304 covers, 81 cells per scope and 2,978 original/capability roots before synchronous allocation. Smaller domains exist for tests, not custom-grid UI support. Finite relation roots enter through T05's checked mock composition. Profile assembly must additionally reject more than 256 combined rule/technique jobs.
 - Shared resource-limit values live in `solver/limits.ts`; proof types own assumption policy. T04 brings forward only the elementary proof primitives needed for authentic candidate-state tests; T05 retains the remaining proof algebra. Tests cannot manufacture accepted steps through a cast or unchecked factory.
 - Bounded staging yields between checked nodes. T03's internal header allowance is 32 KiB because it includes both proposal and proof StateKeys; protocol 2 still limits an individual serialized wire node/header to 16 KiB and an enclosing control packet to 32 KiB. These are distinct representations with separately accounted bytes. T26 must measure responsiveness; functional tests do not validate the proposed 4 ms slice target.
-- Evidence and actual implementation state: [implementation record](m2-implementation-progress.md) and [architecture guide](solver/architecture.md).
+- Evidence and actual implementation state: [implementation record](history/m2-implementation-progress.md) and [architecture guide](solver/architecture.md).
 
 ## D068 — Represent finite table proofs as bounded checked definitions
 
@@ -618,7 +618,7 @@ Record each answer here with its rationale and consequences. If an answer change
 - Filter leaves cover at most 256 Cartesian tuples in a declared input box. Union nodes verify identical source-domain/constraint identities and a disjoint exhaustive partition on one axis. Partial leaves cannot authorize a join/projection. Complete definitions preserve exact assumptions and rule provenance; table checking yields and charges bounded tuple/pair work instead of storing or traversing unbounded row arrays.
 - Small relation projection checks exact deduplicated columns/rows within the existing node-byte cap. General table-to-table projection remains unsupported in this primitive version; complete definitions can instead project bounded relations or effects. Authentic effect-free proof retention preserves candidate revision while expanding the checked prefix, and therefore requires its own atomic bundle acceptance and cumulative accounting.
 - This is a local proof representation, not permission for whole-grid completion enumeration inside logical techniques. Named grammar bounds and independent counterfactual fixtures still apply. All definition data counts toward proof/work/workspace limits; cancellation or truncation cannot become completeness.
-- Acceptance must reject equal-size different tables, omitted partitions and partial-leaf projections, and include a complete table whose input has more rows than a single bounded leaf. Actual status remains in [implementation progress](m2-implementation-progress.md).
+- Acceptance must reject equal-size different tables, omitted partitions and partial-leaf projections, and include a complete table whose input has more rows than a single bounded leaf. Actual status remains in [implementation progress](history/m2-implementation-progress.md).
 
 ## D069 — Bind quality to the operation and authentic accepted path
 
@@ -627,7 +627,7 @@ Record each answer here with its rationale and consequences. If an answer change
 - Decision: require `QualityContext` containing RunKey, Assembly and authentic initial/accepted ReadViews. Candidate ownership validates the exact original-root anchor and accepted step sequence, including proof-only bundles; quality checks primary operation explicitly and validates final complete rules. Prefer lightweight private lineage metadata over synchronously rebuilding every historical candidate map or retaining every prior full view.
 - Evidence merging receives explicit active primary exact run/phase context before accepting process exhaustion, validates full identity/method/statistics and preserves independently valid witnesses when inconsistent claims are rejected. One witness still proves existence only.
 - Exact startup uses bounded preflight before canonical traversal and an explicit conservative work/workspace reservation before iterator construction. Charge its first setup event once; this finite synchronous boundary requires deadline checks and T26 measurement. Functional tests do not validate browser slice targets.
-- Actual implementation and verification remain recorded in [M2 implementation progress](m2-implementation-progress.md).
+- Actual implementation and verification remain recorded in [M2 implementation progress](history/m2-implementation-progress.md).
 
 ## D070 — Clarify coverage ordering and short-pattern link counts
 
@@ -888,7 +888,7 @@ Record each answer here with its rationale and consequences. If an answer change
 - The user asked to document completed and outstanding work and stop. The running T19 reviewer was interrupted immediately; no implementation fix or later task was started afterward. Only documentation and its verification/commit were completed.
 - T01-T18 and the separate 38-row catalogue closure remain reviewed. T19 source is committed at `bcf4812`, but its independent review is unfinished: three reproduced issues remain unfixed, and an early-closure accounting concern remains unclassified. T19 is not complete. T20-T27 have not started.
 - Preserve the isolated worktree, all focused commits, original checkout, ignored recovery records and existing application work. No merge, push, deployment or release approval is implied. Resume only when the user asks, beginning with unfinished T19 review/fixes rather than restarting completed tasks or the interview.
-- The [complete handoff](m2-resume-handoff.md) records exact findings, remaining files/gates, downstream contracts and deferred evidence/benchmark work. The [durable T19 evidence](solver/scheduling-verification.md) preserves actual commands/results and the concurrent template timeout alongside its isolated pass. Historical full-suite failures and unvalidated defaults remain explicit.
+- The [complete handoff](decisions.md#d096---user-requested-implementation-pause-and-durable-handoff) records exact findings, remaining files/gates, downstream contracts and deferred evidence/benchmark work. The [durable T19 evidence](history/scheduling-verification.md) preserves actual commands/results and the concurrent template timeout alongside its isolated pass. Historical full-suite failures and unvalidated defaults remain explicit.
 - Consequence: integration remains unavailable until the outstanding task and release gates pass. The pause changes scheduling of work, not approved feature scope or proof-correctness requirements.
 
 ## D097 - T27 verification preserves incomplete M2 status
@@ -904,3 +904,11 @@ Record each answer here with its rationale and consequences. If an answer change
 - Decision: delete the original Java 17/Spring Boot prototype (`pom.xml`, Maven wrapper, `src/main/java`, `src/main/resources/static`, `src/test/java`), its `.gitattributes`, the Maven/STS/IntelliJ/NetBeans ignore rules and the baseline description `docs/current-application.md`.
 - Reason: the migration to the TypeScript application in `web/` is complete. The two codebases never shared code: `web/` has its own rule engine, storage and solver, and it never called the prototype's `/api/sudoku/*` endpoints. Keeping an unused build system in the repository misleads contributors about how the application is built and run.
 - Consequence: the repository is a single Vite/TypeScript project. Historical verification records that mention Spring or Maven remain as written; they describe the repository at the time they were produced.
+
+## D099 - Integrate M2 and the UX overhaul into master
+
+- Status: confirmed user instruction, 2026-09-17.
+- Decision: merge every remaining branch (`feat/m2-engine`, `feat/ux-overhaul`, `docs/m2-solver-design`, `release/first-release`) into `master`, delete the branches and their worktrees, and treat `master` as the only line of development.
+- The solver is available in the application in engine Explain mode, presented as **Analyze** (summary) and **Explain** (step by step). Engine Analyze mode and confined rollout remain disabled until the benchmark matrix is run (D063); no time, work or proof default has been validated. The verification recorded in D097 is the last full evidence run before integration; later suites on `master` pass, but they do not replace the calibration work.
+- Reason: the work was complete enough to ship as one application, and the isolated worktrees had become the main source of stale references in the documentation.
+- Consequence: documents that describe branch or worktree state are moved under `docs/history/` and kept as written. The roadmap and index describe `master` only.

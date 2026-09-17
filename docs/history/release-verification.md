@@ -1,5 +1,7 @@
 # First-release implementation verification
 
+_Historical record, kept as written on 2026-09-12. Branch and worktree names it mentions no longer exist; everything is on `master`._
+
 Date: 2026-09-12. Scope: approved M1a + M1b only.
 
 ## Repository and delivery

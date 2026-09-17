@@ -1,10 +1,12 @@
 # M2 classic Sudoku solver: screen and evidence design
 
+_Historical record, kept as written on 2026-09-12. Branch and worktree names it mentions no longer exist; everything is on `master`._
+
 **Approval update:** The user approved this design at `0e98c2b` and authorized implementation under D065/D066. The detailed behavior is approved; benchmarks and runtime acceptance remain required.
 
 Date: 2026-09-12. Status: **approved design; implementation in progress**.
 
-This replaces the initial six-technique specification. The complete design comprises this screen/evidence contract, the [expanded research and rationale](2026-09-12-m2-engine-expansion-design.md), the [concrete engine contracts](2026-09-12-m2-engine-contracts.md), the [bounded technique matrix](2026-09-12-m2-technique-coverage.md) and the [revised implementation plan](../plans/2026-09-12-m2-classic-solver.md). Contract annexes supersede earlier sketches; the research inventory supplies sources, not conflicting executable interfaces. Decisions [D046–D064](../../decisions.md#d046--m2-design-authorization-and-preserved-requirements) distinguish confirmed requirements from recommendations.
+This replaces the initial six-technique specification. The complete design comprises this screen/evidence contract, the [expanded research and rationale](2026-09-12-m2-engine-expansion-design.md), the [concrete engine contracts](2026-09-12-m2-engine-contracts.md), the [bounded technique matrix](2026-09-12-m2-technique-coverage.md) and the [revised implementation plan](../plans/2026-09-12-m2-classic-solver.md). Contract annexes supersede earlier sketches; the research inventory supplies sources, not conflicting executable interfaces. Decisions [D046–D064](../../../decisions.md#d046--m2-design-authorization-and-preserved-requirements) distinguish confirmed requirements from recommendations.
 
 ## 1. Authority and inspected application
 

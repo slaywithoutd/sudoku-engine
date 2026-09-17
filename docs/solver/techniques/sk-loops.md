@@ -1,7 +1,7 @@
 # SK Loops — C30
 
 `skLoopTechniques` registers `c30@1` and the `SK Loops` alias. The exact
-[matrix profile](../../superpowers/specs/2026-09-12-m2-technique-coverage.md)
+[matrix profile](../../history/superpowers/specs/2026-09-12-m2-technique-coverage.md)
 selects four boxes at two bands and two stacks, with eight two-cell groups around
 their rectangle. Adjacent groups share a declared row, column, or box. Each link
 has one to three symbols and total multiplicity is at most sixteen. The source
