@@ -399,7 +399,11 @@ export function checkCageCombinations(
       leaves >= 1 &&
       unions === leaves - 1 &&
       projections === proposal.effects.length &&
-      leaves <= Math.ceil(K01_PROFILE.maxInputBox / K01_PROFILE.leafVolume) * 9,
+      // Each split peels one symbol off one axis, so a leaf tree has at most
+      // (box / leaf) leaves per symbol of the alphabet.
+      leaves <=
+        Math.ceil(K01_PROFILE.maxInputBox / K01_PROFILE.leafVolume) *
+          view.assembly.problem.symbols.length,
     "cage-combinations-shape",
   );
 }

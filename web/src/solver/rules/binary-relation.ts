@@ -152,7 +152,7 @@ export abstract class BinaryRelationRule implements RuleModule {
 
   /**
    * Removes every candidate of either cell that no tuple compatible with the
-   * current domains supports. One complete two-cell table (at most 81 rows)
+   * current domains supports. One complete two-cell table (at most |symbols|^2 rows)
    * is filtered from the relation fact and both current domain facts; each
    * removal projects a negative literal from that table (lemma M3 + D075).
    */

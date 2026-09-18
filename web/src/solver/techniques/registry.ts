@@ -1,4 +1,5 @@
 import type { VersionId } from "../problem";
+import { symbolValue } from "../problem";
 import type { ReadView } from "../state/types";
 import type { Assembly } from "../rules/types";
 import type { Discovery, DiscoveryContext, TechniqueDescriptor } from "./types";
@@ -131,9 +132,16 @@ const descriptors: readonly TechniqueDescriptor[] = Object.freeze(
           const dependencies = Object.freeze([{ kind: "all" as const }]);
           if (!detectors.has(entry.id))
             return { kind: "excluded" as const, reason: "specified-not-implemented", dependencies };
+          // S: live sums; V: numeric symbol values (spec §3.5). Both are resolved on the
+          // actual assembly, never on a familiar rule id.
           if (
             (entry.capabilities.includes("A") && !view.assembly.allDifferent.length) ||
-            (entry.capabilities.includes("H") && !view.assembly.covers.length)
+            (entry.capabilities.includes("H") && !view.assembly.covers.length) ||
+            (entry.capabilities.includes("S") && !view.assembly.sums.length) ||
+            (entry.capabilities.includes("V") &&
+              !view.assembly.problem.symbols.every((symbol) =>
+                Number.isSafeInteger(symbolValue(view.assembly.problem, symbol)),
+              ))
           )
             return { kind: "excluded" as const, reason: "missing-capability", dependencies };
           return { kind: "yes" as const };
