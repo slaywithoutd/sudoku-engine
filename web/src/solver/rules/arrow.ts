@@ -38,6 +38,14 @@ export class ArrowRule implements RuleModule {
   }
 
   equation(rule: ConstraintInstance): Equation {
+    const cached = equationCache.get(rule);
+    if (cached) return cached;
+    const computed = this.computeEquation(rule);
+    equationCache.set(rule, computed);
+    return computed;
+  }
+
+  private computeEquation(rule: ConstraintInstance): Equation {
     const [circle, ...arm] = rule.cells;
     return canonicalEquation({
       cells: [circle, ...arm],

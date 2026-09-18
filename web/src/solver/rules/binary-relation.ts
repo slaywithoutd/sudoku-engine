@@ -29,7 +29,13 @@ export const RELATION_MAINTENANCE = "rule-relation@1";
  * order, so a rule written as [b, a] publishes tuples whose first column is
  * cell min(a, b). `holds` always receives the values in the rule's own order.
  */
-const tupleCache = new WeakMap<ConstraintInstance, readonly (readonly SymbolId[])[]>();
+/**
+ * Tuples depend on the rule instance and on the problem's symbol alphabet.
+ * canonicalProblem always builds fresh frozen instances per problem, but the
+ * public methods are keyed on both so an instance reused across alphabets
+ * can never read another problem's table.
+ */
+const tupleCache = new WeakMap<ConstraintInstance, Map<string, readonly (readonly SymbolId[])[]>>();
 
 export abstract class BinaryRelationRule implements RuleModule {
   abstract readonly type: string;
@@ -73,10 +79,13 @@ export abstract class BinaryRelationRule implements RuleModule {
 
   /** Relation tuples in ascending cell order, sorted lexicographically. */
   tuples(rule: ConstraintInstance, problem: EngineProblem): readonly (readonly SymbolId[])[] {
-    const cached = tupleCache.get(rule);
+    const alphabet = problem.symbols.join(",");
+    const perRule = tupleCache.get(rule) ?? new Map<string, readonly (readonly SymbolId[])[]>();
+    const cached = perRule.get(alphabet);
     if (cached) return cached;
     const computed = this.computeTuples(rule, problem);
-    tupleCache.set(rule, computed);
+    perRule.set(alphabet, computed);
+    tupleCache.set(rule, perRule);
     return computed;
   }
 

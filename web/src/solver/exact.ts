@@ -118,7 +118,8 @@ function inputSize(problem: EngineProblem): {
               descriptor.value.length <= 32)),
         "exact-parameter-limit",
       );
-      characters += key.length;
+      characters +=
+        key.length + (typeof descriptor.value === "string" ? descriptor.value.length : 0);
     }
     scopes += rule.cells.length;
     entries += rule.cells.length + keys.length + 4;
