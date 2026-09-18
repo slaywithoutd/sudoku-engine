@@ -96,3 +96,21 @@ export class TechniqueEstimator {
 }
 
 export const constantEstimator = new TechniqueEstimator(CONSTANT_MODEL);
+
+/**
+ * The trained model behind the @2 policies. Until T14 lands a calibrated
+ * table this is the constant model, so @2 differs from @1 only by its
+ * rotation/decay parameters and tier gate.
+ */
+export let trainedEstimator: TechniqueEstimator = constantEstimator;
+
+/** Test-only replacement of the trained model; production installs it at module load (T14). */
+export function installTrainedModel(model: EstimatorModel): void {
+  trainedEstimator = new TechniqueEstimator(model);
+}
+
+export function estimatorFor(policy: string): TechniqueEstimator {
+  return policy === "explain-fair@2" || policy === "analyze-fair@2"
+    ? trainedEstimator
+    : constantEstimator;
+}

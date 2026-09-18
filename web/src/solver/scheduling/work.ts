@@ -18,7 +18,42 @@ export interface WorkClock {
 }
 export const SCHEDULER_VERSION = "scheduler@1";
 export const QUANTUM = 256;
-export type PolicyId = "explain-fair@1" | "analyze-fair@1" | "fixed-scan@1" | "event-fixed@1";
+export type PolicyId =
+  | "explain-fair@1"
+  | "analyze-fair@1"
+  | "fixed-scan@1"
+  | "event-fixed@1"
+  | "explain-fair@2"
+  | "analyze-fair@2";
+export const POLICY_IDS: readonly PolicyId[] = Object.freeze([
+  "explain-fair@1",
+  "analyze-fair@1",
+  "fixed-scan@1",
+  "event-fixed@1",
+  "explain-fair@2",
+  "analyze-fair@2",
+]);
+/**
+ * Parameters of the @2 policies (spec §3.7, §3.11). They are part of the
+ * canonical options, hence of the RunKey; the @1 policies carry none so
+ * their keys stay byte-identical to M2.
+ */
+export interface PolicyParameters {
+  /** Explain only: tiers below this keep the canonical @1 order. */
+  readonly scoreFromTier: number;
+  /** Every k-th ticket serves the least recently served active job. */
+  readonly rotationEvery: number;
+  /** effectiveHit = hit >> min(decayShiftCap, consecutive empty quanta). */
+  readonly decayShiftCap: number;
+}
+export const DEFAULT_POLICY_PARAMETERS: PolicyParameters = Object.freeze({
+  scoreFromTier: 3,
+  rotationEvery: 4,
+  decayShiftCap: 4,
+});
+export function isScoredPolicy(policy: PolicyId): boolean {
+  return policy === "explain-fair@2" || policy === "analyze-fair@2";
+}
 export class WorkLimit extends Error {
   constructor(readonly reason = "work-limit") {
     super(reason);
@@ -81,6 +116,8 @@ export interface SchedulingOptions {
   readonly limits: Readonly<Limits>;
   readonly phaseWorkUnits: number;
   readonly phaseTimeMs: number;
+  /** Present exactly when the policy is scored (@2). */
+  readonly policyParameters?: PolicyParameters;
 }
 /** Logical options only: task slices do not enter deterministic decisions. */
 export function schedulingOptions(
@@ -88,7 +125,8 @@ export function schedulingOptions(
 ): SchedulingOptions {
   const mode = input.mode ?? "explain",
     policy = input.policy ?? (mode === "explain" ? "explain-fair@1" : "analyze-fair@1");
-  const options = {
+  const scored = (POLICY_IDS as readonly string[]).includes(policy) && isScoredPolicy(policy);
+  const options: SchedulingOptions = {
     mode,
     policy,
     profile: input.profile ?? "classic-expanded@1",
@@ -96,17 +134,37 @@ export function schedulingOptions(
     limits: Object.freeze({ ...input.limits }),
     phaseWorkUnits: input.phaseWorkUnits ?? input.limits.workUnits,
     phaseTimeMs: input.phaseTimeMs ?? input.limits.timeMs,
+    ...(scored
+      ? {
+          policyParameters: Object.freeze({
+            ...DEFAULT_POLICY_PARAMETERS,
+            ...(input.policyParameters ?? {}),
+          }),
+        }
+      : {}),
   };
-  if (
-    !["explain", "analyze"].includes(mode) ||
-    !["explain-fair@1", "analyze-fair@1", "fixed-scan@1", "event-fixed@1"].includes(policy)
-  )
+  if (!["explain", "analyze"].includes(mode) || !(POLICY_IDS as readonly string[]).includes(policy))
     throw Error("invalid-scheduler-policy");
   if (
-    (policy === "explain-fair@1" && mode !== "explain") ||
-    (policy === "analyze-fair@1" && mode !== "analyze")
+    (policy.startsWith("explain-fair") && mode !== "explain") ||
+    (policy.startsWith("analyze-fair") && mode !== "analyze")
   )
     throw Error("policy-mode-mismatch");
+  if (!scored && input.policyParameters !== undefined) throw Error("policy-parameters-unscored");
+  if (options.policyParameters) {
+    const { scoreFromTier, rotationEvery, decayShiftCap } = options.policyParameters;
+    if (
+      !Number.isSafeInteger(scoreFromTier) ||
+      scoreFromTier < 0 ||
+      !Number.isSafeInteger(rotationEvery) ||
+      rotationEvery < 2 ||
+      !Number.isSafeInteger(decayShiftCap) ||
+      decayShiftCap < 0 ||
+      decayShiftCap > 10 ||
+      Object.keys(options.policyParameters).length !== 3
+    )
+      throw Error("invalid-policy-parameters");
+  }
   if (!(PROFILES as readonly string[]).includes(options.profile)) throw Error("unknown-profile");
   if (typeof options.rollout !== "boolean") throw Error("invalid-rollout-option");
   if (options.rollout && (mode !== "analyze" || options.profile !== "classic-expanded@1"))

@@ -2,7 +2,12 @@ import type { CheckedStep } from "../proof/types";
 import type { ReadView } from "../state/types";
 import type { TechniqueDescriptor } from "../techniques/types";
 import { type SchedulingLedger, type JobKey, compareJob, compareText } from "./ledger";
-import { type PolicyId } from "./work";
+import {
+  DEFAULT_POLICY_PARAMETERS,
+  isScoredPolicy,
+  type PolicyId,
+  type PolicyParameters,
+} from "./work";
 import { stepFeatures, compareFeatures, type StepFeatures } from "./features";
 
 export interface SchedulerPolicy {
@@ -18,12 +23,17 @@ export class FairPolicy implements SchedulerPolicy {
   #view?: ReadView;
   #features = new WeakMap<CheckedStep, StepFeatures>();
   readonly #tiers: ReadonlyMap<string, number>;
+  readonly scored: boolean;
+  readonly parameters: PolicyParameters;
   constructor(
     readonly id: PolicyId,
     techniques: readonly TechniqueDescriptor[],
-    readonly mode: "explain" | "analyze" = id === "analyze-fair@1" ? "analyze" : "explain",
+    readonly mode: "explain" | "analyze" = id.startsWith("analyze-fair") ? "analyze" : "explain",
+    parameters: PolicyParameters = DEFAULT_POLICY_PARAMETERS,
   ) {
     this.#tiers = new Map(techniques.map((descriptor) => [descriptor.id, descriptor.tier]));
+    this.scored = isScoredPolicy(id);
+    this.parameters = Object.freeze({ ...parameters });
   }
   next(ledger: SchedulingLedger, view: ReadView): JobKey {
     if (this.#view !== view) this.#features = new WeakMap();
@@ -37,12 +47,24 @@ export class FairPolicy implements SchedulerPolicy {
       jobs = jobs.filter((j) => j.tier === tier);
     }
     const baseline = this.id === "fixed-scan@1" || this.id === "event-fixed@1";
-    const oldest = !baseline && (ledger.ticket + 1) % 4 === 0;
+    const rotation = this.scored ? this.parameters.rotationEvery : 4;
+    const oldest = !baseline && (ledger.ticket + 1) % rotation === 0;
+    // A scored Explain policy keeps the canonical @1 order below scoreFromTier
+    // (spec §3.7): declared constants, no model, no decay.
+    const scoredHere =
+      this.scored &&
+      (this.mode === "analyze" || jobs.every((job) => job.tier >= this.parameters.scoreFromTier));
+    const estimateOf = (job: (typeof jobs)[number]) => {
+      if (!this.scored) return job.estimate;
+      if (!scoredHere) return job.declared;
+      const shift = Math.min(this.parameters.decayShiftCap, job.emptyQuanta);
+      return { ...job.estimate, hit: Math.max(1, clamp(job.estimate.hit) >> shift) };
+    };
     jobs.sort((left, right) => {
       if (oldest) return left.lastService - right.lastService || compareJob(left, right);
       if (baseline) return compareJob(left, right);
-      const leftEstimate = left.estimate,
-        rightEstimate = right.estimate;
+      const leftEstimate = estimateOf(left),
+        rightEstimate = estimateOf(right);
       return (
         clamp(rightEstimate.hit) * clamp(rightEstimate.gain) * clamp(leftEstimate.cost) -
           clamp(leftEstimate.hit) * clamp(leftEstimate.gain) * clamp(rightEstimate.cost) ||

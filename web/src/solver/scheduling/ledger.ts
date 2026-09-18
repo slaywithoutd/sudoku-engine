@@ -28,10 +28,14 @@ export interface ScheduledJob {
   readonly descriptor?: TechniqueDescriptor;
   readonly rule?: TechniqueJobs["rules"][number];
   readonly estimate: Estimate;
+  /** The descriptor's own constants, kept for tiers the scored policy leaves canonical. */
+  readonly declared: Estimate;
   status: DetectorStatus;
   dependencies: readonly Watch[];
   work: number;
   lastService: number;
+  /** Consecutive served quanta without a proposal; reset on a proposal or an advance. */
+  emptyQuanta: number;
   reason?: string;
 }
 export function compareJob(left: ScheduledJob, right: ScheduledJob): number {
@@ -60,20 +64,24 @@ export class SchedulingLedger {
         tier: -1,
         rule,
         estimate: { hit: 1, gain: 1, cost: 1 },
+        declared: { hit: 1, gain: 1, cost: 1 },
         status: "pending" as DetectorStatus,
         dependencies: [{ kind: "all" as const }],
         work: 0,
         lastService: 0,
+        emptyQuanta: 0,
       })),
       ...registry.techniques.map((descriptor) => ({
         key: { technique: descriptor.id, scopeKey: "" },
         tier: descriptor.tier,
         descriptor,
         estimate: this.#estimate(descriptor, view),
+        declared: descriptor.estimate(view),
         status: "pending" as DetectorStatus,
         dependencies: descriptor.watches(view),
         work: 0,
         lastService: 0,
+        emptyQuanta: 0,
       })),
     ].sort(compareJob);
     if (new Set(this.jobs.map((j) => JSON.stringify(j.key))).size !== this.jobs.length)
@@ -114,6 +122,13 @@ export class SchedulingLedger {
   service(key: JobKey): void {
     this.job(key).lastService = ++this.#ticket;
   }
+  /** A served quantum ended without a proposal (deterministic in-run decay input). */
+  noteEmptyQuantum(key: JobKey): void {
+    this.job(key).emptyQuanta += 1;
+  }
+  noteProposal(key: JobKey): void {
+    this.job(key).emptyQuanta = 0;
+  }
   status(
     key: JobKey,
     status: DetectorStatus,
@@ -138,10 +153,12 @@ export class SchedulingLedger {
       job.status = cold ? "pending" : rows[i].status;
       job.reason = cold ? undefined : rows[i].reason;
       job.lastService = 0;
+      job.emptyQuanta = 0;
       if (job.descriptor) {
         const carried = !cold && (job.status === "exhausted" || job.status === "excluded");
         Object.assign(job, {
           estimate: this.#estimate(job.descriptor, view),
+          declared: job.descriptor.estimate(view),
           dependencies: carried ? rows[i].dependencies : job.descriptor.watches(view),
         });
       }

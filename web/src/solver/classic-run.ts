@@ -8,7 +8,13 @@ import { productionRules } from "./rules/registry";
 import { profileFor } from "./techniques/registry";
 import { initialize, commitChecked } from "./state/candidates";
 import { IndexWorkspace } from "./indexes/workspace";
-import { schedulingOptions, canonicalOptionsKey, SCHEDULER_VERSION } from "./scheduling/work";
+import {
+  schedulingOptions,
+  type PolicyId,
+  type PolicyParameters,
+  canonicalOptionsKey,
+  SCHEDULER_VERSION,
+} from "./scheduling/work";
 import { assembleTechniqueJobs } from "./techniques/registry";
 import { EXACT_METHOD, exactSteps } from "./exact";
 import { runSolver } from "./run";
@@ -101,6 +107,9 @@ export interface ClassicSolveInput {
   readonly mode?: ClassicMode;
   readonly requestId?: string;
   readonly limits?: Readonly<Limits>;
+  /** Engine-side override for ablations; the application keeps the mode's default policy. */
+  readonly policy?: PolicyId;
+  readonly policyParameters?: PolicyParameters;
 }
 export interface ClassicSolvePorts {
   readonly clock: { now(): number };
@@ -256,7 +265,13 @@ export async function solveClassic(
   // Classic input keeps the classic profile and RunKey; a declared variant rule
   // selects the variant profile that appends the K rows (spec §3.6).
   const PROFILE = profileFor(problem);
-  const options = schedulingOptions({ limits, mode, profile: PROFILE });
+  const options = schedulingOptions({
+    limits,
+    mode,
+    profile: PROFILE,
+    ...(input.policy ? { policy: input.policy } : {}),
+    ...(input.policyParameters ? { policyParameters: input.policyParameters } : {}),
+  });
   const run: RunKey = {
     requestId,
     snapshotId: snapshot.snapshotId,

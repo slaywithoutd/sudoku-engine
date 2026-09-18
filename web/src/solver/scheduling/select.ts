@@ -17,6 +17,7 @@ import { TemplateOperationContext } from "../indexes/templates";
 import type { UniqueAuthority } from "../conditional";
 import type { Discovery, DiscoveryEvent, Ledger } from "../techniques/types";
 import { defined } from "../invariants";
+import { estimatorFor } from "./estimator";
 import { SchedulingLedger, type TechniqueJobs, type ScheduledJob } from "./ledger";
 import { FairPolicy } from "./policy";
 import {
@@ -54,6 +55,8 @@ export type SelectionEvent =
       readonly ledger: Ledger;
     };
 interface Cursor {
+  /** True once the current quantum yielded a proposal (decay bookkeeping). */
+  proposed?: boolean;
   discovery?: Discovery;
   checking?: Generator<CheckEvent, void, void>;
   lease?: WorkspaceReservation;
@@ -112,8 +115,13 @@ export class StepSelection {
       4096 + (registry.rules.length + registry.techniques.length) * 4096,
     );
     try {
-      this.ledger = new SchedulingLedger(view, registry);
-      this.#policy = new FairPolicy(this.options.policy, registry.techniques, this.options.mode);
+      this.ledger = new SchedulingLedger(view, registry, estimatorFor(this.options.policy));
+      this.#policy = new FairPolicy(
+        this.options.policy,
+        registry.techniques,
+        this.options.mode,
+        this.options.policyParameters,
+      );
     } catch (error) {
       this.#lease.dispose();
       throw error;
@@ -310,6 +318,8 @@ export class StepSelection {
         cursor.debt += event.units;
         break;
       case "proposal":
+        cursor.proposed = true;
+        this.ledger.noteProposal(job.key);
         this.#startChecking(job, cursor, event.proposal);
         break;
       case "excluded":
@@ -445,7 +455,9 @@ export class StepSelection {
       this.ledger.service(key);
       const cursor = this.#cursors.get(job) ?? { debt: 0 };
       this.#cursors.set(job, cursor);
+      cursor.proposed = false;
       yield* this.#serviceQuantum(job, cursor, window);
+      if (!cursor.proposed) this.ledger.noteEmptyQuantum(key);
       // A checker result paid at the last unit belongs to this quantum.
       if (cursor.checked && !cursor.debt) this.#bufferChecked(cursor);
       if (
