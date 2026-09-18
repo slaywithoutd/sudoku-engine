@@ -246,6 +246,7 @@ class CandidateOwner {
       placed: Object.freeze(placed),
       coverIds: incidence.covers,
       relationIds: incidence.relations,
+      sumIds: incidence.sums,
       constraintIds: incidence.constraints,
       graphChanged: true,
     });
@@ -775,6 +776,15 @@ function frozenAssembly(input: Assembly): Assembly {
         }),
       ),
     ),
+    sums: Object.freeze(
+      input.sums.map((sum) =>
+        Object.freeze({
+          ...sum,
+          cells: Object.freeze([...sum.cells]),
+          coefficients: Object.freeze([...sum.coefficients]),
+        }),
+      ),
+    ),
     // Reconstruct bounded peer metadata from the capabilities already checked
     // by createRoots; externally supplied lists are not candidate authority.
     peers: Object.freeze(
@@ -898,6 +908,7 @@ export function acceptedStepChanges(
     placed: Object.freeze(placed),
     coverIds: incidence.covers,
     relationIds: incidence.relations,
+    sumIds: incidence.sums,
     constraintIds: incidence.constraints,
     graphChanged: true,
     sourceChanged: true,

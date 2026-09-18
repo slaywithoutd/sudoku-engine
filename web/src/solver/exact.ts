@@ -143,6 +143,7 @@ export function exactInitializationReservation(
     "allDifferent",
     "covers",
     "relations",
+    "sums",
     "peers",
     "supportSignature",
   ]);

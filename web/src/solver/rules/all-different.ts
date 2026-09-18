@@ -91,6 +91,7 @@ export class AllDifferentRule implements RuleModule {
       allDifferent: [{ id: rule.id, cells: [...rule.cells], premise }],
       covers,
       relations: [],
+      sums: [],
       primitiveIds: ["rule-instance@1", "all-different@1", "cover@1"],
     };
   }

@@ -29,6 +29,17 @@ export interface EngineProblem {
   key: ProblemKey;
 }
 
+/**
+ * Numeric meaning of a symbol for arithmetic rules (sums, orders, ratios).
+ * Today every problem uses the symbol identity itself; a future symbolic
+ * domain adds an explicit value table here without touching the checkers.
+ * Throws for a symbol outside the problem so a rule cannot sum a stray id.
+ */
+export function symbolValue(problem: Pick<EngineProblem, "symbols">, symbol: SymbolId): number {
+  if (!problem.symbols.includes(symbol)) throw new Error(`unknown symbol ${symbol}`);
+  return symbol;
+}
+
 const VERSION_ID = /^[a-z][a-z0-9-]*@[1-9]\d*$/;
 const CONSTRAINT_ID = /^[A-Za-z0-9][A-Za-z0-9:._-]*$/;
 

@@ -40,10 +40,24 @@ export interface Relation {
   premise: FactId;
 }
 
+/**
+ * A linear equation over cell values. Bounded by M2_ROOT_LIMITS.sumCells and
+ * sumCoefficient; every coefficient is a nonzero integer so arrow circles can
+ * carry -1. Values are symbolValue(problem, symbol), never raw mask bits.
+ */
+export interface LinearSum {
+  id: string;
+  cells: readonly CellId[];
+  coefficients: readonly number[];
+  total: number;
+  premise: FactId;
+}
+
 export interface RuleCapabilities {
   allDifferent: readonly AllDifferent[];
   covers: readonly Cover[];
   relations: readonly Relation[];
+  sums: readonly LinearSum[];
   primitiveIds: readonly VersionId[];
 }
 
@@ -76,6 +90,7 @@ export interface Assembly {
   allDifferent: readonly AllDifferent[];
   covers: readonly Cover[];
   relations: readonly Relation[];
+  sums: readonly LinearSum[];
   peers: readonly (readonly CellId[])[];
   supportSignature: string;
 }

@@ -20,18 +20,26 @@ function relationCapabilities(rule: ConstraintInstance, context: RuleContext): R
       )
       .map((b) => [a, b]),
   );
+  const premise = context.roots.get(rule.id)!;
   return {
     allDifferent: [],
     covers: [],
-    relations: [
-      {
-        id: `${rule.id}:relation`,
-        cells: rule.cells,
-        tuples,
-        premise: context.roots.get(rule.id)!,
-      },
-    ],
-    primitiveIds: ["relation@1"],
+    relations: [{ id: `${rule.id}:relation`, cells: rule.cells, tuples, premise }],
+    // The mock sum also publishes its linear form so shared-state tests can
+    // exercise the sum root beside the tuple relation of the same rule.
+    sums:
+      rule.type === "sum@1"
+        ? [
+            {
+              id: `${rule.id}:sum`,
+              cells: rule.cells,
+              coefficients: rule.cells.map(() => 1),
+              total: (rule.parameters as { total: number }).total,
+              premise,
+            },
+          ]
+        : [],
+    primitiveIds: ["relation@1", ...(rule.type === "sum@1" ? ["sum@1"] : [])],
   };
 }
 
@@ -50,7 +58,24 @@ function checkMockPrimitive(input: PrimitiveInput, context: CheckContext): Check
         sameValue(input.conclusion, { kind: "rule", constraintId: id }),
       "invalid-mock-root",
     );
-  else {
+  else if (input.rule === "sum@1") {
+    requireProof(
+      rule.type === "sum@1" &&
+        input.premises.length === 1 &&
+        sameValue(input.parameters, { constraintId: id }) &&
+        sameValue(context.retained.get(input.premises[0])?.conclusion, {
+          kind: "rule",
+          constraintId: id,
+        }) &&
+        sameValue(input.conclusion, {
+          kind: "sum",
+          cells: rule.cells,
+          coefficients: rule.cells.map(() => 1),
+          total: (rule.parameters as { total: number }).total,
+        }),
+      "invalid-mock-sum",
+    );
+  } else {
     requireProof(
       input.rule === "relation@1" &&
         input.premises.length === 1 &&
@@ -149,6 +174,7 @@ const orderRule: RuleModule = Object.freeze({
           premise: context.roots.get(rule.id)!,
         },
       ],
+      sums: [],
       primitiveIds: [],
     };
   },

@@ -27,6 +27,16 @@ export type Proposition =
       readonly count: number;
       readonly definition: NodeId;
     }
+  /**
+   * Linear arithmetic over cell values: sum(coefficients[i] * value(cells[i])) === total.
+   * Symbol values come from symbolValue(problem, symbol); coefficients are nonzero.
+   */
+  | {
+      readonly kind: "sum";
+      readonly cells: readonly CellId[];
+      readonly coefficients: readonly number[];
+      readonly total: number;
+    }
   | { readonly kind: "false" };
 export interface Fact {
   readonly id: FactId;
