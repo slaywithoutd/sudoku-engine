@@ -11,6 +11,11 @@ A cage is a `sum` fact whose cells equal an `all-different` fact of the same rul
 - **Grammar:** recomputes the surviving rows and removals from the retained facts and current domains, pins every leaf's premises, parameters and box, requires one complete root table cited by all projections and a binary tree shape (`unions = leaves − 1`).
 - **Evidence:** `web/tests/unit/solver/killer.test.ts` and the fixtures in `web/tests/solver/fixtures/K01.json` (four-cell full box, five-cell out of profile, five-cell narrowed by peers), replay from original clues, and an oracle property over generated killer grids.
 
-## K02 Innies/outies (`k02@1`)
+## K02 Innies/outies (`k02@1`, profile `k02-profile@1`)
 
-Recorded when T09 lands.
+The 45 rule. A container is a full-cover scope sum — every `all-different@1` rule spanning the symbol set publishes one (lemma M4) — and a combination subtracts any subset of the `cage@1` sums that intersect it. Cells covered exactly once by both sides cancel; what remains is the residual equation: uncovered container cells with `+1` (innies), cage cells outside the container with `−1` (outies), and the total `45 − Σ cage totals`.
+
+- **Profile:** one container and 1–7 cages, combined in one `linear-combine@1` node (≤ 8 premises, multipliers `+1`/`−1`), residual ≤ 16 nonzero cells. Discovery enumerates cage subsets in canonical order and proposes only when lemma-LS bounds on the residual remove a candidate. Two-house containers are outside the profile.
+- **Proof:** the `linear-combine@1` node, then one `linear-sum@1` node per removed candidate over the residual's current domain facts, then domain closure.
+- **Grammar:** recomputes the residual from the retained facts, pins the combination's premises, multipliers and conclusion, recomputes the removals, and requires every effect root to be a bound on that exact residual.
+- **Evidence:** `web/tests/unit/solver/killer.test.ts` with the fixtures in `web/tests/solver/fixtures/K02.json` (single innie, outie, five touching cages with an untouched far cage, an eight-cage house where only seven-cage combinations are admissible), replay from original clues, and an oracle property over generated killer grids.

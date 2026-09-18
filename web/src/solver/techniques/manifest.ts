@@ -8007,6 +8007,54 @@ export const variantEntries: readonly CoverageEntry[] = Object.freeze(
           },
         ],
       },
+      {
+        id: "K02",
+        version: "k02@1",
+        aliases: ["Innies/outies"],
+        tier: 2,
+        capabilities: ["D", "S", "V"],
+        assumptionPolicy: "unconditional",
+        bounds:
+          "One full-cover scope sum (an all-different@1 rule spanning the symbol set, lemma M4) combined in a single linear-combine@1 node with multipliers +1/-1 against 1-7 of the cage@1 sums that intersect it; the residual keeps at most 16 nonzero cells (k02-profile@1). Every removal is a linear-sum@1 bound on the residual over the current domain facts of its cells. Two-house containers and cage-only combinations are outside this profile.",
+        grammarId: "k02-grammar@1",
+        detectorId: "k02@1",
+        checkerId: "k02-grammar@1",
+        descriptionPath: "docs/solver/techniques/killer.md",
+        fixtureIds: ["K02-single-innie", "K02-outie", "K02-five-cages", "K02-over-profile"],
+        status: "implemented",
+        evidence: [
+          {
+            kind: "positive",
+            fixtureId: "K02-single-innie",
+            alias: "Innies/outies",
+            record: "web/tests/unit/solver/killer.test.ts#innie",
+          },
+          {
+            kind: "negative",
+            fixtureId: "K02-single-innie",
+            alias: "Innies/outies",
+            record: "web/tests/unit/solver/killer.test.ts#forged-combination",
+          },
+          {
+            kind: "boundary",
+            fixtureId: "K02-over-profile",
+            alias: "Innies/outies",
+            record: "web/tests/unit/solver/killer.test.ts#k02-profile-boundary",
+          },
+          {
+            kind: "original-clue",
+            fixtureId: "K02-outie",
+            alias: "Innies/outies",
+            record: "web/tests/unit/solver/killer.test.ts#k02-replay",
+          },
+          {
+            kind: "independent-oracle",
+            fixtureId: "K02-five-cages",
+            alias: "Innies/outies",
+            record: "web/tests/unit/solver/killer.test.ts#k02-oracle",
+          },
+        ],
+      },
     ] as CoverageEntry[]
   ).map(freeze),
 );

@@ -5,7 +5,16 @@ import { sourceFacts } from "../state/source-index";
 import { symbolMask } from "../state/read";
 import { defined } from "../invariants";
 import { boundsRemovals } from "../rules/linear-rule";
-import { analyzeCage, boxVolume, K01_PROFILE, liveCages, withinProfile } from "./killer";
+import {
+  analyzeCage,
+  boxVolume,
+  K01_PROFILE,
+  K02_PROFILE,
+  liveCages,
+  liveContainers,
+  residualOf,
+  withinProfile,
+} from "./killer";
 
 /**
  * Closed grammar for relation maintenance (`rule-relation@1`): one complete
@@ -392,5 +401,132 @@ export function checkCageCombinations(
       projections === proposal.effects.length &&
       leaves <= Math.ceil(K01_PROFILE.maxInputBox / K01_PROFILE.leafVolume) * 9,
     "cage-combinations-shape",
+  );
+}
+
+/**
+ * Closed grammar for K02 (`k02@1`): one full-cover container sum combined
+ * with 1-7 intersecting cage sums in a single linear-combine@1 node, then a
+ * linear-sum@1 bound per removed candidate over the residual's current
+ * domain facts. The grammar recomputes the residual and the removals; the
+ * primitives recheck the arithmetic.
+ */
+export function checkInnieOuties(
+  proposal: DeductionProposal,
+  view: ReadView,
+  available: ReadonlyMap<number, ProofNode>,
+): void {
+  const pattern = proposal.pattern as Record<string, unknown>;
+  requireProof(
+    sameValue(Object.keys(pattern).sort(), ["alias", "cages", "container", "kind", "residual"]) &&
+      pattern.kind === "innies-outies" &&
+      pattern.alias === "Innies/outies" &&
+      typeof pattern.container === "string" &&
+      Array.isArray(pattern.cages),
+    "invalid-innies-outies-pattern",
+  );
+  const container = liveContainers(view).find(
+    (candidate) => candidate.constraintId === pattern.container,
+  );
+  requireProof(container !== undefined, "unknown-innies-outies-container");
+  const cageIds = pattern.cages as unknown[];
+  const cages = liveCages(view);
+  const chosen = cageIds.map((id) => cages.find((cage) => cage.constraintId === id));
+  requireProof(
+    chosen.length >= 1 &&
+      chosen.length <= K02_PROFILE.maxCages &&
+      new Set(cageIds).size === cageIds.length &&
+      chosen.every(
+        (cage) => cage !== undefined && cage.cells.some((cell) => container.cells.includes(cell)),
+      ),
+    "invalid-innies-outies-cages",
+  );
+  const residual = residualOf(container, chosen as NonNullable<(typeof chosen)[number]>[]);
+  requireProof(
+    residual !== undefined && sameValue(pattern.residual, residual),
+    "invalid-innies-outies-residual",
+  );
+  const open = residual.cells.map((cell) => view.state.values[cell] === 0);
+  const expected = boundsRemovals(
+    view.assembly.problem,
+    residual,
+    residual.cells.map((cell) => view.state.domains[cell]),
+    open,
+  );
+  requireProof(
+    proposal.effects.length > 0 &&
+      proposal.effects.every(
+        (effect) =>
+          effect.kind === "remove" &&
+          expected.some(
+            (removal) => removal.cell === effect.cell && removal.symbol === effect.symbol,
+          ),
+      ),
+    "unsupported-innies-outies-effect",
+  );
+  const combinePremises = [
+    container.sum.root,
+    ...(chosen as NonNullable<(typeof chosen)[number]>[]).map((cage) => cage.sum.root),
+  ];
+  const combines = proposal.proof.nodes.filter((node) => node.rule === "linear-combine@1");
+  requireProof(combines.length === 1, "invalid-innies-outies-combination");
+  const [combine] = combines;
+  requireProof(
+    combine.scope.length === 0 &&
+      sameValue(combine.premises, combinePremises) &&
+      sameValue(combine.parameters, { multipliers: [1, ...chosen.map(() => -1)] }) &&
+      sameValue(combine.conclusion, { kind: "sum", ...residual }),
+    "invalid-innies-outies-combination",
+  );
+  const boundPremises = [combine.id, ...residual.cells.map((cell) => view.state.domainFacts[cell])];
+  const effectRoots = new Set(proposal.proof.roots);
+  const signatures = new Set<string>();
+  for (const node of proposal.proof.nodes) {
+    requireProof(node.scope.length === 0, "outside-technique-grammar");
+    const signature = JSON.stringify({
+      rule: node.rule,
+      premises: node.premises,
+      conclusion: node.conclusion,
+    });
+    requireProof(!signatures.has(signature), "redundant-technique-work");
+    signatures.add(signature);
+    if (node === combine) continue;
+    const proposition = node.conclusion;
+    if (node.rule === "linear-sum@1") {
+      requireProof(
+        sameValue(node.premises, boundPremises) &&
+          sameValue(node.parameters, {}) &&
+          proposition.kind === "literal" &&
+          !proposition.value.positive &&
+          proposal.effects.some(
+            (effect) =>
+              effect.cell === proposition.value.cell && effect.symbol === proposition.value.symbol,
+          ) &&
+          effectRoots.has(node.id),
+        "outside-innies-outies-grammar",
+      );
+      continue;
+    }
+    requireProof(node.rule === "domain-restrict@1", "outside-technique-grammar");
+    const nodePremises = node.premises.map((id) => defined(available.get(id), "available"));
+    const base = domainAssertion(nodePremises[0]?.conclusion),
+      conclusion = nodePremises.at(1)?.conclusion;
+    requireProof(
+      proposition.kind === "domain" &&
+        base !== undefined &&
+        base.cell === proposition.cell &&
+        conclusion?.kind === "literal" &&
+        !conclusion.value.positive &&
+        proposal.effects.some(
+          (effect) =>
+            effect.cell === conclusion.value.cell && effect.symbol === conclusion.value.symbol,
+        ) &&
+        proposition.mask !== base.mask,
+      "outside-domain-closure",
+    );
+  }
+  requireProof(
+    proposal.proof.nodes.length <= 1 + proposal.effects.length * 2,
+    "technique-work-bound",
   );
 }

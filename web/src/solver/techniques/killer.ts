@@ -9,6 +9,7 @@ import { symbolValue } from "../problem";
 import type { EngineProblem } from "../problem";
 import { variantEntries } from "./manifest";
 import { defined } from "../invariants";
+import { boundsRemovals } from "../rules/linear-rule";
 
 /** Technique id of K01 proposals; the closed grammar lives in variant-grammar.ts. */
 export const CAGE_COMBINATIONS = "k01@1";
@@ -272,5 +273,206 @@ export const cageCombinationTechniques: readonly TechniqueDescriptor[] = Object.
     },
     estimate: () => ({ hit: 1, gain: 1, cost: 2 }),
     discover: discoverCombinations,
+  }),
+]);
+
+/** Technique id of K02 proposals; the closed grammar lives in variant-grammar.ts. */
+export const INNIES_OUTIES = "k02@1";
+
+/**
+ * Versioned profile of K02 (spec §3.6): one full-cover scope sum (a house,
+ * lemma M4) minus any subset of the cages that intersect it, in one
+ * linear-combine@1 node of at most 8 premises, then lemma-LS bounds on the
+ * residual. Two-house containers stay outside this profile.
+ */
+export const K02_PROFILE = Object.freeze({
+  version: "k02-profile@1",
+  maxCages: 7,
+  maxResidualCells: 16,
+});
+
+export interface Container {
+  readonly constraintId: string;
+  readonly cells: readonly number[];
+  readonly sum: Fact;
+}
+
+/** Full-cover scope sums: every all-different@1 rule spanning the whole symbol set. */
+export function liveContainers(view: ReadView): Container[] {
+  const problem = view.assembly.problem;
+  const types = new Map(problem.constraints.map((rule) => [rule.id, rule.type]));
+  const containers: Container[] = [];
+  for (const sum of sourceFacts(view, "sum")) {
+    const equation = sum.proposition;
+    if (equation.kind !== "sum" || sum.conditional || sum.openAssumptions.length) continue;
+    if (sum.rules.length !== 1 || types.get(sum.rules[0]) !== "all-different@1") continue;
+    if (equation.cells.length !== problem.symbols.length) continue;
+    if (equation.coefficients.some((c) => c !== 1)) continue;
+    containers.push({ constraintId: sum.rules[0], cells: equation.cells, sum });
+  }
+  return containers.sort((left, right) => (left.constraintId < right.constraintId ? -1 : 1));
+}
+
+export interface Residual {
+  readonly cells: readonly number[];
+  readonly coefficients: readonly number[];
+  readonly total: number;
+}
+
+/** Lemma LC with multipliers +1 (container) and -1 (each cage); zero coefficients drop out. */
+export function residualOf(container: Container, cages: readonly Cage[]): Residual | undefined {
+  const coefficients = new Map<number, number>();
+  for (const cell of container.cells) coefficients.set(cell, 1);
+  let total = container.sum.proposition.kind === "sum" ? container.sum.proposition.total : 0;
+  for (const cage of cages) {
+    total -= cage.sum.proposition.kind === "sum" ? cage.sum.proposition.total : 0;
+    for (const cell of cage.cells) coefficients.set(cell, (coefficients.get(cell) ?? 0) - 1);
+  }
+  const cells = [...coefficients]
+    .filter(([, coefficient]) => coefficient !== 0)
+    .map(([cell]) => cell)
+    .sort((left, right) => left - right);
+  if (cells.length === 0 || cells.length > K02_PROFILE.maxResidualCells) return undefined;
+  return {
+    cells,
+    coefficients: cells.map((cell) => defined(coefficients.get(cell), "coefficient")),
+    total,
+  };
+}
+
+export interface InnieOutie {
+  readonly container: Container;
+  readonly cages: readonly Cage[];
+  readonly residual: Residual;
+  readonly removals: readonly { cell: number; symbol: number }[];
+}
+
+/** Every productive container/cage-subset combination in canonical order, recomputed from facts. */
+export function* innieOuties(view: ReadView): Generator<InnieOutie> {
+  const problem = view.assembly.problem;
+  const cages = liveCages(view);
+  for (const container of liveContainers(view)) {
+    const touching = cages.filter((cage) =>
+      cage.cells.some((cell) => container.cells.includes(cell)),
+    );
+    const limit = Math.min(touching.length, K02_PROFILE.maxCages);
+    const subsets: Cage[][] = [];
+    const walk = (start: number, chosen: Cage[]) => {
+      if (chosen.length > 0) subsets.push([...chosen]);
+      if (chosen.length === limit) return;
+      for (let index = start; index < touching.length; index += 1) {
+        chosen.push(touching[index]);
+        walk(index + 1, chosen);
+        chosen.pop();
+      }
+    };
+    walk(0, []);
+    subsets.sort((left, right) => left.length - right.length);
+    for (const subset of subsets) {
+      const residual = residualOf(container, subset);
+      if (!residual) continue;
+      const open = residual.cells.map((cell) => view.state.values[cell] === 0);
+      if (!open.some(Boolean)) continue;
+      const removals = boundsRemovals(
+        problem,
+        residual,
+        residual.cells.map((cell) => view.state.domains[cell]),
+        open,
+      );
+      if (removals.length === 0) continue;
+      yield { container, cages: subset, residual, removals };
+    }
+  }
+}
+
+function* discoverInnieOuties(view: ReadView, context: DiscoveryContext): Discovery {
+  const containers = liveContainers(view);
+  const cages = liveCages(view);
+  if (containers.length === 0 || cages.length === 0) {
+    yield { kind: "excluded", reason: "no-overlapping-sums", dependencies: [{ kind: "all" }] };
+    return;
+  }
+  for (const found of innieOuties(view)) {
+    yield { kind: "work", units: found.residual.cells.length + found.cages.length };
+    context.workspace.checkpoint();
+    const builder = new CertificateBuilder(view);
+    const combined = builder.add(
+      "linear-combine@1",
+      [found.container.sum.root, ...found.cages.map((cage) => cage.sum.root)],
+      { kind: "sum", ...found.residual },
+      { multipliers: [1, ...found.cages.map(() => -1)] },
+    );
+    const premises = [
+      combined,
+      ...found.residual.cells.map((cell) => view.state.domainFacts[cell]),
+    ];
+    for (const { cell, symbol } of found.removals) {
+      yield { kind: "work", units: 1 };
+      const root = builder.add("linear-sum@1", premises, literal(cell, symbol, false));
+      builder.effect({ kind: "remove", cell, symbol }, root);
+    }
+    yield {
+      kind: "proposal",
+      proposal: builder.finish(INNIES_OUTIES, {
+        kind: "innies-outies",
+        alias: "Innies/outies",
+        container: found.container.constraintId,
+        cages: found.cages.map((cage) => cage.constraintId),
+        residual: {
+          cells: [...found.residual.cells],
+          coefficients: [...found.residual.coefficients],
+          total: found.residual.total,
+        },
+      }),
+    };
+  }
+  yield { kind: "exhausted" };
+}
+
+const k02Entry = defined(
+  variantEntries.find((row) => row.id === "K02"),
+  "K02 catalogue row",
+);
+
+/** K02 Innies/outies: a house sum minus its cages, bounded on the residual. */
+export const innieOutieTechniques: readonly TechniqueDescriptor[] = Object.freeze([
+  Object.freeze({
+    id: k02Entry.version,
+    aliases: k02Entry.aliases,
+    tier: k02Entry.tier,
+    requires: k02Entry.capabilities,
+    assumptionPolicy: k02Entry.assumptionPolicy,
+    bounds: Object.freeze({
+      maxLength: 0,
+      maxBranchDepth: 0,
+      maxAlternatives: K02_PROFILE.maxCages,
+      maxPatternCells: K02_PROFILE.maxResidualCells,
+      maxSetSize: K02_PROFILE.maxCages,
+    }),
+    watches: (view: ReadView) =>
+      Object.freeze([
+        ...liveContainers(view).map((container) => ({
+          kind: "sum" as const,
+          id: `${container.constraintId}:sum`,
+        })),
+        ...liveCages(view).map((cage) => ({
+          kind: "sum" as const,
+          id: `${cage.constraintId}:sum`,
+        })),
+      ]),
+    eligible: (view: ReadView) => {
+      const dependencies = Object.freeze([{ kind: "all" as const }]);
+      const cages = liveCages(view);
+      if (
+        cages.length === 0 ||
+        !liveContainers(view).some((container) =>
+          cages.some((cage) => cage.cells.some((cell) => container.cells.includes(cell))),
+        )
+      )
+        return { kind: "excluded" as const, reason: "no-overlapping-sums", dependencies };
+      return { kind: "yes" as const };
+    },
+    estimate: () => ({ hit: 1, gain: 1, cost: 3 }),
+    discover: discoverInnieOuties,
   }),
 ]);

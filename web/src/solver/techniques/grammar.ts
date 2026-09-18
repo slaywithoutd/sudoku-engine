@@ -21,6 +21,7 @@ import { checkTemplatePattern } from "../proof/template-cover";
 import { checkUniquePattern } from "./unique-grammar";
 import {
   checkCageCombinations,
+  checkInnieOuties,
   checkRelationMaintenance,
   checkSumMaintenance,
 } from "./variant-grammar";
@@ -107,6 +108,10 @@ export function checkTechniqueGrammar(
   }
   if (proposal.technique === "k01@1") {
     checkCageCombinations(proposal, view, available);
+    return;
+  }
+  if (proposal.technique === "k02@1") {
+    checkInnieOuties(proposal, view, available);
     return;
   }
   if (proposal.technique === "c33@1") {

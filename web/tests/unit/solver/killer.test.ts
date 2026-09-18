@@ -23,6 +23,8 @@ import { discoveryContext } from "../../solver/discovery-context";
 import { variantOracle } from "../../solver/oracle-variants";
 import { generateSmall, toEngineConstraints } from "../../solver/generate-small";
 import fixtures from "../../solver/fixtures/K01.json";
+import k02Fixtures from "../../solver/fixtures/K02.json";
+import { sameValue } from "../../../src/solver/proof/primitives";
 
 const limits = discoveryContext().limits;
 
@@ -256,6 +258,184 @@ describe("K01 Killer combinations (T08)", () => {
       expect(witnesses.length).toBeGreaterThan(0);
       for (const proposal of proposals) {
         expect([...checkProposal(proposal, context(current))].at(-1)?.kind).toBe("checked");
+        for (const effect of proposal.effects) {
+          effects += 1;
+          for (const witness of witnesses) expect(witness[effect.cell]).not.toBe(effect.symbol);
+        }
+      }
+    }
+    expect(effects).toBeGreaterThan(0);
+  });
+});
+
+interface K02Fixture {
+  id: string;
+  cellCount: number;
+  symbols: number;
+  givens: number[];
+  constraints: ConstraintInstance[];
+  residual?: { cells: number[]; coefficients: number[]; total: number };
+}
+
+function k02Fixture(id: string): K02Fixture {
+  const entry = (k02Fixtures.fixtures as K02Fixture[]).find((candidate) => candidate.id === id);
+  if (!entry) throw new Error(`no fixture ${id}`);
+  return entry;
+}
+
+const k02 = () => getTechniques("variants-expanded@1").find((entry) => entry.id === "k02@1")!;
+const cagesOf = (proposal: DeductionProposal) => (proposal.pattern as { cages: string[] }).cages;
+const residualOfPattern = (proposal: DeductionProposal) =>
+  (proposal.pattern as { residual: unknown }).residual;
+
+function discoverK02(current: ReadView) {
+  const events = [...k02().discover(current, discoveryContext())];
+  const proposals = events.flatMap((event) => (event.kind === "proposal" ? [event.proposal] : []));
+  return { events, proposals, terminal: events.at(-1) };
+}
+
+describe("K02 Innies/outies (T09)", () => {
+  test("innie: a house minus its inside cages forces the uncovered cell", () => {
+    const entry = k02Fixture("K02-single-innie");
+    const { view: current } = maintained(view(problemOf(entry as Fixture)));
+    const { proposals, terminal } = discoverK02(current);
+    expect(terminal).toEqual({ kind: "exhausted" });
+    const innie = proposals.find(
+      (p) => sameValue(residualOfPattern(p), entry.residual) && cagesOf(p).length === 3,
+    );
+    expect(innie).toBeDefined();
+    expect(innie!.effects).toHaveLength(8);
+    expect(innie!.effects.every((e) => e.cell === 8 && e.symbol !== 9)).toBe(true);
+    expect(innie!.proof.nodes.filter((n) => n.rule === "linear-combine@1")).toHaveLength(1);
+    for (const proposal of proposals)
+      expect([...checkProposal(proposal, context(current))].at(-1)?.kind).toBe("checked");
+  });
+
+  test("forged-combination: multipliers, residual, effects and relabelling are rejected", () => {
+    const entry = k02Fixture("K02-single-innie");
+    const { view: current } = maintained(view(problemOf(entry as Fixture)));
+    const innie = discoverK02(current).proposals.find((p) => cagesOf(p).length === 3)!;
+    const rejected = (mutate: (p: DeductionProposal) => void) => {
+      const copy = structuredClone(innie) as DeductionProposal;
+      mutate(copy);
+      return [...checkProposal(copy, context(current))].at(-1)?.kind;
+    };
+    expect(
+      rejected((p) => {
+        const combine = p.proof.nodes.find((n) => n.rule === "linear-combine@1")!;
+        (combine.parameters as { multipliers: number[] }).multipliers[1] = 1;
+      }),
+    ).toBe("rejected");
+    expect(
+      rejected((p) => {
+        const combine = p.proof.nodes.find((n) => n.rule === "linear-combine@1")!;
+        (combine.conclusion as { total: number }).total += 1;
+        (p.pattern as { residual: { total: number } }).residual.total += 1;
+      }),
+    ).toBe("rejected");
+    expect(
+      rejected((p) => {
+        (p.effects as { kind: string; cell: number; symbol: number }[]).push({
+          kind: "remove",
+          cell: 8,
+          symbol: 9,
+        });
+      }),
+    ).toBe("rejected");
+    expect(
+      rejected((p) => {
+        (p as { technique: string }).technique = "k01@1";
+      }),
+    ).toBe("rejected");
+    expect(
+      rejected((p) => {
+        (p.pattern as { cages: string[] }).cages.pop();
+      }),
+    ).toBe("rejected");
+  });
+
+  test("k02-profile-boundary: at most seven cages per combination; no cages means excluded", () => {
+    const entry = k02Fixture("K02-over-profile");
+    const { view: current } = maintained(view(problemOf(entry as Fixture)));
+    const { proposals } = discoverK02(current);
+    expect(proposals.length).toBeGreaterThan(0);
+    const seven = proposals.find((p) => cagesOf(p).length === 7);
+    expect(seven).toBeDefined();
+    expect(seven!.effects).toContainEqual({ kind: "remove", cell: 9, symbol: 8 });
+    expect(seven!.effects).toContainEqual({ kind: "remove", cell: 9, symbol: 9 });
+    for (const proposal of proposals) {
+      expect(cagesOf(proposal).length).toBeLessThanOrEqual(7);
+      expect([...checkProposal(proposal, context(current))].at(-1)?.kind).toBe("checked");
+    }
+    // A forged eight-cage combination is refused before any arithmetic.
+    const forged = structuredClone(proposals[0]) as DeductionProposal;
+    (forged.pattern as { cages: string[] }).cages = [
+      "c0",
+      "c1",
+      "c2",
+      "c3",
+      "c4",
+      "c5",
+      "c6",
+      "c7",
+    ];
+    expect([...checkProposal(forged, context(current))].at(-1)?.kind).toBe("rejected");
+    const none = view(problemOf(fixture("K01-four-cell-full-box")));
+    expect(k02().eligible(none)).toMatchObject({ kind: "excluded", reason: "no-overlapping-sums" });
+  });
+
+  test("k02-replay: the outie bundle replays from original clues", () => {
+    const entry = k02Fixture("K02-outie");
+    const start = view(problemOf(entry as Fixture));
+    const { view: current, bundles } = maintained(start);
+    const outie = discoverK02(current).proposals.find((p) =>
+      sameValue(residualOfPattern(p), entry.residual),
+    )!;
+    expect(outie).toBeDefined();
+    // Cage bounds already removed 1 from cell 9 (each cell of a 20-cage is at least 2).
+    expect(outie.effects).toHaveLength(7);
+    expect(outie.effects.every((e) => e.cell === 9 && e.symbol >= 2 && e.symbol <= 8)).toBe(true);
+    expect([...checkProposal(outie, context(current))].at(-1)?.kind).toBe("checked");
+    const snapshot = makeSnapshot(start.assembly.problem, { kind: "manual" }, "k02", 0);
+    expect([...replay(snapshot, [...bundles, outie], start.assembly, limits)].at(-1)?.kind).toBe(
+      "checked",
+    );
+  });
+
+  test("k02-oracle: five touching cages fix the outside cell, and K02 never removes a witness value", () => {
+    const entry = k02Fixture("K02-five-cages");
+    const { view: current } = maintained(view(problemOf(entry as Fixture)));
+    const five = discoverK02(current).proposals.find((p) => cagesOf(p).length === 5)!;
+    expect(five).toBeDefined();
+    expect(cagesOf(five)).not.toContain("far");
+    expect(five.effects.every((e) => e.cell === 9 && e.symbol !== 3)).toBe(true);
+    let effects = 0;
+    for (let seed = 1; seed <= 30; seed += 1) {
+      const small = generateSmall(seed, { cages: 4, givens: 2 });
+      const problem = canonicalProblem({
+        schema: 1,
+        cells: Array.from({ length: small.cellCount }, (_, cell) => cell),
+        symbols: [...small.symbols],
+        givens: [...small.givens],
+        constraints: toEngineConstraints(small).map((c) => ({
+          ...c,
+          cells: [...c.cells],
+          parameters: { ...c.parameters },
+        })),
+      });
+      const { view: generated } = maintained(view(problem));
+      const { proposals } = discoverK02(generated);
+      const witnesses = variantOracle({
+        cellCount: small.cellCount,
+        symbols: small.symbols,
+        givens: small.givens,
+        constraints: small.constraints,
+        limit: 200,
+        maxNodes: 200000,
+      }).witnesses;
+      expect(witnesses.length).toBeGreaterThan(0);
+      for (const proposal of proposals) {
+        expect([...checkProposal(proposal, context(generated))].at(-1)?.kind).toBe("checked");
         for (const effect of proposal.effects) {
           effects += 1;
           for (const witness of witnesses) expect(witness[effect.cell]).not.toBe(effect.symbol);

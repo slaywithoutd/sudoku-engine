@@ -23,7 +23,7 @@ import { netTechniques } from "./nets";
 import { krakenTechniques } from "./kraken";
 import { generalizedTechniques } from "./generalized-runtime";
 import { exocetTechniques } from "./exocet";
-import { cageCombinationTechniques } from "./killer";
+import { cageCombinationTechniques, innieOutieTechniques } from "./killer";
 import { tridagonTechniques } from "./tridagon";
 import { skLoopTechniques } from "./sk-loops";
 import { fireworksTechniques } from "./fireworks";
@@ -152,6 +152,7 @@ const descriptors: readonly TechniqueDescriptor[] = Object.freeze(
 /** Variant rows (spec §3.6) join the classic descriptors only under the variant profiles. */
 const variantDescriptors: readonly TechniqueDescriptor[] = Object.freeze([
   ...cageCombinationTechniques,
+  ...innieOutieTechniques,
 ]);
 
 export const PROFILES = Object.freeze([

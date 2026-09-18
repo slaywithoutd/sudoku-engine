@@ -1,0 +1,416 @@
+{
+  "row": "K02",
+  "origin": {
+    "author": "Independent repository fixture author",
+    "license": "Repository-owned; no external puzzle copied",
+    "construction": "One nine-cell all-different scope (a house, sum 45) and hand-written cages; expected residuals follow from 45 minus the cage totals."
+  },
+  "fixtures": [
+    {
+      "id": "K02-single-innie",
+      "kind": "productive",
+      "cellCount": 9,
+      "symbols": 9,
+      "givens": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "constraints": [
+        {
+          "id": "house",
+          "type": "all-different@1",
+          "cells": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8
+          ],
+          "parameters": {}
+        },
+        {
+          "id": "c1",
+          "type": "cage@1",
+          "cells": [
+            0,
+            1,
+            2
+          ],
+          "parameters": {
+            "total": 6
+          }
+        },
+        {
+          "id": "c2",
+          "type": "cage@1",
+          "cells": [
+            3,
+            4,
+            5
+          ],
+          "parameters": {
+            "total": 15
+          }
+        },
+        {
+          "id": "c3",
+          "type": "cage@1",
+          "cells": [
+            6,
+            7
+          ],
+          "parameters": {
+            "total": 15
+          }
+        }
+      ],
+      "residual": {
+        "cells": [
+          8
+        ],
+        "coefficients": [
+          1
+        ],
+        "total": 9
+      },
+      "expectedEffects": "cell 8 loses 1..8: the innie is 45 - 6 - 15 - 15 = 9"
+    },
+    {
+      "id": "K02-outie",
+      "kind": "productive",
+      "cellCount": 10,
+      "symbols": 9,
+      "givens": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "constraints": [
+        {
+          "id": "house",
+          "type": "all-different@1",
+          "cells": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8
+          ],
+          "parameters": {}
+        },
+        {
+          "id": "c1",
+          "type": "cage@1",
+          "cells": [
+            7,
+            8,
+            9
+          ],
+          "parameters": {
+            "total": 20
+          }
+        },
+        {
+          "id": "c2",
+          "type": "cage@1",
+          "cells": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "parameters": {
+            "total": 10
+          }
+        },
+        {
+          "id": "c3",
+          "type": "cage@1",
+          "cells": [
+            4,
+            5,
+            6
+          ],
+          "parameters": {
+            "total": 24
+          }
+        }
+      ],
+      "residual": {
+        "cells": [
+          9
+        ],
+        "coefficients": [
+          -1
+        ],
+        "total": -9
+      },
+      "expectedEffects": "cell 9 (outside the house) loses 2..8: 45 - 10 - 24 - 20 = -9 means -cell9 = -9; cage bounds already removed 1"
+    },
+    {
+      "id": "K02-five-cages",
+      "kind": "productive",
+      "cellCount": 12,
+      "symbols": 9,
+      "givens": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "constraints": [
+        {
+          "id": "house",
+          "type": "all-different@1",
+          "cells": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8
+          ],
+          "parameters": {}
+        },
+        {
+          "id": "c1",
+          "type": "cage@1",
+          "cells": [
+            0,
+            1
+          ],
+          "parameters": {
+            "total": 3
+          }
+        },
+        {
+          "id": "c2",
+          "type": "cage@1",
+          "cells": [
+            2,
+            3
+          ],
+          "parameters": {
+            "total": 7
+          }
+        },
+        {
+          "id": "c3",
+          "type": "cage@1",
+          "cells": [
+            4,
+            5
+          ],
+          "parameters": {
+            "total": 11
+          }
+        },
+        {
+          "id": "c4",
+          "type": "cage@1",
+          "cells": [
+            6,
+            7
+          ],
+          "parameters": {
+            "total": 15
+          }
+        },
+        {
+          "id": "c5",
+          "type": "cage@1",
+          "cells": [
+            8,
+            9
+          ],
+          "parameters": {
+            "total": 12
+          }
+        },
+        {
+          "id": "far",
+          "type": "cage@1",
+          "cells": [
+            10,
+            11
+          ],
+          "parameters": {
+            "total": 5
+          }
+        }
+      ],
+      "residual": {
+        "cells": [
+          9
+        ],
+        "coefficients": [
+          -1
+        ],
+        "total": -3
+      },
+      "expectedEffects": "with all five touching cages the residual is -cell9 = 45 - 48, so cell 9 = 3; the far cage never enters"
+    },
+    {
+      "id": "K02-over-profile",
+      "kind": "boundary",
+      "cellCount": 14,
+      "symbols": 9,
+      "givens": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "constraints": [
+        {
+          "id": "house",
+          "type": "all-different@1",
+          "cells": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8
+          ],
+          "parameters": {}
+        },
+        {
+          "id": "c0",
+          "type": "cage@1",
+          "cells": [
+            0,
+            1
+          ],
+          "parameters": {
+            "total": 3
+          }
+        },
+        {
+          "id": "c1",
+          "type": "cage@1",
+          "cells": [
+            2,
+            3
+          ],
+          "parameters": {
+            "total": 7
+          }
+        },
+        {
+          "id": "c2",
+          "type": "cage@1",
+          "cells": [
+            4,
+            5
+          ],
+          "parameters": {
+            "total": 11
+          }
+        },
+        {
+          "id": "c3",
+          "type": "cage@1",
+          "cells": [
+            6,
+            9
+          ],
+          "parameters": {
+            "total": 10
+          }
+        },
+        {
+          "id": "c4",
+          "type": "cage@1",
+          "cells": [
+            7,
+            10
+          ],
+          "parameters": {
+            "total": 10
+          }
+        },
+        {
+          "id": "c5",
+          "type": "cage@1",
+          "cells": [
+            8,
+            11
+          ],
+          "parameters": {
+            "total": 10
+          }
+        },
+        {
+          "id": "c6",
+          "type": "cage@1",
+          "cells": [
+            6,
+            12
+          ],
+          "parameters": {
+            "total": 5
+          }
+        },
+        {
+          "id": "c7",
+          "type": "cage@1",
+          "cells": [
+            7,
+            13
+          ],
+          "parameters": {
+            "total": 10
+          }
+        }
+      ],
+      "expectedBoundary": "eight cages touch the house; the seven-cage combination c0..c6 (residual -cell6 - cells 9..12 = -11) removes 8 and 9 from cell 9, no proposal may cite eight cages, and a forged eight-cage combination is rejected"
+    }
+  ]
+}
