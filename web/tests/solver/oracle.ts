@@ -42,10 +42,7 @@ function validateCells(name: string, values: number[], minimum: number, maximum:
   }
 }
 
-function validateRestriction(
-  name: "force" | "forbid",
-  restriction: [number, number] | undefined,
-): void {
+function validateRestriction(name: "force" | "forbid", restriction: unknown): void {
   if (restriction === undefined) return;
   if (
     !Array.isArray(restriction) ||

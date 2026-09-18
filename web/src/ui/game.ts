@@ -1,6 +1,7 @@
 import type { CellState, EditorState, Settings, ShortcutAction, Value } from "../domain/model";
 import type { BoardAction } from "../domain/editor";
 import { effectiveValues } from "../domain/classic";
+import { defined } from "../domain/invariants";
 import { el, button } from "./dom";
 import { icon } from "./icons";
 import { ignoredTarget, keyIntent } from "./input";
@@ -83,7 +84,9 @@ export function copyCell(state: EditorState, givens: readonly Value[]): boolean 
     value = effectiveValues(state, givens)[state.selected];
   copiedCell = structuredClone({ ...cell, value });
   const text = value ? String(value) : [...cell.notes, ...(cell.center ?? [])].join("");
-  void navigator.clipboard?.writeText(text).catch(() => {});
+  // The clipboard API is absent in insecure contexts even though the DOM types promise it.
+  const clipboard = (navigator as { clipboard?: Clipboard }).clipboard;
+  void clipboard?.writeText(text).catch(() => {});
   return true;
 }
 export function pasteCellAction(state: EditorState): BoardAction | null {
@@ -166,7 +169,7 @@ export async function boardImage(givens: readonly Value[], state: EditorState): 
     pad = 36,
     cell = (size - pad * 2) / 9,
     canvas = el("canvas"),
-    ctx = canvas.getContext("2d")!,
+    ctx = defined(canvas.getContext("2d"), "canvas-2d-context"),
     css = getComputedStyle(document.documentElement),
     token = (name: string) => css.getPropertyValue(name).trim();
   canvas.width = canvas.height = size;

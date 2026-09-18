@@ -41,7 +41,7 @@ function checkMockPrimitive(input: PrimitiveInput, context: CheckContext): Check
     input.conclusion.kind === "rule"
       ? input.conclusion.constraintId
       : (input.parameters as { constraintId: string }).constraintId;
-  const rule = context.view.assembly.problem.constraints.find((rule) => rule.id === id)!;
+  const rule = context.view.assembly.problem.constraints.find((rule) => rule.id === id);
   requireProof(rule && rule.cells.length === 2, "invalid-mock-scope");
   if (input.rule === "rule-instance@1")
     requireProof(

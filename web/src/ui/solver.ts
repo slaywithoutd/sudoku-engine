@@ -9,6 +9,7 @@ import {
 } from "../domain/model";
 import { reduceEditor } from "../domain/editor";
 import { effectiveValues, isComplete, peersOf, toPuzzleString } from "../domain/classic";
+import { lookup } from "../domain/invariants";
 import { createDraft, nextPuzzleName } from "../domain/library";
 import { createSolverController, type SolverController } from "../app/solver-controller";
 import { startWorker } from "../app/solver-worker";
@@ -389,7 +390,7 @@ export function mountSolver(
     current = Math.max(0, Math.min(shown.length - 1, index));
     if (current === shown.length - 1) stopAutoplay();
     render();
-    stepList.children[current]?.scrollIntoView({ block: "nearest" });
+    stepList.children.item(current)?.scrollIntoView({ block: "nearest" });
   };
   const startAutoplay = () => {
     const speed = settings().solverAutoplayMs;
@@ -536,15 +537,13 @@ export function mountSolver(
     const placed = new Map(
       step.effects.filter((e) => e.kind === "place").map((e) => [e.cell, e.symbol]),
     );
-    const showAll = settings().solverCandidates && step.candidates;
+    const shownCandidates = settings().solverCandidates ? step.candidates : undefined;
     const candidates = before.map((v, i) =>
       v
         ? null
-        : showAll
-          ? digitsOf(step.candidates![i])
-          : removed.has(i)
-            ? ([...removed.get(i)!].sort() as Digit[])
-            : [],
+        : shownCandidates
+          ? digitsOf(shownCandidates[i])
+          : ([...(removed.get(i) ?? [])].sort() as Digit[]),
     );
     return {
       values: before,
@@ -579,7 +578,7 @@ export function mountSolver(
       {
         title: "Puzzles",
         options: Object.values(data.puzzles).map((p) => {
-          const session = data.sessions[p.id];
+          const session = lookup(data.sessions, p.id);
           const state = !session
             ? undefined
             : isComplete(effectiveValues(session.editor, p.definition.givens))
@@ -682,7 +681,7 @@ export function mountSolver(
       seenEvent = event;
       if (event.kind === "step") steps.push(event);
       else if (event.kind === "precount") precount = event.solution;
-      else if (event.kind === "progress") lastPhase = event.phase;
+      else lastPhase = event.phase;
     }
     if (snapshot.outcome !== seenOutcome) {
       seenOutcome = snapshot.outcome;

@@ -53,7 +53,8 @@ function parseGame(json: unknown): ParsedPuzzle {
   if (typeof x.name === "string" && x.name.trim()) extra.name = x.name.trim().slice(0, 120);
   if (Array.isArray(x.cells)) {
     if (x.cells.length !== 81) fail();
-    extra.cells = x.cells.map((raw, i) => {
+    extra.cells = x.cells.map((raw: unknown, i) => {
+      if (!raw || typeof raw !== "object") fail();
       const c = raw as Record<string, unknown>;
       const digits = (v: unknown) =>
         v === undefined
@@ -64,14 +65,7 @@ function parseGame(json: unknown): ParsedPuzzle {
               )
             ? (v as CellState["notes"])
             : fail();
-      if (
-        !c ||
-        typeof c !== "object" ||
-        !Number.isInteger(c.value) ||
-        (c.value as number) < 0 ||
-        (c.value as number) > 9
-      )
-        fail();
+      if (!Number.isInteger(c.value) || (c.value as number) < 0 || (c.value as number) > 9) fail();
       const color =
         c.color === undefined
           ? 0
@@ -112,11 +106,14 @@ export function parsePuzzles(text: string): ParseResult {
   }
   // Comment/metadata lines (#A author, [Puzzle] headers) carry no cells.
   const lines = trimmed.split(/\r?\n/).filter((line) => !/^\s*(#|\[)/.test(line));
-  const blocks: string[][] = [[]];
+  let current: string[] = [];
+  const blocks = [current];
   for (const line of lines) {
-    if (!line.trim()) {
-      if (blocks.at(-1)!.length) blocks.push([]);
-    } else blocks.at(-1)!.push(line);
+    if (line.trim()) current.push(line);
+    else if (current.length) {
+      current = [];
+      blocks.push(current);
+    }
   }
   const puzzles: ParsedPuzzle[] = [];
   for (const [b, block] of blocks.filter((x) => x.length).entries()) {

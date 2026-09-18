@@ -167,7 +167,7 @@ function admittedTable() {
       });
     else {
       const cursor = checker.check(n, context(n));
-      while (true) {
+      for (;;) {
         const r = cursor.next();
         if (r.done) {
           metadata.set(n.id, r.value);
