@@ -21,10 +21,13 @@ function relationCapabilities(rule: ConstraintInstance, context: RuleContext): R
       .map((b) => [a, b]),
   );
   const premise = context.roots.get(rule.id)!;
+  // Wider mock sums (three or more cells) publish only their linear form; the
+  // two-cell tuple relation stays the shared-state test of relation roots.
+  const binary = rule.cells.length === 2;
   return {
     allDifferent: [],
     covers: [],
-    relations: [{ id: `${rule.id}:relation`, cells: rule.cells, tuples, premise }],
+    relations: binary ? [{ id: `${rule.id}:relation`, cells: rule.cells, tuples, premise }] : [],
     // The mock sum also publishes its linear form so shared-state tests can
     // exercise the sum root beside the tuple relation of the same rule.
     sums:
@@ -39,7 +42,7 @@ function relationCapabilities(rule: ConstraintInstance, context: RuleContext): R
             },
           ]
         : [],
-    primitiveIds: ["relation@1", ...(rule.type === "sum@1" ? ["sum@1"] : [])],
+    primitiveIds: [...(binary ? ["relation@1"] : []), ...(rule.type === "sum@1" ? ["sum@1"] : [])],
   };
 }
 
@@ -50,7 +53,10 @@ function checkMockPrimitive(input: PrimitiveInput, context: CheckContext): Check
       ? input.conclusion.constraintId
       : (input.parameters as { constraintId: string }).constraintId;
   const rule = context.view.assembly.problem.constraints.find((rule) => rule.id === id)!;
-  requireProof(rule && rule.cells.length === 2, "invalid-mock-scope");
+  requireProof(
+    rule && (rule.cells.length === 2 || (rule.type === "sum@1" && rule.cells.length > 2)),
+    "invalid-mock-scope",
+  );
   if (input.rule === "rule-instance@1")
     requireProof(
       input.premises.length === 0 &&
@@ -78,6 +84,7 @@ function checkMockPrimitive(input: PrimitiveInput, context: CheckContext): Check
   } else {
     requireProof(
       input.rule === "relation@1" &&
+        rule.cells.length === 2 &&
         input.premises.length === 1 &&
         sameValue(input.parameters, { constraintId: id }) &&
         sameValue(context.retained.get(input.premises[0])?.conclusion, {

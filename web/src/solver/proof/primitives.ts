@@ -20,6 +20,7 @@ import {
   CoverCountStrategy,
   AllDifferentSubsetStrategy,
 } from "./counts";
+import { LinearCombineStrategy, LinearSumStrategy } from "./linear";
 import { TableChecker } from "./tables";
 import { SubsetCountChecker } from "./subset-count";
 import type { TableDefinition } from "./tables";
@@ -506,6 +507,8 @@ export class PrimitiveRegistry {
       new HallStrategy(),
       new CoverCountStrategy(),
       new AllDifferentSubsetStrategy(),
+      new LinearSumStrategy(),
+      new LinearCombineStrategy(),
     ].map(
       (strategy) =>
         [
