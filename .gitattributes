@@ -1,0 +1,4 @@
+# Normalize every text file to LF in the repository and in every checkout,
+# regardless of core.autocrlf. Matches .editorconfig (end_of_line = lf) and
+# Prettier (endOfLine: lf), so `npm run format:check` is deterministic on Windows.
+* text=auto eol=lf
