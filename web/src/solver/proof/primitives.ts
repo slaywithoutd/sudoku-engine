@@ -230,7 +230,8 @@ export function assertM2RootAssemblyBounds(assembly: Assembly): void {
             coefficient !== 0 &&
             Math.abs(coefficient as number) <= M2_ROOT_LIMITS.sumCoefficient,
         ) &&
-        Number.isSafeInteger(sum.total),
+        Number.isSafeInteger(sum.total) &&
+        Math.abs(sum.total) <= M2_ROOT_LIMITS.sumTotal,
       "invalid-root-sum",
     );
   }

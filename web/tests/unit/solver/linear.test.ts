@@ -103,11 +103,19 @@ function fixture(
     uniqueEvidenceId: null,
   };
   const nodes: ProofNode[] = [];
-  const add = (rule: string, premises: number[], conclusion: Proposition, parameters = {}) => {
+  const addScoped = (
+    rule: string,
+    premises: number[],
+    conclusion: Proposition,
+    scope: number[],
+    parameters = {},
+  ) => {
     const id = context.retained.size + nodes.length;
-    nodes.push({ id, rule, premises, conclusion, scope: [], parameters });
+    nodes.push({ id, rule, premises, conclusion, scope, parameters });
     return id;
   };
+  const add = (rule: string, premises: number[], conclusion: Proposition, parameters = {}) =>
+    addScoped(rule, premises, conclusion, [], parameters);
   const proposal = (roots: number[]): DeductionProposal => ({
     technique: "rule-propagation@1",
     state: view.state.key,
@@ -138,7 +146,7 @@ function fixture(
     return fact.id;
   };
   const domain = (cell: number) => view.state.domainFacts[cell];
-  return { add, check, sumFact, domain, view };
+  return { add, addScoped, check, sumFact, domain, view };
 }
 
 const not = (cell: number, symbol: number): Proposition => ({
@@ -171,7 +179,7 @@ describe("linear-sum@1 (lemma LS)", () => {
   });
 
   test("uses a placed cell's given literal as its singleton domain and honors a negative coefficient", () => {
-    // cell0 - cell1 = 0 with cell1 given 3: cell0 must be 3.
+    // cell0 - cell1 = 3 with cell1 given 3 (a positive literal, not a domain node): cell0 must be 6.
     const b = fixture(2, [0, 3], [sum("eq", [0, 1], 3)], { eq: [1, -1] });
     const premises = [b.sumFact("eq"), b.domain(0), b.domain(1)];
     const eqFact = b.view.facts.get(b.sumFact("eq"))!;
@@ -181,7 +189,6 @@ describe("linear-sum@1 (lemma LS)", () => {
       coefficients: [1, -1],
       total: 3,
     });
-    // Published total is the mock's 3, so the equation reads cell0 - cell1 = 3, i.e. cell0 = 6.
     expect(b.check(() => b.add("linear-sum@1", premises, not(0, 5)))).toMatchObject({
       kind: "verified",
     });
@@ -201,7 +208,7 @@ describe("linear-sum@1 (lemma LS)", () => {
     ).toMatchObject({ kind: "verified" });
   });
 
-  test("rejects missing, foreign, extra or duplicated domain premises and targets outside the sum", () => {
+  test("rejects missing, foreign or extra domain premises, foreign targets and malformed claims", () => {
     const b = fixture(4, [], [sum("s", [0, 1, 2], 6)]);
     const s = b.sumFact("s");
     expect(
@@ -229,6 +236,57 @@ describe("linear-sum@1 (lemma LS)", () => {
         b.add("linear-sum@1", [s, b.domain(0), b.domain(1), b.domain(2)], not(0, 9), { extra: 1 }),
       ),
     ).toMatchObject({ kind: "rejected", code: "invalid-inference-parameters" });
+    const premises = [s, b.domain(0), b.domain(1), b.domain(2)];
+    expect(
+      b.check(() =>
+        b.add("linear-sum@1", premises, {
+          kind: "literal",
+          value: { cell: 0, symbol: 9, positive: true },
+        }),
+      ),
+    ).toMatchObject({ kind: "rejected", code: "expected-negative-literal" });
+    expect(
+      b.check(() =>
+        b.add("linear-sum@1", premises, { ...not(0, 9), extra: 1 } as unknown as Proposition),
+      ),
+    ).toMatchObject({ kind: "rejected", code: "expected-negative-literal" });
+    expect(
+      b.check(() =>
+        b.add("linear-sum@1", premises, { kind: "false", extra: 1 } as unknown as Proposition),
+      ),
+    ).toMatchObject({ kind: "rejected", code: "invalid-inference-conclusion" });
+  });
+
+  test("rejects a target already absent from its domain and inherits an assumption into a discharge", () => {
+    // cell1 given 3: 3 is the only symbol in cell1's singleton domain.
+    const b = fixture(3, [0, 3, 0], [sum("s", [0, 1, 2], 6)]);
+    const premises = [b.sumFact("s"), b.domain(0), b.domain(1), b.domain(2)];
+    expect(b.check(() => b.add("linear-sum@1", premises, not(1, 5)))).toMatchObject({
+      kind: "rejected",
+      code: "target-already-absent",
+    });
+    // Assume cell0 = 9: 9 + 3 + 1 > 6 is a contradiction under that assumption alone,
+    // and discharging it yields the unconditional negative literal.
+    expect(
+      b.check(() => {
+        const a = b.addScoped(
+          "assume@1",
+          [],
+          { kind: "literal", value: { cell: 0, symbol: 9, positive: true } },
+          [],
+        );
+        const contradiction = b.addScoped(
+          "linear-sum@1",
+          [b.sumFact("s"), a, b.domain(1), b.domain(2)],
+          FALSE,
+          [a],
+        );
+        return b.add("discharge@1", [a, contradiction], not(0, 9));
+      }),
+    ).toMatchObject({
+      kind: "verified",
+      certificate: { consequences: [{ openAssumptions: [], conditional: false, rules: ["s"] }] },
+    });
   });
 });
 
@@ -274,6 +332,34 @@ describe("linear-combine@1 (lemma LC)", () => {
         b.add("linear-combine@1", six, residual, { multipliers: [1, 1, -1, -1, -1, -1, -1, 2] }),
       ),
     ).toMatchObject({ kind: "rejected", code: "invalid-linear-combine-multipliers" });
+    expect(
+      b.check(() =>
+        b.add("linear-combine@1", six, residual, { multipliers: [1, 1, -1, -1, -1, -1, -1] }),
+      ),
+    ).toMatchObject({ kind: "rejected", code: "invalid-linear-combine-multipliers" });
+    expect(
+      b.check(() =>
+        b.add("linear-combine@1", [b.sumFact("h1"), b.domain(0)], residual, {
+          multipliers: [1, 1],
+        }),
+      ),
+    ).toMatchObject({ kind: "rejected", code: "expected-sum" });
+    // Two houses added without cancellation leave 18 cells: outside the 16-cell profile.
+    expect(
+      b.check(() =>
+        b.add(
+          "linear-combine@1",
+          [b.sumFact("h1"), b.sumFact("h2")],
+          {
+            kind: "sum",
+            cells: Array.from({ length: 18 }, (_, cell) => cell),
+            coefficients: Array.from({ length: 18 }, () => 1),
+            total: 90,
+          },
+          { multipliers: [1, 1] },
+        ),
+      ),
+    ).toMatchObject({ kind: "rejected", code: "linear-combine-out-of-profile" });
     const seven = ids(["h1", "h2", "c1", "c2", "c3", "c4", "c5", "c6", "c7"]);
     expect(
       b.check(() =>
@@ -322,7 +408,14 @@ describe("linear-combine@1 (lemma LC)", () => {
   });
 
   test("a fully cancelled combination is false only when its totals disagree", () => {
-    const b = fixture(2, [], [sum("a", [0, 1], 5), sum("b", [0, 1], 6)]);
+    const b = fixture(2, [], [sum("a", [0, 1], 5), sum("b", [0, 1], 6), sum("c", [0, 1], 5)]);
+    expect(
+      b.check(() =>
+        b.add("linear-combine@1", [b.sumFact("a"), b.sumFact("c")], FALSE, {
+          multipliers: [1, -1],
+        }),
+      ),
+    ).toMatchObject({ kind: "rejected", code: "linear-combine-trivial" });
     expect(
       b.check(() =>
         b.add("linear-combine@1", [b.sumFact("a"), b.sumFact("b")], FALSE, {

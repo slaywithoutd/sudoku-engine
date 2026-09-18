@@ -3,7 +3,10 @@ import { assemble } from "../../../src/solver/rules/assemble";
 import { initialize } from "../../../src/solver/state/candidates";
 import { symbolValue } from "../../../src/solver/problem";
 import { M2_ROOT_LIMITS } from "../../../src/solver/limits";
-import { primitiveRegistry } from "../../../src/solver/proof/primitives";
+import {
+  assertM2RootAssemblyBounds,
+  primitiveRegistry,
+} from "../../../src/solver/proof/primitives";
 import { replay, initializationReservation } from "../../../src/solver/proof/replay";
 import { makeSnapshot } from "../../../src/solver/snapshot";
 import { CandidateIndexes } from "../../../src/solver/state/indexes";
@@ -106,16 +109,52 @@ describe("sum vocabulary (T01)", () => {
       withSums((sum) => [sum, { ...sum }]),
       "invalid-capability",
     );
-    // Several distinct sums from one rule are legitimate (a module may publish many equations).
-    expect(
-      assemble(
-        makeMockProblem(),
-        withSums((sum) => [sum, { ...sum, id: "second" }]),
-      ).ok,
-    ).toBe(true);
+    // One linear form per rule, named `${rule.id}:sum` (the convention facts.addCapabilities checks).
+    expectRejected(
+      withSums((sum) => [sum, { ...sum, id: "second" }]),
+      "invalid-capability",
+    );
+    expectRejected(
+      withSums(() => ({ id: "sum:0:other" })),
+      "invalid-capability",
+    );
+    expectRejected(
+      withSums(() => ({ total: M2_ROOT_LIMITS.sumTotal + 1 })),
+      "invalid-capability",
+    );
   });
 
-  test("accepts a negative coefficient and the widest bounded sum", () => {
+  test("root bounds reject oversized or malformed sums that bypass the assembler", () => {
+    const result = assemble(makeMockProblem(), mockRuleRegistry);
+    if (!result.ok) throw new Error("assembly");
+    const [sum] = result.value.sums;
+    const forged = (patch: Partial<typeof sum>) => ({
+      ...result.value,
+      sums: Object.freeze([Object.freeze({ ...sum, ...patch })]),
+    });
+    expect(() => assertM2RootAssemblyBounds(result.value)).not.toThrow();
+    const wide = Array.from({ length: M2_ROOT_LIMITS.sumCells + 1 }, (_, index) => index);
+    expect(() =>
+      assertM2RootAssemblyBounds(forged({ cells: wide, coefficients: wide.map(() => 1) })),
+    ).toThrow();
+    expect(() => assertM2RootAssemblyBounds(forged({ coefficients: [1, 0] }))).toThrow(
+      "invalid-root-sum",
+    );
+    expect(() =>
+      assertM2RootAssemblyBounds(forged({ total: M2_ROOT_LIMITS.sumTotal + 1 })),
+    ).toThrow("invalid-root-sum");
+    const many = {
+      ...result.value,
+      sums: Object.freeze(
+        Array.from({ length: M2_ROOT_LIMITS.sums + 1 }, (_, index) =>
+          Object.freeze({ ...sum, id: `s${index}` }),
+        ),
+      ),
+    };
+    expect(() => assertM2RootAssemblyBounds(many)).toThrow("root-sum-limit");
+  });
+
+  test("accepts a negative coefficient and a nine-cell sum within the bounds", () => {
     const negative = assemble(
       makeMockProblem(),
       withSums(() => ({ coefficients: [1, -M2_ROOT_LIMITS.sumCoefficient], total: 0 })),

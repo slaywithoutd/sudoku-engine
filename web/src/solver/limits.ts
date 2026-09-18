@@ -27,6 +27,7 @@ export const M2_ROOT_LIMITS = Object.freeze({
   sumCells: 16,
   sumCoefficient: 8,
   sumCombinePremises: 8,
+  sumTotal: 2147483647, // Totals stay far inside double-exact arithmetic across eight combined sums.
   nodes: 3234, // 81 domains + 81 clues + 256 rules + 256 scopes + 2304 covers + 256 sums.
   scopeCells: 81,
   identifierCharacters: 16 * 1024,

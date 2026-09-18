@@ -274,13 +274,18 @@ function validateCapabilities(
     )
       issues.push(capabilityIssue(rule, "relation capability is malformed or duplicated"));
   }
+  // One linear form per rule, named `${rule.id}:sum`; facts.addCapabilities
+  // demands the same name, so the convention is enforced here rather than at
+  // initialization where it would surface as a thrown proof error.
   for (const capability of claimed.sums) {
     if (
+      capability?.id !== `${rule.id}:sum` ||
       !registerId(capability?.id) ||
       !validCells(capability?.cells, problem) ||
       (capability?.cells as readonly unknown[]).length > M2_ROOT_LIMITS.sumCells ||
       !validCoefficients(capability) ||
       !Number.isSafeInteger(capability?.total) ||
+      Math.abs(capability.total as number) > M2_ROOT_LIMITS.sumTotal ||
       !validPremise(capability?.premise, expectedPremise)
     )
       issues.push(capabilityIssue(rule, "sum capability is malformed or duplicated"));

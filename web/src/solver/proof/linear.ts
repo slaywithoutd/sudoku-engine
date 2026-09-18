@@ -1,4 +1,4 @@
-import { derived, requireProof, sameValue, validLiteral } from "./primitives";
+import { derived, premises, requireProof, sameValue, validLiteral } from "./primitives";
 import { provedDomains } from "./counts";
 import type { CheckContext, CheckedInference, PrimitiveInput, Proposition } from "./types";
 import { symbolValue } from "../problem";
@@ -8,8 +8,8 @@ import { defined } from "../invariants";
 
 type Sum = Extract<Proposition, { kind: "sum" }>;
 
-/** Retained premises in the order the node cites them; every id must be a checked node. */
-function retainedPremises(input: PrimitiveInput, context: CheckContext): Proposition[] {
+/** Retained premises for a node with parameters; mirrors `premises` without its `{}` check. */
+function parameterizedPremises(input: PrimitiveInput, context: CheckContext): Proposition[] {
   requireProof(
     new Set(input.premises).size === input.premises.length,
     "invalid-inference-parameters",
@@ -46,9 +46,9 @@ function domainValues(mask: number, context: CheckContext): number[] {
 export class LinearSumStrategy {
   readonly id = "linear-sum@1";
   check(input: PrimitiveInput, context: CheckContext): CheckedInference {
-    requireProof(sameValue(input.parameters, {}), "invalid-inference-parameters");
-    const [sum, ...sources] = retainedPremises(input, context);
+    const [sum, ...sources] = premises(input, context, input.premises.length);
     requireProof(isSum(sum), "expected-sum");
+    requireProof(sum.coefficients.length === sum.cells.length, "malformed-sum");
     const domains = provedDomains(sources, sum.cells);
     const bounds = sum.cells.map((cell, index) => {
       const values = domainValues(defined(domains.get(cell), "domain"), context).map(
@@ -59,13 +59,17 @@ export class LinearSumStrategy {
     });
     const claim = input.conclusion;
     if (claim.kind === "false") {
+      requireProof(sameValue(claim, { kind: "false" }), "invalid-inference-conclusion");
       const lo = bounds.reduce((total, bound) => total + bound.lo, 0);
       const hi = bounds.reduce((total, bound) => total + bound.hi, 0);
       requireProof(lo > sum.total || hi < sum.total, "linear-sum-not-contradictory");
       return derived(input, context);
     }
     requireProof(
-      claim.kind === "literal" && !claim.value.positive && validLiteral(claim.value, context),
+      claim.kind === "literal" &&
+        !claim.value.positive &&
+        validLiteral(claim.value, context) &&
+        sameValue(claim, { kind: "literal", value: claim.value }),
       "expected-negative-literal",
     );
     const target = sum.cells.indexOf(claim.value.cell);
@@ -113,7 +117,7 @@ export class LinearCombineStrategy {
       input.premises.length >= 2 && input.premises.length <= M2_ROOT_LIMITS.sumCombinePremises,
       "linear-combine-premise-count",
     );
-    const sums = retainedPremises(input, context);
+    const sums = parameterizedPremises(input, context);
     requireProof(sums.every(isSum), "expected-sum");
     const coefficients = new Map<number, number>();
     let total = 0;
@@ -131,9 +135,10 @@ export class LinearCombineStrategy {
       .filter(([, coefficient]) => coefficient !== 0)
       .map(([cell]) => cell)
       .sort((left, right) => left - right);
+    requireProof(Number.isSafeInteger(total), "linear-combine-overflow");
     const claim = input.conclusion;
     if (cells.length === 0) {
-      requireProof(claim.kind === "false" && total !== 0, "linear-combine-trivial");
+      requireProof(sameValue(claim, { kind: "false" }) && total !== 0, "linear-combine-trivial");
       return derived(input, context);
     }
     requireProof(
