@@ -5,19 +5,23 @@ import { normalizeClassic } from "./problem";
 import { makeSnapshot, type RunKey } from "./snapshot";
 import { assemble } from "./rules/assemble";
 import { productionRules } from "./rules/registry";
+import { profileFor } from "./techniques/registry";
 import { initialize, commitChecked } from "./state/candidates";
 import { IndexWorkspace } from "./indexes/workspace";
 import { schedulingOptions, canonicalOptionsKey, SCHEDULER_VERSION } from "./scheduling/work";
 import { assembleTechniqueJobs } from "./techniques/registry";
 import { EXACT_METHOD, exactSteps } from "./exact";
 import { runSolver } from "./run";
-import { coverageEntries } from "./techniques/manifest";
+import { coverageEntries, variantEntries } from "./techniques/manifest";
 import { defined } from "./invariants";
 
 const techniqueNames = new Map<string, string>([
   ["rule-propagation@1", "Basic elimination"],
   ["rule-relation@1", "Relation propagation"],
   ["rule-sum@1", "Sum bounds"],
+  ...variantEntries.map(
+    (entry) => [entry.version, entry.aliases[0] ?? entry.id] as [string, string],
+  ),
   ...coverageEntries.map(
     (entry) => [entry.version, entry.aliases[0] ?? entry.id] as [string, string],
   ),
@@ -53,7 +57,6 @@ export type ClassicSolveEvent =
       readonly steps: number;
     };
 
-const PROFILE = "classic-expanded@1";
 /**
  * Interactive ceilings for one classic 9x9 run; the exact phase inherits what the logical phase
  * leaves.
@@ -226,6 +229,9 @@ export async function solveClassic(
     ports.emit({ kind: "precount", solution: [...precheck.solution] });
   let view = initialize(assembly, "primary");
   const workspace = new IndexWorkspace({ entryLimit: 100_000, byteLimit: limits.workspaceBytes });
+  // Classic input keeps the classic profile and RunKey; a declared variant rule
+  // selects the variant profile that appends the K rows (spec §3.6).
+  const PROFILE = profileFor(problem);
   const options = schedulingOptions({ limits, mode, profile: PROFILE });
   const run: RunKey = {
     requestId,

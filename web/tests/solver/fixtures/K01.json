@@ -1,0 +1,138 @@
+{
+  "row": "K01",
+  "origin": {
+    "author": "Independent repository fixture author",
+    "license": "Repository-owned; no external puzzle copied",
+    "construction": "Small problems written by hand from the cage arithmetic; expected effects computed by listing the distinct-digit combinations that reach the total."
+  },
+  "fixtures": [
+    {
+      "id": "K01-four-cell-full-box",
+      "kind": "productive",
+      "cellCount": 4,
+      "symbols": 9,
+      "givens": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "constraints": [
+        {
+          "id": "cage",
+          "type": "cage@1",
+          "cells": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "parameters": {
+            "total": 10
+          }
+        }
+      ],
+      "volume": 2401,
+      "rows": 24,
+      "expectedEffects": "after sum-bounds maintenance leaves 1..7 in every cell, K01 removes 5, 6 and 7 from each: the only combination is 1+2+3+4"
+    },
+    {
+      "id": "K01-five-cell-out-of-profile",
+      "kind": "boundary",
+      "cellCount": 5,
+      "symbols": 9,
+      "givens": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "constraints": [
+        {
+          "id": "cage",
+          "type": "cage@1",
+          "cells": [
+            0,
+            1,
+            2,
+            3,
+            4
+          ],
+          "parameters": {
+            "total": 15
+          }
+        }
+      ],
+      "volume": 59049,
+      "expectedExclusion": "cage-box-out-of-profile"
+    },
+    {
+      "id": "K01-five-cell-narrowed",
+      "kind": "productive",
+      "cellCount": 15,
+      "symbols": 9,
+      "givens": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        5,
+        6,
+        7,
+        8,
+        9,
+        5,
+        6,
+        7,
+        8,
+        9
+      ],
+      "constraints": [
+        {
+          "id": "cage",
+          "type": "cage@1",
+          "cells": [
+            0,
+            1,
+            2,
+            3,
+            4
+          ],
+          "parameters": {
+            "total": 15
+          }
+        },
+        {
+          "id": "p0",
+          "type": "all-different@1",
+          "cells": [
+            0,
+            5,
+            6,
+            7,
+            8,
+            9
+          ],
+          "parameters": {}
+        },
+        {
+          "id": "p1",
+          "type": "all-different@1",
+          "cells": [
+            1,
+            10,
+            11,
+            12,
+            13,
+            14
+          ],
+          "parameters": {}
+        }
+      ],
+      "volume": 11664,
+      "expectedEffects": "cells 2, 3 and 4 lose 6 through 9 (1+2+3+4+5 is the only combination); cells 0 and 1 keep 1..4"
+    }
+  ]
+}

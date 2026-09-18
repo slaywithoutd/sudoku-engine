@@ -7947,6 +7947,100 @@ export const coverageEntries: readonly CoverageEntry[] = Object.freeze(
   ).map(freeze),
 );
 
+/**
+ * M2.5 variant catalogue (spec §3.6). Kept apart from the 38 classic rows so
+ * the classic profiles, their pinned counts and validateCoverage are
+ * untouched; the variant profiles in registry.ts append these rows.
+ */
+export const variantEntries: readonly CoverageEntry[] = Object.freeze(
+  (
+    [
+      {
+        id: "K01",
+        version: "k01@1",
+        aliases: ["Killer combinations"],
+        tier: 1,
+        capabilities: ["D", "A", "S", "V"],
+        assumptionPolicy: "unconditional",
+        bounds:
+          "One live cage (a sum whose cells equal an all-different scope of the same rule) with 2-5 unsolved cells and an input box of at most 16,384 Cartesian tuples (k01-profile@1). The complete table is a binary union of table-filter leaves of at most 256 tuples over the cage's all-different, sum and current domain facts; every removal is a single-literal projection of the complete table. Larger cages are excluded with cage-box-out-of-profile, never approximated.",
+        grammarId: "k01-grammar@1",
+        detectorId: "k01@1",
+        checkerId: "k01-grammar@1",
+        descriptionPath: "docs/solver/techniques/killer.md",
+        fixtureIds: [
+          "K01-four-cell-full-box",
+          "K01-five-cell-out-of-profile",
+          "K01-five-cell-narrowed",
+        ],
+        status: "implemented",
+        evidence: [
+          {
+            kind: "positive",
+            fixtureId: "K01-four-cell-full-box",
+            alias: "Killer combinations",
+            record: "web/tests/unit/solver/killer.test.ts#four-cell-full-box",
+          },
+          {
+            kind: "negative",
+            fixtureId: "K01-four-cell-full-box",
+            alias: "Killer combinations",
+            record: "web/tests/unit/solver/killer.test.ts#forged-table",
+          },
+          {
+            kind: "boundary",
+            fixtureId: "K01-five-cell-out-of-profile",
+            alias: "Killer combinations",
+            record: "web/tests/unit/solver/killer.test.ts#profile-boundary",
+          },
+          {
+            kind: "original-clue",
+            fixtureId: "K01-five-cell-narrowed",
+            alias: "Killer combinations",
+            record: "web/tests/unit/solver/killer.test.ts#replay",
+          },
+          {
+            kind: "independent-oracle",
+            fixtureId: "K01-four-cell-full-box",
+            alias: "Killer combinations",
+            record: "web/tests/unit/solver/killer.test.ts#oracle",
+          },
+        ],
+      },
+    ] as CoverageEntry[]
+  ).map(freeze),
+);
+
+/** Evidence gate for variant rows; the classic gate stays closed at 38. */
+export function validateVariantCoverage(entries: readonly CoverageEntry[]): readonly string[] {
+  const errors = new Set<string>();
+  for (const entry of entries) {
+    const known = variantEntries.find((row) => row.id === entry.id);
+    if (!known || known.version !== entry.version || known.bounds !== entry.bounds)
+      errors.add("changed-variant-contract");
+    if (entry.status === "independently-verified")
+      for (const alias of entry.aliases)
+        for (const kind of [
+          "positive",
+          "negative",
+          "boundary",
+          "original-clue",
+          "independent-oracle",
+        ])
+          if (
+            !entry.evidence.some(
+              (evidence) =>
+                evidence.kind === kind &&
+                evidence.alias === alias &&
+                entry.fixtureIds.includes(evidence.fixtureId) &&
+                !!evidence.record,
+            )
+          )
+            errors.add("missing-independent-evidence");
+  }
+  return Object.freeze([...errors]);
+}
+
 /** The catalogue row for a technique id; unknown ids are a programming error. */
 export function coverageEntry(id: string): CoverageEntry {
   const entry = coverageEntries.find((row) => row.id === id);

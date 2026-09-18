@@ -1,3 +1,4 @@
+import { PROFILES } from "../techniques/registry";
 import type { Limits } from "../limits";
 import type { VersionId } from "../problem";
 
@@ -106,8 +107,7 @@ export function schedulingOptions(
     (policy === "analyze-fair@1" && mode !== "analyze")
   )
     throw Error("policy-mode-mismatch");
-  if (!["classic-expanded@1", "classic-conditional@1"].includes(options.profile))
-    throw Error("unknown-profile");
+  if (!(PROFILES as readonly string[]).includes(options.profile)) throw Error("unknown-profile");
   if (typeof options.rollout !== "boolean") throw Error("invalid-rollout-option");
   if (options.rollout && (mode !== "analyze" || options.profile !== "classic-expanded@1"))
     throw Error("rollout-requires-analyze-primary");

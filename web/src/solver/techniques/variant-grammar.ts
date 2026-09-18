@@ -5,6 +5,7 @@ import { sourceFacts } from "../state/source-index";
 import { symbolMask } from "../state/read";
 import { defined } from "../invariants";
 import { boundsRemovals } from "../rules/linear-rule";
+import { analyzeCage, boxVolume, K01_PROFILE, liveCages, withinProfile } from "./killer";
 
 /**
  * Closed grammar for relation maintenance (`rule-relation@1`): one complete
@@ -239,4 +240,157 @@ export function checkSumMaintenance(
     );
   }
   requireProof(proposal.proof.nodes.length <= proposal.effects.length * 2, "technique-work-bound");
+}
+
+/**
+ * Closed grammar for K01 (`k01@1`): one live cage within the profile, a
+ * complete table over its all-different, sum and current domain facts built
+ * from filter leaves and binary unions, and a single-literal projection per
+ * removed candidate. The grammar recomputes the surviving rows and the leaf
+ * counts itself; the table primitives then verify partition, completeness and
+ * every projection independently.
+ */
+export function checkCageCombinations(
+  proposal: DeductionProposal,
+  view: ReadView,
+  available: ReadonlyMap<number, ProofNode>,
+): void {
+  const pattern = proposal.pattern as Record<string, unknown>;
+  requireProof(
+    sameValue(Object.keys(pattern).sort(), ["alias", "cage", "cells", "kind", "rows", "volume"]) &&
+      pattern.kind === "cage-combinations" &&
+      pattern.alias === "Killer combinations" &&
+      typeof pattern.cage === "string",
+    "invalid-cage-combinations-pattern",
+  );
+  const cage = liveCages(view).find((candidate) => candidate.constraintId === pattern.cage);
+  requireProof(cage !== undefined, "unknown-cage");
+  const analysis = analyzeCage(view, cage);
+  requireProof(withinProfile(analysis), "cage-box-out-of-profile");
+  requireProof(
+    sameValue(pattern.cells, cage.cells) &&
+      pattern.volume === analysis.volume &&
+      pattern.rows === analysis.rows &&
+      analysis.rows > 0,
+    "invalid-cage-combinations-pattern",
+  );
+  requireProof(
+    proposal.effects.length > 0 &&
+      proposal.effects.every(
+        (effect) =>
+          effect.kind === "remove" &&
+          analysis.removals.some(
+            (removal) => removal.cell === effect.cell && removal.symbol === effect.symbol,
+          ),
+      ),
+    "unsupported-cage-combinations-effect",
+  );
+  const premises = [
+    cage.scope.root,
+    cage.sum.root,
+    ...cage.cells.map((cell) => view.state.domainFacts[cell]),
+  ];
+  const nodes = proposal.proof.nodes;
+  const byId = new Map(nodes.map((node) => [node.id, node] as const));
+  const effectRoots = new Set(proposal.proof.roots);
+  let leaves = 0,
+    unions = 0,
+    projections = 0;
+  const tops = new Set<number>();
+  for (const node of nodes) {
+    requireProof(node.scope.length === 0, "outside-technique-grammar");
+    const proposition = node.conclusion;
+    if (node.rule === "table-filter@1") {
+      leaves += 1;
+      const parameters = node.parameters as { cells?: unknown; box?: unknown };
+      const box = parameters.box;
+      requireProof(
+        sameValue(node.premises, premises) &&
+          sameValue(parameters, { cells: cage.cells, box }) &&
+          Array.isArray(box) &&
+          box.length === cage.cells.length &&
+          box.every(
+            (mask, index) =>
+              Number.isSafeInteger(mask) && ((mask as number) & analysis.domains[index]) === mask,
+          ) &&
+          boxVolume(view.assembly.problem, box as number[]) <= K01_PROFILE.leafVolume &&
+          proposition.kind === "table" &&
+          sameValue(proposition, {
+            kind: "table",
+            cells: cage.cells,
+            count: proposition.count,
+            definition: node.id,
+          }),
+        "invalid-cage-combinations-leaf",
+      );
+      continue;
+    }
+    if (node.rule === "table-union@1") {
+      unions += 1;
+      requireProof(
+        node.premises.length === 2 &&
+          node.premises.every((id) => {
+            const child = byId.get(id);
+            return child?.rule === "table-filter@1" || child?.rule === "table-union@1";
+          }) &&
+          sameValue(node.parameters, {}) &&
+          proposition.kind === "table" &&
+          sameValue(proposition, {
+            kind: "table",
+            cells: cage.cells,
+            count: proposition.count,
+            definition: node.id,
+          }),
+        "invalid-cage-combinations-union",
+      );
+      continue;
+    }
+    if (node.rule === "table-project@1") {
+      projections += 1;
+      const table = node.premises.length === 1 ? byId.get(node.premises[0]) : undefined;
+      requireProof(
+        table !== undefined &&
+          (table.rule === "table-filter@1" || table.rule === "table-union@1") &&
+          table.conclusion.kind === "table" &&
+          table.conclusion.count === analysis.rows &&
+          sameValue(node.parameters, {}) &&
+          proposition.kind === "literal" &&
+          !proposition.value.positive &&
+          proposal.effects.some(
+            (effect) =>
+              effect.cell === proposition.value.cell && effect.symbol === proposition.value.symbol,
+          ) &&
+          effectRoots.has(node.id),
+        "outside-cage-combinations-grammar",
+      );
+      tops.add(table.id);
+      continue;
+    }
+    requireProof(node.rule === "domain-restrict@1", "outside-technique-grammar");
+    const nodePremises = node.premises.map((id) => defined(available.get(id), "available"));
+    const base = domainAssertion(nodePremises[0]?.conclusion),
+      conclusion = nodePremises.at(1)?.conclusion;
+    requireProof(
+      proposition.kind === "domain" &&
+        base !== undefined &&
+        base.cell === proposition.cell &&
+        conclusion?.kind === "literal" &&
+        !conclusion.value.positive &&
+        proposal.effects.some(
+          (effect) =>
+            effect.cell === conclusion.value.cell && effect.symbol === conclusion.value.symbol,
+        ) &&
+        proposition.mask !== base.mask,
+      "outside-domain-closure",
+    );
+  }
+  // One complete table serves every projection; the union tree is binary.
+  requireProof(
+    tops.size === 1 &&
+      leaves >= 1 &&
+      unions === leaves - 1 &&
+      projections === proposal.effects.length &&
+      leaves <= Math.ceil(K01_PROFILE.maxInputBox / K01_PROFILE.leafVolume) * 9,
+    "cage-combinations-shape",
+  );
 }

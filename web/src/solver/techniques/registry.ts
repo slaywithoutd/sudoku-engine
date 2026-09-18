@@ -2,7 +2,7 @@ import type { VersionId } from "../problem";
 import type { ReadView } from "../state/types";
 import type { Assembly } from "../rules/types";
 import type { Discovery, DiscoveryContext, TechniqueDescriptor } from "./types";
-import { coverageEntries } from "./manifest";
+import { coverageEntries, variantEntries } from "./manifest";
 import { NakedSingles, HiddenSingles } from "./singles";
 import { LockedCandidates } from "./intersections";
 import { Subsets, LockedSubsets } from "./subsets";
@@ -23,6 +23,7 @@ import { netTechniques } from "./nets";
 import { krakenTechniques } from "./kraken";
 import { generalizedTechniques } from "./generalized-runtime";
 import { exocetTechniques } from "./exocet";
+import { cageCombinationTechniques } from "./killer";
 import { tridagonTechniques } from "./tridagon";
 import { skLoopTechniques } from "./sk-loops";
 import { fireworksTechniques } from "./fireworks";
@@ -148,14 +149,48 @@ const descriptors: readonly TechniqueDescriptor[] = Object.freeze(
 );
 
 /** Closed known-version dispatch. Unimplemented rows remain visible and excluded. */
+/** Variant rows (spec §3.6) join the classic descriptors only under the variant profiles. */
+const variantDescriptors: readonly TechniqueDescriptor[] = Object.freeze([
+  ...cageCombinationTechniques,
+]);
+
+export const PROFILES = Object.freeze([
+  "classic-expanded@1",
+  "classic-conditional@1",
+  "variants-expanded@1",
+  "variants-conditional@1",
+] as const);
+export type ProfileId = (typeof PROFILES)[number];
+
+function isProfile(value: string): value is ProfileId {
+  return (PROFILES as readonly string[]).includes(value);
+}
+
+/** Classic profiles keep their exact descriptor sets; variant profiles append the K rows. */
 export function getTechniques(profile: VersionId): readonly TechniqueDescriptor[] {
-  if (!["classic-expanded@1", "classic-conditional@1"].includes(profile))
-    throw Error("unknown-profile");
-  return profile === "classic-conditional@1"
+  if (!isProfile(profile)) throw Error("unknown-profile");
+  const conditional = profile.endsWith("conditional@1");
+  const base = conditional
     ? descriptors
-    : Object.freeze(
-        descriptors.filter((descriptor) => descriptor.assumptionPolicy !== "unique-only"),
-      );
+    : descriptors.filter((descriptor) => descriptor.assumptionPolicy !== "unique-only");
+  return Object.freeze(
+    profile.startsWith("variants-") ? [...base, ...variantDescriptors] : [...base],
+  );
+}
+
+/** The profile a problem needs: variant rows only when a non-classic rule is declared. */
+export function profileFor(
+  problem: { constraints: readonly { type: string }[] },
+  conditional = false,
+): ProfileId {
+  const variant = problem.constraints.some((rule) => rule.type !== "all-different@1");
+  return variant
+    ? conditional
+      ? "variants-conditional@1"
+      : "variants-expanded@1"
+    : conditional
+      ? "classic-conditional@1"
+      : "classic-expanded@1";
 }
 
 /**
@@ -166,10 +201,14 @@ export function profileReadiness(profile: VersionId): {
   readonly missing: readonly string[];
 } {
   getTechniques(profile);
-  const missing = coverageEntries
+  const conditional = profile.endsWith("conditional@1");
+  const rows = profile.startsWith("variants-")
+    ? [...coverageEntries, ...variantEntries]
+    : coverageEntries;
+  const missing = rows
     .filter(
       (entry) =>
-        (profile === "classic-conditional@1" || entry.assumptionPolicy !== "unique-only") &&
+        (conditional || entry.assumptionPolicy !== "unique-only") &&
         entry.status !== "independently-verified",
     )
     .map((entry) => entry.id);

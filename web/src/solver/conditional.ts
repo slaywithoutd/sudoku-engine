@@ -104,7 +104,7 @@ function validateRun(run: RunKey, primary: Readonly<RunKey>): void {
   const mode: unknown = run.mode;
   requireProof(
     run.operation === "conditional" &&
-      run.profile === "classic-conditional@1" &&
+      (run.profile === "classic-conditional@1" || run.profile === "variants-conditional@1") &&
       typeof run.requestId === "string" &&
       run.requestId.length > 0 &&
       run.requestId.length <= 128 &&
@@ -453,7 +453,8 @@ export class ConditionalOperation {
           envelope.run.snapshotId === envelope.snapshot.snapshotId &&
           envelope.run.inputRevision === envelope.snapshot.inputRevision &&
           envelope.run.operation === "conditional" &&
-          envelope.run.profile === "classic-conditional@1" &&
+          (envelope.run.profile === "classic-conditional@1" ||
+            envelope.run.profile === "variants-conditional@1") &&
           typeof envelope.run.parentEvidenceId === "string" &&
           envelope.run.parentEvidenceId.length > 0 &&
           typeof envelope.nonce === "string" &&
