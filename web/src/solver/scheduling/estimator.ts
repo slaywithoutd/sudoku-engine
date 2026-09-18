@@ -21,7 +21,7 @@ export interface EstimatorModel {
   readonly featureSchema: string;
   readonly corpusHash: string;
   readonly trainerHash: string;
-  readonly families: Readonly<Record<string, FamilyModel>>;
+  readonly families: Readonly<Record<string, FamilyModel | undefined>>;
 }
 
 export const SCALE_SHIFT = 10;
@@ -57,6 +57,7 @@ export function validateModel(model: EstimatorModel): readonly string[] {
   const errors: string[] = [];
   if (model.featureSchema !== BOARD_FEATURE_SCHEMA) errors.push("feature-schema-mismatch");
   for (const [id, family] of Object.entries(model.families)) {
+    if (!family) continue;
     for (const term of [family.hit, family.cost])
       if (
         term.weights.length !== BOARD_FEATURE_NAMES.length ||
