@@ -54,6 +54,10 @@ export type SelectionEvent =
       readonly reason: string;
       readonly ledger: Ledger;
     };
+/** Read after the quantum ran; the generator may have flipped the flag meanwhile. */
+function proposedDuring(cursor: Cursor): boolean {
+  return cursor.proposed === true;
+}
 interface Cursor {
   /** True once the current quantum yielded a proposal (decay bookkeeping). */
   proposed?: boolean;
@@ -457,7 +461,7 @@ export class StepSelection {
       this.#cursors.set(job, cursor);
       cursor.proposed = false;
       yield* this.#serviceQuantum(job, cursor, window);
-      if (!cursor.proposed) this.ledger.noteEmptyQuantum(key);
+      if (!proposedDuring(cursor)) this.ledger.noteEmptyQuantum(key);
       // A checker result paid at the last unit belongs to this quantum.
       if (cursor.checked && !cursor.debt) this.#bufferChecked(cursor);
       if (
