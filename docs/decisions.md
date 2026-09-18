@@ -1,6 +1,6 @@
 # Decision log
 
-Updated: 2026-09-17.
+Updated: 2026-09-18.
 
 Status vocabulary: **Confirmed** = explicit user requirement or answer; **Proposed** = recommendation awaiting an answer; **Superseded** = retained historical decision replaced by another entry.
 
@@ -912,3 +912,14 @@ Record each answer here with its rationale and consequences. If an answer change
 - The solver is available in the application in engine Explain mode, presented as **Analyze** (summary) and **Explain** (step by step). Engine Analyze mode and confined rollout remain disabled until the benchmark matrix is run (D063); no time, work or proof default has been validated. The verification recorded in D097 is the last full evidence run before integration; later suites on `master` pass, but they do not replace the calibration work.
 - Reason: the work was complete enough to ship as one application, and the isolated worktrees had become the main source of stale references in the documentation.
 - Consequence: documents that describe branch or worktree state are moved under `docs/history/` and kept as written. The roadmap and index describe `master` only.
+
+## D100 - Approve the M2.5 engine design and start implementation
+
+- Status: confirmed user instruction, 2026-09-18.
+- Source: the user chose full implementation in batches ("B") after reading the audited [M2.5 engine design](specs/2026-09-17-engine-design.md). The design was produced in a Socratic session on 2026-09-17 and audited the same day (ambiguity 0.31 → 0.12, no blocking item).
+- Decision: implement M2.5 as one feature branch with one reviewed commit per task, merged into `master` only after the acceptance evidence in the spec (§7, §3.12) exists. Scope is exactly the spec's §3 decisions; §8 stays out. The task plan is written next and approved before the first code commit.
+- Variant rules: one new proposition `sum`, rules `linear-sum@1` and `linear-combine@1`, capability `sums`, production modules `order@1`, `difference@1` (one instance per adjacent pair), `cage@1`, `arrow@1`, diagonal through the classic adapter, families K01 cage combinations and K02 innies/outies, a `relation-strong` implication recipe, a second independent test oracle, and an exact-phase `prune` hook per module. That hook is trusted evidence code validated by oracle differential tests; it refines D049's "singles propagation" to "singles plus module forward checking" and does not change the exact phase's independence from human-pruned candidates.
+- Scheduling: `explain-fair@2` (score inside the current tier, tiers ≥ 3 only) and `analyze-fair@2` (score across tiers) with frozen fixed-point integer models calibrated offline from a sampling harness over a generated plus licensed public corpus; deterministic in-run decay and parameterized rotation; the `@1` policies remain the ablation baselines. `@2` becomes a default only if it passes metrics A–F on held-out data; otherwise it ships disabled and the milestone still completes.
+- Preserved: 81/9 structural caps and the classic-only named families (non-regression rule on new code), D052/D061 independent checking, D055/D056 semantics, D063's browser benchmark matrix as a separate gate, D094 policy identity rules. Provisional bounds (K01 input box 16,384; K01/K02 tiers 1 and 2) are versioned profile parameters.
+- Roadmap: M2.5 is inserted between M2 and M3; M5 shrinks to sandwich, remaining killer techniques and UI integration.
+- Consequence: `docs/specs/` becomes the location for approved design documents on `master`; the spec's own audit ledger (§12) records the resolved, provisional and deferred items.
