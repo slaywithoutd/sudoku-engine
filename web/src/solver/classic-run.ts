@@ -15,6 +15,18 @@ import { runSolver } from "./run";
 import { coverageEntries, variantEntries } from "./techniques/manifest";
 import { defined } from "./invariants";
 
+const techniqueTiers = new Map<string, number>(
+  [...coverageEntries, ...variantEntries].map((entry) => [entry.version, entry.tier] as const),
+);
+type Difficulty = Extract<ClassicSolveEvent, { kind: "result" }>["difficulty"];
+function noDifficulty(): Difficulty {
+  return { schema: "difficulty@0", maxTier: -1, stepsByTier: [] };
+}
+function difficultyOf(tiers: readonly number[]): Difficulty {
+  const stepsByTier = Array(8).fill(0) as number[];
+  for (const tier of tiers) stepsByTier[tier + 1] += 1;
+  return { schema: "difficulty@0", maxTier: Math.max(-1, ...tiers), stepsByTier };
+}
 const techniqueNames = new Map<string, string>([
   ["rule-propagation@1", "Basic elimination"],
   ["rule-relation@1", "Relation propagation"],
@@ -55,6 +67,16 @@ export type ClassicSolveEvent =
       readonly solution: readonly number[] | null;
       readonly logicalValues: readonly number[];
       readonly steps: number;
+      /**
+       * Informative only (spec §3.8): the highest catalogue tier among accepted
+       * steps and the count of accepted steps per tier (index 0 = rule
+       * maintenance, then tier 0..6). Nothing schedules or certifies on it.
+       */
+      readonly difficulty: {
+        readonly schema: "difficulty@0";
+        readonly maxTier: number;
+        readonly stepsByTier: readonly number[];
+      };
     };
 
 /**
@@ -201,6 +223,7 @@ export async function solveClassic(
       solution: null,
       logicalValues: [...problem.givens],
       steps: 0,
+      difficulty: noDifficulty(),
     });
   const assembled = assemble(problem, productionRules());
   if (!assembled.ok) {
@@ -222,6 +245,7 @@ export async function solveClassic(
       solution: null,
       logicalValues: [...problem.givens],
       steps: 0,
+      difficulty: noDifficulty(),
     });
     return;
   }
@@ -252,6 +276,7 @@ export async function solveClassic(
   let lastProgress = ports.clock.now(),
     work = 0,
     steps = 0;
+  const tiersSeen: number[] = [];
   let pending:
     | {
         technique: string;
@@ -317,6 +342,7 @@ export async function solveClassic(
           // next event.
           if (pending) emitStep(pending);
           steps++;
+          tiersSeen.push(techniqueTiers.get(event.step.proposal.technique) ?? -1);
           pending = {
             technique: event.step.proposal.technique,
             effects: event.step.proposal.effects,
@@ -338,6 +364,7 @@ export async function solveClassic(
             solution: solutionOf(count),
             logicalValues: [...view.state.values],
             steps,
+            difficulty: difficultyOf(tiersSeen),
           });
         }
       },

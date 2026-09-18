@@ -1,0 +1,97 @@
+import type { ReadView } from "../state/types";
+import type { Estimate } from "../techniques/types";
+import { BOARD_FEATURE_NAMES, BOARD_FEATURE_SCHEMA, boardFeatures } from "./features-board";
+
+/**
+ * A frozen, fixed-point linear model per technique (spec §3.10). Weights are
+ * scaled by 1024; the dot product is shifted back and clamped to 1...1024,
+ * which is exactly the range FairPolicy already clamps to. No float reaches
+ * the scheduler, so estimates are identical on every platform.
+ */
+export interface FamilyModel {
+  /** Bias and one weight per BOARD_FEATURE_NAMES entry, all x1024 integers. */
+  readonly hit: { readonly bias: number; readonly weights: readonly number[] };
+  readonly cost: { readonly bias: number; readonly weights: readonly number[] };
+  /** Mean accepted-step utility of the family in the calibration partition. */
+  readonly gain: number;
+}
+
+export interface EstimatorModel {
+  readonly id: string;
+  readonly featureSchema: string;
+  readonly corpusHash: string;
+  readonly trainerHash: string;
+  readonly families: Readonly<Record<string, FamilyModel>>;
+}
+
+export const SCALE_SHIFT = 10;
+export const ESTIMATE_MIN = 1;
+export const ESTIMATE_MAX = 1024;
+
+/** The model of a policy that trusts every descriptor's own constants. */
+export const CONSTANT_MODEL: EstimatorModel = Object.freeze({
+  id: "constant@1",
+  featureSchema: BOARD_FEATURE_SCHEMA,
+  corpusHash: "",
+  trainerHash: "",
+  families: Object.freeze({}),
+});
+
+export function clampEstimate(value: number): number {
+  if (!Number.isFinite(value)) return ESTIMATE_MIN;
+  return Math.max(ESTIMATE_MIN, Math.min(ESTIMATE_MAX, Math.trunc(value)));
+}
+
+function dot(
+  term: { bias: number; weights: readonly number[] },
+  features: readonly number[],
+): number {
+  let total = term.bias;
+  for (let index = 0; index < term.weights.length; index += 1)
+    total += term.weights[index] * (features[index] ?? 0);
+  // Arithmetic shift keeps the integer domain; products stay far below 2^53.
+  return Math.trunc(total / 2 ** SCALE_SHIFT);
+}
+
+export function validateModel(model: EstimatorModel): readonly string[] {
+  const errors: string[] = [];
+  if (model.featureSchema !== BOARD_FEATURE_SCHEMA) errors.push("feature-schema-mismatch");
+  for (const [id, family] of Object.entries(model.families)) {
+    for (const term of [family.hit, family.cost])
+      if (
+        term.weights.length !== BOARD_FEATURE_NAMES.length ||
+        !Number.isSafeInteger(term.bias) ||
+        term.weights.some((weight) => !Number.isSafeInteger(weight))
+      )
+        errors.push(`malformed-family:${id}`);
+    if (!Number.isSafeInteger(family.gain)) errors.push(`malformed-gain:${id}`);
+  }
+  return Object.freeze(errors);
+}
+
+/**
+ * Shared estimate producer. A technique without a family entry keeps its own
+ * declared constants, so the constant model reproduces today's scheduling
+ * exactly; a trained family replaces hit and cost with the fixed-point model
+ * and gain with the calibrated mean utility.
+ */
+export class TechniqueEstimator {
+  constructor(readonly model: EstimatorModel) {
+    const errors = validateModel(model);
+    if (errors.length > 0) throw new Error(`invalid-estimator-model:${errors.join(",")}`);
+    Object.freeze(this);
+  }
+
+  estimate(techniqueId: string, view: ReadView, declared: Estimate): Estimate {
+    const family = this.model.families[techniqueId];
+    if (!family) return declared;
+    const features = boardFeatures(view);
+    return Object.freeze({
+      hit: clampEstimate(dot(family.hit, features)),
+      gain: clampEstimate(family.gain),
+      cost: clampEstimate(dot(family.cost, features)),
+    });
+  }
+}
+
+export const constantEstimator = new TechniqueEstimator(CONSTANT_MODEL);

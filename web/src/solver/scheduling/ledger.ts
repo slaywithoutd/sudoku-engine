@@ -1,6 +1,7 @@
 import type { VersionId } from "../problem";
 import type { ReadView } from "../state/types";
 import { invalidate, type ChangeSet, type Watch } from "../state/events";
+import { constantEstimator, type TechniqueEstimator } from "./estimator";
 import type {
   Discovery,
   TechniqueDescriptor,
@@ -48,9 +49,11 @@ export class SchedulingLedger {
   readonly jobs: readonly ScheduledJob[];
   #view: ReadView;
   #ticket = 0;
-  constructor(view: ReadView, registry: TechniqueJobs) {
+  readonly #estimator: TechniqueEstimator;
+  constructor(view: ReadView, registry: TechniqueJobs, estimator = constantEstimator) {
     if (registry.rules.length + registry.techniques.length > 256) throw Error("profile-job-limit");
     this.#view = view;
+    this.#estimator = estimator;
     this.jobs = [
       ...registry.rules.map((rule) => ({
         key: { technique: rule.id, scopeKey: rule.scopeKey },
@@ -66,7 +69,7 @@ export class SchedulingLedger {
         key: { technique: descriptor.id, scopeKey: "" },
         tier: descriptor.tier,
         descriptor,
-        estimate: descriptor.estimate(view),
+        estimate: this.#estimate(descriptor, view),
         status: "pending" as DetectorStatus,
         dependencies: descriptor.watches(view),
         work: 0,
@@ -75,6 +78,10 @@ export class SchedulingLedger {
     ].sort(compareJob);
     if (new Set(this.jobs.map((j) => JSON.stringify(j.key))).size !== this.jobs.length)
       throw Error("duplicate-scheduler-job");
+  }
+  /** Declared constants pass through the shared estimator (spec §3.8, §6.1). */
+  #estimate(descriptor: TechniqueDescriptor, view: ReadView): Estimate {
+    return this.#estimator.estimate(descriptor.id, view, descriptor.estimate(view));
   }
   get ticket(): number {
     return this.#ticket;
@@ -134,7 +141,7 @@ export class SchedulingLedger {
       if (job.descriptor) {
         const carried = !cold && (job.status === "exhausted" || job.status === "excluded");
         Object.assign(job, {
-          estimate: job.descriptor.estimate(view),
+          estimate: this.#estimate(job.descriptor, view),
           dependencies: carried ? rows[i].dependencies : job.descriptor.watches(view),
         });
       }
