@@ -19,7 +19,7 @@ test("C30 all-double has complete eight-pair closure and checked effects", () =>
     view = fixtureView(f),
     cursor = compileSkLoop(view, f.expectedPattern as unknown as SkPlan);
   let proposal;
-  while (true) {
+  for (;;) {
     const n = cursor.next();
     if (n.done) {
       proposal = n.value;

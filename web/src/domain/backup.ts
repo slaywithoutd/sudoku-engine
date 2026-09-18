@@ -14,6 +14,7 @@ import {
 } from "./model";
 import { normalizeSettings } from "./settings";
 import { sameCell } from "./editor";
+import { defined, lookup } from "./invariants";
 import { safeId } from "./library";
 import { conflictingCells } from "./classic";
 export interface BackupEnvelope {
@@ -190,12 +191,13 @@ export function validateLibrary(input: unknown): LibraryData {
         requireValid(Object.hasOwn(puzzles, target));
         draft[link] = target;
       }
-    if (draft.finishedPuzzleId)
+    if (draft.finishedPuzzleId) {
+      const finished = lookup(puzzles, draft.finishedPuzzleId);
       requireValid(
-        draft.editor.cells.every(
-          (c, i) => c.value === puzzles[draft.finishedPuzzleId!].definition.givens[i],
-        ),
+        finished !== undefined &&
+          draft.editor.cells.every((c, i) => c.value === finished.definition.givens[i]),
       );
+    }
     drafts[key] = draft;
   }
   for (const [key, raw] of Object.entries(object(x.sessions))) {
@@ -284,10 +286,12 @@ export function previewRestore(
     throw new Error("Could not create identifiers for the copies.");
   };
   const puzzleIds = new Map<string, string>();
+  // Every source puzzle receives a target id here, so the lookups below cannot miss.
+  const targetOf = (puzzleId: string) => defined(puzzleIds.get(puzzleId), "target-puzzle-id");
   for (const p of Object.values(source.puzzles)) {
-    const existing = local.puzzles[p.id],
-      session = source.sessions[p.id],
-      localSession = local.sessions[p.id];
+    const existing = lookup(local.puzzles, p.id),
+      session = lookup(source.sessions, p.id),
+      localSession = lookup(local.sessions, p.id);
     const conflict =
       Object.hasOwn(local.drafts, p.id) ||
       (existing && !equal(existing, p)) ||
@@ -295,11 +299,11 @@ export function previewRestore(
     puzzleIds.set(p.id, conflict ? allocate() : p.id);
   }
   for (const p of Object.values(source.puzzles)) {
-    const target = puzzleIds.get(p.id)!;
+    const target = targetOf(p.id);
     if (target !== p.id) {
       data.puzzles[target] = { ...p, id: target };
       result.copied++;
-    } else if (local.puzzles[target]) result.skipped++;
+    } else if (Object.hasOwn(local.puzzles, target)) result.skipped++;
     else {
       data.puzzles[target] = p;
       result.added++;
@@ -307,9 +311,9 @@ export function previewRestore(
   }
   for (const d of Object.values(source.drafts)) {
     const remapped = { ...d };
-    if (d.sourcePuzzleId) remapped.sourcePuzzleId = puzzleIds.get(d.sourcePuzzleId)!;
-    if (d.finishedPuzzleId) remapped.finishedPuzzleId = puzzleIds.get(d.finishedPuzzleId)!;
-    const existing = local.drafts[d.id];
+    if (d.sourcePuzzleId) remapped.sourcePuzzleId = targetOf(d.sourcePuzzleId);
+    if (d.finishedPuzzleId) remapped.finishedPuzzleId = targetOf(d.finishedPuzzleId);
+    const existing = lookup(local.drafts, d.id);
     if (existing && equal(existing, remapped)) result.skipped++;
     else if (existing || Object.hasOwn(local.puzzles, d.id)) {
       const target = allocate();
@@ -321,11 +325,11 @@ export function previewRestore(
     }
   }
   for (const s of Object.values(source.sessions)) {
-    const target = puzzleIds.get(s.puzzleId)!;
+    const target = targetOf(s.puzzleId);
     if (target !== s.puzzleId) {
       data.sessions[target] = { ...s, puzzleId: target };
       result.copied++;
-    } else if (local.sessions[target]) result.skipped++;
+    } else if (Object.hasOwn(local.sessions, target)) result.skipped++;
     else {
       data.sessions[target] = s;
       result.added++;

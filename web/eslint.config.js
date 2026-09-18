@@ -30,6 +30,12 @@ export default tseslint.config(
     rules: readabilityRules,
   },
   {
+    // Tests assert on fixtures they built themselves; a `!` on such a lookup is
+    // the idiom, not a hidden runtime risk. Production code keeps it an error.
+    files: ["tests/**/*.ts"],
+    rules: { "@typescript-eslint/no-non-null-assertion": "warn" },
+  },
+  {
     files: ["*.config.ts"],
     languageOptions: {
       parser: tseslint.parser,

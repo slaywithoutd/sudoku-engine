@@ -371,7 +371,7 @@ export function independentChainCertificate(f: TechniqueFixture): DeductionPropo
         members: Array.isArray(v[0]) ? (v as number[][]).map(term) : [term(v as number[])],
         als: seed.alsVisits?.includes(v[0]) ? [v[0]] : null,
       }));
-  const names: Record<string, string> = {
+  const names: Partial<Record<string, string>> = {
     "X-Chain": "X-Chains",
     "XY-Chain": "XY-Chains",
     AIC: "AICs",

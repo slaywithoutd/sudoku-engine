@@ -23,7 +23,7 @@ function source(f: any) {
       alias: "Tridagon guardians",
     } as TridagonPlan);
   let proposal;
-  while (true) {
+  for (;;) {
     const n = cursor.next();
     if (n.done) {
       proposal = n.value;

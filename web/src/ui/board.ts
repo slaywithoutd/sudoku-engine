@@ -230,7 +230,7 @@ export function mountBoard(container: HTMLElement, options: BoardOptions): Board
       if (candidates)
         corner
           .querySelectorAll<HTMLElement>("span")
-          .forEach((span) => (span.dataset.slot = span.textContent!));
+          .forEach((span) => (span.dataset.slot = span.textContent));
       const parts = [`${ROWS[Math.floor(i / 9)]}${(i % 9) + 1}`, shown ? String(shown) : "empty"];
       if (given) parts.push("clue");
       if (conflicts.has(i)) parts.push("conflict");

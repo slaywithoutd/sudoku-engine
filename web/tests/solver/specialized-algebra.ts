@@ -11,7 +11,7 @@ export const independentPeer = (a: number, b: number) =>
 export function* independentProduct(sets: readonly (readonly number[])[]): Generator<number[]> {
   const indexes = sets.map(() => 0);
   if (sets.some((s) => !s.length)) return;
-  while (true) {
+  for (;;) {
     yield sets.map((s, i) => s[indexes[i]]);
     let i = sets.length - 1;
     while (i >= 0 && ++indexes[i] === sets[i].length) {

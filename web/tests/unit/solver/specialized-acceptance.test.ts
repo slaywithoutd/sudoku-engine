@@ -37,7 +37,7 @@ const limits = { ...discoveryContext().limits, timeMs: 180000, workUnits: 200000
 function compile(f: any): DeductionProposal {
   const { view } = specializedState(f),
     cursor = compilers[f.rowId](view, f.expectedPattern);
-  while (true) {
+  for (;;) {
     const n = cursor.next();
     if (n.done) {
       if (!n.value) throw Error(`unproductive:${f.id}`);

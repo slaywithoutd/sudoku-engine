@@ -189,7 +189,7 @@ test("auxiliary empty matching retains every actual relation conflict", () => {
     const auxiliaries = [{ cells: [36], house: "row:4", symbols: [3, 4] }],
       cursor = new AlignedExclusionSearch(view, graph, auxiliaries).classify([39, 47], auxiliaries);
     let reasons: number[] = [];
-    while (true) {
+    for (;;) {
       const step = cursor.next();
       if (step.done) {
         reasons = step.value.reasons;
@@ -337,7 +337,7 @@ test("aligned classification visits all 6561 assignments and retains equal nonpe
     }
     const cursor = new AlignedExclusionSearch(view, graph, []).classify([0, 13, 26, 39], []);
     let work = 0;
-    while (true) {
+    for (;;) {
       const e = cursor.next();
       if (e.done) {
         expect(e.value).toEqual({ reasons: Array(6561).fill(0), support: [511, 511, 511, 511] });
@@ -606,7 +606,7 @@ function production(view: ReadView, pattern: SetPattern, effects: any[]) {
     }
     graph.compilation = context.workspace.reserve(0, 65536);
     const compiler = new SetCertificate(view, graph).compile(pattern, effects);
-    while (true) {
+    for (;;) {
       const e = compiler.next();
       if (e.done) return e.value;
     }

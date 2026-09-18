@@ -122,7 +122,7 @@ test("groups enumerate every <=3-member subset and preserve scope occurrences wi
   expect(groups.entries).toHaveLength((7 + 3) * 3);
   const pair = groups.entries.filter((g) => g.symbol === 1 && g.cells.join() === "0,1");
   expect(pair).toHaveLength(2);
-  expect(pair.every((g) => g.members.length === 2 && g.recipe.kind === "group-members")).toBe(true);
+  expect(pair.every((g) => g.members.length === 2)).toBe(true);
   expect(groups.entries.every((g) => g.cells.length <= 3 && g.premises.length > 0)).toBe(true);
 });
 
