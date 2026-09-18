@@ -1,4 +1,6 @@
 import { AllDifferentRule } from "./all-different";
+import { ArrowRule } from "./arrow";
+import { CageRule } from "./cage";
 import { DifferenceRule } from "./difference";
 import { OrderRule } from "./order";
 import type { RuleModule } from "./types";
@@ -9,5 +11,11 @@ import type { RuleModule } from "./types";
  * for them; a problem with an unregistered type still fails assembly.
  */
 export function productionRules(): readonly RuleModule[] {
-  return Object.freeze([new AllDifferentRule(), new OrderRule(), new DifferenceRule()]);
+  return Object.freeze([
+    new AllDifferentRule(),
+    new OrderRule(),
+    new DifferenceRule(),
+    new CageRule(),
+    new ArrowRule(),
+  ]);
 }

@@ -17,6 +17,7 @@ import { defined } from "./invariants";
 const techniqueNames = new Map<string, string>([
   ["rule-propagation@1", "Basic elimination"],
   ["rule-relation@1", "Relation propagation"],
+  ["rule-sum@1", "Sum bounds"],
   ...coverageEntries.map(
     (entry) => [entry.version, entry.aliases[0] ?? entry.id] as [string, string],
   ),

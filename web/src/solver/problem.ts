@@ -30,6 +30,31 @@ export interface EngineProblem {
 }
 
 /**
+ * Adds the two main diagonals of a square grid as all-different instances
+ * (`diagonal:main`, `diagonal:anti`). Diagonal Sudoku needs no new module:
+ * a full-length diagonal over the whole symbol set earns covers exactly like
+ * a house. The width is derived from the cell count; only square grids apply.
+ */
+export function withDiagonals(problem: EngineProblem): EngineProblem {
+  const width = Math.round(Math.sqrt(problem.cells.length));
+  if (width * width !== problem.cells.length)
+    throw new ProblemInputError("non-square-grid", "diagonals need a square grid");
+  const main = Array.from({ length: width }, (_, index) => index * width + index);
+  const anti = Array.from({ length: width }, (_, index) => index * width + (width - 1 - index));
+  return canonicalProblem({
+    schema: problem.schema,
+    cells: problem.cells,
+    symbols: problem.symbols,
+    givens: problem.givens,
+    constraints: [
+      ...problem.constraints,
+      { id: "diagonal:main", type: "all-different@1", cells: main, parameters: {} },
+      { id: "diagonal:anti", type: "all-different@1", cells: anti, parameters: {} },
+    ],
+  });
+}
+
+/**
  * Numeric meaning of a symbol for arithmetic rules (sums, orders, ratios).
  * Today every problem uses the symbol identity itself; a future symbolic
  * domain adds an explicit value table here without touching the checkers.
