@@ -1,6 +1,6 @@
 # M2.5 Engine — variant primitives and calibrated scheduling
 
-Status: brainstorm record, 2026-09-17, **audited the same day** (Socratic ambiguity review, §12). Not approved, not planned, no code written. Every decision below is a *proposal the user accepted in conversation*; it becomes binding only through a decisions-log entry after the user reads this document.
+Status: **approved 2026-09-18 (D100)**. Brainstorm record of 2026-09-17, audited the same day (Socratic ambiguity review, §12). Implementation follows the task plan referenced from D100; no code existed when this document was approved.
 
 Related: [engine architecture](../solver/architecture.md), [roadmap](../roadmap.md), [M2 engine contracts](../history/superpowers/specs/2026-09-12-m2-engine-contracts.md), [coverage matrix](../history/superpowers/specs/2026-09-12-m2-technique-coverage.md), [expansion research](../history/superpowers/specs/2026-09-12-m2-engine-expansion-design.md).
 
