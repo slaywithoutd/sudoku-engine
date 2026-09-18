@@ -40,6 +40,10 @@ export class CertificateBuilder {
   constructor(readonly view: ReadView) {
     this.#next = sourceMaximumId(view) + 1;
   }
+  /** Id the next `add` will allocate; table summaries cite their own defining node. */
+  get next(): number {
+    return this.#next;
+  }
   add(
     rule: string,
     premises: readonly number[],

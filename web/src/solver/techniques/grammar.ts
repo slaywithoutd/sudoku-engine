@@ -19,6 +19,7 @@ import { checkFireworksPattern } from "./fireworks-grammar";
 import { checkOrPattern } from "./or-grammar";
 import { checkTemplatePattern } from "../proof/template-cover";
 import { checkUniquePattern } from "./unique-grammar";
+import { checkRelationMaintenance } from "./variant-grammar";
 import { findHouse, symbolMask } from "../state/read";
 import { defined } from "../invariants";
 
@@ -91,6 +92,10 @@ export function checkTechniqueGrammar(
       fact && sameValue(domainAssertion(fact.proposition), { cell, mask: domains[cell] }),
       "unproved-current-domain",
     );
+  }
+  if (proposal.technique === "rule-relation@1") {
+    checkRelationMaintenance(proposal, view, available);
+    return;
   }
   if (proposal.technique === "c33@1") {
     checkTemplatePattern(proposal, view, available);

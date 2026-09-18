@@ -187,7 +187,13 @@ export function assertM2RootAssemblyBounds(assembly: Assembly): void {
           key.length <= 64 &&
           descriptor.enumerable &&
           "value" in descriptor &&
-          (typeof descriptor.value === "boolean" || Number.isSafeInteger(descriptor.value)),
+          // Scalars only: booleans, safe integers and short enumeration tags such
+          // as difference@1's kind. Nested data belongs in capabilities, not roots.
+          (typeof descriptor.value === "boolean" ||
+            Number.isSafeInteger(descriptor.value) ||
+            (typeof descriptor.value === "string" &&
+              descriptor.value.length >= 1 &&
+              descriptor.value.length <= 32)),
         "invalid-root-parameters",
       );
     }

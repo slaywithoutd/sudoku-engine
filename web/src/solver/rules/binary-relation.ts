@@ -1,0 +1,213 @@
+import type { ConstraintInstance, EngineProblem, SymbolId } from "../problem";
+import { symbolValue } from "../problem";
+import { CertificateBuilder, literal } from "../proof/builder";
+import { inference, requireProof, sameValue } from "../proof/primitives";
+import type { PrimitiveInput, CheckContext, CheckedInference } from "../proof/types";
+import { sourceFacts } from "../state/source-index";
+import { symbolMask } from "../state/read";
+import type {
+  Assignment,
+  Discovery,
+  ReadView,
+  RuleCapabilities,
+  RuleContext,
+  RuleIssue,
+  RuleModule,
+} from "./types";
+
+/** Technique id of relation maintenance proposals; its closed grammar lives in variant-grammar.ts. */
+export const RELATION_MAINTENANCE = "rule-relation@1";
+
+/**
+ * Shared strategy for rules over exactly two cells whose meaning is a finite
+ * set of value pairs (order, consecutive, ratio, negative dots). Each concrete
+ * module supplies `holds(left, right)` over numeric values; everything else —
+ * validation, the published relation capability, propagation through a
+ * complete two-cell table and the independent capability check — is common.
+ *
+ * The capability lists the relation over the two cells in ascending cell
+ * order, so a rule written as [b, a] publishes tuples whose first column is
+ * cell min(a, b). `holds` always receives the values in the rule's own order.
+ */
+export abstract class BinaryRelationRule implements RuleModule {
+  abstract readonly type: string;
+
+  /** True when the pair of numeric values satisfies the rule, in the rule's cell order. */
+  protected abstract holds(left: number, right: number, rule: ConstraintInstance): boolean;
+
+  /** Parameter validation specific to the concrete rule; empty when valid. */
+  protected abstract parameterIssues(rule: ConstraintInstance): readonly string[];
+
+  normalize(input: ConstraintInstance): ConstraintInstance {
+    // The pair is ordered: [a, b] and [b, a] mean different things for `<`.
+    return { ...input, cells: [...input.cells] };
+  }
+
+  validate(problem: EngineProblem, rule: ConstraintInstance): readonly RuleIssue[] {
+    const issues: RuleIssue[] = [];
+    if (rule.cells.length !== 2 || rule.cells[0] === rule.cells[1])
+      issues.push({
+        code: "invalid-scope",
+        constraintId: rule.id,
+        message: `${this.type} requires two distinct cells`,
+      });
+    if (rule.cells.some((cell) => !problem.cells.includes(cell)))
+      issues.push({
+        code: "invalid-scope",
+        constraintId: rule.id,
+        message: `${this.type} references an unknown cell`,
+      });
+    for (const message of this.parameterIssues(rule))
+      issues.push({ code: "invalid-parameters", constraintId: rule.id, message });
+    return issues;
+  }
+
+  checkComplete(rule: ConstraintInstance, assignment: Assignment): boolean {
+    // Assignments carry symbol ids; symbolValue is the identity today (spec §3.3 A).
+    const [left, right] = rule.cells.map((cell) => assignment.values[cell]);
+    if (!left || !right) return false;
+    return this.holds(left, right, rule);
+  }
+
+  /** Relation tuples in ascending cell order, sorted lexicographically. */
+  tuples(rule: ConstraintInstance, problem: EngineProblem): readonly (readonly SymbolId[])[] {
+    const [a, b] = rule.cells;
+    const swapped = a > b;
+    const tuples: SymbolId[][] = [];
+    for (const first of problem.symbols)
+      for (const second of problem.symbols) {
+        const leftSymbol = swapped ? second : first;
+        const rightSymbol = swapped ? first : second;
+        if (this.holds(symbolValue(problem, leftSymbol), symbolValue(problem, rightSymbol), rule))
+          tuples.push([first, second]);
+      }
+    return tuples.sort((left, right) => left[0] - right[0] || left[1] - right[1]);
+  }
+
+  capabilities(rule: ConstraintInstance, context: RuleContext): RuleCapabilities {
+    const premise = context.roots.get(rule.id);
+    if (premise === undefined) throw new Error(`Missing assembler root for ${rule.id}`);
+    return {
+      allDifferent: [],
+      covers: [],
+      relations: [
+        {
+          id: `${rule.id}:relation`,
+          cells: [...rule.cells].sort((left, right) => left - right),
+          tuples: this.tuples(rule, context.problem),
+          premise,
+        },
+      ],
+      sums: [],
+      primitiveIds: ["rule-instance@1", "relation@1"],
+    };
+  }
+
+  /**
+   * Removes every candidate of either cell that no tuple compatible with the
+   * current domains supports. One complete two-cell table (at most 81 rows)
+   * is filtered from the relation fact and both current domain facts; each
+   * removal projects a negative literal from that table (lemma M3 + D075).
+   */
+  *propagate(view: ReadView, rule: ConstraintInstance): Discovery {
+    const cells = [...rule.cells].sort((left, right) => left - right);
+    if (cells.every((cell) => view.state.values[cell])) {
+      yield { kind: "exhausted" };
+      return;
+    }
+    const fact = sourceFacts(view, "relation").find(
+      (candidate) =>
+        candidate.proposition.kind === "relation" &&
+        sameValue(candidate.proposition.cells, cells) &&
+        sameValue(candidate.rules, [rule.id]) &&
+        !candidate.conditional &&
+        candidate.openAssumptions.length === 0,
+    );
+    if (!fact || fact.proposition.kind !== "relation") throw Error("missing-relation-evidence");
+    const domains = cells.map((cell) => view.state.domains[cell]);
+    const supported = cells.map(() => 0);
+    let count = 0;
+    for (const tuple of fact.proposition.tuples) {
+      yield { kind: "work", units: 1 };
+      if (tuple.every((symbol, index) => domains[index] & symbolMask(symbol))) {
+        count += 1;
+        tuple.forEach((symbol, index) => {
+          supported[index] |= symbolMask(symbol);
+        });
+      }
+    }
+    const removals = cells.flatMap((cell, index) =>
+      view.state.values[cell]
+        ? []
+        : view.assembly.problem.symbols
+            .filter(
+              (symbol) =>
+                domains[index] & symbolMask(symbol) && !(supported[index] & symbolMask(symbol)),
+            )
+            .map((symbol) => ({ cell, symbol })),
+    );
+    if (removals.length === 0) {
+      yield { kind: "exhausted" };
+      return;
+    }
+    const builder = new CertificateBuilder(view);
+    const table = builder.add(
+      "table-filter@1",
+      [fact.root, ...cells.map((cell) => view.state.domainFacts[cell])],
+      { kind: "table", cells, count, definition: builder.next },
+      { cells, box: domains },
+    );
+    for (const { cell, symbol } of removals) {
+      yield { kind: "work", units: 1 };
+      const root = builder.add("table-project@1", [table], literal(cell, symbol, false));
+      builder.effect({ kind: "remove", cell, symbol }, root);
+    }
+    yield {
+      kind: "proposal",
+      proposal: builder.finish(RELATION_MAINTENANCE, { kind: "relation", constraintId: rule.id }),
+    };
+    yield { kind: "exhausted" };
+  }
+
+  checkPrimitive(input: PrimitiveInput, context: CheckContext): CheckedInference {
+    const problem = context.view.assembly.problem;
+    const id =
+      input.conclusion.kind === "rule"
+        ? input.conclusion.constraintId
+        : (input.parameters as { constraintId?: string } | null)?.constraintId;
+    const rule = problem.constraints.find((rule) => rule.id === id);
+    requireProof(
+      rule?.type === this.type && this.validate(problem, rule).length === 0,
+      "invalid-rule-instance",
+    );
+    if (input.rule === "rule-instance@1") {
+      requireProof(
+        input.premises.length === 0 &&
+          sameValue(input.parameters, {}) &&
+          sameValue(input.conclusion, { kind: "rule", constraintId: rule.id }),
+        "invalid-rule-root",
+      );
+      return inference(input, [rule.id]);
+    }
+    requireProof(
+      input.rule === "relation@1" &&
+        sameValue(input.parameters, { constraintId: rule.id }) &&
+        input.premises.length === 1 &&
+        sameValue(context.retained.get(input.premises[0])?.conclusion, {
+          kind: "rule",
+          constraintId: rule.id,
+        }),
+      "missing-rule-premise",
+    );
+    // Recompute the tuple set from the rule's own semantics; discovery output is never trusted.
+    requireProof(
+      sameValue(input.conclusion, {
+        kind: "relation",
+        cells: [...rule.cells].sort((left, right) => left - right),
+        tuples: this.tuples(rule, problem),
+      }),
+      "invalid-relation-tuples",
+    );
+    return inference(input, [rule.id]);
+  }
+}

@@ -4,7 +4,7 @@ import type { CountEvidence, HumanStatus } from "./evidence";
 import { normalizeClassic } from "./problem";
 import { makeSnapshot, type RunKey } from "./snapshot";
 import { assemble } from "./rules/assemble";
-import { AllDifferentRule } from "./rules/all-different";
+import { productionRules } from "./rules/registry";
 import { initialize, commitChecked } from "./state/candidates";
 import { IndexWorkspace } from "./indexes/workspace";
 import { schedulingOptions, canonicalOptionsKey, SCHEDULER_VERSION } from "./scheduling/work";
@@ -16,6 +16,7 @@ import { defined } from "./invariants";
 
 const techniqueNames = new Map<string, string>([
   ["rule-propagation@1", "Basic elimination"],
+  ["rule-relation@1", "Relation propagation"],
   ...coverageEntries.map(
     (entry) => [entry.version, entry.aliases[0] ?? entry.id] as [string, string],
   ),
@@ -154,7 +155,7 @@ export function countClassic(
     height: 9,
     givens: [...givens],
   });
-  const assembled = assemble(problem, [new AllDifferentRule()]);
+  const assembled = assemble(problem, productionRules());
   if (!assembled.ok) return { kind: "zero" };
   return exactPrecount(problem, assembled.value, limits, clock);
 }
@@ -197,7 +198,7 @@ export async function solveClassic(
       logicalValues: [...problem.givens],
       steps: 0,
     });
-  const assembled = assemble(problem, [new AllDifferentRule()]);
+  const assembled = assemble(problem, productionRules());
   if (!assembled.ok) {
     empty(assembled.issues.map((issue) => issue.code).join(",") || "assembly-failed");
     return;
