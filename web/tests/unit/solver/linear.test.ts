@@ -43,7 +43,7 @@ function fixture(
   cellCount: number,
   givens: number[],
   constraints: ConstraintInstance[],
-  coefficients?: Record<string, number[]>,
+  coefficients?: Record<string, number[] | undefined>,
 ) {
   let registry: readonly RuleModule[] = mockRuleRegistry;
   if (coefficients) {

@@ -75,7 +75,7 @@ function validate(input: VariantOracleInput): void {
     }
     if (
       (constraint.kind === "order" || constraint.kind === "difference") &&
-      constraint.cells.length !== 2
+      (constraint.cells as readonly number[]).length !== 2
     )
       throw new RangeError(`${constraint.kind} needs two cells`);
   }

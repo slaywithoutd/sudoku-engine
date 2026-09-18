@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { exactSteps, isWitness } from "../../../src/solver/exact";
+import { exactSteps, isWitness, type ExactEvent } from "../../../src/solver/exact";
 import { canonicalProblem, normalizeClassic } from "../../../src/solver/problem";
 import type { ConstraintInstance, EngineProblem } from "../../../src/solver/problem";
 import { assemble } from "../../../src/solver/rules/assemble";
@@ -37,7 +37,9 @@ function engineProblem(seed: number, options: Parameters<typeof generateSmall>[1
 
 function run(problem: EngineProblem, assembly: Assembly) {
   const events = [...exactSteps(problem, assembly)];
-  const witnesses = events.filter((event) => event.kind === "witness");
+  const witnesses = events.filter(
+    (event): event is Extract<ExactEvent, { kind: "witness" }> => event.kind === "witness",
+  );
   const terminal = events.at(-1)!;
   return { events, witnesses, terminal, stats: terminal.stats };
 }
@@ -58,14 +60,12 @@ describe("exact enumeration with module forward checking (T06)", () => {
     const baseline = run(problem, classicOnly.value);
     const production = run(problem, assembled(problem));
     expect(production.stats).toEqual(baseline.stats);
-    expect(production.witnesses.map((w) => w.kind === "witness" && w.values.join(""))).toEqual(
-      baseline.witnesses.map((w) => w.kind === "witness" && w.values.join("")),
+    expect(production.witnesses.map((w) => w.values.join(""))).toEqual(
+      baseline.witnesses.map((w) => w.values.join("")),
     );
     expect(baseline.witnesses).toHaveLength(1);
     expect(baseline.terminal.kind).toBe("exhausted");
-    expect(baseline.witnesses[0].kind === "witness" && baseline.witnesses[0].values.join("")).toBe(
-      SOLUTION,
-    );
+    expect(baseline.witnesses[0].values.join("")).toBe(SOLUTION);
   });
 
   test("generated mixed problems count the same as the independent oracle (capped at two)", () => {
@@ -94,9 +94,7 @@ describe("exact enumeration with module forward checking (T06)", () => {
       expect(witnesses).toHaveLength(expected);
       expect(terminal.kind).toBe(expected === 2 ? "cap-reached" : "exhausted");
       for (const witness of witnesses)
-        expect(witness.kind === "witness" && isWitness(problem, assembly, witness.values)).toBe(
-          true,
-        );
+        expect(isWitness(problem, assembly, witness.values)).toBe(true);
       if (expected === 2) multiple += 1;
     }
     expect(multiple).toBeGreaterThanOrEqual(5);
@@ -215,7 +213,7 @@ describe("exact enumeration with module forward checking (T06)", () => {
     // exhausts, every witness is valid, and the search stays far below the budget.
     expect(witnesses.length).toBeGreaterThanOrEqual(1);
     for (const witness of witnesses)
-      expect(witness.kind === "witness" && isWitness(problem, assembly, witness.values)).toBe(true);
+      expect(isWitness(problem, assembly, witness.values)).toBe(true);
     expect(["exhausted", "cap-reached"]).toContain(terminal.kind);
     expect(stats.nodes).toBeLessThan(500000);
   });

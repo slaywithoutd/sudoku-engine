@@ -280,13 +280,13 @@ function validateCapabilities(
   for (const capability of claimed.sums) {
     if (
       capability?.id !== `${rule.id}:sum` ||
-      !registerId(capability?.id) ||
-      !validCells(capability?.cells, problem) ||
-      (capability?.cells as readonly unknown[]).length > M2_ROOT_LIMITS.sumCells ||
+      !registerId(capability.id) ||
+      !validCells(capability.cells, problem) ||
+      (capability.cells as readonly unknown[]).length > M2_ROOT_LIMITS.sumCells ||
       !validCoefficients(capability) ||
-      !Number.isSafeInteger(capability?.total) ||
+      !Number.isSafeInteger(capability.total) ||
       Math.abs(capability.total as number) > M2_ROOT_LIMITS.sumTotal ||
-      !validPremise(capability?.premise, expectedPremise)
+      !validPremise(capability.premise, expectedPremise)
     )
       issues.push(capabilityIssue(rule, "sum capability is malformed or duplicated"));
   }
