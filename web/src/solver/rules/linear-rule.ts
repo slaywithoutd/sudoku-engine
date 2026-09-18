@@ -34,11 +34,15 @@ export function weightedBounds(
   mask: number,
   coefficient: number,
 ): { lo: number; hi: number } | undefined {
-  const values = problem.symbols
-    .filter((symbol) => (mask & symbolMask(symbol)) !== 0)
-    .map((symbol) => coefficient * symbolValue(problem, symbol));
-  if (values.length === 0) return undefined;
-  return { lo: Math.min(...values), hi: Math.max(...values) };
+  let lo = Infinity,
+    hi = -Infinity;
+  for (const symbol of problem.symbols) {
+    if ((mask & symbolMask(symbol)) === 0) continue;
+    const weighted = coefficient * symbolValue(problem, symbol);
+    if (weighted < lo) lo = weighted;
+    if (weighted > hi) hi = weighted;
+  }
+  return lo === Infinity ? undefined : { lo, hi };
 }
 
 /**
@@ -112,6 +116,52 @@ export function scopeIssues(
       message: `${type} references an unknown cell`,
     });
   return issues;
+}
+
+/**
+ * Evidence-side forward check shared by cage and arrow (spec §3.13): the same
+ * lemma-LS bounds as propagation, applied to raw masks without any proof.
+ */
+export function pruneSum(
+  problem: EngineProblem,
+  equation: Equation,
+  values: readonly number[],
+  masks: readonly number[],
+): readonly number[] | null {
+  const { cells, coefficients, total } = equation;
+  const count = cells.length;
+  const los = new Array<number>(count),
+    his = new Array<number>(count),
+    domains = new Array<number>(count);
+  let lo = 0,
+    hi = 0;
+  for (let index = 0; index < count; index += 1) {
+    const cell = cells[index];
+    domains[index] = values[cell] !== 0 ? symbolMask(values[cell]) : masks[cell];
+    const bound = weightedBounds(problem, domains[index], coefficients[index]);
+    if (bound === undefined) return null;
+    los[index] = bound.lo;
+    his[index] = bound.hi;
+    lo += bound.lo;
+    hi += bound.hi;
+  }
+  if (lo > total || hi < total) return null;
+  let next: number[] | undefined;
+  for (let target = 0; target < count; target += 1) {
+    const cell = cells[target];
+    if (values[cell] !== 0) continue;
+    const othersLo = lo - los[target],
+      othersHi = hi - his[target];
+    for (const symbol of problem.symbols) {
+      if ((domains[target] & symbolMask(symbol)) === 0) continue;
+      const weighted = coefficients[target] * symbolValue(problem, symbol);
+      if (weighted + othersLo > total || weighted + othersHi < total) {
+        next ??= [...masks];
+        next[cell] &= ~symbolMask(symbol);
+      }
+    }
+  }
+  return next ?? masks;
 }
 
 /** Shared propagation for any module that publishes one `sum` capability. */

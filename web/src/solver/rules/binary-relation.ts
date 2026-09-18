@@ -29,6 +29,8 @@ export const RELATION_MAINTENANCE = "rule-relation@1";
  * order, so a rule written as [b, a] publishes tuples whose first column is
  * cell min(a, b). `holds` always receives the values in the rule's own order.
  */
+const tupleCache = new WeakMap<ConstraintInstance, readonly (readonly SymbolId[])[]>();
+
 export abstract class BinaryRelationRule implements RuleModule {
   abstract readonly type: string;
 
@@ -71,6 +73,17 @@ export abstract class BinaryRelationRule implements RuleModule {
 
   /** Relation tuples in ascending cell order, sorted lexicographically. */
   tuples(rule: ConstraintInstance, problem: EngineProblem): readonly (readonly SymbolId[])[] {
+    const cached = tupleCache.get(rule);
+    if (cached) return cached;
+    const computed = this.computeTuples(rule, problem);
+    tupleCache.set(rule, computed);
+    return computed;
+  }
+
+  private computeTuples(
+    rule: ConstraintInstance,
+    problem: EngineProblem,
+  ): readonly (readonly SymbolId[])[] {
     const [a, b] = rule.cells;
     const swapped = a > b;
     const tuples: SymbolId[][] = [];
@@ -81,7 +94,32 @@ export abstract class BinaryRelationRule implements RuleModule {
         if (this.holds(symbolValue(problem, leftSymbol), symbolValue(problem, rightSymbol), rule))
           tuples.push([first, second]);
       }
-    return tuples.sort((left, right) => left[0] - right[0] || left[1] - right[1]);
+    return Object.freeze(tuples.sort((left, right) => left[0] - right[0] || left[1] - right[1]));
+  }
+
+  /** Keeps, for each of the two cells, only the symbols some compatible tuple supports. */
+  prune(
+    rule: ConstraintInstance,
+    problem: EngineProblem,
+    values: readonly number[],
+    masks: readonly number[],
+  ): readonly number[] | null {
+    const cells = [...rule.cells].sort((left, right) => left - right);
+    const current = cells.map((cell) =>
+      values[cell] !== 0 ? symbolMask(values[cell]) : masks[cell],
+    );
+    const supported = [0, 0];
+    for (const tuple of this.tuples(rule, problem))
+      if ((current[0] & symbolMask(tuple[0])) !== 0 && (current[1] & symbolMask(tuple[1])) !== 0) {
+        supported[0] |= symbolMask(tuple[0]);
+        supported[1] |= symbolMask(tuple[1]);
+      }
+    if (supported[0] === 0 || supported[1] === 0) return null;
+    const next = [...masks];
+    cells.forEach((cell, index) => {
+      next[cell] = masks[cell] & supported[index];
+    });
+    return next;
   }
 
   capabilities(rule: ConstraintInstance, context: RuleContext): RuleCapabilities {

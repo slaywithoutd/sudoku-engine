@@ -6,11 +6,13 @@ import {
   checkRuleRoot,
   checkSumCapability,
   propagateSum,
+  pruneSum,
   scalarParameters,
   scopeIssues,
   type Equation,
 } from "./linear-rule";
 import { M2_ROOT_LIMITS } from "../limits";
+import { symbolMask } from "../state/read";
 import type {
   Assignment,
   Discovery,
@@ -27,6 +29,8 @@ import type {
  * the cage) and a unit-coefficient sum. A cage never claims symbol covers:
  * a full-house cage is a house, and the all-different module owns houses.
  */
+const equationCache = new WeakMap<ConstraintInstance, Equation>();
+
 export class CageRule implements RuleModule {
   readonly type = "cage@1";
 
@@ -45,6 +49,14 @@ export class CageRule implements RuleModule {
   }
 
   equation(rule: ConstraintInstance): Equation {
+    const cached = equationCache.get(rule);
+    if (cached) return cached;
+    const computed = this.computeEquation(rule);
+    equationCache.set(rule, computed);
+    return computed;
+  }
+
+  private computeEquation(rule: ConstraintInstance): Equation {
     return canonicalEquation({
       cells: rule.cells,
       coefficients: rule.cells.map(() => 1),
@@ -100,6 +112,32 @@ export class CageRule implements RuleModule {
 
   *propagate(view: ReadView, rule: ConstraintInstance): Discovery {
     yield* propagateSum(view, rule, this.equation(rule));
+  }
+
+  prune(
+    rule: ConstraintInstance,
+    problem: EngineProblem,
+    values: readonly number[],
+    masks: readonly number[],
+  ): readonly number[] | null {
+    // The exact session derives peer exclusions from all-different@1 houses
+    // only, so a cage enforces its own distinctness here before the bounds.
+    let placed = 0;
+    for (const cell of rule.cells)
+      if (values[cell] !== 0) {
+        const bit = symbolMask(values[cell]);
+        if ((placed & bit) !== 0) return null;
+        placed |= bit;
+      }
+    let next: number[] | undefined;
+    if (placed !== 0)
+      for (const cell of rule.cells)
+        if (values[cell] === 0 && (masks[cell] & placed) !== 0) {
+          next ??= [...masks];
+          next[cell] &= ~placed;
+          if (next[cell] === 0) return null;
+        }
+    return pruneSum(problem, this.equation(rule), values, next ?? masks);
   }
 
   checkPrimitive(input: PrimitiveInput, context: CheckContext): CheckedInference {

@@ -6,6 +6,7 @@ import {
   checkRuleRoot,
   checkSumCapability,
   propagateSum,
+  pruneSum,
   scalarParameters,
   scopeIssues,
   type Equation,
@@ -27,6 +28,8 @@ import type {
  * and -1 on the circle, total 0. Arm cells may repeat values unless another
  * rule forbids it, so no all-different scope is claimed.
  */
+const equationCache = new WeakMap<ConstraintInstance, Equation>();
+
 export class ArrowRule implements RuleModule {
   readonly type = "arrow@1";
 
@@ -87,6 +90,15 @@ export class ArrowRule implements RuleModule {
 
   *propagate(view: ReadView, rule: ConstraintInstance): Discovery {
     yield* propagateSum(view, rule, this.equation(rule));
+  }
+
+  prune(
+    rule: ConstraintInstance,
+    problem: EngineProblem,
+    values: readonly number[],
+    masks: readonly number[],
+  ): readonly number[] | null {
+    return pruneSum(problem, this.equation(rule), values, masks);
   }
 
   checkPrimitive(input: PrimitiveInput, context: CheckContext): CheckedInference {

@@ -3,6 +3,7 @@ import type {
   ConstraintId,
   ConstraintInstance,
   EngineProblem,
+  Mask,
   SymbolId,
   VersionId,
 } from "../problem";
@@ -77,6 +78,21 @@ export interface RuleModule {
   capabilities(rule: ConstraintInstance, context: RuleContext): RuleCapabilities;
   propagate(view: ReadView, rule: ConstraintInstance): Discovery;
   checkPrimitive(input: PrimitiveInput, context: CheckContext): CheckedInference;
+  /**
+   * Evidence-side forward check for exact enumeration (spec §3.13, D049 as
+   * refined by D100). Given a partial assignment (`0` = open) and the current
+   * candidate masks, returns the masks this rule still permits, or `null` when
+   * the rule can no longer be satisfied. It is trusted, not proof-checked: it
+   * must never drop a value that some completion of the partial assignment
+   * uses, and its only validation is the independent oracle differential.
+   * Modules without a prune hook are checked at complete assignments only.
+   */
+  prune?(
+    rule: ConstraintInstance,
+    problem: EngineProblem,
+    values: readonly number[],
+    masks: readonly Mask[],
+  ): readonly Mask[] | null;
 }
 
 export interface RuleContext {
