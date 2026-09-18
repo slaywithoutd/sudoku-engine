@@ -93,10 +93,7 @@ export class TableChecker {
     );
   }
 
-  private *rows(
-    node: ProofNode,
-    problem: EngineProblem,
-  ): Generator<readonly number[] | null> {
+  private *rows(node: ProofNode, problem: EngineProblem): Generator<readonly number[] | null> {
     yield null;
     if (node.conclusion.kind === "relation") {
       yield* node.conclusion.tuples;
@@ -164,7 +161,7 @@ export class TableChecker {
       return;
     }
     const alternatives = table.box.map((mask) =>
-      Array.from({ length: 9 }, (_, i) => i + 1).filter((symbol) => mask & symbolMask(symbol)),
+      problem.symbols.filter((symbol) => mask & symbolMask(symbol)),
     );
     const indexes = alternatives.map(() => 0);
     if (alternatives.some((values) => values.length === 0)) return;

@@ -11,6 +11,7 @@ import type { CheckContext, DeductionProposal } from "../../../src/solver/proof/
 import type { ReadView } from "../../../src/solver/state/types";
 import { symbolMask } from "../../../src/solver/state/read";
 import {
+  assembleTechniqueJobs,
   getTechniques,
   profileFor,
   profileReadiness,
@@ -116,15 +117,36 @@ describe("K01 Killer combinations (T08)", () => {
     expect(profileFor(cage)).toBe("variants-expanded@1");
     expect(profileFor(cage, true)).toBe("variants-conditional@1");
     expect(profileFor({ constraints: [{ type: "all-different@1" }] })).toBe("classic-expanded@1");
-    // Until the block review flips the row to independently-verified, the variant profile is not ready.
+    // The block-4 review (fix commit) flipped both K rows to independently-verified,
+    // so the variant profiles assemble jobs like the classic ones.
     expect(profileReadiness("classic-expanded@1").ready).toBe(true);
-    expect(profileReadiness("variants-expanded@1").missing).toEqual(
-      variantEntries.filter((e) => e.status !== "independently-verified").map((e) => e.id),
+    expect(profileReadiness("variants-expanded@1")).toEqual({ ready: true, missing: [] });
+    const cageView = view(cage);
+    expect(assembleTechniqueJobs(cageView.assembly, "variants-expanded@1").techniques).toHaveLength(
+      33 + variantEntries.length,
     );
   });
 
-  test("four-cell-full-box: after bounds maintenance the complete table leaves only 1..4", () => {
+  test("four-cell-full-box: bounds remove nothing, the 6561-tuple box is tabled and 1 leaves every cell", () => {
     const entry = fixture("K01-four-cell-full-box");
+    const { view: current } = maintained(view(problemOf(entry)));
+    for (const cell of [0, 1, 2, 3]) expect(domain(current, cell)).toHaveLength(9);
+    const full = analyzeCage(current, liveCages(current)[0]);
+    expect(full.volume).toBe(6561);
+    expect(full.rows).toBe(120);
+    const fullBox = discover(current);
+    expect(fullBox.proposals).toHaveLength(1);
+    expect(fullBox.proposals[0].effects).toEqual(
+      [0, 1, 2, 3].map((cell) => ({ kind: "remove", cell, symbol: 1 })),
+    );
+    expect(
+      fullBox.proposals[0].proof.nodes.filter((n) => n.rule === "table-filter@1").length,
+    ).toBeGreaterThanOrEqual(Math.ceil(6561 / 256));
+    expect([...checkProposal(fullBox.proposals[0], context(current))].at(-1)?.kind).toBe("checked");
+  });
+
+  test("four-cell-narrowed-box: after bounds maintenance the complete table leaves only 1..4", () => {
+    const entry = fixture("K01-four-cell-narrowed-box");
     const { view: current } = maintained(view(problemOf(entry)));
     for (const cell of [0, 1, 2, 3]) expect(domain(current, cell)).toEqual([1, 2, 3, 4, 5, 6, 7]);
     const cages = liveCages(current);
@@ -147,7 +169,7 @@ describe("K01 Killer combinations (T08)", () => {
   });
 
   test("forged-table: tampered counts, boxes, effects and relabelling are rejected", () => {
-    const { view: current } = maintained(view(problemOf(fixture("K01-four-cell-full-box"))));
+    const { view: current } = maintained(view(problemOf(fixture("K01-four-cell-narrowed-box"))));
     const [proposal] = discover(current).proposals;
     const rejected = (mutate: (p: DeductionProposal) => void) => {
       const copy = structuredClone(proposal) as DeductionProposal;
@@ -367,6 +389,13 @@ describe("K02 Innies/outies (T09)", () => {
       expect(cagesOf(proposal).length).toBeLessThanOrEqual(7);
       expect([...checkProposal(proposal, context(current))].at(-1)?.kind).toBe("checked");
     }
+    // Every subset of the walk is charged: work events count at least the subsets visited.
+    const walkEvents = [...k02().discover(current, discoveryContext())];
+    const workUnits = walkEvents.reduce(
+      (total, event) => total + (event.kind === "work" ? event.units : 0),
+      0,
+    );
+    expect(workUnits).toBeGreaterThanOrEqual(8 + 28 + 56 + 70 + 56 + 28 + 8);
     // A forged eight-cage combination is refused before any arithmetic.
     const forged = structuredClone(proposals[0]) as DeductionProposal;
     (forged.pattern as { cages: string[] }).cages = [
@@ -382,6 +411,40 @@ describe("K02 Innies/outies (T09)", () => {
     expect([...checkProposal(forged, context(current))].at(-1)?.kind).toBe("rejected");
     const none = view(problemOf(fixture("K01-four-cell-full-box")));
     expect(k02().eligible(none)).toMatchObject({ kind: "excluded", reason: "no-overlapping-sums" });
+    // Discovery agrees with eligibility when nothing overlaps.
+    expect([...k02().discover(none, discoveryContext())].at(-1)).toMatchObject({
+      kind: "excluded",
+      reason: "no-overlapping-sums",
+    });
+    // Ten cages touching one house exceed maxTouching: excluded, never enumerated.
+    const crowded = view(
+      canonicalProblem({
+        schema: 1,
+        cells: Array.from({ length: 20 }, (_, cell) => cell),
+        symbols: Array.from({ length: 9 }, (_, index) => index + 1),
+        givens: Array(20).fill(0),
+        constraints: [
+          {
+            id: "house",
+            type: "all-different@1",
+            cells: [0, 1, 2, 3, 4, 5, 6, 7, 8],
+            parameters: {},
+          },
+          ...Array.from({ length: 10 }, (_, index) => ({
+            id: `c${index}`,
+            type: "cage@1",
+            cells: [index % 9, 9 + index],
+            parameters: { total: 10 },
+          })),
+        ],
+      }),
+    );
+    const crowdedEvents = [...k02().discover(crowded, discoveryContext())];
+    expect(crowdedEvents.at(-1)).toMatchObject({
+      kind: "excluded",
+      reason: "container-too-crowded",
+    });
+    expect(crowdedEvents.filter((event) => event.kind === "proposal")).toHaveLength(0);
   });
 
   test("k02-replay: the outie bundle replays from original clues", () => {

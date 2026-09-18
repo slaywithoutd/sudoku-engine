@@ -28,6 +28,36 @@
             3
           ],
           "parameters": {
+            "total": 26
+          }
+        }
+      ],
+      "volume": 6561,
+      "rows": 120,
+      "expectedEffects": "bounds remove nothing (every digit fits 26 by bounds), so the full 6561 box is tabled: the five combinations 9872 9863 9854 9764 8765 never use 1, so every cell loses 1"
+    },
+    {
+      "id": "K01-four-cell-narrowed-box",
+      "kind": "productive",
+      "cellCount": 4,
+      "symbols": 9,
+      "givens": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "constraints": [
+        {
+          "id": "cage",
+          "type": "cage@1",
+          "cells": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "parameters": {
             "total": 10
           }
         }

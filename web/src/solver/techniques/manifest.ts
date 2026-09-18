@@ -7970,10 +7970,11 @@ export const variantEntries: readonly CoverageEntry[] = Object.freeze(
         descriptionPath: "docs/solver/techniques/killer.md",
         fixtureIds: [
           "K01-four-cell-full-box",
+          "K01-four-cell-narrowed-box",
           "K01-five-cell-out-of-profile",
           "K01-five-cell-narrowed",
         ],
-        status: "implemented",
+        status: "independently-verified",
         evidence: [
           {
             kind: "positive",
@@ -7983,7 +7984,7 @@ export const variantEntries: readonly CoverageEntry[] = Object.freeze(
           },
           {
             kind: "negative",
-            fixtureId: "K01-four-cell-full-box",
+            fixtureId: "K01-four-cell-narrowed-box",
             alias: "Killer combinations",
             record: "web/tests/unit/solver/killer.test.ts#forged-table",
           },
@@ -8021,7 +8022,7 @@ export const variantEntries: readonly CoverageEntry[] = Object.freeze(
         checkerId: "k02-grammar@1",
         descriptionPath: "docs/solver/techniques/killer.md",
         fixtureIds: ["K02-single-innie", "K02-outie", "K02-five-cages", "K02-over-profile"],
-        status: "implemented",
+        status: "independently-verified",
         evidence: [
           {
             kind: "positive",

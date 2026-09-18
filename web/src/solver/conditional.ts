@@ -1,6 +1,7 @@
 import { uniqueParentDetails, type AcceptedUniqueParent } from "./evidence";
 import type { RunKey, SolverSnapshot } from "./snapshot";
 import type { Assembly } from "./rules/types";
+import { profileFor } from "./techniques/profiles";
 import type { ReadView } from "./state/types";
 import type { CheckEvent, CheckedStep, DeductionProposal, Limits } from "./proof/types";
 import {
@@ -104,7 +105,10 @@ function validateRun(run: RunKey, primary: Readonly<RunKey>): void {
   const mode: unknown = run.mode;
   requireProof(
     run.operation === "conditional" &&
-      (run.profile === "classic-conditional@1" || run.profile === "variants-conditional@1") &&
+      run.profile ===
+        (primary.profile === "variants-expanded@1"
+          ? "variants-conditional@1"
+          : "classic-conditional@1") &&
       typeof run.requestId === "string" &&
       run.requestId.length > 0 &&
       run.requestId.length <= 128 &&
@@ -453,8 +457,7 @@ export class ConditionalOperation {
           envelope.run.snapshotId === envelope.snapshot.snapshotId &&
           envelope.run.inputRevision === envelope.snapshot.inputRevision &&
           envelope.run.operation === "conditional" &&
-          (envelope.run.profile === "classic-conditional@1" ||
-            envelope.run.profile === "variants-conditional@1") &&
+          envelope.run.profile === profileFor(assembly.problem, true) &&
           typeof envelope.run.parentEvidenceId === "string" &&
           envelope.run.parentEvidenceId.length > 0 &&
           typeof envelope.nonce === "string" &&

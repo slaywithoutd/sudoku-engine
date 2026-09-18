@@ -5,7 +5,7 @@ import { normalizeClassic } from "./problem";
 import { makeSnapshot, type RunKey } from "./snapshot";
 import { assemble } from "./rules/assemble";
 import { productionRules } from "./rules/registry";
-import { profileFor } from "./techniques/registry";
+import { profileFor, profileReadiness } from "./techniques/registry";
 import { initialize, commitChecked } from "./state/candidates";
 import { IndexWorkspace } from "./indexes/workspace";
 import {
@@ -265,6 +265,10 @@ export async function solveClassic(
   // Classic input keeps the classic profile and RunKey; a declared variant rule
   // selects the variant profile that appends the K rows (spec §3.6).
   const PROFILE = profileFor(problem);
+  if (!profileReadiness(PROFILE).ready) {
+    empty("profile-incomplete");
+    return;
+  }
   const options = schedulingOptions({
     limits,
     mode,

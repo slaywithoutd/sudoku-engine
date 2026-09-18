@@ -142,10 +142,11 @@ describe("M2.5 composition and non-regression (T10)", () => {
         symbols: small.symbols,
         givens: small.givens,
         constraints: small.constraints,
-        limit: 3,
-        maxNodes: 2_000_000,
+        limit: 400,
+        maxNodes: 4_000_000,
       });
-      expect(witnesses.exhausted || witnesses.witnesses.length >= 3).toBe(true);
+      // A 4x4 grid has 288 completions, so every instance is enumerated exhaustively.
+      expect(witnesses.exhausted).toBe(true);
       const expected = Math.min(witnesses.witnesses.length, 2);
       const events = [...exactSteps(problem, assembly.value)];
       expect(events.filter((event) => event.kind === "witness")).toHaveLength(expected);

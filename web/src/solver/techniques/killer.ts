@@ -289,6 +289,11 @@ export const K02_PROFILE = Object.freeze({
   version: "k02-profile@1",
   maxCages: 7,
   maxResidualCells: 16,
+  /**
+   * Containers touched by more cages than this are excluded, which bounds the
+   * subset walk at sum of C(maxTouching, k) for k <= maxCages (501 combinations).
+   */
+  maxTouching: 7 + 2,
 });
 
 export interface Container {
@@ -347,53 +352,87 @@ export interface InnieOutie {
   readonly removals: readonly { cell: number; symbol: number }[];
 }
 
-/** Every productive container/cage-subset combination in canonical order, recomputed from facts. */
-export function* innieOuties(view: ReadView): Generator<InnieOutie> {
+export type InnieOutieEvent =
+  { kind: "work"; units: number } | { kind: "found"; found: InnieOutie };
+
+/**
+ * Every productive container/cage-subset combination in canonical order,
+ * recomputed from facts. Subsets are streamed by increasing size, one unit
+ * of work per subset, so the walk is charged and preemptible; a container
+ * touched by more than K02_PROFILE.maxTouching cages is skipped (the caller
+ * reports the exclusion), which bounds the walk at sum_{k<=7} C(9,k) = 501.
+ */
+export function* innieOuties(
+  view: ReadView,
+): Generator<InnieOutieEvent, { skipped: number; considered: number }> {
   const problem = view.assembly.problem;
   const cages = liveCages(view);
+  let skipped = 0,
+    considered = 0;
   for (const container of liveContainers(view)) {
     const touching = cages.filter((cage) =>
       cage.cells.some((cell) => container.cells.includes(cell)),
     );
+    if (touching.length === 0) continue;
+    considered += 1;
+    if (touching.length > K02_PROFILE.maxTouching) {
+      skipped += 1;
+      continue;
+    }
     const limit = Math.min(touching.length, K02_PROFILE.maxCages);
-    const subsets: Cage[][] = [];
-    const walk = (start: number, chosen: Cage[]) => {
-      if (chosen.length > 0) subsets.push([...chosen]);
-      if (chosen.length === limit) return;
-      for (let index = start; index < touching.length; index += 1) {
-        chosen.push(touching[index]);
-        walk(index + 1, chosen);
-        chosen.pop();
+    for (let size = 1; size <= limit; size += 1) {
+      const chosen: number[] = Array.from({ length: size }, (_, index) => index);
+      for (;;) {
+        yield { kind: "work", units: 1 };
+        const subset = chosen.map((index) => touching[index]);
+        const residual = residualOf(container, subset);
+        if (residual) {
+          const open = residual.cells.map((cell) => view.state.values[cell] === 0);
+          if (open.some(Boolean)) {
+            const removals = boundsRemovals(
+              problem,
+              residual,
+              residual.cells.map((cell) => view.state.domains[cell]),
+              open,
+            );
+            if (removals.length > 0)
+              yield { kind: "found", found: { container, cages: subset, residual, removals } };
+          }
+        }
+        // Next combination in lexicographic order.
+        let position = size - 1;
+        while (position >= 0 && chosen[position] === touching.length - size + position)
+          position -= 1;
+        if (position < 0) break;
+        chosen[position] += 1;
+        for (let index = position + 1; index < size; index += 1)
+          chosen[index] = chosen[index - 1] + 1;
       }
-    };
-    walk(0, []);
-    subsets.sort((left, right) => left.length - right.length);
-    for (const subset of subsets) {
-      const residual = residualOf(container, subset);
-      if (!residual) continue;
-      const open = residual.cells.map((cell) => view.state.values[cell] === 0);
-      if (!open.some(Boolean)) continue;
-      const removals = boundsRemovals(
-        problem,
-        residual,
-        residual.cells.map((cell) => view.state.domains[cell]),
-        open,
-      );
-      if (removals.length === 0) continue;
-      yield { container, cages: subset, residual, removals };
     }
   }
+  return { skipped, considered };
 }
 
 function* discoverInnieOuties(view: ReadView, context: DiscoveryContext): Discovery {
   const containers = liveContainers(view);
   const cages = liveCages(view);
-  if (containers.length === 0 || cages.length === 0) {
+  const overlapping = containers.some((container) =>
+    cages.some((cage) => cage.cells.some((cell) => container.cells.includes(cell))),
+  );
+  if (!overlapping) {
     yield { kind: "excluded", reason: "no-overlapping-sums", dependencies: [{ kind: "all" }] };
     return;
   }
-  for (const found of innieOuties(view)) {
-    yield { kind: "work", units: found.residual.cells.length + found.cages.length };
+  const walk = innieOuties(view);
+  let step = walk.next();
+  while (!step.done) {
+    const event = step.value;
+    if (event.kind === "work") {
+      yield event;
+      step = walk.next();
+      continue;
+    }
+    const found = event.found;
     context.workspace.checkpoint();
     const builder = new CertificateBuilder(view);
     const combined = builder.add(
@@ -425,8 +464,12 @@ function* discoverInnieOuties(view: ReadView, context: DiscoveryContext): Discov
         },
       }),
     };
+    step = walk.next();
   }
-  yield { kind: "exhausted" };
+  const { skipped, considered } = step.value;
+  if (considered > 0 && skipped === considered)
+    yield { kind: "excluded", reason: "container-too-crowded", dependencies: [{ kind: "all" }] };
+  else yield { kind: "exhausted" };
 }
 
 const k02Entry = defined(

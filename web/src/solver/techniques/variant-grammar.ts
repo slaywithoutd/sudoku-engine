@@ -255,9 +255,9 @@ export function checkSumMaintenance(
  * Closed grammar for K01 (`k01@1`): one live cage within the profile, a
  * complete table over its all-different, sum and current domain facts built
  * from filter leaves and binary unions, and a single-literal projection per
- * removed candidate. The grammar recomputes the surviving rows and the leaf
- * counts itself; the table primitives then verify partition, completeness and
- * every projection independently.
+ * removed candidate. The grammar recomputes the surviving rows and pins every
+ * leaf's premises, parameters and box; leaf counts, the union partition, root
+ * completeness and every projection are verified by the table primitives.
  */
 export function checkCageCombinations(
   proposal: DeductionProposal,
@@ -435,6 +435,10 @@ export function checkInnieOuties(
   requireProof(container !== undefined, "unknown-innies-outies-container");
   const cageIds = pattern.cages as unknown[];
   const cages = liveCages(view);
+  const touching = cages.filter((cage) =>
+    cage.cells.some((cell) => container.cells.includes(cell)),
+  );
+  requireProof(touching.length <= K02_PROFILE.maxTouching, "container-too-crowded");
   const chosen = cageIds.map((id) => cages.find((cage) => cage.constraintId === id));
   requireProof(
     chosen.length >= 1 &&

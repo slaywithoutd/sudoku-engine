@@ -1,4 +1,4 @@
-import { PROFILES } from "../techniques/registry";
+import { PROFILES } from "../techniques/profiles";
 import type { Limits } from "../limits";
 import type { VersionId } from "../problem";
 
