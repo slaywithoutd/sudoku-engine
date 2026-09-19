@@ -1,7 +1,7 @@
 import type { Limits } from "./limits";
 import type { CheckedStep, Effect } from "./proof/types";
 import type { CountEvidence, HumanStatus } from "./evidence";
-import { normalizeClassic } from "./problem";
+import { normalizeClassic, type EngineProblem } from "./problem";
 import { makeSnapshot, type RunKey } from "./snapshot";
 import { assemble } from "./rules/assemble";
 import { productionRules } from "./rules/registry";
@@ -61,6 +61,8 @@ export type ClassicSolveEvent =
        */
       readonly candidates: readonly number[];
       readonly cells: readonly number[];
+      /** Accounted work units of the logical phase when the step was proposed (informative). */
+      readonly workUnits: number;
     }
   | { readonly kind: "precount"; readonly solution: readonly number[] }
   | { readonly kind: "progress"; readonly phase: "human" | "exact"; readonly workUnits: number }
@@ -212,9 +214,6 @@ export async function solveClassic(
   input: ClassicSolveInput,
   ports: ClassicSolvePorts,
 ): Promise<void> {
-  const limits = input.limits ?? CLASSIC_SOLVE_LIMITS,
-    mode = input.mode ?? "explain",
-    requestId = input.requestId ?? "solve";
   const problem = normalizeClassic({
     kind: "classic",
     version: 1,
@@ -222,6 +221,22 @@ export async function solveClassic(
     height: 9,
     givens: [...input.givens],
   });
+  await solveProblem(problem, input, ports);
+}
+
+/**
+ * The same pipeline over an already-normalized EngineProblem: the bench
+ * harness and the ablation use it for variant corpus cases, which have no
+ * classic definition (spec §3.2: variants are constraint instances only).
+ */
+export async function solveProblem(
+  problem: EngineProblem,
+  input: Omit<ClassicSolveInput, "givens">,
+  ports: ClassicSolvePorts,
+): Promise<void> {
+  const limits = input.limits ?? CLASSIC_SOLVE_LIMITS,
+    mode = input.mode ?? "explain",
+    requestId = input.requestId ?? "solve";
   const empty = (code: string, human: HumanStatus = "not-started") =>
     ports.emit({
       kind: "result",
@@ -302,6 +317,7 @@ export async function solveClassic(
         effects: readonly Effect[];
         candidates: readonly number[];
         cells: readonly number[];
+        workUnits: number;
       }
     | undefined;
   const emitStep = (step: NonNullable<typeof pending>) =>
@@ -314,6 +330,7 @@ export async function solveClassic(
       values: [...view.state.values],
       candidates: step.candidates,
       cells: step.cells,
+      workUnits: step.workUnits,
     });
   await runSolver(
     {
@@ -367,6 +384,7 @@ export async function solveClassic(
             effects: event.step.proposal.effects,
             candidates: [...view.state.domains],
             cells: patternCells(event.step.proposal.pattern),
+            workUnits: work,
           };
         } else if (event.kind === "terminal") {
           if (pending) {
