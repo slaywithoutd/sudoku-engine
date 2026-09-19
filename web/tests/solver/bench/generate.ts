@@ -8,13 +8,7 @@ import { oracle } from "../oracle";
 import { variantOracle, type VariantConstraint } from "../oracle-variants";
 import { rng } from "../generate-small";
 
-export type CorpusFamily =
-  | "classic"
-  | "killer"
-  | "thermometer"
-  | "kropki"
-  | "arrow"
-  | "mixed";
+export type CorpusFamily = "classic" | "killer" | "thermometer" | "kropki" | "arrow" | "mixed";
 
 export interface CorpusConstraint {
   readonly id: string;
@@ -30,7 +24,7 @@ export interface CorpusCase {
   readonly puzzle: string;
   readonly constraints: readonly CorpusConstraint[];
   readonly givens: number;
-  readonly oracleCount: "unique";
+  readonly oracleCount: 1;
   readonly sourceGroup: string;
   readonly license: "repository-generated";
   readonly seed: number;
@@ -52,8 +46,14 @@ function shuffle<T>(values: readonly T[], random: () => number): T[] {
 function classicScopes(): VariantConstraint[] {
   const scopes: VariantConstraint[] = [];
   for (let index = 0; index < WIDTH; index += 1) {
-    scopes.push({ kind: "all-different", cells: Array.from({ length: WIDTH }, (_, c) => index * WIDTH + c) });
-    scopes.push({ kind: "all-different", cells: Array.from({ length: WIDTH }, (_, r) => r * WIDTH + index) });
+    scopes.push({
+      kind: "all-different",
+      cells: Array.from({ length: WIDTH }, (_, c) => index * WIDTH + c),
+    });
+    scopes.push({
+      kind: "all-different",
+      cells: Array.from({ length: WIDTH }, (_, r) => r * WIDTH + index),
+    });
   }
   for (let box = 0; box < WIDTH; box += 1) {
     const cells: number[] = [];
@@ -84,7 +84,9 @@ export function completeGrid(random: () => number): number[] {
   const grid: number[] = [];
   for (let r = 0; r < WIDTH; r += 1)
     for (let c = 0; c < WIDTH; c += 1) {
-      const source = transpose ? baseGrid[columns[c] * WIDTH + rows[r]] : baseGrid[rows[r] * WIDTH + columns[c]];
+      const source = transpose
+        ? baseGrid[columns[c] * WIDTH + rows[r]]
+        : baseGrid[rows[r] * WIDTH + columns[c]];
       grid.push(permutation[source - 1]);
     }
   return grid;
@@ -107,7 +109,11 @@ function toOracleConstraints(constraints: readonly CorpusConstraint[]): VariantC
     switch (constraint.type) {
       case "cage@1":
         result.push({ kind: "all-different", cells: constraint.cells });
-        result.push({ kind: "sum", cells: constraint.cells, total: constraint.parameters.total as number });
+        result.push({
+          kind: "sum",
+          cells: constraint.cells,
+          total: constraint.parameters.total as number,
+        });
         break;
       case "order@1":
         result.push({ kind: "order", cells: [constraint.cells[0], constraint.cells[1]] });
@@ -121,7 +127,12 @@ function toOracleConstraints(constraints: readonly CorpusConstraint[]): VariantC
         break;
       case "arrow@1": {
         const [circle, ...arm] = constraint.cells;
-        result.push({ kind: "sum", cells: [circle, ...arm], coefficients: [-1, ...arm.map(() => 1)], total: 0 });
+        result.push({
+          kind: "sum",
+          cells: [circle, ...arm],
+          coefficients: [-1, ...arm.map(() => 1)],
+          total: 0,
+        });
         break;
       }
     }
@@ -139,7 +150,11 @@ export function isUnique(
   options: UniquenessOptions = {},
 ): boolean | undefined {
   if (constraints.length === 0) {
-    const result = oracle({ givens: [...givens], limit: 2, maxNodes: options.maxNodes ?? 2_000_000 });
+    const result = oracle({
+      givens: [...givens],
+      limit: 2,
+      maxNodes: options.maxNodes ?? 2_000_000,
+    });
     if (!result.exhausted && result.witnesses.length < 2) return undefined;
     return result.witnesses.length === 1;
   }
@@ -166,7 +181,10 @@ function thinGivens(
   const givens = solution.map((value, cell) => (keep[cell] ? value : 0));
   const unique = isUnique(givens, constraints);
   if (unique !== true) return undefined;
-  for (const cell of shuffle(Array.from({ length: CELLS }, (_, c) => c), random)) {
+  for (const cell of shuffle(
+    Array.from({ length: CELLS }, (_, c) => c),
+    random,
+  )) {
     if (givens[cell] === 0) continue;
     if (givens.filter((v) => v !== 0).length <= floor) break;
     const value = givens[cell];
@@ -179,7 +197,13 @@ function thinGivens(
 export function classicCase(seed: number): CorpusCase | undefined {
   const random = rng(seed);
   const solution = completeGrid(random);
-  const givens = thinGivens(solution, solution.map(() => true), [], random, 17);
+  const givens = thinGivens(
+    solution,
+    solution.map(() => true),
+    [],
+    random,
+    17,
+  );
   if (!givens) return undefined;
   return {
     id: `classic-${seed}`,
@@ -187,17 +211,24 @@ export function classicCase(seed: number): CorpusCase | undefined {
     puzzle: givens.join(""),
     constraints: [],
     givens: givens.filter((v) => v !== 0).length,
-    oracleCount: "unique",
+    oracleCount: 1,
     sourceGroup: `gen-classic-${seed}`,
     license: "repository-generated",
     seed,
   };
 }
 
-function cages(solution: readonly number[], random: () => number, coverage: number): CorpusConstraint[] {
+function cages(
+  solution: readonly number[],
+  random: () => number,
+  coverage: number,
+): CorpusConstraint[] {
   const used = new Set<number>();
   const result: CorpusConstraint[] = [];
-  const order = shuffle(Array.from({ length: CELLS }, (_, c) => c), random);
+  const order = shuffle(
+    Array.from({ length: CELLS }, (_, c) => c),
+    random,
+  );
   for (const start of order) {
     if (used.has(start) || result.length >= coverage) continue;
     const cells = [start];
@@ -241,14 +272,18 @@ export function killerCase(seed: number): CorpusCase | undefined {
     puzzle: givens.join(""),
     constraints,
     givens: givens.filter((v) => v !== 0).length,
-    oracleCount: "unique",
+    oracleCount: 1,
     sourceGroup: `gen-killer-${seed}`,
     license: "repository-generated",
     seed,
   };
 }
 
-function thermometers(solution: readonly number[], random: () => number, count: number): CorpusConstraint[] {
+export function thermometers(
+  solution: readonly number[],
+  random: () => number,
+  count: number,
+): CorpusConstraint[] {
   const result: CorpusConstraint[] = [];
   const used = new Set<number>();
   let attempts = 0;
@@ -288,7 +323,8 @@ export function thermometerCase(seed: number): CorpusCase | undefined {
   const solution = completeGrid(random);
   const constraints = thermometers(solution, random, 6);
   if (constraints.length < 6) return undefined;
-  const keep = solution.map(() => random() < 0.4);
+  // Random subsets below ~55 givens are rarely unique; thinning removes the surplus.
+  const keep = solution.map(() => random() < 0.65);
   const givens = thinGivens(solution, keep, constraints, random, 12);
   if (!givens) return undefined;
   return {
@@ -297,7 +333,7 @@ export function thermometerCase(seed: number): CorpusCase | undefined {
     puzzle: givens.join(""),
     constraints,
     givens: givens.filter((v) => v !== 0).length,
-    oracleCount: "unique",
+    oracleCount: 1,
     sourceGroup: `gen-thermometer-${seed}`,
     license: "repository-generated",
     seed,
@@ -341,14 +377,18 @@ export function kropkiCase(seed: number): CorpusCase | undefined {
     puzzle: givens.join(""),
     constraints,
     givens: givens.filter((v) => v !== 0).length,
-    oracleCount: "unique",
+    oracleCount: 1,
     sourceGroup: `gen-kropki-${seed}`,
     license: "repository-generated",
     seed,
   };
 }
 
-function arrows(solution: readonly number[], random: () => number, count: number): CorpusConstraint[] {
+function arrows(
+  solution: readonly number[],
+  random: () => number,
+  count: number,
+): CorpusConstraint[] {
   const result: CorpusConstraint[] = [];
   const used = new Set<number>();
   let attempts = 0;
@@ -361,7 +401,11 @@ function arrows(solution: readonly number[], random: () => number, count: number
     let sum = 0;
     while (sum < solution[circle]) {
       const next = neighbours(current).filter(
-        (cell) => cell !== circle && !used.has(cell) && !arm.includes(cell) && sum + solution[cell] <= solution[circle],
+        (cell) =>
+          cell !== circle &&
+          !used.has(cell) &&
+          !arm.includes(cell) &&
+          sum + solution[cell] <= solution[circle],
       );
       if (next.length === 0) break;
       current = next[Math.floor(random() * next.length)];
@@ -386,7 +430,8 @@ export function arrowCase(seed: number): CorpusCase | undefined {
   const solution = completeGrid(random);
   const constraints = arrows(solution, random, 7);
   if (constraints.length < 5) return undefined;
-  const keep = solution.map(() => random() < 0.4);
+  // Random subsets below ~55 givens are rarely unique; thinning removes the surplus.
+  const keep = solution.map(() => random() < 0.65);
   const givens = thinGivens(solution, keep, constraints, random, 12);
   if (!givens) return undefined;
   return {
@@ -395,7 +440,7 @@ export function arrowCase(seed: number): CorpusCase | undefined {
     puzzle: givens.join(""),
     constraints,
     givens: givens.filter((v) => v !== 0).length,
-    oracleCount: "unique",
+    oracleCount: 1,
     sourceGroup: `gen-arrow-${seed}`,
     license: "repository-generated",
     seed,
@@ -413,9 +458,11 @@ export function mixedCase(seed: number): CorpusCase | undefined {
   const dotted = kropkiDots(solution, false).filter(() => random() < 0.2);
   const all = [...constraints, ...dotted].filter(
     (constraint, index, list) =>
-      list.findIndex((other) => other.cells.join() === constraint.cells.join() && other.type === constraint.type) === index,
+      list.findIndex(
+        (other) => other.cells.join() === constraint.cells.join() && other.type === constraint.type,
+      ) === index,
   );
-  const keep = solution.map(() => random() < 0.35);
+  const keep = solution.map(() => random() < 0.55);
   const givens = thinGivens(solution, keep, all, random, 8);
   if (!givens) return undefined;
   return {
@@ -424,7 +471,7 @@ export function mixedCase(seed: number): CorpusCase | undefined {
     puzzle: givens.join(""),
     constraints: all,
     givens: givens.filter((v) => v !== 0).length,
-    oracleCount: "unique",
+    oracleCount: 1,
     sourceGroup: `gen-mixed-${seed}`,
     license: "repository-generated",
     seed,
