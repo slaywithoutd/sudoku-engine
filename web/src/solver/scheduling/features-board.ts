@@ -21,12 +21,13 @@ export const BOARD_FEATURE_NAMES = Object.freeze([
   "coversWithThreeSupports",
   "coversWithOneSupport",
   "maxTwoSupportCoversPerSymbol",
-  "symbolsFullyPlaced",
+  "maxThreeSupportCoversPerSymbol",
+  "maxPlacementsNeededPerSymbol",
   "alsScopes",
   "liveSums",
   "sumSlack",
   "smallLiveSums",
-  "liveRelations",
+  "liveRelationCells",
   "scopes",
   "covers",
   "relations",
@@ -68,7 +69,8 @@ export function boardFeatures(view: ReadView): BoardFeatures {
   let two = 0,
     three = 0,
     one = 0;
-  const twoPerSymbol = new Map<number, number>();
+  const twoPerSymbol = new Map<number, number>(),
+    threePerSymbol = new Map<number, number>();
   for (const cover of assembly.covers) {
     if (cover.cells.some((cell) => state.values[cell] === cover.symbol)) continue;
     const supports = view.supports(cover.id).length;
@@ -76,15 +78,22 @@ export function boardFeatures(view: ReadView): BoardFeatures {
     else if (supports === 2) {
       two += 1;
       twoPerSymbol.set(cover.symbol, (twoPerSymbol.get(cover.symbol) ?? 0) + 1);
-    } else if (supports === 3) three += 1;
+    } else if (supports === 3) {
+      three += 1;
+      threePerSymbol.set(cover.symbol, (threePerSymbol.get(cover.symbol) ?? 0) + 1);
+    }
   }
   const placedPerSymbol = new Map<number, number>();
   for (const cell of problem.cells)
     if (state.values[cell] !== 0)
       placedPerSymbol.set(state.values[cell], (placedPerSymbol.get(state.values[cell]) ?? 0) + 1);
-  const fullyPlaced = problem.symbols.filter(
-    (symbol) => (placedPerSymbol.get(symbol) ?? 0) >= problem.cells.length / problem.symbols.length,
-  ).length;
+  // Per symbol, placements still needed; their sum is the unsolved-cell count,
+  // so the schema keeps the maximum.
+  const perSymbol = Math.floor(problem.cells.length / problem.symbols.length);
+  const placementsNeeded = Math.max(
+    0,
+    ...problem.symbols.map((symbol) => perSymbol - (placedPerSymbol.get(symbol) ?? 0)),
+  );
   // Scope-level ALS proxy: a scope whose open cells number n and whose candidate
   // union has n + 1 symbols. Combinations inside a scope stay with the ALS index.
   let alsScopes = 0;
@@ -121,9 +130,9 @@ export function boardFeatures(view: ReadView): BoardFeatures {
     });
     slack += Math.max(0, hi - lo);
   }
-  const liveRelations = assembly.relations.filter((relation) =>
-    relation.cells.some((cell) => state.values[cell] === 0),
-  ).length;
+  const relationCells = new Set<number>();
+  for (const relation of assembly.relations)
+    for (const cell of relation.cells) if (state.values[cell] === 0) relationCells.add(cell);
   const features = Object.freeze([
     unsolved,
     bivalue,
@@ -134,12 +143,13 @@ export function boardFeatures(view: ReadView): BoardFeatures {
     three,
     one,
     Math.max(0, ...twoPerSymbol.values()),
-    fullyPlaced,
+    Math.max(0, ...threePerSymbol.values()),
+    placementsNeeded,
     alsScopes,
     liveSums,
     slack,
     smallSums,
-    liveRelations,
+    relationCells.size,
     assembly.allDifferent.length,
     assembly.covers.length,
     assembly.relations.length,

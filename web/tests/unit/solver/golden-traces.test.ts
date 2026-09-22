@@ -2,6 +2,8 @@ import { describe, expect, test } from "vitest";
 import { readFileSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { solveClassic, type ClassicSolveEvent } from "../../../src/solver/classic-run";
+import type { PolicyParameters } from "../../../src/solver/scheduling/work";
+import { coverageEntries } from "../../../src/solver/techniques/manifest";
 
 /**
  * Golden Explain traces under explain-fair@1 (spec §3.12 metric F and the T10
@@ -37,10 +39,19 @@ const limits = {
   workspaceBytes: 64_000_000,
 };
 
-async function trace(id: string, puzzle: string): Promise<GoldenTrace> {
+async function trace(
+  id: string,
+  puzzle: string,
+  policyParameters?: PolicyParameters,
+): Promise<GoldenTrace> {
   const events: ClassicSolveEvent[] = [];
   await solveClassic(
-    { givens: [...puzzle].map(Number), limits, mode: "explain" },
+    {
+      givens: [...puzzle].map(Number),
+      limits,
+      mode: "explain",
+      ...(policyParameters ? { policy: "explain-fair@2" as const, policyParameters } : {}),
+    },
     { clock: { now: () => Date.now() }, emit: (event) => events.push(event) },
   );
   const result = events.at(-1);
@@ -78,6 +89,35 @@ describe("golden classic traces under explain-fair@1", () => {
       }
       expect(current.result).toEqual(entry.result);
       expect(current.steps).toEqual(entry.steps);
+    },
+    600_000,
+  );
+});
+
+const tiers = new Map(coverageEntries.map((entry) => [entry.version, entry.tier] as const));
+/** Steps before the first tier >= 3 step: the part spec §3.7 keeps canonical. */
+const lowPrefix = (steps: GoldenTrace["steps"]) => {
+  const end = steps.findIndex((step) => (tiers.get(step.technique) ?? -1) >= 3);
+  return end < 0 ? steps : steps.slice(0, end);
+};
+
+describe("metric F on the golden fixtures: explain-fair@2 keeps the tiers 0-2 prefix", () => {
+  test.each(
+    golden.traces.flatMap((entry) =>
+      [2, 8].map(
+        (rotationEvery) =>
+          [
+            `${entry.id} r${rotationEvery}`,
+            entry,
+            { scoreFromTier: 3, rotationEvery, decayShiftCap: rotationEvery === 2 ? 2 : 6 },
+          ] as const,
+      ),
+    ),
+  )(
+    "%s",
+    async (_id, entry, parameters) => {
+      const current = await trace(entry.id, entry.puzzle, parameters);
+      expect(lowPrefix(current.steps)).toEqual(lowPrefix(entry.steps));
     },
     600_000,
   );

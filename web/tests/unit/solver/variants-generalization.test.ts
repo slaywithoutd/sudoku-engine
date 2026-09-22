@@ -14,6 +14,13 @@ import type { IndexEvent } from "../../../src/solver/indexes/workspace";
 import { getTechniques } from "../../../src/solver/techniques/registry";
 import { discoveryContext } from "../../solver/discovery-context";
 import { variantOracle, type VariantConstraint } from "../../solver/oracle-variants";
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+import type { Corpus } from "../../solver/bench/corpus-schema";
+import { corpusProblem, SAMPLE_LIMITS } from "../../solver/bench/sample";
+import { assembleTechniqueJobs, profileFor } from "../../../src/solver/techniques/registry";
+import { TemplateOperationContext } from "../../../src/solver/indexes/templates";
+import { prepareSources } from "../../../src/solver/state/source-index";
 
 const limits = discoveryContext().limits;
 
@@ -296,4 +303,59 @@ describe("free generalization and relation strong links (T07)", () => {
     expect(xz).toBeDefined();
     expect(JSON.stringify(xz!.pattern)).toMatch(/"house":"(a|b)"/);
   });
+});
+
+describe("forcing nets on a variant board (block 5 review)", () => {
+  test("a basic step the local checker refuses ends the branch instead of throwing", () => {
+    // Corpus case kropki-81, initial state: before the fix C23 threw
+    // `net-local-rejected:duplicate-placement` from inside a branch.
+    const corpus = JSON.parse(
+      readFileSync(
+        fileURLToPath(new URL("../../solver/bench/corpus.json", import.meta.url)),
+        "utf8",
+      ),
+    ) as Corpus;
+    const entry = corpus.calibration.find((candidate) => candidate.id === "kropki-81")!;
+    const problem = corpusProblem(entry);
+    const assembled = assemble(problem, productionRules());
+    if (!assembled.ok) throw new Error("assembly");
+    const view = initialize(assembled.value, "primary");
+    const c23 = assembleTechniqueJobs(assembled.value, profileFor(problem)).techniques.find(
+      (descriptor) => descriptor.id === "c23@1",
+    )!;
+    expect(c23.eligible(view).kind).toBe("yes");
+    const workspace = new IndexWorkspace({ entryLimit: 100_000, byteLimit: 64_000_000 });
+    const templates = new TemplateOperationContext(view);
+    templates.advance(view, () => {});
+    const cursor = prepareSources(view, workspace);
+    let prepared = cursor.next();
+    while (!prepared.done) prepared = cursor.next();
+    // Discovery runs to its cap or a terminal without throwing; anything it
+    // proposes must still pass the independent checker.
+    try {
+      let work = 0;
+      for (const event of c23.discover(view, { workspace, templates, limits: SAMPLE_LIMITS })) {
+        if (event.kind === "work") {
+          work += event.units;
+          if (work >= 16_384) break;
+          continue;
+        }
+        if (event.kind === "proposal")
+          expect(
+            [
+              ...checkProposal(event.proposal, {
+                view,
+                retained: retainedProof(view),
+                limits: SAMPLE_LIMITS,
+                policy: c23.assumptionPolicy,
+                uniqueEvidenceId: null,
+              }),
+            ].at(-1)?.kind,
+          ).toBe("checked");
+        break;
+      }
+    } finally {
+      prepared.value.dispose();
+    }
+  }, 600_000);
 });

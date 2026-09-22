@@ -7,6 +7,8 @@ import {
   type PolicyId,
 } from "../../../src/solver/scheduling/work";
 import { SchedulingLedger } from "../../../src/solver/scheduling/ledger";
+import { StepSelection } from "../../../src/solver/scheduling/select";
+import { IndexWorkspace } from "../../../src/solver/indexes/workspace";
 import { FairPolicy } from "../../../src/solver/scheduling/policy";
 import {
   BOARD_FEATURE_SCHEMA,
@@ -247,4 +249,82 @@ describe("scored policies (T12)", () => {
     expect(two).toEqual(one);
     expect(twoAgain).toEqual(two);
   }, 600_000);
+
+  test("select() feeds the decay counters: an empty quantum decays the favourite until it yields", () => {
+    const view = fixture();
+    const jobs = [descriptor("hot@1", 4, 1, 512), descriptor("warm@1", 4, 1, 100)];
+    const selection = new StepSelection(
+      view,
+      { rules: [], techniques: jobs },
+      {
+        ...schedulingOptions({
+          limits,
+          policy: "explain-fair@2",
+          policyParameters: { scoreFromTier: 0, rotationEvery: 1000, decayShiftCap: 4 },
+          phaseWorkUnits: 6 * 256,
+        }),
+        workspace: new IndexWorkspace({ entryLimit: 1000, byteLimit: 64_000_000 }),
+        clock: { now: () => 0 },
+      },
+    );
+    try {
+      const events = [...selection.select()];
+      expect(events.at(-1)?.kind).toBe("logical-stop");
+      const hot = selection.ledger.job({ technique: "hot@1", scopeKey: "" });
+      const warm = selection.ledger.job({ technique: "warm@1", scopeKey: "" });
+      // 512 >> 3 = 64 < 100: three empty quanta hand the ticket to warm@1.
+      expect(hot.emptyQuanta).toBeGreaterThanOrEqual(3);
+      expect(warm.emptyQuanta).toBeGreaterThanOrEqual(1);
+    } finally {
+      selection.dispose();
+    }
+  });
+
+  test("decay resets on a candidate-revision change, not on a same-revision proof addition", () => {
+    const view = fixture();
+    const jobs = [descriptor("hot@1", 4)];
+    const ledger = new SchedulingLedger(view, { rules: [], techniques: jobs });
+    const hot = { technique: "hot@1", scopeKey: "" };
+    ledger.service(hot);
+    ledger.noteEmptyQuantum(hot);
+    const changes = {
+      before: view.state.key,
+      after: view.state.key,
+      removed: [],
+      placed: [],
+      cells: [],
+      coverIds: [],
+      relationIds: [],
+      sumIds: [],
+      constraintIds: [],
+      graphChanged: false,
+      sourceChanged: true,
+    };
+    ledger.advance(view, changes);
+    expect(ledger.job(hot).emptyQuanta).toBe(1);
+    ledger.advance(view, { ...changes, removed: [{ cell: 1, symbol: 1, positive: false }] });
+    expect(ledger.job(hot).emptyQuanta).toBe(0);
+  });
+
+  test("every policy id is deterministic: two runs give identical traces and results", async () => {
+    const run = async (policy: PolicyId) => {
+      const events: ClassicSolveEvent[] = [];
+      await solveClassic(
+        {
+          givens: [...PUZZLE].map(Number),
+          mode: policy.startsWith("analyze") ? "analyze" : "explain",
+          policy,
+          limits: { ...limits, timeMs: 600_000, workUnits: 40_000_000, exactNodes: 1_000_000 },
+        },
+        {
+          clock: { now: () => 0 },
+          emit: (event) => {
+            if (event.kind !== "progress") events.push(event);
+          },
+        },
+      );
+      return JSON.stringify(events);
+    };
+    for (const policy of POLICY_IDS) expect(await run(policy)).toBe(await run(policy));
+  }, 1_200_000);
 });

@@ -37,7 +37,18 @@ declared constants (spec §3.9 fitting threshold).
 
 ## Counts
 
-See the table in the build log of `docs/history/m25-implementation-progress.md`
-(T13 row) and the validation test `counts meet the spec §3.9 generated
-targets in every family`, which pins the targets 300/150/100/100/100/100 and
-requires every family to have held-out cases.
+Corpus hash `2c8c6891…0dea` (schema 2, 1,274 cases):
+
+| Family | Calibration | Held-out | Total | Spec §3.9 target |
+| --- | ---: | ---: | ---: | ---: |
+| classic | 261 | 79 | 340 | ≥ 300 generated |
+| killer | 134 | 58 | 192 | ≥ 150 |
+| thermometer | 93 | 27 | 120 | ≥ 100 |
+| kropki | 78 | 22 | 100 | ≥ 100 |
+| arrow | 204 | 63 | 267 | ≥ 100 |
+| mixed | 194 | 61 | 255 | ≥ 100 |
+| public hard classic | 0 | 0 | 0 | ≥ 1,000 (deferred, see above) |
+
+The validation test `counts meet the spec §3.9 generated targets in every
+family` pins the generated targets and requires every family to have
+held-out cases.

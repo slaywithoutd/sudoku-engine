@@ -47,13 +47,13 @@ export class FairPolicy implements SchedulerPolicy {
       jobs = jobs.filter((j) => j.tier === tier);
     }
     const baseline = this.id === "fixed-scan@1" || this.id === "event-fixed@1";
-    const rotation = this.scored ? this.parameters.rotationEvery : 4;
-    const oldest = !baseline && (ledger.ticket + 1) % rotation === 0;
     // A scored Explain policy keeps the canonical @1 order below scoreFromTier
-    // (spec §3.7): declared constants, no model, no decay.
+    // (spec §3.7): declared constants, no model, no decay and the @1 rotation.
     const scoredHere =
       this.scored &&
       (this.mode === "analyze" || jobs.every((job) => job.tier >= this.parameters.scoreFromTier));
+    const rotation = scoredHere ? this.parameters.rotationEvery : 4;
+    const oldest = !baseline && (ledger.ticket + 1) % rotation === 0;
     const estimateOf = (job: (typeof jobs)[number]) => {
       if (!this.scored) return job.estimate;
       if (!scoredHere) return job.declared;

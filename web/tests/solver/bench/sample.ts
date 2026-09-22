@@ -1,9 +1,14 @@
 /**
  * Sampling harness (spec §3.9, plan T14). Not a policy: on every view of the
  * Explain trajectory it drives `descriptor.discover()` directly for every
- * eligible technique of every tier, to exhaustion or a per-technique quantum
- * cap, and records the board feature vector with (found?, work to first
- * checked proposal or the censored cap, utility). It then advances with the
+ * eligible technique of every tier, to exhaustion or the spec's 16,384-unit
+ * per-technique cap, and records the board feature vector with (found?, work
+ * to first checked proposal, else the censored cap, utility). As in a
+ * production selection, the techniques of one state share one workspace, one
+ * template context and the prepared source index, so an index is built once
+ * per state (charged to the first technique that needs it, in registry order).
+ * A technique interrupted by a workspace or work limit is left out of the
+ * state and listed, never counted as a miss. It then advances with the
  * genuine explain-fair@1 choice. Not every state is sampled: while a rule
  * still propagates the scheduler never scores a technique; states solved by
  * a single (tiers 0-1) are decided in a few units before any scored tier is
@@ -22,14 +27,14 @@ import { productionRules } from "../../../src/solver/rules/registry";
 import { initialize, commitChecked, retainedProof } from "../../../src/solver/state/candidates";
 import type { ReadView } from "../../../src/solver/state/types";
 import { assembleTechniqueJobs, profileFor } from "../../../src/solver/techniques/registry";
-import type { DeductionProposal } from "../../../src/solver/proof/types";
 import { checkProposal } from "../../../src/solver/proof/checker";
-import { IndexWorkspace } from "../../../src/solver/indexes/workspace";
+import { IndexInterrupted, IndexWorkspace } from "../../../src/solver/indexes/workspace";
+import { prepareSources } from "../../../src/solver/state/source-index";
 import { TemplateOperationContext } from "../../../src/solver/indexes/templates";
 import { selectStep } from "../../../src/solver/scheduling/select";
 import { boardFeatures } from "../../../src/solver/scheduling/features-board";
 import { stepFeatures } from "../../../src/solver/scheduling/features";
-import { QUANTUM, schedulingOptions } from "../../../src/solver/scheduling/work";
+import { QUANTUM, WorkLimit, schedulingOptions } from "../../../src/solver/scheduling/work";
 import type { Limits } from "../../../src/solver/limits";
 import type { CorpusEntry } from "./corpus-schema";
 
@@ -43,13 +48,15 @@ export interface StateSample {
   readonly state: number;
   readonly features: readonly number[];
   readonly techniques: Readonly<Record<string, TechniqueSample>>;
+  /** Eligible techniques interrupted by a workspace or work limit (not samples). */
+  readonly interrupted: readonly string[];
   /** The explain-fair@1 step taken from this state, or the stop reason. */
   readonly chosen: string;
 }
 
-export const SAMPLER_VERSION = "sampler@1";
-/** Per-technique work cap in units (spec §3.9: the cap is the cost control). */
-export const DEFAULT_CAP = 4 * QUANTUM;
+export const SAMPLER_VERSION = "sampler@2";
+/** Per-technique work cap in units (spec §3.9: 16,384, the cap is the cost control). */
+export const DEFAULT_CAP = 64 * QUANTUM;
 /** One in this many singles-solved (tier 0-1) states is sampled. */
 export const SINGLES_STRIDE = 8;
 /** One in this many tier-2 states is sampled. */
@@ -100,20 +107,20 @@ export function corpusProblem(entry: Pick<CorpusEntry, "puzzle" | "constraints">
   });
 }
 
+interface StateContext {
+  readonly workspace: IndexWorkspace;
+  readonly templates: TemplateOperationContext;
+}
+
+/** One technique on one state; `undefined` when a limit interrupted it. */
 function sampleTechnique(
   view: ReadView,
   descriptor: ReturnType<typeof assembleTechniqueJobs>["techniques"][number],
   cap: number,
-): TechniqueSample {
-  const workspace = new IndexWorkspace({
-    entryLimit: 100_000,
-    byteLimit: SAMPLE_LIMITS.workspaceBytes,
-  });
-  const templates = new TemplateOperationContext(view);
-  templates.advance(view, () => {});
-  const discovery = descriptor.discover(view, { workspace, limits: SAMPLE_LIMITS, templates });
+  context: StateContext,
+): TechniqueSample | undefined {
+  const discovery = descriptor.discover(view, { ...context, limits: SAMPLE_LIMITS });
   let work = 0;
-  let proposal: DeductionProposal | undefined;
   try {
     for (const event of discovery) {
       if (event.kind === "work") {
@@ -129,19 +136,19 @@ function sampleTechnique(
             uniqueEvidenceId: null,
           }),
         ].at(-1);
-        if (checked?.kind === "checked") {
-          proposal = event.proposal;
+        if (checked?.kind === "checked")
           return [1, Math.max(1, work), stepFeatures(checked.step, view).utility];
-        }
-      } else break;
+      } else if (event.kind === "interrupted") return undefined;
+      else break;
     }
   } catch (error) {
-    // A detector that overruns its own workspace or budget is a censored miss.
-    if (!(error instanceof Error)) throw error;
+    if (error instanceof WorkLimit || error instanceof IndexInterrupted) return undefined;
+    throw error;
   } finally {
-    discovery.return?.(undefined);
+    discovery.return(undefined);
   }
-  return [0, proposal ? Math.max(1, work) : Math.min(cap, Math.max(1, work)), 0];
+  // No checked proposal: censored at the cap (spec §3.9), exhausted or not.
+  return [0, cap, 0];
 }
 
 /** Every quiescent state of the Explain trajectory of one corpus case. */
@@ -187,9 +194,25 @@ export function sampleCase(entry: CorpusEntry, cap = DEFAULT_CAP): StateSample[]
         (tier === 2 ? low++ % LOW_STRIDE === 0 : singles++ % SINGLES_STRIDE === 0));
     if (sampled) {
       const techniques: Record<string, TechniqueSample> = {};
-      for (const descriptor of registry.techniques) {
-        if (descriptor.eligible(view).kind !== "yes") continue;
-        techniques[descriptor.id] = sampleTechnique(view, descriptor, cap);
+      const interrupted: string[] = [];
+      const shared = new IndexWorkspace({
+        entryLimit: 100_000,
+        byteLimit: SAMPLE_LIMITS.workspaceBytes,
+      });
+      const templates = new TemplateOperationContext(view);
+      templates.advance(view, () => {});
+      const cursor = prepareSources(view, shared);
+      let prepared = cursor.next();
+      while (!prepared.done) prepared = cursor.next();
+      try {
+        for (const descriptor of registry.techniques) {
+          if (descriptor.eligible(view).kind !== "yes") continue;
+          const sample = sampleTechnique(view, descriptor, cap, { workspace: shared, templates });
+          if (sample) techniques[descriptor.id] = sample;
+          else interrupted.push(descriptor.id);
+        }
+      } finally {
+        prepared.value.dispose();
       }
       samples.push({
         case: entry.id,
@@ -198,6 +221,7 @@ export function sampleCase(entry: CorpusEntry, cap = DEFAULT_CAP): StateSample[]
         state,
         features: boardFeatures(view),
         techniques,
+        interrupted,
         chosen,
       });
     }

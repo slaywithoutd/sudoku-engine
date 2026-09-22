@@ -18,6 +18,7 @@ import {
 } from "../../../src/solver/scheduling/estimator";
 import { SchedulingLedger } from "../../../src/solver/scheduling/ledger";
 import { getTechniques, assembleTechniqueJobs } from "../../../src/solver/techniques/registry";
+import { preparedSources } from "../../../src/solver/state/source-index";
 import { PUZZLE } from "../../fixtures";
 
 function classicView(givens = PUZZLE) {
@@ -71,7 +72,26 @@ describe("board features (T11)", () => {
     expect(features[index("sums")]).toBe(27);
     expect(features[index("unsolvedCells")]).toBe([...PUZZLE].filter((c) => c === "0").length);
     expect(features[index("candidates")]).toBeGreaterThan(features[index("unsolvedCells")]);
-    expect(features[index("liveRelations")]).toBe(0);
+    expect(features[index("liveRelationCells")]).toBe(0);
+    const placed = [...PUZZLE].filter((c) => c !== "0");
+    const leastPlaced = Math.min(
+      ...Array.from({ length: 9 }, (_, i) => placed.filter((c) => c === String(i + 1)).length),
+    );
+    expect(features[index("maxPlacementsNeededPerSymbol")]).toBe(9 - leastPlaced);
+    expect(features[index("maxThreeSupportCoversPerSymbol")]).toBeLessThanOrEqual(
+      features[index("coversWithThreeSupports")],
+    );
+  });
+
+  test("build no index: no workspace parameter and no prepared sources afterwards", () => {
+    // boardFeatures takes no workspace, so it cannot lease one; it reads only
+    // maintained supports and must not prepare the view's source index either.
+    expect(boardFeatures.length).toBe(1);
+    const first = classicView();
+    const features = boardFeatures(first);
+    expect(preparedSources(first)).toBeUndefined();
+    boardFeatures(classicView());
+    expect(boardFeatures(first)).toBe(features);
   });
 
   test("read sums and relations on a variant view", () => {
@@ -79,7 +99,7 @@ describe("board features (T11)", () => {
     expect(features[index("liveSums")]).toBe(1);
     expect(features[index("smallLiveSums")]).toBe(1);
     expect(features[index("sumSlack")]).toBeGreaterThan(0);
-    expect(features[index("liveRelations")]).toBe(1);
+    expect(features[index("liveRelationCells")]).toBe(2);
     expect(features[index("alsScopes")]).toBe(0);
   });
 });

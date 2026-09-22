@@ -5,7 +5,10 @@
  * first checked proposal, censored at the cap) plus a constant `gain` (mean
  * accepted-step utility). Weights are emitted as x1024 integers for the
  * fixed-point estimator; families with fewer than MIN_POSITIVES positive
- * states in the calibration partition are refused and listed.
+ * states in the calibration partition are refused, listed, and given the
+ * observed constants of spec §3.9 (base-rate hit, median cost, mean gain).
+ * Cost is in quanta, not units: the spec's 16,384-unit cap would not fit the
+ * 1…1024 estimate range, 64 quanta does.
  */
 import { createHash } from "node:crypto";
 import {
@@ -17,7 +20,7 @@ import { ESTIMATE_MAX, ESTIMATE_MIN, SCALE_SHIFT } from "../../../src/solver/sch
 import { QUANTUM } from "../../../src/solver/scheduling/work";
 import type { StateSample } from "./sample";
 
-export const TRAINER_VERSION = "trainer@1";
+export const TRAINER_VERSION = "trainer@2";
 export const MIN_POSITIVES = 200;
 /** Ridge strength relative to the sample count; keeps the normal equations well posed. */
 const RIDGE = 1e-2;
@@ -71,6 +74,12 @@ function fixedPoint(weights: readonly number[]): { bias: number; weights: number
   return { bias: scaled[0], weights: scaled.slice(1) };
 }
 
+function median(values: readonly number[]): number {
+  const sorted = [...values].sort((a, b) => a - b);
+  const middle = sorted.length >> 1;
+  return sorted.length % 2 ? sorted[middle] : Math.floor((sorted[middle - 1] + sorted[middle]) / 2);
+}
+
 function clamp(value: number): number {
   return Math.max(ESTIMATE_MIN, Math.min(ESTIMATE_MAX, Math.round(value)));
 }
@@ -102,7 +111,20 @@ export function train(
   for (const [id, bucket] of [...perFamily].sort(([a], [b]) => (a < b ? -1 : 1))) {
     const positives = bucket.utilities.length;
     if (positives < MIN_POSITIVES) {
+      // Spec §3.9: below the threshold `hit` is the observed base rate (floor 1)
+      // and `cost` the observed median, on the same scales as a fitted family,
+      // so a refused family is not pinned under every fitted peer.
       refused.push({ id, positives, states: bucket.rows.length });
+      const zeros = Array<number>(BOARD_FEATURE_NAMES.length).fill(0);
+      const constant = (value: number) => ({
+        bias: clamp(value) * 2 ** SCALE_SHIFT,
+        weights: zeros,
+      });
+      families[id] = {
+        hit: constant((positives / bucket.rows.length) * ESTIMATE_MAX),
+        cost: constant(median(bucket.quanta)),
+        gain: clamp(positives ? bucket.utilities.reduce((a, b) => a + b, 0) / positives : 1),
+      };
       continue;
     }
     const lambda = RIDGE * bucket.rows.length;

@@ -56,6 +56,12 @@ export interface CheckContext {
   readonly currentNode?: ProofNode;
   /** Remaining checker workspace after retained/current wire data is charged. */
   readonly workspaceRemaining?: number;
+  /**
+   * Optional storage gate (D102): before each bounded copy the checker asks
+   * the caller to hold at least `bytes` in total; a throw becomes a
+   * `workspace-byte-limit` rejection. Without it nothing is reserved here.
+   */
+  readonly reserveBytes?: (bytes: number) => void;
 }
 export interface CheckedInference {
   readonly conclusion: Proposition;

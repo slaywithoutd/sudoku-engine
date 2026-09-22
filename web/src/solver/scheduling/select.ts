@@ -348,10 +348,12 @@ export class StepSelection {
   /** Producer stays paused throughout checking; reserve selected storage
    * before any return/advance. */
   #startChecking(job: ScheduledJob, cursor: Cursor, proposal: DeductionProposal): void {
-    cursor.lease = this.context.workspace.reserve(
-      1,
-      this.options.limits.stepBytes * 3 + retainedProof(this.#view).size * 128 + 32768,
-    );
+    // The fixed part (retained index + frame) is held up front; checker copies
+    // are reserved by the checker itself before each allocation (D102),
+    // replacing the former fixed 3 x stepBytes worst case per open check.
+    const lease = this.context.workspace.reserve(1, retainedProof(this.#view).size * 128 + 32768);
+    cursor.lease = lease;
+    let leased = 0;
     this.#charge(1);
     cursor.debt++;
     cursor.accountedCheckWork = 0;
@@ -361,6 +363,11 @@ export class StepSelection {
       policy: job.descriptor?.assumptionPolicy ?? "unconditional",
       uniqueEvidenceId: null,
       uniqueAuthority: this.context.uniqueAuthority,
+      reserveBytes: (bytes) => {
+        if (bytes <= leased) return;
+        lease.grow(0, bytes - leased);
+        leased = bytes;
+      },
       remainingWork: () =>
         this.#remaining() -
         (checkUsage(defined(cursor.checking, "checking")).workUnits -

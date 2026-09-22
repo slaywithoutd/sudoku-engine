@@ -31,7 +31,7 @@ import {
 } from "../../solver/bench/train";
 import { BOARD_FEATURE_NAMES } from "../../../src/solver/scheduling/features-board";
 import { TechniqueEstimator, validateModel } from "../../../src/solver/scheduling/estimator";
-import { MODEL_1 } from "../../../src/solver/scheduling/model-1";
+import { MODEL_1, MODEL_1_DIGEST } from "../../../src/solver/scheduling/model-1";
 
 const bench = fileURLToPath(new URL("../../solver/bench/", import.meta.url));
 const modelPath = fileURLToPath(
@@ -43,8 +43,11 @@ function trainerHash(): string {
   return createHash("sha256")
     .update(readFileSync(bench + "train.ts", "utf8").replace(/\r\n/g, "\n"))
     .update(readFileSync(bench + "sample.ts", "utf8").replace(/\r\n/g, "\n"))
-    .digest("hex")
-    .slice(0, 16);
+    .digest("hex");
+}
+
+function modelDigest(model: unknown): string {
+  return createHash("sha256").update(JSON.stringify(model)).digest("hex");
 }
 
 describe.skipIf(mode !== "build")("sample build", () => {
@@ -93,6 +96,9 @@ describe.skipIf(mode !== "train")("train", () => {
 import type { EstimatorModel } from "./estimator";
 
 export const MODEL_1: EstimatorModel = ${JSON.stringify(report.model, null, 2)};
+
+/** sha256 of JSON.stringify(MODEL_1); a weight change without retraining fails the tests. */
+export const MODEL_1_DIGEST = "${modelDigest(report.model)}";
 `;
     writeFileSync(modelPath, header);
     writeFileSync(`${out}/training-report.json`, JSON.stringify(report, null, 1));
@@ -114,8 +120,9 @@ describe.skipIf(mode !== undefined)("sampling harness and trainer (T14)", () => 
       for (const [hit, work, utility] of Object.values(sample.techniques)) {
         expect(work).toBeGreaterThanOrEqual(1);
         expect(work).toBeLessThanOrEqual(512);
-        // A proof-only (facts) proposal checks with zero utility.
-        if (hit === 0) expect(utility).toBe(0);
+        // A proof-only (facts) proposal checks with zero utility; a miss is
+        // censored at the cap (spec §3.9).
+        if (hit === 0) expect([work, utility]).toEqual([512, 0]);
         else expect(utility).toBeGreaterThanOrEqual(0);
       }
     }
@@ -140,6 +147,7 @@ describe.skipIf(mode !== undefined)("sampling harness and trainer (T14)", () => 
         "rich@1": [1, 100 + state, 20],
         "rare@1": [state % 50 === 0 ? 1 : 0, 2048, state % 50 === 0 ? 3 : 0],
       },
+      interrupted: [],
       chosen: "rich@1",
     }));
     const report = train(samples, {
@@ -154,6 +162,12 @@ describe.skipIf(mode !== undefined)("sampling harness and trainer (T14)", () => 
     expect(() => new TechniqueEstimator(report.model)).not.toThrow();
     expect(report.model.families["rich@1"]!.gain).toBe(20);
     expect(report.model.families["rich@1"]!.hit.bias).toBeGreaterThan(0);
+    // Spec §3.9: a refused family gets its observed constants on the fitted
+    // scales: 4 positives in 200 calibration states, median cost 2048 units.
+    const rare = report.model.families["rare@1"]!;
+    expect(rare.hit).toEqual({ bias: 20 * 1024, weights: features.map(() => 0) });
+    expect(rare.cost).toEqual({ bias: 8 * 1024, weights: features.map(() => 0) });
+    expect(rare.gain).toBe(3);
   });
 
   test("model-1 is well formed and carries its identity", () => {
@@ -163,5 +177,7 @@ describe.skipIf(mode !== undefined)("sampling harness and trainer (T14)", () => 
     expect(MODEL_1.trainerHash).toBe(trainerHash());
     const corpus = JSON.parse(readFileSync(bench + "corpus.json", "utf8")) as Corpus;
     expect(MODEL_1.corpusHash).toBe(corpus.corpusHash);
+    // D094: one policy version, one weight table.
+    expect(modelDigest(MODEL_1)).toBe(MODEL_1_DIGEST);
   });
 });

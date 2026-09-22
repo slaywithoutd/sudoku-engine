@@ -149,11 +149,14 @@ export class SchedulingLedger {
   advance(view: ReadView, changes: ChangeSet, cold = false): void {
     const rows = invalidate(changes, this.rows);
     this.#view = view;
+    // Decay resets on a candidate-revision change only (spec §3.11); a
+    // same-revision proof addition keeps the counters.
+    const revised = cold || changes.removed.length > 0 || changes.placed.length > 0;
     this.jobs.forEach((job, i) => {
       job.status = cold ? "pending" : rows[i].status;
       job.reason = cold ? undefined : rows[i].reason;
       job.lastService = 0;
-      job.emptyQuanta = 0;
+      if (revised) job.emptyQuanta = 0;
       if (job.descriptor) {
         const carried = !cold && (job.status === "exhausted" || job.status === "excluded");
         Object.assign(job, {
