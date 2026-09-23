@@ -24,6 +24,8 @@ Deviations from the plan recorded so far: (1) forcing nets (C22-C28) keep cover/
 
 Recorded decision (block 4, M1): the variant profiles `variants-expanded@1` / `variants-conditional@1` exist and are ready once the K rows are independently verified; `classic-run` only ever receives classic input in this milestone, and a problem whose profile is not ready now yields an `error` result with code `profile-incomplete` rather than a rejected promise.
 
+| T15 ablation and default decision | `test(solver): T15` | bench-ablate (metrics over synthetic traces, metric E on a held-out case); ablation phases 1 and 2 by `ABLATE=run` shards and `ABLATE=report` | Block 5 review FAIL→fixed (`fix(solver): scheduling review`), see below; report in [m25-ablation](m25-ablation.md), decision D101 |
+
 Block 5 review (T11-T15, independent reviewer, 2026-09-22): FAIL, fixed in `fix(solver): scheduling review` before the ablation ran.
 
 - H1 `rotationEvery` applied in tiers -1 and 0-2 (`policy.ts`), against spec §3.7; `r8` changed 3 of 18 tier 0-2 prefixes and `r2` stopped at the first step with `workspace-byte-limit`. The rotation now uses the `@1` cadence wherever the score does not act; metric F is pinned on the golden fixtures for `r2` and `r8`.
