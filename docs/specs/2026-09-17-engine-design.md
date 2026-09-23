@@ -1,6 +1,6 @@
 # M2.5 Engine — variant primitives and calibrated scheduling
 
-Status: **approved 2026-09-18 (D100)**. Brainstorm record of 2026-09-17, audited the same day (Socratic ambiguity review, §12). Implementation follows the task plan referenced from D100; no code existed when this document was approved.
+Status: **approved 2026-09-18 (D100)**; implemented on `feat/m25-engine` through T16, with the §3.12 acceptance gate decided in D101 (A, B and D fail on held-out data, so both `@2` policies ship selectable and disabled) and the checker bounds this milestone needed recorded in D102. Brainstorm record of 2026-09-17, audited the same day (Socratic ambiguity review, §12). Implementation follows the task plan referenced from D100; no code existed when this document was approved.
 
 Related: [engine architecture](../solver/architecture.md), [roadmap](../roadmap.md), [M2 engine contracts](../history/superpowers/specs/2026-09-12-m2-engine-contracts.md), [coverage matrix](../history/superpowers/specs/2026-09-12-m2-technique-coverage.md), [expansion research](../history/superpowers/specs/2026-09-12-m2-engine-expansion-design.md).
 

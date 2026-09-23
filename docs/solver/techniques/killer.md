@@ -19,3 +19,13 @@ The 45 rule. A container is a full-cover scope sum — every `all-different@1` r
 - **Proof:** the `linear-combine@1` node, then one `linear-sum@1` node per removed candidate over the residual's current domain facts, then domain closure.
 - **Grammar:** recomputes the residual from the retained facts, pins the combination's premises, multipliers and conclusion, recomputes the removals, and requires every effect root to be a bound on that exact residual.
 - **Evidence:** `web/tests/unit/solver/killer.test.ts` with the fixtures in `web/tests/solver/fixtures/K02.json` (single innie, outie, five touching cages with an untouched far cage, an eight-cage house where only seven-cage combinations are admissible), replay from original clues, and an oracle property over generated killer grids.
+
+## Profiles
+
+`variantEntries` (`techniques/manifest.ts`) is the catalogue of the K families and
+`techniques/profiles.ts` the leaf module holding `variants-expanded@1` and
+`variants-conditional@1`, which append the K rows to the classic profile.
+`profileFor(problem)` selects a variant profile exactly when the problem declares
+a variant rule, so a classic board keeps `classic-expanded@1` and its trace. A
+problem whose profile is not ready yields an `error` result with code
+`profile-incomplete` instead of a rejected promise.
