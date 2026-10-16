@@ -942,3 +942,15 @@ Record each answer here with its rationale and consequences. If an answer change
 - Contributing cause, recorded rather than worked around: the corpus has no public hard classic puzzles (T13, no license verified), so tiers ≥ 3 are rare - 94 accepted tier ≥ 3 states across 310 cases. Spec §3.9 predicted this. A future calibration with hard public puzzles may revisit the gate; it needs a new corpus hash, a new sampling run and a new policy version (D094).
 - Consequence: the defaults and the golden traces are unchanged, `@2` remains available for experiments and for the M2.6 work, and D063's browser matrix is still the separate gate for the time and rollout defaults.
 
+## D103 - Approve M2.6 engine hardening
+
+- Status: confirmed user instruction, 2026-10-16 ("li e aprovo"), after M2.5 merged into `master` at `c3ced37`.
+- Source: the [M2.6 engine hardening spec](specs/2026-09-22-m26-engine-hardening.md), produced from the solver evaluation of 2026-09-21 and a Socratic session the same day. The spec drafted this entry as D102; that number went to the M2.5 checker bounds, so the approval is D103.
+- Decision: implement M2.6 from `master` as `feat/m26-hardening`, one reviewed commit per task (spec §5, T01–T11), blocks reviewed as in M2.5. Scope is the spec's §3 decisions and §4 design; §7's out-of-scope list stays out.
+- Exact phase: keeps the D049 resumable MRV DFS, now with bulk naked and hidden singles, locked candidates and module forward checking per node, one work event per node, method `original-dfs@2`. D049 is restated: the exact enumeration runs from the original givens before the human pass, its conclusive count is reused as `priorCount`, and the human pass never feeds the count.
+- Budgets: the exact count runs first with up to 30 % of the budget; the logical phase is cut by work units (deterministic) and wall-clock time is a safety stop only, reported as its own stop reason (D042). A final exact phase runs only when the precount was inconclusive.
+- Scheduling: `explain-fair@3` claims tier exhaustion only when proved; from tier 3 up, a job that reaches its per-state work cap counts as settled, Explain climbs, and the resulting steps carry `budgetLimited` (D063 revised, D055 preserved). `analyze-fair@3` replaces the 4,096-unit selection window so Analyze produces steps. `@1`/`@2` golden traces stay byte-identical (D094); `@3` traces are recorded and reviewed once.
+- Result and UI: the result carries `stopReason`, technique coverage (exhausted, capped, not started), `countVerifiedMs` and `budgetLimitedSteps`; the Solve screen shows them, and direct clue conflicts run to "No solution".
+- Exit gate: the spec's §6 targets in vitest and on the D063 benchmark matrix, 0 count disagreements against the reference DFS and the Algorithm X oracle, unchanged `@1`/`@2` traces. Provisional values (tier cap 2,000,000 units per job per state, the 30/70 split, `workUnits`) are re-derived in T08.
+- Consequence: the roadmap gains the M2.6 row between M2.5 and M3. No code exists yet; M3 waits for M2.6.
+
