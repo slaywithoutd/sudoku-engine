@@ -1,5 +1,6 @@
 import type { ScreenServices } from "../app/controller";
 import { copyPuzzleToDraft, deleteRecord, renameRecord } from "../domain/library";
+import { lookup } from "../domain/invariants";
 import { effectiveValues, isComplete } from "../domain/classic";
 import type { Value } from "../domain/model";
 import { formatDuration } from "../app/play-clock";
@@ -47,15 +48,16 @@ export function mountLibrary(
   heading.append(el("h1", "Library"), headingActions);
   const tabs = el("div", undefined, "segmented tabs");
   tabs.setAttribute("aria-label", "Library sections");
-  const counts = new Map<string, HTMLElement>();
+  const counts = {
+    puzzles: el("span", undefined, "count"),
+    drafts: el("span", undefined, "count"),
+  };
   for (const [key, label] of [
     ["puzzles", "Puzzles"],
     ["drafts", "Drafts"],
   ] as const) {
     const b = button("", () => services.navigate({ screen: "library", tab: key }), "segment");
-    const count = el("span", undefined, "count");
-    counts.set(key, count);
-    b.append(el("span", label), count);
+    b.append(el("span", label), counts[key]);
     b.setAttribute("aria-pressed", String(tab === key));
     tabs.append(b);
   }
@@ -69,8 +71,8 @@ export function mountLibrary(
     previous = identity;
     const drafts = Object.values(data.drafts).filter((d) => !d.finishedPuzzleId),
       puzzles = Object.values(data.puzzles);
-    counts.get("puzzles")!.textContent = String(puzzles.length);
-    counts.get("drafts")!.textContent = String(drafts.length);
+    counts.puzzles.textContent = String(puzzles.length);
+    counts.drafts.textContent = String(drafts.length);
     list.replaceChildren();
     const items = tab === "drafts" ? drafts : puzzles;
     if (!items.length) {
@@ -90,7 +92,7 @@ export function mountLibrary(
     }
     const sorted = [...items].sort((a, b) => {
       const time = (r: typeof a) =>
-        "updatedAt" in r ? r.updatedAt : (data.sessions[r.id]?.updatedAt ?? r.createdAt);
+        "updatedAt" in r ? r.updatedAt : (lookup(data.sessions, r.id)?.updatedAt ?? r.createdAt);
       return time(b).localeCompare(time(a));
     });
     for (const record of sorted) {

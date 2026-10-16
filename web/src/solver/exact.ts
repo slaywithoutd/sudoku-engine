@@ -1,6 +1,6 @@
 import { canonicalProblem } from "./problem";
 import type { EngineProblem, ConstraintInstance } from "./problem";
-import type { Assembly } from "./rules/types";
+import type { Assembly, RuleModule } from "./rules/types";
 import type { Literal } from "./state/types";
 import { hasSingleCandidate, symbolMask } from "./state/read";
 import { defined } from "./invariants";
@@ -111,10 +111,15 @@ function inputSize(problem: EngineProblem): {
           key.length <= 64 &&
           descriptor.enumerable &&
           "value" in descriptor &&
-          (typeof descriptor.value === "boolean" || Number.isSafeInteger(descriptor.value)),
+          (typeof descriptor.value === "boolean" ||
+            Number.isSafeInteger(descriptor.value) ||
+            (typeof descriptor.value === "string" &&
+              descriptor.value.length >= 1 &&
+              descriptor.value.length <= 32)),
         "exact-parameter-limit",
       );
-      characters += key.length;
+      characters +=
+        key.length + (typeof descriptor.value === "string" ? descriptor.value.length : 0);
     }
     scopes += rule.cells.length;
     entries += rule.cells.length + keys.length + 4;
@@ -143,6 +148,7 @@ export function exactInitializationReservation(
     "allDifferent",
     "covers",
     "relations",
+    "sums",
     "peers",
     "supportSignature",
   ]);
@@ -167,6 +173,11 @@ class OriginalSemantics {
   readonly checks: readonly ((values: readonly number[]) => boolean)[];
   readonly houses: readonly ConstraintInstance[];
   readonly peers: readonly (readonly number[])[];
+  /** Rules whose module offers a forward check (spec §3.13); all-different is covered by peers. */
+  readonly pruners: readonly {
+    readonly rule: ConstraintInstance;
+    readonly prune: NonNullable<RuleModule["prune"]>;
+  }[];
   constructor(problem: EngineProblem, assembly: Assembly) {
     this.reservation = exactInitializationReservation(problem, assembly);
     this.problem = canonicalProblem(problem);
@@ -192,6 +203,12 @@ class OriginalSemantics {
       return (values: readonly number[]) => check(rule, { values }) === true;
     });
     this.houses = this.problem.constraints.filter((rule) => rule.type === "all-different@1");
+    this.pruners = this.problem.constraints.flatMap((rule) => {
+      const module = defined(assembly.modules.get(rule.id), "module");
+      return typeof module.prune === "function"
+        ? [{ rule, prune: module.prune.bind(module) as NonNullable<RuleModule["prune"]> }]
+        : [];
+    });
     this.peers = this.problem.cells.map((cell) =>
       [
         ...new Set(
@@ -248,11 +265,10 @@ class ExactSearchSession {
 
   /** Each yield follows one bounded cell scan, house/symbol scan or assignment. */
   private *propagate(values: number[]): Generator<ExactEvent, number[] | null, void> {
-    const { problem, peers, houses } = this.semantics;
+    const { problem, peers, houses, pruners } = this.semantics;
     const full = (1 << problem.symbols.length) - 1;
     for (;;) {
       const masks: number[] = [];
-      let single = -1;
       for (const cell of problem.cells) {
         let mask = full;
         for (const peer of peers[cell]) if (values[peer] !== 0) mask &= ~symbolMask(values[peer]);
@@ -260,8 +276,32 @@ class ExactSearchSession {
         masks[cell] = mask;
         yield this.work();
         if (mask === 0) return null;
-        if (values[cell] === 0 && hasSingleCandidate(mask) && single < 0) single = cell;
       }
+      // Module forward checks to a fixed point. A hook may only shrink the
+      // masks of its own cells; anything else it returns is ignored.
+      let narrowed = true;
+      while (narrowed) {
+        narrowed = false;
+        for (const { rule, prune } of pruners) {
+          const next = prune(rule, problem, values, masks);
+          yield this.work();
+          if (next === null) return null;
+          for (const cell of rule.cells) {
+            const mask = next[cell] & masks[cell];
+            if (mask === 0) return null;
+            if (mask !== masks[cell]) {
+              masks[cell] = mask;
+              narrowed = true;
+            }
+          }
+        }
+      }
+      let single = -1;
+      for (const cell of problem.cells)
+        if (values[cell] === 0 && hasSingleCandidate(masks[cell])) {
+          single = cell;
+          break;
+        }
       if (single >= 0) {
         values[single] = Math.log2(masks[single]) + 1;
         yield this.work();

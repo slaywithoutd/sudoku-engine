@@ -175,6 +175,7 @@ describe("capability assembly", () => {
             { id: "duplicate", symbol: 2, cells: [0], premise },
           ],
           relations: [],
+          sums: [],
           primitiveIds: ["missing-version"],
         };
       },
@@ -194,6 +195,7 @@ describe("capability assembly", () => {
           allDifferent: [{ id: "foreign", cells: rule.cells, premise: 999_999 }],
           covers: [],
           relations: [],
+          sums: [],
           primitiveIds: [],
         };
       },
@@ -222,6 +224,7 @@ describe("capability assembly", () => {
               premise: context.roots.get(rule.id)!,
             },
           ],
+          sums: [],
           primitiveIds: Object.assign(Array(1), {}) as string[],
         };
       },
@@ -244,6 +247,7 @@ describe("capability assembly", () => {
           allDifferent: [],
           covers: [],
           relations: [],
+          sums: [],
           primitiveIds: ["unregistered@1"],
         };
       },

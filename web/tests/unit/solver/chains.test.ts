@@ -431,7 +431,7 @@ test.each(["C16", "C17"])(
         else throw Error("measurement interrupted");
       }
       expect(index).toBeDefined();
-      expect(workEvents).toBe(2750);
+      expect(workEvents).toBe(2777); // 2750 + 27 house-sum sources (M2.5 lemma M4)
     } finally {
       index?.dispose();
     }

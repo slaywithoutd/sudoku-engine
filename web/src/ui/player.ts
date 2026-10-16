@@ -2,7 +2,8 @@ import type { ScreenServices } from "../app/controller";
 import { copyPuzzleToDraft, startPlay } from "../domain/library";
 import { reduceEditor, type BoardAction } from "../domain/editor";
 import { conflictingCells, effectiveValues, isComplete, toPuzzleString } from "../domain/classic";
-import { newTimer, type PlaySession, type ShortcutAction, type TimerState } from "../domain/model";
+import { defined, lookup } from "../domain/invariants";
+import { newTimer, type ShortcutAction, type TimerState } from "../domain/model";
 import { gameExport } from "../domain/puzzle-format";
 import { createPlayClock, formatDuration } from "../app/play-clock";
 import { uniqueSolution } from "../app/solution";
@@ -32,14 +33,14 @@ export function mountPlayer(
   services: ScreenServices,
   id: string,
 ): () => void {
-  const puzzle = Object.hasOwn(services.controller.snapshot().puzzles, id)
-    ? services.controller.snapshot().puzzles[id]
-    : undefined;
+  const puzzle = lookup(services.controller.snapshot().puzzles, id);
   if (!puzzle) return missing(container, services);
   services.controller.update((d) => startPlay(d, id, services.now()));
   const givens = puzzle.definition.givens,
     context = { mode: "play" as const, givens };
-  const session = () => services.controller.snapshot().sessions[id] as PlaySession | undefined;
+  const session = () => lookup(services.controller.snapshot().sessions, id);
+  // startPlay above created the session, so it exists for the rest of this screen's life.
+  const currentSession = () => defined(session(), "play-session");
   const timerOf = (s = session()): TimerState => s?.timer ?? { ...newTimer("immediately") };
   const settings = () => services.controller.snapshot().settings;
   const complete = () => {
@@ -68,7 +69,7 @@ export function mountPlayer(
     clock.sync();
     const elapsedMs = Math.round(clock.elapsed());
     services.controller.update((data) => {
-      const s = data.sessions[id];
+      const s = lookup(data.sessions, id);
       if (!s) return data;
       const timer = { ...timerOf(s), elapsedMs, ...patch };
       const before = timerOf(s);
@@ -166,7 +167,7 @@ export function mountPlayer(
   // Board -------------------------------------------------------------------
   const apply = (action: BoardAction) => {
     services.controller.update((data) => {
-      const s = data.sessions[id];
+      const s = lookup(data.sessions, id);
       if (!s) return data;
       const editor = reduceEditor(context, s.editor, action);
       if (editor === s.editor) return data;
@@ -184,7 +185,7 @@ export function mountPlayer(
   const surface = mountPuzzleSurface(shell, services, {
     mode: "play",
     givens,
-    state: () => session()!.editor,
+    state: () => currentSession().editor,
     dispatch: apply,
     editable: () => !timerOf().paused || complete(),
     onAutofill: autofill,
@@ -231,7 +232,7 @@ export function mountPlayer(
     });
   };
   const checkNow = () => {
-    const values = effectiveValues(session()!.editor, givens),
+    const values = effectiveValues(currentSession().editor, givens),
       empty = values.filter((v) => !v).length,
       conflicts = conflictingCells(values).length;
     checkRequested = true;
@@ -246,7 +247,7 @@ export function mountPlayer(
   const more = menuButton(
     iconButton("more", "More actions", () => {}),
     () => {
-      const state = session()!.editor,
+      const state = currentSession().editor,
         shortcut = (action: ShortcutAction) =>
           comboLabel(settings().shortcuts[action]) || undefined;
       return [
@@ -265,7 +266,7 @@ export function mountPlayer(
           disabled: state.selected < 0 || !hasCopiedCell(),
           shortcut: shortcut("pasteCell"),
           onSelect: () => {
-            const paste = pasteCellAction(session()!.editor);
+            const paste = pasteCellAction(currentSession().editor);
             if (paste) apply(paste);
           },
         },
@@ -284,7 +285,7 @@ export function mountPlayer(
           icon: "download",
           onSelect: () => {
             writeTimer();
-            const s = session()!;
+            const s = currentSession();
             download(
               fileName(puzzle.name, "json"),
               new Blob(
@@ -305,7 +306,10 @@ export function mountPlayer(
           label: "Save image",
           icon: "image",
           onSelect: async () =>
-            download(fileName(puzzle.name, "png"), await boardImage(givens, session()!.editor)),
+            download(
+              fileName(puzzle.name, "png"),
+              await boardImage(givens, currentSession().editor),
+            ),
         },
         "separator",
         {
@@ -331,7 +335,7 @@ export function mountPlayer(
 
   const update = () => {
     const data = services.controller.snapshot(),
-      s = data.sessions[id];
+      s = lookup(data.sessions, id);
     if (!s) return;
     clock.sync();
     const t = timerOf(s),
@@ -341,10 +345,10 @@ export function mountPlayer(
     title.textContent = data.puzzles[id].name;
     // Correctness marks: player digits equal to the unique solution.
     if (data.settings.markCorrectDigits) loadSolution();
-    const correct =
-      data.settings.markCorrectDigits && solution
-        ? new Set(values.flatMap((v, i) => (!givens[i] && v && v === solution![i] ? [i] : [])))
-        : undefined;
+    const known = data.settings.markCorrectDigits ? solution : undefined;
+    const correct = known
+      ? new Set(values.flatMap((v, i) => (!givens[i] && v && v === known[i] ? [i] : [])))
+      : undefined;
     surface.render({ correct });
     timerText.hidden = !data.settings.showTimer;
     pause.hidden = done;

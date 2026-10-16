@@ -114,7 +114,7 @@ export function mountPuzzleSurface(
             return false;
           }
           options.dispatch({ type: "select", index: -1 });
-          (document.activeElement as HTMLElement | null)?.blur?.();
+          if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
           return true;
         case "toolValue":
         case "toolCorner":

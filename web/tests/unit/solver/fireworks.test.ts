@@ -17,7 +17,7 @@ import type { DeductionProposal } from "../../../src/solver/proof/types";
 
 function compile(f: any): DeductionProposal {
   const cursor = compileFireworks(fixtureView(f), f.expectedPattern as FireworksPlan);
-  while (true) {
+  for (;;) {
     const n = cursor.next();
     if (n.done) {
       expect(n.value).not.toBeNull();

@@ -30,6 +30,10 @@ describe("classic solve composition", () => {
     expect(events.find((event) => event.kind === "precount")).toMatchObject({
       solution: givens(solution),
     });
+    // Informative difficulty (spec §3.8): the highest tier used and the per-tier step counts.
+    expect(result.difficulty.schema).toBe("difficulty@0");
+    expect(result.difficulty.maxTier).toBeGreaterThanOrEqual(0);
+    expect(result.difficulty.stepsByTier.reduce((a, b) => a + b, 0)).toBe(result.steps);
   });
   test("reports multiple, zero and conflicting inputs without the logical phase", async () => {
     expect((await solve("0".repeat(80) + "1")).result).toMatchObject({

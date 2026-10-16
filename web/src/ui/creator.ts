@@ -2,6 +2,7 @@ import type { ScreenServices } from "../app/controller";
 import { toPuzzleString } from "../domain/classic";
 import { createDraft, finishDraft, renameRecord } from "../domain/library";
 import { reduceEditor } from "../domain/editor";
+import { defined, lookup } from "../domain/invariants";
 import type { ParsedPuzzle } from "../domain/puzzle-format";
 import { el, button } from "./dom";
 import { dialog, confirmDialog } from "./dialogs";
@@ -60,15 +61,15 @@ export function mountCreator(
   services: ScreenServices,
   id: string,
 ): () => void {
-  const initial = Object.hasOwn(services.controller.snapshot().drafts, id)
-    ? services.controller.snapshot().drafts[id]
-    : undefined;
+  const initial = lookup(services.controller.snapshot().drafts, id);
   if (!initial) return missing(container, services);
   if (initial.finishedPuzzleId) {
     services.navigate({ screen: "play", id: initial.finishedPuzzleId });
     return () => {};
   }
-  const draft = () => services.controller.snapshot().drafts[id];
+  const draft = () => lookup(services.controller.snapshot().drafts, id);
+  // The draft outlives every action below; only update() tolerates its deletion.
+  const currentDraft = () => defined(draft(), "draft");
   const shell = gameShell(container, "create");
   const name = nameField("Puzzle name", initial.name, (value) =>
     services.controller.update((d) => renameRecord(d, "draft", id, value, services.now())),
@@ -83,11 +84,11 @@ export function mountCreator(
   const surface = mountPuzzleSurface(shell, services, {
     mode: "create",
     givens: context.givens,
-    state: () => draft().editor,
+    state: () => currentDraft().editor,
     display: () => ({ showConflicts: true, showNoteConflicts: false }),
     dispatch(action) {
       services.controller.update((data) => {
-        const current = data.drafts[id];
+        const current = lookup(data.drafts, id);
         if (!current || current.finishedPuzzleId) return data;
         const editor = reduceEditor(context, current.editor, action);
         return editor === current.editor
@@ -113,7 +114,7 @@ export function mountCreator(
   const more = menuButton(
     iconButton("more", "More actions", () => {}),
     () => {
-      const current = draft();
+      const current = currentDraft();
       const values = current.editor.cells.map((c) => c.value);
       return [
         {
@@ -139,7 +140,8 @@ export function mountCreator(
           disabled: !values.some(Boolean),
           onSelect: () =>
             services.controller.update((data) => {
-              const d = data.drafts[id];
+              const d = lookup(data.drafts, id);
+              if (!d) return data;
               const editor = reduceEditor(context, d.editor, { type: "reset" });
               return editor === d.editor
                 ? data
@@ -156,7 +158,7 @@ export function mountCreator(
     "check",
     "Finish",
     () => {
-      const current = draft();
+      const current = currentDraft();
       const { clues } = clueSummary(current.editor);
       const complete = () => {
         const puzzleId = services.newId();

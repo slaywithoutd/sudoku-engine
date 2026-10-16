@@ -1,6 +1,7 @@
 import { emptyEditor, newTimer, type CellState, type LibraryData, type Value } from "./model";
 import { conflictingCells } from "./classic";
 import { defaultSettings } from "./settings";
+import { lookup } from "./invariants";
 export function emptyLibrary(): LibraryData {
   return {
     formatVersion: 2,
@@ -56,7 +57,7 @@ export function finishDraft(
   puzzleId: string,
   now: string,
 ): LibraryData {
-  const draft = data.drafts[draftId];
+  const draft = lookup(data.drafts, draftId);
   if (!draft || draft.finishedPuzzleId) throw new Error("This draft is not available for editing.");
   available(data, puzzleId);
   const givens = draft.editor.cells.map((c) => c.value);
@@ -85,8 +86,8 @@ export function finishDraft(
   };
 }
 export function startPlay(data: LibraryData, puzzleId: string, now: string): LibraryData {
-  if (!data.puzzles[puzzleId]) throw new Error("Puzzle not found.");
-  if (data.sessions[puzzleId]) return data;
+  if (!Object.hasOwn(data.puzzles, puzzleId)) throw new Error("Puzzle not found.");
+  if (Object.hasOwn(data.sessions, puzzleId)) return data;
   return {
     ...data,
     sessions: {
@@ -106,7 +107,7 @@ export function copyPuzzleToDraft(
   draftId: string,
   now: string,
 ): LibraryData {
-  const puzzle = data.puzzles[puzzleId];
+  const puzzle = lookup(data.puzzles, puzzleId);
   if (!puzzle) throw new Error("Puzzle not found.");
   const next = createDraft(data, draftId, now, puzzle.definition.givens, puzzle.name);
   return {
@@ -129,7 +130,7 @@ export function renameRecord(
 ): LibraryData {
   name = name.trim() || "Untitled";
   if (kind === "draft") {
-    const draft = data.drafts[id];
+    const draft = lookup(data.drafts, id);
     if (!draft || draft.finishedPuzzleId)
       throw new Error("This draft is not available for editing.");
     if (name === draft.name) return data;
@@ -138,7 +139,7 @@ export function renameRecord(
       drafts: { ...data.drafts, [id]: { ...draft, name, updatedAt: now } },
     };
   }
-  const puzzle = data.puzzles[id];
+  const puzzle = lookup(data.puzzles, id);
   if (!puzzle) throw new Error("Puzzle not found.");
   return name === puzzle.name
     ? data
@@ -146,12 +147,13 @@ export function renameRecord(
 }
 export function deleteRecord(data: LibraryData, kind: "draft" | "puzzle", id: string): LibraryData {
   if (kind === "draft") {
-    if (!data.drafts[id] || data.drafts[id].finishedPuzzleId) throw new Error("Draft unavailable.");
+    const draft = lookup(data.drafts, id);
+    if (!draft || draft.finishedPuzzleId) throw new Error("Draft unavailable.");
     const drafts = { ...data.drafts };
     delete drafts[id];
     return { ...data, drafts };
   }
-  if (!data.puzzles[id]) throw new Error("Puzzle not found.");
+  if (!Object.hasOwn(data.puzzles, id)) throw new Error("Puzzle not found.");
   const puzzles = { ...data.puzzles },
     sessions = { ...data.sessions },
     drafts = { ...data.drafts };

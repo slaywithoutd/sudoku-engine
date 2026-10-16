@@ -169,11 +169,13 @@ describe("shared candidate ownership", () => {
       const priorUsage = workspace.usage;
       const assumption = assumed.certificate.proposal.proof.nodes[0].id;
       const collision = before.state.domainFacts[0];
-      expect(assumption).toBe(6);
-      expect(collision).toBe(7);
+      // Roots: 2 domains, 1 rule, 1 scope, 2 covers, 1 house sum (this two-cell
+      // scope is a full house), then the assumption and its domain publication.
+      expect(assumption).toBe(7);
+      expect(collision).toBe(8);
 
-      // Keep every original root and the exact assumption, but hide domain7.
-      // The old checker then treated7 as a fresh ID for this valid weak clause.
+      // Keep every original root and the exact assumption, but hide the domain
+      // node. The old checker then treated its ID as fresh for this valid weak clause.
       const shortened = new Map(priorPrefix);
       shortened.delete(collision);
       const proposal: DeductionProposal = {

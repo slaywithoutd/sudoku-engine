@@ -28,7 +28,8 @@ type WorkerEvent =
 
 let stopped = false;
 const post = (event: WorkerEvent) => self.postMessage(event);
-self.onmessage = (event: MessageEvent<WorkerRequest>) => {
+// postMessage data is untrusted; the guards below answer anything but a known request with an error.
+self.onmessage = (event: MessageEvent<WorkerRequest | null | undefined>) => {
   const request = event.data;
   if (request?.kind === "stop") {
     stopped = true;
@@ -36,11 +37,13 @@ self.onmessage = (event: MessageEvent<WorkerRequest>) => {
   }
   if (request?.kind === "solve-classic") {
     // One run per worker: the controller terminates the worker to cancel.
+    const { timeLimitMs } = request;
     const timeMs =
-      Number.isSafeInteger(request.timeLimitMs) &&
-      request.timeLimitMs! >= 1000 &&
-      request.timeLimitMs! <= 600_000
-        ? request.timeLimitMs!
+      timeLimitMs !== undefined &&
+      Number.isSafeInteger(timeLimitMs) &&
+      timeLimitMs >= 1000 &&
+      timeLimitMs <= 600_000
+        ? timeLimitMs
         : CLASSIC_SOLVE_LIMITS.timeMs;
     solveClassic(
       {

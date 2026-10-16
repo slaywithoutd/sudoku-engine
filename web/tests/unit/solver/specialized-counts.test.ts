@@ -159,7 +159,7 @@ test("signed-count strategy carries every premise's scopes, conditional taint, a
   });
   let work = 0,
     result;
-  while (true) {
+  for (;;) {
     const n = cursor.next();
     if (n.done) {
       result = n.value;

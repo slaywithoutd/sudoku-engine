@@ -20,11 +20,15 @@ import { symbolMask } from "../state/read";
  * relation-conflict: assume the source candidate, restrict its domain, join
  * the proved <=256-row relation with one-cell complete domain filters, then
  * project not-target (<=16 filters/joins). Do not fabricate a clause primitive.
+ * relation-strong (lemma RS): filter the proved relation by both current
+ * domains, then project the two-positive-literal clause every surviving row
+ * satisfies. Only cross-cell pairs whose literals are each individually
+ * avoidable are recorded; forced single literals belong to maintenance.
  */
 export type ImplicationRecipe =
   | { readonly kind: "cell-cover" | "cell-conflict"; readonly source: number }
   | {
-      readonly kind: "house-cover" | "scope-conflict" | "relation-conflict";
+      readonly kind: "house-cover" | "scope-conflict" | "relation-conflict" | "relation-strong";
       readonly source: number;
     };
 export interface CoverEntry extends IndexEntry {
@@ -127,6 +131,38 @@ class ImplicationCollector {
     readonly workspace: IndexWorkspace,
     readonly reservation: WorkspaceReservation,
   ) {}
+  /**
+   * Strong edges of a two-cell relation: pairs (x on one cell, y on the other)
+   * such that every tuple compatible with the current domains has x or y.
+   * Pairs where one literal alone covers every row are skipped: that literal
+   * is forced and rule maintenance removes its alternatives instead.
+   */
+  *relationStrong(
+    fact: Fact,
+    p: Extract<Proposition, { kind: "relation" }>,
+  ): Generator<{ kind: "work"; units: number }> {
+    const [a, b] = p.cells;
+    const rows = p.tuples.filter(
+      (tuple) =>
+        this.view.state.domains[a] & symbolMask(tuple[0]) &&
+        this.view.state.domains[b] & symbolMask(tuple[1]),
+    );
+    if (rows.length === 0) return;
+    const premises = [fact.id, ...p.cells.map((cell) => this.view.state.domainFacts[cell])];
+    for (const x of this.symbols(a))
+      for (const y of this.symbols(b)) {
+        yield* work(this.workspace);
+        const coversAll = rows.every((tuple) => tuple[0] === x || tuple[1] === y);
+        const xForced = rows.every((tuple) => tuple[0] === x);
+        const yForced = rows.every((tuple) => tuple[1] === y);
+        if (coversAll && !xForced && !yForced)
+          this.edge("strong", candidate(a, x), candidate(b, y), premises, {
+            kind: "relation-strong",
+            source: fact.id,
+          });
+      }
+  }
+
   /** Symbols still open in the cell. */
   symbols(cell: number): number[] {
     return this.view.assembly.problem.symbols.filter(
@@ -220,6 +256,8 @@ class ImplicationCollector {
               yield* this.relationConflict(fact, proposition, [cells[i], left], [cells[j], right]);
           }
       }
+    if (proposition.kind === "relation" && proposition.cells.length === 2)
+      yield* this.relationStrong(fact, proposition);
   }
   /** A weak link when no live tuple of the relation holds both candidates. */
   *relationConflict(

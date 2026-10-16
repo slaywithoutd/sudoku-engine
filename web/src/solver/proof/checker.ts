@@ -84,6 +84,24 @@ interface CheckedNodeAuthority {
 const acceptedNodes = new WeakMap<ProofNode, CheckedNodeAuthority>();
 const NODE_BYTES = 16 * 1024;
 const HEADER_BYTES = 32 * 1024;
+/**
+ * The state key embeds the canonical problem, so its size is the problem's,
+ * not the proof's (D102): a kropki grid with 171 constraints serializes to
+ * ~18 KB. Up to STATE_SHARE the state fits the fixed caps as before; beyond
+ * it the state copy cap is the state's own size and the header cap grows by
+ * twice the excess (proposal.state and proof.state), so every problem keeps at
+ * least HEADER_BYTES - 2 * STATE_SHARE bytes of non-state header.
+ */
+const STATE_SHARE = 8 * 1024;
+function stateBytes(problemKey: string): number {
+  // {"problemKey":"…","branch":"…","revision":n}: the key plus a bounded frame.
+  return jsonByteLength(problemKey) + 1024;
+}
+function headerCap(problemKey: string): number {
+  return HEADER_BYTES + 2 * Math.max(0, stateBytes(problemKey) - STATE_SHARE);
+}
+/** Slack added to each storage request so the gate is not called per node. */
+const RESERVE_CHUNK = 64 * 1024;
 const MAX_ARITY = 64;
 
 /** TypeScript brands do not survive a wire boundary; identity is the authority. */
@@ -381,6 +399,7 @@ function* captureProposal(
   cap: number,
   stepNodes: number,
   tick: () => void,
+  header = HEADER_BYTES,
 ): Generator<
   CheckEvent,
   { header: ReturnType<typeof copyBounded<DeductionProposal>>; references: ProofNode[] },
@@ -395,9 +414,9 @@ function* captureProposal(
   );
   requireProof(Reflect.ownKeys(nodes).length === nodes.length + 1, "invalid-proof-array");
   const count = nodes.length;
-  const header = copyBounded(
+  const captured = copyBounded(
     { ...input, proof: { ...input.proof, nodes: [] } },
-    Math.min(cap, HEADER_BYTES),
+    Math.min(cap, header),
   );
   const references: ProofNode[] = [];
   for (let index = 0; index < count; index++) {
@@ -411,7 +430,7 @@ function* captureProposal(
       yield { kind: "work", units: 1 };
     }
   }
-  return { header, references };
+  return { header: captured, references };
 }
 
 function ids(values: readonly number[], cap: number): void {
@@ -591,7 +610,22 @@ function* verifyGraph(
       admission === "certificate"
         ? canonicalProblem(sourceView.assembly.problem)
         : sourceView.assembly.problem;
-    const state = copyBounded(sourceView.state.key, NODE_BYTES).value;
+    // Storage is requested before every bounded copy (D095 reserve-before-
+    // allocate) and grows with the actual copies instead of a fixed worst case.
+    let held = 0;
+    const reserve = (bytes: number) => {
+      if (!source.reserveBytes || bytes <= held) return;
+      const target = bytes + RESERVE_CHUNK;
+      try {
+        source.reserveBytes(target);
+      } catch {
+        requireProof(false, "workspace-byte-limit");
+      }
+      held = target;
+    };
+    const stateCap = Math.max(NODE_BYTES, stateBytes(problem.key));
+    reserve(stateCap);
+    const state = copyBounded(sourceView.state.key, stateCap).value;
     requireProof(
       state.problemKey === problem.key &&
         typeof state.branch === "string" &&
@@ -626,11 +660,13 @@ function* verifyGraph(
     // Freeze the bounded header first, then capture references in batches.
     // Payloads are copied/checked one at a time below; completed private
     // copies never observe later mutations of the external proposal.
+    reserve(stateCap + headerCap(problem.key));
     const captured = yield* captureProposal(
       input,
       Math.min(limits.stepBytes, limits.workspaceBytes),
       limits.stepNodes,
       tick,
+      headerCap(problem.key),
     );
     let runBytes = 0;
     let maximumId = -1;
@@ -695,6 +731,7 @@ function* verifyGraph(
         registry.seedRetainedTable(node, authority.table);
         yield { kind: "work", units: 1 };
       }
+      reserve(captured.header.bytes + runBytes + NODE_BYTES);
       const encoded = copyBounded(node, NODE_BYTES);
       runBytes += encoded.bytes;
       requireProof(
@@ -740,6 +777,7 @@ function* verifyGraph(
     const stagedNodes: ProofNode[] = [];
     for (const reference of captured.references) {
       tick();
+      reserve(runBytes + stepBytes + NODE_BYTES);
       const copied = copyBounded(
         reference,
         Math.min(

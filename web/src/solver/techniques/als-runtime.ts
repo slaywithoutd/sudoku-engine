@@ -18,7 +18,7 @@ import {
   type AlsProjection,
   type BlossomPattern,
 } from "./als-certificate";
-import { classicHouseEqualTo, symbolMask } from "../state/read";
+import { findHouseEqualTo, symbolMask } from "../state/read";
 import { defined } from "../invariants";
 
 const projection = (set: number, left: number, right: number): AlsProjection => ({
@@ -46,7 +46,9 @@ export class AlsSearch {
       yield { kind: "work", units: 1 };
       const source = defined(this.view.facts.get(entry.recipe.source), "fact").proposition;
       if (source.kind !== "all-different") continue;
-      const house = classicHouseEqualTo(this.view, source.cells);
+      // Any proved all-different scope hosts an ALS (a killer cage included);
+      // the classic-house restriction was a profile choice the sum modules lift.
+      const house = findHouseEqualTo(this.view, source.cells);
       if (!house || seen.has(entry.cells.join())) continue;
       this.graph.lease.grow(1, 1024 + entry.cells.length * entry.symbols.length * 64);
       seen.add(entry.cells.join());

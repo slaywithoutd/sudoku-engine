@@ -94,7 +94,7 @@ test.each(["C10", "C11", "C12", "C13"])(
     // Cancellation after a yielded proof retains no compiler or borrowed-index memory.
     cancelled = false;
     const afterProposal = detector.discover(view, { ...context, workspace });
-    while (true) {
+    for (;;) {
       const next = afterProposal.next();
       if (next.done) throw Error("no-proposal");
       if (next.value.kind === "proposal") break;

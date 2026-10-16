@@ -99,6 +99,20 @@ export class ChainSearch {
           this.arc({ members: [...left], als: null }, { members: [...right], als: null }, source);
       }
     }
+    // Strong links a two-cell relation proves (lemma RS). The "scalar" family
+    // only excludes grouped and ALS vertices; single-literal relation arcs
+    // belong to every family, and the X-Chain alias is decided afterwards.
+    for (const edge of this.graph.index.edges) {
+      if (edge.kind !== "strong" || edge.recipe.kind !== "relation-strong") continue;
+      yield { kind: "work", units: 1 };
+      const [left, right] = edge.literals;
+      if (this.view.state.values[left.cell] || this.view.state.values[right.cell]) continue;
+      this.arc(
+        { members: [left], als: null },
+        { members: [right], als: null },
+        { kind: "relation", source: edge.recipe.source },
+      );
+    }
     if (this.family !== "scalar")
       for (const house of this.view.assembly.allDifferent)
         for (const scope of this.view.assembly.allDifferent) {

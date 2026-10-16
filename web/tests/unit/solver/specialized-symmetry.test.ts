@@ -44,7 +44,7 @@ test.each(fixtures)(
     expect(completed).toBe(prefix.length + 1);
     const cursor = compileExocet(view, f.expectedPattern);
     let proposal;
-    while (true) {
+    for (;;) {
       const n = cursor.next();
       if (n.done) {
         proposal = n.value;

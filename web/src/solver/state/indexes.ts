@@ -9,6 +9,7 @@ interface Incidence {
   readonly constraints: readonly string[];
   readonly covers: readonly string[];
   readonly relations: readonly string[];
+  readonly sums: readonly string[];
 }
 const sorted = (values: Iterable<string>) => Object.freeze([...new Set(values)].sort());
 
@@ -42,6 +43,9 @@ export class CandidateIndexes {
               assembly.relations
                 .filter((relation) => relation.cells.includes(cell))
                 .map((relation) => relation.id),
+            ),
+            sums: sorted(
+              assembly.sums.filter((sum) => sum.cells.includes(cell)).map((sum) => sum.id),
             ),
           }),
         ),
@@ -77,6 +81,7 @@ export class CandidateIndexes {
       constraints: sorted(cells.flatMap((cell) => this.#incidence[cell].constraints)),
       covers: sorted(cells.flatMap((cell) => this.#incidence[cell].covers)),
       relations: sorted(cells.flatMap((cell) => this.#incidence[cell].relations)),
+      sums: sorted(cells.flatMap((cell) => this.#incidence[cell].sums)),
     });
   }
 }

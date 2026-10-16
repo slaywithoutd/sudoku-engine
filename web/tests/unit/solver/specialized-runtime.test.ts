@@ -37,7 +37,7 @@ test("large retained prefixes construct and allocate the first scope-free local 
     const b = new SpecializedProof(largePrefix(), lease),
       cursor = b.local([0]);
     let table;
-    while (true) {
+    for (;;) {
       const n = cursor.next();
       if (n.done) {
         table = n.value;
@@ -244,7 +244,7 @@ test("a ready proposal keeps its compiler lease until the borrower closes the cu
     other = {
       *plans() {
         try {
-          while (true) yield { kind: "work" as const, units: 1 };
+          for (;;) yield { kind: "work" as const, units: 1 };
         } finally {
           otherClosed = true;
         }

@@ -381,7 +381,7 @@ export function selectControl(options: {
     }
     list.addEventListener("keydown", (event) => {
       event.stopPropagation();
-      const focused = document.activeElement as HTMLElement;
+      const focused = document.activeElement as HTMLElement | null;
       if (event.key === "Enter" || event.key === " ") {
         if (focused?.getAttribute("role") === "option") {
           event.preventDefault();
@@ -393,7 +393,7 @@ export function selectControl(options: {
         typed = now - typedAt > 700 ? event.key.toLowerCase() : typed + event.key.toLowerCase();
         typedAt = now;
         [...list.querySelectorAll<HTMLElement>("[role=option]")]
-          .find((o) => o.textContent!.toLowerCase().startsWith(typed))
+          .find((o) => o.textContent.toLowerCase().startsWith(typed))
           ?.focus();
       }
     });

@@ -21,7 +21,7 @@ export function comboFromEvent(event: KeyboardEvent): string {
   if (MODIFIER_KEYS.has(event.key)) return "";
   let key: string;
   if (/^Key[A-Z]$/.test(event.code)) key = event.code.slice(3);
-  else if (/^(?:Digit|Numpad)[0-9]$/.test(event.code)) key = event.code.at(-1)!;
+  else if (/^(?:Digit|Numpad)[0-9]$/.test(event.code)) key = event.code.slice(-1);
   else if (event.key === " ") key = "Space";
   else if (event.key.length === 1) key = event.key.toUpperCase();
   else key = event.key;

@@ -142,6 +142,7 @@ describe("deterministic scheduling ownership", () => {
       cells: [],
       coverIds: [],
       relationIds: [],
+      sumIds: [],
       constraintIds: [],
       graphChanged: false,
       sourceChanged: true,
@@ -207,7 +208,7 @@ describe("selection windows and accepted publications", () => {
               if (next.value.kind === "checked-step") found = next.value;
             }
           }
-          if (!found || found.kind !== "checked-step") break;
+          if (!found) break;
           keys.push(JSON.stringify(found.step.proposal));
           selection.advance(commitChecked(selection.view, found.step).view);
         }

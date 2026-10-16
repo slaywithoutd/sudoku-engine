@@ -17,6 +17,7 @@ import { TemplateOperationContext } from "../indexes/templates";
 import type { UniqueAuthority } from "../conditional";
 import type { Discovery, DiscoveryEvent, Ledger } from "../techniques/types";
 import { defined } from "../invariants";
+import { estimatorFor } from "./estimator";
 import { SchedulingLedger, type TechniqueJobs, type ScheduledJob } from "./ledger";
 import { FairPolicy } from "./policy";
 import {
@@ -53,7 +54,13 @@ export type SelectionEvent =
       readonly reason: string;
       readonly ledger: Ledger;
     };
+/** Read after the quantum ran; the generator may have flipped the flag meanwhile. */
+function proposedDuring(cursor: Cursor): boolean {
+  return cursor.proposed === true;
+}
 interface Cursor {
+  /** True once the current quantum yielded a proposal (decay bookkeeping). */
+  proposed?: boolean;
   discovery?: Discovery;
   checking?: Generator<CheckEvent, void, void>;
   lease?: WorkspaceReservation;
@@ -112,8 +119,13 @@ export class StepSelection {
       4096 + (registry.rules.length + registry.techniques.length) * 4096,
     );
     try {
-      this.ledger = new SchedulingLedger(view, registry);
-      this.#policy = new FairPolicy(this.options.policy, registry.techniques, this.options.mode);
+      this.ledger = new SchedulingLedger(view, registry, estimatorFor(this.options.policy));
+      this.#policy = new FairPolicy(
+        this.options.policy,
+        registry.techniques,
+        this.options.mode,
+        this.options.policyParameters,
+      );
     } catch (error) {
       this.#lease.dispose();
       throw error;
@@ -310,6 +322,8 @@ export class StepSelection {
         cursor.debt += event.units;
         break;
       case "proposal":
+        cursor.proposed = true;
+        this.ledger.noteProposal(job.key);
         this.#startChecking(job, cursor, event.proposal);
         break;
       case "excluded":
@@ -334,10 +348,12 @@ export class StepSelection {
   /** Producer stays paused throughout checking; reserve selected storage
    * before any return/advance. */
   #startChecking(job: ScheduledJob, cursor: Cursor, proposal: DeductionProposal): void {
-    cursor.lease = this.context.workspace.reserve(
-      1,
-      this.options.limits.stepBytes * 3 + retainedProof(this.#view).size * 128 + 32768,
-    );
+    // The fixed part (retained index + frame) is held up front; checker copies
+    // are reserved by the checker itself before each allocation (D102),
+    // replacing the former fixed 3 x stepBytes worst case per open check.
+    const lease = this.context.workspace.reserve(1, retainedProof(this.#view).size * 128 + 32768);
+    cursor.lease = lease;
+    let leased = 0;
     this.#charge(1);
     cursor.debt++;
     cursor.accountedCheckWork = 0;
@@ -347,6 +363,11 @@ export class StepSelection {
       policy: job.descriptor?.assumptionPolicy ?? "unconditional",
       uniqueEvidenceId: null,
       uniqueAuthority: this.context.uniqueAuthority,
+      reserveBytes: (bytes) => {
+        if (bytes <= leased) return;
+        lease.grow(0, bytes - leased);
+        leased = bytes;
+      },
       remainingWork: () =>
         this.#remaining() -
         (checkUsage(defined(cursor.checking, "checking")).workUnits -
@@ -445,7 +466,9 @@ export class StepSelection {
       this.ledger.service(key);
       const cursor = this.#cursors.get(job) ?? { debt: 0 };
       this.#cursors.set(job, cursor);
+      cursor.proposed = false;
       yield* this.#serviceQuantum(job, cursor, window);
+      if (!proposedDuring(cursor)) this.ledger.noteEmptyQuantum(key);
       // A checker result paid at the last unit belongs to this quantum.
       if (cursor.checked && !cursor.debt) this.#bufferChecked(cursor);
       if (

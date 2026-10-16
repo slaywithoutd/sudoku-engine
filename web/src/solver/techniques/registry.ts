@@ -1,8 +1,11 @@
 import type { VersionId } from "../problem";
+import { symbolValue } from "../problem";
 import type { ReadView } from "../state/types";
 import type { Assembly } from "../rules/types";
 import type { Discovery, DiscoveryContext, TechniqueDescriptor } from "./types";
-import { coverageEntries } from "./manifest";
+import { coverageEntries, variantEntries } from "./manifest";
+import { isProfile, PROFILES, profileFor, type ProfileId } from "./profiles";
+export { PROFILES, profileFor, type ProfileId } from "./profiles";
 import { NakedSingles, HiddenSingles } from "./singles";
 import { LockedCandidates } from "./intersections";
 import { Subsets, LockedSubsets } from "./subsets";
@@ -23,6 +26,7 @@ import { netTechniques } from "./nets";
 import { krakenTechniques } from "./kraken";
 import { generalizedTechniques } from "./generalized-runtime";
 import { exocetTechniques } from "./exocet";
+import { cageCombinationTechniques, innieOutieTechniques } from "./killer";
 import { tridagonTechniques } from "./tridagon";
 import { skLoopTechniques } from "./sk-loops";
 import { fireworksTechniques } from "./fireworks";
@@ -130,9 +134,16 @@ const descriptors: readonly TechniqueDescriptor[] = Object.freeze(
           const dependencies = Object.freeze([{ kind: "all" as const }]);
           if (!detectors.has(entry.id))
             return { kind: "excluded" as const, reason: "specified-not-implemented", dependencies };
+          // S: live sums; V: numeric symbol values (spec §3.5). Both are resolved on the
+          // actual assembly, never on a familiar rule id.
           if (
             (entry.capabilities.includes("A") && !view.assembly.allDifferent.length) ||
-            (entry.capabilities.includes("H") && !view.assembly.covers.length)
+            (entry.capabilities.includes("H") && !view.assembly.covers.length) ||
+            (entry.capabilities.includes("S") && !view.assembly.sums.length) ||
+            (entry.capabilities.includes("V") &&
+              !view.assembly.problem.symbols.every((symbol) =>
+                Number.isSafeInteger(symbolValue(view.assembly.problem, symbol)),
+              ))
           )
             return { kind: "excluded" as const, reason: "missing-capability", dependencies };
           return { kind: "yes" as const };
@@ -148,14 +159,22 @@ const descriptors: readonly TechniqueDescriptor[] = Object.freeze(
 );
 
 /** Closed known-version dispatch. Unimplemented rows remain visible and excluded. */
+/** Variant rows (spec §3.6) join the classic descriptors only under the variant profiles. */
+const variantDescriptors: readonly TechniqueDescriptor[] = Object.freeze([
+  ...cageCombinationTechniques,
+  ...innieOutieTechniques,
+]);
+
+/** Classic profiles keep their exact descriptor sets; variant profiles append the K rows. */
 export function getTechniques(profile: VersionId): readonly TechniqueDescriptor[] {
-  if (!["classic-expanded@1", "classic-conditional@1"].includes(profile))
-    throw Error("unknown-profile");
-  return profile === "classic-conditional@1"
+  if (!isProfile(profile)) throw Error("unknown-profile");
+  const conditional = profile.endsWith("conditional@1");
+  const base = conditional
     ? descriptors
-    : Object.freeze(
-        descriptors.filter((descriptor) => descriptor.assumptionPolicy !== "unique-only"),
-      );
+    : descriptors.filter((descriptor) => descriptor.assumptionPolicy !== "unique-only");
+  return Object.freeze(
+    profile.startsWith("variants-") ? [...base, ...variantDescriptors] : [...base],
+  );
 }
 
 /**
@@ -166,10 +185,14 @@ export function profileReadiness(profile: VersionId): {
   readonly missing: readonly string[];
 } {
   getTechniques(profile);
-  const missing = coverageEntries
+  const conditional = profile.endsWith("conditional@1");
+  const rows = profile.startsWith("variants-")
+    ? [...coverageEntries, ...variantEntries]
+    : coverageEntries;
+  const missing = rows
     .filter(
       (entry) =>
-        (profile === "classic-conditional@1" || entry.assumptionPolicy !== "unique-only") &&
+        (conditional || entry.assumptionPolicy !== "unique-only") &&
         entry.status !== "independently-verified",
     )
     .map((entry) => entry.id);

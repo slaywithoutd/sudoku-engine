@@ -78,8 +78,9 @@ export function reduceEditor(
       if (index === state.selected) {
         // Demote the primary cell; the next extra (if any) takes its place
         // so the selection shrinks instead of jumping to a fresh cell.
-        const [next, ...rest] = state.extraSelected;
-        return { ...state, selected: next ?? -1, extraSelected: rest };
+        const next = state.extraSelected.at(0) ?? -1,
+          rest = state.extraSelected.slice(1);
+        return { ...state, selected: next, extraSelected: rest };
       }
       if (state.extraSelected.includes(index))
         return { ...state, extraSelected: state.extraSelected.filter((i) => i !== index) };

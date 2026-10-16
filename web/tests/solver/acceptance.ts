@@ -88,22 +88,21 @@ export function fixtureView(fixture: TechniqueFixture): ReadView {
     const proposals = [...view.assembly.modules.get(rule.id)!.propagate(view, rule)].filter(
       (e) => e.kind === "proposal",
     );
-    for (const event of proposals)
-      if (event.kind === "proposal") {
-        const terminal = [
-          ...checkProposal(event.proposal, {
-            view,
-            retained: retainedProof(view),
-            limits: defaultLimits,
-            policy: "unconditional",
-            uniqueEvidenceId: null,
-          }),
-        ].at(-1);
-        if (terminal?.kind !== "checked")
-          throw Error(`preamble-rejected:${JSON.stringify(terminal)}`);
-        bundles.push(terminal.step.proposal);
-        view = commitChecked(view, terminal.step).view;
-      }
+    for (const event of proposals) {
+      const terminal = [
+        ...checkProposal(event.proposal, {
+          view,
+          retained: retainedProof(view),
+          limits: defaultLimits,
+          policy: "unconditional",
+          uniqueEvidenceId: null,
+        }),
+      ].at(-1);
+      if (terminal?.kind !== "checked")
+        throw Error(`preamble-rejected:${JSON.stringify(terminal)}`);
+      bundles.push(terminal.step.proposal);
+      view = commitChecked(view, terminal.step).view;
+    }
   }
   if (
     JSON.stringify(view.state.values) !== JSON.stringify(fixture.preState.values) ||
@@ -439,7 +438,8 @@ function finiteOracle(view: ReadView, input: OracleInput): OracleResult {
   );
   const witnesses: number[][] = [];
   let nodes = 0,
-    interrupted = false,
+    // visit() flips this flag; the cast stops TS from narrowing the initializer to `false`.
+    interrupted = false as boolean,
     capped = false;
   const compatible = () =>
     problem.constraints.every((rule) => {

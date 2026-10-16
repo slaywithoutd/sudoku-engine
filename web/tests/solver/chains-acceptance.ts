@@ -130,6 +130,7 @@ export class IndependentChainProof extends FixtureProof {
         this.clause(cells.map((cell) => ({ cell, symbol: source.symbol, positive: true }))),
       );
     }
+    if (source.kind !== "als") throw new Error("acceptance builder handles classic sources only");
     const house = this.view.assembly.allDifferent.find((h) => h.id === source.house)!.cells;
     const fact = [...this.view.facts.values()].find(
       (f) =>
@@ -371,7 +372,7 @@ export function independentChainCertificate(f: TechniqueFixture): DeductionPropo
         members: Array.isArray(v[0]) ? (v as number[][]).map(term) : [term(v as number[])],
         als: seed.alsVisits?.includes(v[0]) ? [v[0]] : null,
       }));
-  const names: Record<string, string> = {
+  const names: Partial<Record<string, string>> = {
     "X-Chain": "X-Chains",
     "XY-Chain": "XY-Chains",
     AIC: "AICs",

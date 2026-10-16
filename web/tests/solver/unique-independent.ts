@@ -8,9 +8,9 @@ export interface UniqueSeed {
   expectedEffects: { kind: string; cell: number; symbol: number }[];
   prefix?: any[];
 }
-const demand = (value: unknown, message: string): void => {
+function demand(value: unknown, message: string): asserts value {
   if (!value) throw Error(message);
-};
+}
 const equal = (a: unknown, b: unknown): boolean => {
   if (a === b) return true;
   if (
@@ -76,7 +76,7 @@ function pathsValid(domains: number[], branch: any): void {
           "independent-cell-cover",
         );
       else {
-        const house = independentHouses.get(r.house)!;
+        const house = independentHouses.get(r.house);
         demand(
           house &&
             house.includes(a.cell) &&

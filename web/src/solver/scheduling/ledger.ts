@@ -1,6 +1,7 @@
 import type { VersionId } from "../problem";
 import type { ReadView } from "../state/types";
 import { invalidate, type ChangeSet, type Watch } from "../state/events";
+import { constantEstimator, type TechniqueEstimator } from "./estimator";
 import type {
   Discovery,
   TechniqueDescriptor,
@@ -27,10 +28,14 @@ export interface ScheduledJob {
   readonly descriptor?: TechniqueDescriptor;
   readonly rule?: TechniqueJobs["rules"][number];
   readonly estimate: Estimate;
+  /** The descriptor's own constants, kept for tiers the scored policy leaves canonical. */
+  readonly declared: Estimate;
   status: DetectorStatus;
   dependencies: readonly Watch[];
   work: number;
   lastService: number;
+  /** Consecutive served quanta without a proposal; reset on a proposal or an advance. */
+  emptyQuanta: number;
   reason?: string;
 }
 export function compareJob(left: ScheduledJob, right: ScheduledJob): number {
@@ -48,33 +53,43 @@ export class SchedulingLedger {
   readonly jobs: readonly ScheduledJob[];
   #view: ReadView;
   #ticket = 0;
-  constructor(view: ReadView, registry: TechniqueJobs) {
+  readonly #estimator: TechniqueEstimator;
+  constructor(view: ReadView, registry: TechniqueJobs, estimator = constantEstimator) {
     if (registry.rules.length + registry.techniques.length > 256) throw Error("profile-job-limit");
     this.#view = view;
+    this.#estimator = estimator;
     this.jobs = [
       ...registry.rules.map((rule) => ({
         key: { technique: rule.id, scopeKey: rule.scopeKey },
         tier: -1,
         rule,
         estimate: { hit: 1, gain: 1, cost: 1 },
+        declared: { hit: 1, gain: 1, cost: 1 },
         status: "pending" as DetectorStatus,
         dependencies: [{ kind: "all" as const }],
         work: 0,
         lastService: 0,
+        emptyQuanta: 0,
       })),
       ...registry.techniques.map((descriptor) => ({
         key: { technique: descriptor.id, scopeKey: "" },
         tier: descriptor.tier,
         descriptor,
-        estimate: descriptor.estimate(view),
+        estimate: this.#estimate(descriptor, view),
+        declared: descriptor.estimate(view),
         status: "pending" as DetectorStatus,
         dependencies: descriptor.watches(view),
         work: 0,
         lastService: 0,
+        emptyQuanta: 0,
       })),
     ].sort(compareJob);
     if (new Set(this.jobs.map((j) => JSON.stringify(j.key))).size !== this.jobs.length)
       throw Error("duplicate-scheduler-job");
+  }
+  /** Declared constants pass through the shared estimator (spec §3.8, §6.1). */
+  #estimate(descriptor: TechniqueDescriptor, view: ReadView): Estimate {
+    return this.#estimator.estimate(descriptor.id, view, descriptor.estimate(view));
   }
   get ticket(): number {
     return this.#ticket;
@@ -107,6 +122,13 @@ export class SchedulingLedger {
   service(key: JobKey): void {
     this.job(key).lastService = ++this.#ticket;
   }
+  /** A served quantum ended without a proposal (deterministic in-run decay input). */
+  noteEmptyQuantum(key: JobKey): void {
+    this.job(key).emptyQuanta += 1;
+  }
+  noteProposal(key: JobKey): void {
+    this.job(key).emptyQuanta = 0;
+  }
   status(
     key: JobKey,
     status: DetectorStatus,
@@ -127,14 +149,19 @@ export class SchedulingLedger {
   advance(view: ReadView, changes: ChangeSet, cold = false): void {
     const rows = invalidate(changes, this.rows);
     this.#view = view;
+    // Decay resets on a candidate-revision change only (spec §3.11); a
+    // same-revision proof addition keeps the counters.
+    const revised = cold || changes.removed.length > 0 || changes.placed.length > 0;
     this.jobs.forEach((job, i) => {
       job.status = cold ? "pending" : rows[i].status;
       job.reason = cold ? undefined : rows[i].reason;
       job.lastService = 0;
+      if (revised) job.emptyQuanta = 0;
       if (job.descriptor) {
         const carried = !cold && (job.status === "exhausted" || job.status === "excluded");
         Object.assign(job, {
-          estimate: job.descriptor.estimate(view),
+          estimate: this.#estimate(job.descriptor, view),
+          declared: job.descriptor.estimate(view),
           dependencies: carried ? rows[i].dependencies : job.descriptor.watches(view),
         });
       }

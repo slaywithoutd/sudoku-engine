@@ -20,7 +20,7 @@ test.each(fixtures)(
     const view = fixtureView(f as unknown as TechniqueFixture),
       cursor = compileTridagon(view, f.expectedPattern as TridagonPlan);
     let proposal;
-    while (true) {
+    for (;;) {
       const n = cursor.next();
       if (n.done) {
         proposal = n.value;

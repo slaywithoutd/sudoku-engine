@@ -30,7 +30,9 @@ export class ForcingGraph {
     for (const edge of index.edges) {
       yield { kind: "work", units: 1 };
       const recipe = edge.recipe;
-      if (recipe.kind === "relation-conflict") continue;
+      // Relation edges keep their own table-based grammar (rule-relation@1 and
+      // chain relation sources); forcing nets stay on cover/scope reasons.
+      if (recipe.kind === "relation-conflict" || recipe.kind === "relation-strong") continue;
       const [literal, other] = edge.literals;
       let reason: ForcingReason;
       if (recipe.kind === "cell-conflict" || recipe.kind === "cell-cover")

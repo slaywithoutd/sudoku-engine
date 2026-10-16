@@ -16,7 +16,9 @@ export type StrongSource =
   | { kind: "cell"; cell: number }
   | { kind: "house"; house: string; symbol: number }
   | { kind: "proved-cover"; source: number; house: string; symbol: number }
-  | { kind: "als"; cells: number[]; house: string; symbols: number[] };
+  | { kind: "als"; cells: number[]; house: string; symbols: number[] }
+  /** Lemma RS: a two-cell relation fact whose surviving rows all satisfy the member pair. */
+  | { kind: "relation"; source: number };
 export interface ChainLink {
   kind: "strong" | "weak";
   source: StrongSource | null;
@@ -93,6 +95,25 @@ export class ChainCertificate extends PatternBuilder {
     yield { kind: "work", units: 1 };
     if (source.kind === "cell") return this.cell(source.cell);
     if (source.kind === "house") return this.house(source.house, source.symbol);
+    if (source.kind === "relation") {
+      const fact = defined(this.view.facts.get(source.source), "fact");
+      const proposition = fact.proposition;
+      if (proposition.kind !== "relation") throw Error("missing-relation-source");
+      const cells = proposition.cells;
+      const domains = cells.map((cell) => this.view.state.domains[cell]);
+      let count = 0;
+      for (const tuple of proposition.tuples) {
+        yield { kind: "work", units: 1 };
+        if (tuple.every((symbol, index) => domains[index] & symbolMask(symbol))) count += 1;
+      }
+      const table = this.add(
+        "table-filter@1",
+        [fact.root, ...cells.map((cell) => this.view.state.domainFacts[cell])],
+        { kind: "table", cells, count, definition: this.next },
+        { cells, box: domains },
+      );
+      return this.add("table-project@1", [table], clause(members));
+    }
     if (source.kind === "proved-cover") {
       const proposition = defined(this.view.facts.get(source.source), "fact").proposition;
       if (proposition.kind !== "cover") throw Error("missing-proved-cover");

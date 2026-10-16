@@ -190,7 +190,7 @@ test("C32-surviving-core-negative: a real complete core witness defeats the visu
   );
   const cursor = compileTridagon(view, f.expectedPattern);
   let answer;
-  while (true) {
+  for (;;) {
     const n = cursor.next();
     if (n.done) {
       answer = n.value;

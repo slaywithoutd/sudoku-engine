@@ -233,6 +233,21 @@ class RootBuilder {
         { constraintId },
       );
     }
+    for (const capability of canonicalCapabilities(assembly.sums)) {
+      const constraintId = constraintFor(capability.premise);
+      requireProof(capability.id === `${constraintId}:sum`, "invalid-capability-id");
+      this.add(
+        "sum@1",
+        Object.freeze({
+          kind: "sum",
+          cells: Object.freeze([...capability.cells]),
+          coefficients: Object.freeze([...capability.coefficients]),
+          total: capability.total,
+        }),
+        [capability.premise],
+        { constraintId },
+      );
+    }
   }
   finish(): ReadonlyMap<FactId, Fact> {
     for (const node of this.#nodes.values()) rootCounts.set(node, this.#facts.size);

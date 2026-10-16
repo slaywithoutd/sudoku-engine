@@ -80,11 +80,21 @@ export function* initializationReservation(
       { constraintId: handles.get(relation.premise) },
     );
   }
+  for (const sum of sorted(assembly.sums)) {
+    yield { kind: "work", units: 1 };
+    add(
+      "sum@1",
+      { kind: "sum", cells: sum.cells, coefficients: sum.coefficients, total: sum.total },
+      [sum.premise],
+      { constraintId: handles.get(sum.premise) },
+    );
+  }
   const scopeEntries = [
     ...problem.constraints,
     ...assembly.allDifferent,
     ...assembly.covers,
     ...assembly.relations,
+    ...assembly.sums,
   ].reduce((total, scope) => total + scope.cells.length, 0);
   const tupleEntries = assembly.relations.reduce(
     (total, relation) => total + relation.cells.length * relation.tuples.length,

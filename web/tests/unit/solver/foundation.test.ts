@@ -343,11 +343,11 @@ test("C01 independently checks the one-hole placement after checked maintenance"
   if (!assembly.ok) throw Error("invalid fixture");
   let view = initialize(assembly.value, "primary");
   for (const rule of view.assembly.problem.constraints) {
-    while (true) {
+    for (;;) {
       const event = [...view.assembly.modules.get(rule.id)!.propagate(view, rule)].find(
         (e) => e.kind === "proposal",
       );
-      if (!event || event.kind !== "proposal") break;
+      if (!event) break;
       view = commitChecked(view, assertSound(view, event.proposal)).view;
     }
   }

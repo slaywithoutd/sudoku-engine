@@ -1,9 +1,10 @@
 import "./styles.css";
 import { openRepository, type Repository } from "./storage/repository";
 import { emptyLibrary } from "./domain/library";
+import { defined } from "./domain/invariants";
 import { mountApplication } from "./app/application";
 import { el, button } from "./ui/dom";
-const root = document.querySelector<HTMLElement>("#app")!;
+const root = defined(document.querySelector<HTMLElement>("#app"), "app-root");
 async function boot(): Promise<void> {
   root.textContent = "Opening your library…";
   let repo: Repository | undefined;

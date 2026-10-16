@@ -94,18 +94,71 @@ export class ChainSources {
           ),
         "invalid-house-strong-source",
       );
+    } else if (source.kind === "relation") {
+      fields(source, ["kind", "source"]);
+      const fact = this.view.facts.get(source.source);
+      requireProof(
+        fact !== undefined &&
+          fact.openAssumptions.length === 0 &&
+          fact.proposition.kind === "relation" &&
+          fact.proposition.cells.length === 2,
+        "invalid-relation-source",
+      );
+      const relation = fact.proposition;
+      const cells = relation.cells;
+      const domains = cells.map((cell) => this.view.state.domains[cell]);
+      const rows = relation.tuples.filter((tuple) =>
+        tuple.every((symbol, index) => domains[index] & symbolMask(symbol)),
+      );
+      // Two positive literals on the two cells, each current, jointly covering every row.
+      requireProof(
+        members.length === 2 &&
+          members.every((literal) => current(this.view, literal)) &&
+          sameValue(
+            members.map((literal) => literal.cell).sort((left, right) => left - right),
+            [...cells],
+          ) &&
+          rows.length > 0 &&
+          rows.every((tuple) =>
+            members.some((literal) => tuple[cells.indexOf(literal.cell)] === literal.symbol),
+          ),
+        "invalid-relation-strong-members",
+      );
+      const table = this.available.get(node.premises[0]);
+      requireProof(
+        node.rule === "table-project@1" &&
+          node.premises.length === 1 &&
+          sameValue(node.parameters, {}) &&
+          table !== undefined &&
+          table.rule === "table-filter@1" &&
+          table.scope.length === 0 &&
+          sameValue(table.premises, [
+            fact.root,
+            ...cells.map((cell) => this.view.state.domainFacts[cell]),
+          ]) &&
+          sameValue(table.parameters, { cells, box: domains }) &&
+          sameValue(table.conclusion, {
+            kind: "table",
+            cells,
+            count: rows.length,
+            definition: table.id,
+          }),
+        "invalid-relation-strong-table",
+      );
     } else {
       requireProof(claimed(source).kind === "als", "unknown-chain-source");
       fields(source, ["kind", "cells", "house", "symbols"]);
       const cells = source.cells,
         house = findHouse(this.view, source.house);
+      // An ALS lives in any proved all-different scope; C17's own runtime still
+      // visits classic houses only, so the source check stays scope-generic.
       requireProof(
         Array.isArray(cells) &&
           distinct(cells) &&
           cells.length >= 1 &&
           cells.length <= 5 &&
           house &&
-          classic(house.cells) &&
+          house.cells.length >= cells.length &&
           cells.every((cell) => house.cells.includes(cell) && !this.view.state.values[cell]),
         "als-out-of-profile",
       );
