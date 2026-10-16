@@ -1648,6 +1648,48 @@ dialog .actions .ghost:first-child {
   pointer-events: none;
   z-index: -1;
 }
+/* Selected cells merge into one shape, drawn by the .selection-fill and
+   .selection-outline overlays below. Colored cells are the exception: their
+   opaque background would hide the fill overlay underneath, so they tint
+   themselves through this layer instead, running edge to edge on every side
+   shared with another selected cell and squaring those corners so neighbours
+   meet flush. Insets and radius mirror OUTLINE_INSET / OUTLINE_RADIUS in
+   selection-outline.ts so the tint sits inside the drawn outline. */
+.cell[aria-selected="true"] {
+  --merge-top: 6%;
+  --merge-right: 6%;
+  --merge-bottom: 6%;
+  --merge-left: 6%;
+  --merge-tl: 12%;
+  --merge-tr: 12%;
+  --merge-br: 12%;
+  --merge-bl: 12%;
+}
+.cell.merged-up {
+  --merge-top: 0;
+  --merge-tl: 0;
+  --merge-tr: 0;
+}
+.cell.merged-right {
+  --merge-right: 0;
+  --merge-tr: 0;
+  --merge-br: 0;
+}
+.cell.merged-down {
+  --merge-bottom: 0;
+  --merge-br: 0;
+  --merge-bl: 0;
+}
+.cell.merged-left {
+  --merge-left: 0;
+  --merge-tl: 0;
+  --merge-bl: 0;
+}
+.cell[data-color][aria-selected="true"]::before {
+  inset: var(--merge-top) var(--merge-right) var(--merge-bottom) var(--merge-left);
+  border-radius: var(--merge-tl) var(--merge-tr) var(--merge-br) var(--merge-bl);
+  corner-shape: round;
+}
 /* Highlight strength for the "seen" and selection overlays below, as a
    layer over whatever the cell already shows. Every highlighted cell keeps
    this strength except colored ones, which drop it so an annotation color
@@ -1677,12 +1719,43 @@ dialog .actions .ghost:first-child {
 .cell[aria-selected="true"] {
   z-index: 1;
 }
-.cell[aria-selected="true"]::before {
-  background: color-mix(in srgb, var(--selection) var(--selected-opacity), transparent);
-  box-shadow: inset 0 0 0 2px var(--selection-border);
+/* The selection fill lives in the overlay under the cells; the cell's own
+   layer stays clear (hover included) so the merged shape shows through. */
+.board .cell[aria-selected="true"]::before {
+  background: none;
 }
-:root[data-contrast="high"] .cell[aria-selected="true"]::before {
-  box-shadow: inset 0 0 0 3px var(--selection-border);
+.board .cell[data-color][aria-selected="true"]::before {
+  background: color-mix(in srgb, var(--selection) var(--selected-opacity), transparent);
+}
+/* One merged shape per selection region: the fill sits below the cells and
+   the outline above the grid lines. */
+.selection-fill,
+.selection-outline {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  overflow: visible;
+}
+.selection-fill {
+  z-index: 0;
+}
+.selection-outline {
+  z-index: 3;
+}
+.selection-fill path {
+  fill: color-mix(in srgb, var(--selection) var(--selected-opacity), transparent);
+  --selected-opacity: 65%;
+}
+.selection-outline path {
+  fill: none;
+  stroke: var(--selection-border);
+  stroke-width: 2px;
+  stroke-linejoin: round;
+}
+:root[data-contrast="high"] .selection-outline path {
+  stroke-width: 3px;
 }
 /* Marks the anchor cell of a multi-selection (keyboard focus, copy/paste
    target) without fighting the shared selection background above — an
