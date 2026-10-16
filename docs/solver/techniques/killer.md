@@ -25,7 +25,8 @@ The 45 rule. A container is a full-cover scope sum — every `all-different@1` r
 `variantEntries` (`techniques/manifest.ts`) is the catalogue of the K families and
 `techniques/profiles.ts` the leaf module holding `variants-expanded@1` and
 `variants-conditional@1`, which append the K rows to the classic profile.
-`profileFor(problem)` selects a variant profile exactly when the problem declares
-a variant rule, so a classic board keeps `classic-expanded@1` and its trace. A
+`profileFor(problem)` selects a variant profile exactly when the problem has a
+constraint other than `all-different@1`, so a classic board (and a diagonal-only
+board) keeps `classic-expanded@1` and its trace. A
 problem whose profile is not ready yields an `error` result with code
 `profile-incomplete` instead of a rejected promise.

@@ -49,9 +49,10 @@ A scored policy scores where it is allowed to and behaves like `@1` everywhere
 else. In Explain that means only states whose active tier is at or above
 `scoreFromTier`; in Analyze, every tier. Where the score does not act the policy
 keeps the declared estimates, the canonical order and the `@1` cadence of every
-fourth ticket, which is what keeps tiers 0–2 byte-identical to `@1`. Where it
+fourth ticket, which is what keeps tiers 0–2 byte-identical to `@1` at the
+default `scoreFromTier` (any value of 3 or more). Where it
 does act, the job's estimate comes from the trained model, `effectiveHit =
-hit >> min(decayShiftCap, emptyQuanta)` decays a job that keeps returning
+max(1, hit >> min(decayShiftCap, emptyQuanta))` decays a job that keeps returning
 nothing (the counter resets on a proposal or a candidate-revision change), and
 every `rotationEvery`-th ticket serves the oldest eligible job.
 
@@ -65,8 +66,9 @@ never swapped at runtime: one policy version, one weight table (D094).
 
 Both `@2` policies ship **disabled**; `explain-fair@1` and `analyze-fair@1` are
 the defaults. The ablation of spec §3.12 failed metrics A, B and D on the
-held-out partition — see the [ablation report](../history/m25-ablation.md) and
-D101. The estimates remain engineering hypotheses; tickets guarantee service
+held-out partition for Explain; Analyze was not measured, and `analyze-fair@2`
+stays disabled with it — see the [ablation report](../history/m25-ablation.md)
+and D101. The estimates remain engineering hypotheses; tickets guarantee service
 independently of them.
 
 ## Selection ownership and acceptance
