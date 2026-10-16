@@ -39,7 +39,7 @@ class AlsAdmission {
           set.cells.length >= 1 &&
           set.cells.length <= 5 &&
           house &&
-          house.cells.length === 9 &&
+          house.cells.length >= set.cells.length &&
           set.cells.every((cell) => house.cells.includes(cell) && !view.state.values[cell]),
         "als-size-or-house",
       );

@@ -26,11 +26,15 @@ class NetInterrupted extends Error {
   }
 }
 function localFailure(code: string): never {
+  interruption(code);
+  throw Error("net-local-rejected:" + code);
+}
+/** Resource codes interrupt the net; any other code returns normally. */
+function interruption(code: string): void {
   if (code === "proof-time-limit") throw new NetInterrupted("time-limit");
   if (code === "proof-work-limit") throw new NetInterrupted("work-limit");
   if (code.startsWith("proof-") && code.endsWith("limit"))
     throw new NetInterrupted("proof-step-limit");
-  throw Error("net-local-rejected:" + code);
 }
 const basics = [
   new NakedSingles(),
@@ -269,7 +273,14 @@ class NetSearch {
         for (const vertex of session.check(selected, this.context.limits)) {
           if (vertex.kind === "work") yield vertex;
           else if (vertex.kind === "branch-checked") checked = vertex.certificate;
-          else localFailure(vertex.code);
+          else {
+            // A basic step the local checker refuses (observed as
+            // `duplicate-placement` on kropki and mixed corpus boards) ends
+            // the branch with no certificate. Nothing is concluded from it;
+            // only resource codes interrupt.
+            interruption(vertex.code);
+            return;
+          }
         }
         if (!checked) return;
         const map = this.dag.append(before, checked);

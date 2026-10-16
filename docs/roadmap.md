@@ -1,6 +1,6 @@
 # Sudoku platform roadmap
 
-Updated: 2026-09-18. M1 and M2 are merged on master; the solver ships in the app (Analyze/Explain). Benchmark calibration of solver resource defaults is still open. M2 direction is D046–D057; completed planning and proposed choices are D059–D064; integration is D099. M2.5 is approved under D100 and in progress.
+Updated: 2026-10-16. M1 and M2 are merged on master; the solver ships in the app (Analyze/Explain). Benchmark calibration of solver resource defaults is still open. M2 direction is D046–D057; completed planning and proposed choices are D059–D064; integration is D099. M2.5 (D100) is implemented and verified on `feat/m25-engine` and ready to merge: the [whole-suite gate](history/m25-verification.md) passed, and the `@2` policies ship disabled (D101).
 
 ## Delivery sequence
 

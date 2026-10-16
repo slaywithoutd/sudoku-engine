@@ -20,6 +20,7 @@ import {
   CoverCountStrategy,
   AllDifferentSubsetStrategy,
 } from "./counts";
+import { LinearCombineStrategy, LinearSumStrategy } from "./linear";
 import { TableChecker } from "./tables";
 import { SubsetCountChecker } from "./subset-count";
 import type { TableDefinition } from "./tables";
@@ -119,6 +120,7 @@ export function assertM2RootAssemblyBounds(assembly: Assembly): void {
     "allDifferent",
     "covers",
     "relations",
+    "sums",
     "peers",
     "supportSignature",
   ]);
@@ -134,6 +136,10 @@ export function assertM2RootAssemblyBounds(assembly: Assembly): void {
     Array.isArray(assembly.relations) && assembly.relations.length <= 256,
     "root-relation-limit",
   );
+  requireProof(
+    Array.isArray(assembly.sums) && assembly.sums.length <= M2_ROOT_LIMITS.sums,
+    "root-sum-limit",
+  );
   const problem = assembly.problem;
   requireProof(
     problem.cells.length +
@@ -141,7 +147,8 @@ export function assertM2RootAssemblyBounds(assembly: Assembly): void {
       problem.constraints.length +
       assembly.allDifferent.length +
       assembly.covers.length +
-      assembly.relations.length <=
+      assembly.relations.length +
+      assembly.sums.length <=
       M2_ROOT_LIMITS.nodes,
     "root-node-limit",
   );
@@ -153,6 +160,7 @@ export function assertM2RootAssemblyBounds(assembly: Assembly): void {
     assembly.allDifferent,
     assembly.covers,
     assembly.relations,
+    assembly.sums,
   ])
     requireDenseRootArray(values);
   for (const rule of problem.constraints) {
@@ -179,7 +187,13 @@ export function assertM2RootAssemblyBounds(assembly: Assembly): void {
           key.length <= 64 &&
           descriptor.enumerable &&
           "value" in descriptor &&
-          (typeof descriptor.value === "boolean" || Number.isSafeInteger(descriptor.value)),
+          // Scalars only: booleans, safe integers and short enumeration tags such
+          // as difference@1's kind. Nested data belongs in capabilities, not roots.
+          (typeof descriptor.value === "boolean" ||
+            Number.isSafeInteger(descriptor.value) ||
+            (typeof descriptor.value === "string" &&
+              descriptor.value.length >= 1 &&
+              descriptor.value.length <= 32)),
         "invalid-root-parameters",
       );
     }
@@ -207,6 +221,25 @@ export function assertM2RootAssemblyBounds(assembly: Assembly): void {
         "invalid-root-tuple",
       );
     }
+  }
+  for (const sum of assembly.sums) {
+    requireRootData(sum, ["id", "cells", "coefficients", "total", "premise"]);
+    requireRootIdentifier(sum.id, 16);
+    requireRootScope(sum.cells);
+    requireProof(sum.cells.length <= M2_ROOT_LIMITS.sumCells, "root-sum-size-limit");
+    requireDenseRootArray(sum.coefficients);
+    requireProof(
+      sum.coefficients.length === sum.cells.length &&
+        sum.coefficients.every(
+          (coefficient: unknown) =>
+            Number.isSafeInteger(coefficient) &&
+            coefficient !== 0 &&
+            Math.abs(coefficient as number) <= M2_ROOT_LIMITS.sumCoefficient,
+        ) &&
+        Number.isSafeInteger(sum.total) &&
+        Math.abs(sum.total) <= M2_ROOT_LIMITS.sumTotal,
+      "invalid-root-sum",
+    );
   }
   const capabilityFields = new Map([
     [assembly.allDifferent, ["id", "cells", "premise"]],
@@ -466,6 +499,7 @@ export class PrimitiveRegistry {
     ["all-different@1", declaredRule],
     ["cover@1", declaredRule],
     ["relation@1", declaredRule],
+    ["sum@1", declaredRule],
     ["domain-restrict@1", restrictDomain],
     ["weak-link@1", weakLink],
     ["cover-clause@1", coverClause],
@@ -480,6 +514,8 @@ export class PrimitiveRegistry {
       new HallStrategy(),
       new CoverCountStrategy(),
       new AllDifferentSubsetStrategy(),
+      new LinearSumStrategy(),
+      new LinearCombineStrategy(),
     ].map(
       (strategy) =>
         [

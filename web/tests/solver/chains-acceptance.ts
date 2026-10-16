@@ -130,6 +130,7 @@ export class IndependentChainProof extends FixtureProof {
         this.clause(cells.map((cell) => ({ cell, symbol: source.symbol, positive: true }))),
       );
     }
+    if (source.kind !== "als") throw new Error("acceptance builder handles classic sources only");
     const house = this.view.assembly.allDifferent.find((h) => h.id === source.house)!.cells;
     const fact = [...this.view.facts.values()].find(
       (f) =>

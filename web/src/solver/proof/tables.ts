@@ -8,6 +8,8 @@ import {
 } from "./primitives";
 import type { CheckContext, CheckedInference, PrimitiveInput, ProofNode } from "./types";
 import { symbolMask } from "../state/read";
+import { symbolValue } from "../problem";
+import type { EngineProblem } from "../problem";
 import { defined } from "../invariants";
 
 export interface TableDefinition {
@@ -91,7 +93,7 @@ export class TableChecker {
     );
   }
 
-  private *rows(node: ProofNode): Generator<readonly number[] | null> {
+  private *rows(node: ProofNode, problem: EngineProblem): Generator<readonly number[] | null> {
     yield null;
     if (node.conclusion.kind === "relation") {
       yield* node.conclusion.tuples;
@@ -99,7 +101,7 @@ export class TableChecker {
     }
     const table = this.definition(node);
     if (table.operation === "union") {
-      for (const child of table.children) yield* this.rows(child);
+      for (const child of table.children) yield* this.rows(child, problem);
       return;
     }
     if (table.operation === "join" || table.operation === "join-filter") {
@@ -107,12 +109,12 @@ export class TableChecker {
         leftCells = this.cells(left),
         rightCells = this.cells(right);
       const shared = leftCells.filter((cell) => rightCells.includes(cell));
-      for (const leftRow of this.rows(left)) {
+      for (const leftRow of this.rows(left, problem)) {
         if (leftRow === null) {
           yield null;
           continue;
         }
-        for (const rightRow of this.rows(right)) {
+        for (const rightRow of this.rows(right, problem)) {
           if (rightRow === null) {
             yield null;
             continue;
@@ -159,7 +161,7 @@ export class TableChecker {
       return;
     }
     const alternatives = table.box.map((mask) =>
-      Array.from({ length: 9 }, (_, i) => i + 1).filter((symbol) => mask & symbolMask(symbol)),
+      problem.symbols.filter((symbol) => mask & symbolMask(symbol)),
     );
     const indexes = alternatives.map(() => 0);
     if (alternatives.some((values) => values.length === 0)) return;
@@ -170,12 +172,23 @@ export class TableChecker {
       for (const constraint of table.constraints) {
         const proposition = constraint.conclusion;
         requireProof(
-          proposition.kind === "relation" || proposition.kind === "all-different",
+          proposition.kind === "relation" ||
+            proposition.kind === "all-different" ||
+            proposition.kind === "sum",
           "invalid-table-constraint",
         );
         const values = proposition.cells.map((cell) => row[table.cells.indexOf(cell)]);
         if (proposition.kind === "all-different") valid &&= new Set(values).size === values.length;
-        else {
+        else if (proposition.kind === "sum") {
+          // A linear equation filters a leaf exactly like a relation would; the
+          // symbol value table is the same one lemma LS uses.
+          let total = 0;
+          for (let index = 0; index < values.length; index++) {
+            total += proposition.coefficients[index] * symbolValue(problem, values[index]);
+            yield null;
+          }
+          valid &&= total === proposition.total;
+        } else {
           let match = false;
           for (const tuple of proposition.tuples) {
             match ||= sameValue(values, tuple);
@@ -238,7 +251,7 @@ export class TableChecker {
             sameValue(claim, clause(claim.alternatives)),
           "invalid-table-projection",
         );
-        for (const row of this.rows(sources[0])) {
+        for (const row of this.rows(sources[0], context.view.assembly.problem)) {
           if (row !== null) {
             let satisfied = false;
             for (const value of claim.alternatives) {
@@ -277,7 +290,7 @@ export class TableChecker {
           "invalid-table-projection",
         );
         const seen = new Uint8Array(keys.length);
-        for (const row of this.rows(sources[0])) {
+        for (const row of this.rows(sources[0], context.view.assembly.problem)) {
           if (row !== null) {
             const key = claim.cells.map((cell) => row[originalCells.indexOf(cell)]).join(",");
             const index = keys.indexOf(key);
@@ -298,7 +311,7 @@ export class TableChecker {
       requireProof(claim.kind === "false" || cells.includes(cell), "invalid-table-projection");
       let mask = 0,
         count = 0;
-      for (const row of this.rows(sources[0])) {
+      for (const row of this.rows(sources[0], context.view.assembly.problem)) {
         if (row !== null) {
           count++;
           if (cell !== -1) mask |= symbolMask(row[cells.indexOf(cell)]);
@@ -383,7 +396,9 @@ export class TableChecker {
       requireProof(
         constraints.every(
           (source) =>
-            (source.conclusion.kind === "relation" || source.conclusion.kind === "all-different") &&
+            (source.conclusion.kind === "relation" ||
+              source.conclusion.kind === "all-different" ||
+              source.conclusion.kind === "sum") &&
             source.conclusion.cells.every((cell) => cells.includes(cell)),
         ),
         "invalid-table-constraint",
@@ -498,7 +513,7 @@ export class TableChecker {
     this.#definitionNodes.set(node.id, node);
     let count = definition.operation === "union" ? definition.count : 0;
     if (definition.operation !== "union")
-      for (const row of this.rows(node)) {
+      for (const row of this.rows(node, context.view.assembly.problem)) {
         if (row !== null) count++;
         yield 1;
       }

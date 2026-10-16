@@ -12,6 +12,8 @@ import type {
   RuleModule,
 } from "./types";
 import { symbolMask } from "../state/read";
+import { symbolValue } from "../problem";
+import { canonicalEquation, type Equation } from "./linear-rule";
 
 /** Versioned strategy for the only production rule supported in M2. */
 export class AllDifferentRule implements RuleModule {
@@ -87,12 +89,28 @@ export class AllDifferentRule implements RuleModule {
             premise,
           }))
         : [];
+    // A full house also fixes its arithmetic: every symbol appears once, so the
+    // values add up to the symbol total (lemma M4). Innies/outies start here.
+    const sums =
+      covers.length > 0
+        ? [{ id: `${rule.id}:sum`, ...this.houseEquation(rule, context.problem), premise }]
+        : [];
     return {
       allDifferent: [{ id: rule.id, cells: [...rule.cells], premise }],
       covers,
       relations: [],
-      primitiveIds: ["rule-instance@1", "all-different@1", "cover@1"],
+      sums,
+      primitiveIds: ["rule-instance@1", "all-different@1", "cover@1", "sum@1"],
     };
+  }
+
+  /** Unit-coefficient equation of a full house: the sum of every symbol value. */
+  houseEquation(rule: ConstraintInstance, problem: EngineProblem): Equation {
+    return canonicalEquation({
+      cells: rule.cells,
+      coefficients: rule.cells.map(() => 1),
+      total: problem.symbols.reduce((total, symbol) => total + symbolValue(problem, symbol), 0),
+    });
   }
 
   *propagate(view: ReadView, rule: ConstraintInstance): Discovery {
@@ -166,6 +184,12 @@ export class AllDifferentRule implements RuleModule {
         requireProof(
           sameValue(input.conclusion, { kind: "all-different", cells: rule.cells }),
           "invalid-all-different-scope",
+        );
+      } else if (input.rule === "sum@1") {
+        requireProof(
+          rule.cells.length === problem.symbols.length &&
+            sameValue(input.conclusion, { kind: "sum", ...this.houseEquation(rule, problem) }),
+          "invalid-house-sum",
         );
       } else {
         requireProof(

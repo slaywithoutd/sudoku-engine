@@ -53,6 +53,7 @@ describe("original-problem exact enumeration", () => {
       covers: [],
       allDifferent: [],
       relations: [],
+      sums: [],
     };
     expect(
       [...exactSteps(problem, misleading)].filter((event) => event.kind === "witness"),
@@ -97,7 +98,13 @@ describe("original-problem exact enumeration", () => {
       validate: () => [],
       checkComplete: (_rule: unknown, assignment: { values: readonly number[] }) =>
         assignment.values[0] === 3 && assignment.values[1] === 2,
-      capabilities: () => ({ allDifferent: [], covers: [], relations: [], primitiveIds: [] }),
+      capabilities: () => ({
+        allDifferent: [],
+        covers: [],
+        relations: [],
+        sums: [],
+        primitiveIds: [],
+      }),
       *propagate(): Generator<never> {
         throw new Error("discovery called");
       },

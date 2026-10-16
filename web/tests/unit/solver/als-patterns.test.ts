@@ -342,7 +342,7 @@ test.each(["c18@1", "c19@1"])(
       if (event.kind === "work") alsWork++;
       else if (event.kind === "ready") event.value.dispose();
     }
-    expect(implicationWork).toBe(2750);
+    expect(implicationWork).toBe(2777); // 2750 + 27 house-sum sources (M2.5 lemma M4)
     for (const cap of [implicationWork, implicationWork + 1 + alsWork]) {
       const context = discoveryContext();
       context.limits.workUnits = cap;

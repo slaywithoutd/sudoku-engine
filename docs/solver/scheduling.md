@@ -37,6 +37,40 @@ then tier. Remaining ties compare technique, canonical effects and canonical pro
 These weights, priorities and defaults are engineering hypotheses, not calibrated
 performance claims.
 
+## Scored policies (M2.5)
+
+`explain-fair@2` and `analyze-fair@2` add `PolicyParameters` — `scoreFromTier`
+(default 3), `rotationEvery` (4) and `decayShiftCap` (4) — to the frozen options
+and therefore to `canonicalOptionsKey()`. `schedulingOptions()` carries the
+parameters exactly when the policy is scored; an unscored policy with parameters
+is rejected (`policy-parameters-unscored`).
+
+A scored policy scores where it is allowed to and behaves like `@1` everywhere
+else. In Explain that means only states whose active tier is at or above
+`scoreFromTier`; in Analyze, every tier. Where the score does not act the policy
+keeps the declared estimates, the canonical order and the `@1` cadence of every
+fourth ticket, which is what keeps tiers 0–2 byte-identical to `@1` at the
+default `scoreFromTier` (any value of 3 or more). Where it
+does act, the job's estimate comes from the trained model, `effectiveHit =
+max(1, hit >> min(decayShiftCap, emptyQuanta))` decays a job that keeps returning
+nothing (the counter resets on a proposal or a candidate-revision change), and
+every `rotationEvery`-th ticket serves the oldest eligible job.
+
+`boardFeatures(view)` is the `board-features@1` integer vector, computed once per
+view identity in O(cells × symbols) and never building an index.
+`TechniqueEstimator` turns it into `hit`, `cost` and `gain` per technique through
+fixed-point integer weights (×1024, output clamped 1…1,024); a family without a
+trained entry keeps its declared constants, so the constant model reproduces `@1`
+exactly. The trained table `scheduling/model-1.ts` is validated at load and is
+never swapped at runtime: one policy version, one weight table (D094).
+
+Both `@2` policies ship **disabled**; `explain-fair@1` and `analyze-fair@1` are
+the defaults. The ablation of spec §3.12 failed metrics A, B and D on the
+held-out partition for Explain; Analyze was not measured, and `analyze-fair@2`
+stays disabled with it — see the [ablation report](../history/m25-ablation.md)
+and D101. The estimates remain engineering hypotheses; tickets guarantee service
+independently of them.
+
 ## Selection ownership and acceptance
 
 `new StepSelection(view,registry,options)` requires an authentic publication.
@@ -67,6 +101,12 @@ is a one-shot helper which disposes its owner; workers that continue after
 acceptance must keep a StepSelection instance.
 
 ## Work and storage accounting
+
+An open check no longer reserves a fixed `3 × stepBytes`: the checker asks for
+storage before each bounded copy through an optional gate and the selection
+grows that one lease with the actual copies (D102). A refused request rejects
+the check as `workspace-byte-limit`, which the selection already treats as an
+interruption.
 
 `Budget` has spend(units):boolean and remaining():number. `WorkBudget` also has
 charge(units), used and reserve(maximum). A WorkHold excludes its maximum from

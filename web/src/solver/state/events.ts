@@ -7,7 +7,7 @@ export type { Ledger, LedgerEntry, DetectorStatus } from "../techniques/types";
 
 export type Watch =
   | { readonly kind: "cell"; readonly cell: CellId }
-  | { readonly kind: "cover" | "relation" | "constraint"; readonly id: string }
+  | { readonly kind: "cover" | "relation" | "sum" | "constraint"; readonly id: string }
   | { readonly kind: "graph" | "all" };
 export interface ChangeSet {
   readonly before: StateKey;
@@ -17,6 +17,7 @@ export interface ChangeSet {
   readonly cells: readonly CellId[];
   readonly coverIds: readonly string[];
   readonly relationIds: readonly string[];
+  readonly sumIds: readonly string[];
   readonly constraintIds: readonly ConstraintId[];
   readonly graphChanged: boolean;
   /** Accepted proof-prefix changes may add sources without a candidate revision. */
@@ -34,6 +35,8 @@ function affected(watch: Watch, changes: ChangeSet): boolean {
       return !!changes.sourceChanged || changes.coverIds.includes(watch.id);
     case "relation":
       return !!changes.sourceChanged || changes.relationIds.includes(watch.id);
+    case "sum":
+      return !!changes.sourceChanged || changes.sumIds.includes(watch.id);
     case "constraint":
       return changes.constraintIds.includes(watch.id);
     default:

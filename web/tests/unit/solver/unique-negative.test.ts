@@ -24,6 +24,7 @@ import { getTechniques } from "../../../src/solver/techniques/registry";
 import { revokeUniqueParent } from "../../../src/solver/evidence";
 import { compileUnique } from "../../../src/solver/techniques/unique-compiler";
 import { mockRuleRegistry } from "../../solver/mock-rules";
+import { productionRules } from "../../../src/solver/rules/registry";
 import { oracle } from "../../solver/oracle";
 import type { DeductionProposal } from "../../../src/solver/proof/types";
 import type { ReadView } from "../../../src/solver/state/types";
@@ -420,5 +421,36 @@ test("affected mixed rules reject despite authentic uniqueness; disjoint rules p
     } finally {
       h.operation.dispose();
     }
+  }
+}, 30000);
+
+test("a production relation touching the rectangle rejects the trade (D093 on M2.5 modules)", () => {
+  // core[0] < partner where the partner is already placed at 9: the production
+  // order@1 module propagates nothing (every core candidate is below 9), so the
+  // fixture prefix is unchanged, yet the affected rule is not all-different.
+  const core = seed.expectedPattern.cells as number[];
+  const placed = seed.preState.values as number[];
+  const partner = Array.from({ length: 81 }, (_, c) => c).find(
+    (c) => !core.includes(c) && placed[c] === 9,
+  )!;
+  const h = uniqueHarness(seed, {
+    constraints: [
+      { id: "extra-order:0", type: "order@1", cells: [core[0], partner], parameters: {} },
+    ],
+    modules: productionRules(),
+  });
+  try {
+    const proposal = independentNamedUnique(
+      h.operation.view,
+      seed,
+      h.parent.evidenceId,
+      seed.expectedEffects[0] as any,
+    );
+    expect([...checkProposal(proposal, context(h))].at(-1)).toEqual({
+      kind: "rejected",
+      code: "unique-unsupported-rule-preservation",
+    });
+  } finally {
+    h.operation.dispose();
   }
 }, 30000);

@@ -142,6 +142,7 @@ describe("deterministic scheduling ownership", () => {
       cells: [],
       coverIds: [],
       relationIds: [],
+      sumIds: [],
       constraintIds: [],
       graphChanged: false,
       sourceChanged: true,

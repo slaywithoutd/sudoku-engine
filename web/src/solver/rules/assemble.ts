@@ -2,11 +2,13 @@ import { canonicalJson, canonicalProblem, ProblemInputError } from "../problem";
 import { primitiveRegistry } from "../proof/primitives";
 import { defined, unverified, type Unverified } from "../invariants";
 import type { CellId, ConstraintId, ConstraintInstance, EngineProblem, Json } from "../problem";
+import { M2_ROOT_LIMITS } from "../limits";
 import type {
   AllDifferent,
   AssemblyResult,
   Cover,
   FactId,
+  LinearSum,
   Relation,
   RuleCapabilities,
   RuleIssue,
@@ -235,6 +237,7 @@ function validateCapabilities(
     !isDenseArray(claimed.allDifferent) ||
     !isDenseArray(claimed.covers) ||
     !isDenseArray(claimed.relations) ||
+    !isDenseArray(claimed.sums) ||
     !isDenseArray(claimed.primitiveIds)
   )
     return [capabilityIssue(rule, "capability result is incomplete")];
@@ -271,8 +274,42 @@ function validateCapabilities(
     )
       issues.push(capabilityIssue(rule, "relation capability is malformed or duplicated"));
   }
+  // One linear form per rule, named `${rule.id}:sum`; facts.addCapabilities
+  // demands the same name, so the convention is enforced here rather than at
+  // initialization where it would surface as a thrown proof error.
+  for (const capability of claimed.sums) {
+    if (
+      capability?.id !== `${rule.id}:sum` ||
+      !registerId(capability.id) ||
+      !validCells(capability.cells, problem) ||
+      (capability.cells as readonly unknown[]).length > M2_ROOT_LIMITS.sumCells ||
+      !validCoefficients(capability) ||
+      !Number.isSafeInteger(capability.total) ||
+      Math.abs(capability.total as number) > M2_ROOT_LIMITS.sumTotal ||
+      !validPremise(capability.premise, expectedPremise)
+    )
+      issues.push(capabilityIssue(rule, "sum capability is malformed or duplicated"));
+  }
   issues.push(...primitiveIdIssues(rule, capabilities.primitiveIds));
   return issues;
+}
+
+/**
+ * One nonzero bounded integer coefficient per cell. A zero coefficient would
+ * silently drop a cell from the equation, so it is rejected rather than pruned.
+ */
+function validCoefficients(capability: Unverified<LinearSum>): boolean {
+  return (
+    isDenseArray(capability?.coefficients) &&
+    capability.coefficients.length === (capability.cells as readonly unknown[]).length &&
+    capability.coefficients.every(
+      (coefficient) =>
+        typeof coefficient === "number" &&
+        Number.isSafeInteger(coefficient) &&
+        coefficient !== 0 &&
+        Math.abs(coefficient) <= M2_ROOT_LIMITS.sumCoefficient,
+    )
+  );
 }
 
 /** Every tuple is a dense array of problem symbols, one per relation cell. */
@@ -324,6 +361,14 @@ function freezeRelation(capability: Relation): Relation {
   });
 }
 
+function freezeSum(capability: LinearSum): LinearSum {
+  return Object.freeze({
+    ...capability,
+    cells: Object.freeze([...capability.cells]),
+    coefficients: Object.freeze([...capability.coefficients]),
+  });
+}
+
 function buildPeers(
   problem: EngineProblem,
   allDifferent: readonly AllDifferent[],
@@ -363,10 +408,11 @@ export class CapabilityAssembler {
     if (validationIssues.length > 0) return failure(validationIssues);
     const collected = this.#collectCapabilities(normalized);
     if (collected.issues.length > 0) return failure(collected.issues);
-    const { modules, allDifferent, covers, relations } = collected;
+    const { modules, allDifferent, covers, relations, sums } = collected;
     allDifferent.sort((left, right) => compareText(left.id, right.id));
     covers.sort((left, right) => compareText(left.id, right.id));
     relations.sort((left, right) => compareText(left.id, right.id));
+    sums.sort((left, right) => compareText(left.id, right.id));
     const moduleTypes = [...new Set(modules.map(([, module]) => module.type))].sort();
     const supportSignature = canonicalJson({
       primitiveIds: primitiveRegistry.ids,
@@ -380,6 +426,7 @@ export class CapabilityAssembler {
         allDifferent: Object.freeze(allDifferent),
         covers: Object.freeze(covers),
         relations: Object.freeze(relations),
+        sums: Object.freeze(sums),
         peers: buildPeers(normalized, allDifferent),
         supportSignature,
       }),
@@ -412,6 +459,7 @@ export class CapabilityAssembler {
       allDifferent: [],
       covers: [],
       relations: [],
+      sums: [],
       issues: [],
     };
     const usedCapabilityIds = new Set<string>();
@@ -432,6 +480,7 @@ export class CapabilityAssembler {
           collected.allDifferent.push(...capabilities.allDifferent.map(freezeAllDifferent));
           collected.covers.push(...capabilities.covers.map(freezeCover));
           collected.relations.push(...capabilities.relations.map(freezeRelation));
+          collected.sums.push(...capabilities.sums.map(freezeSum));
         }
       } catch (error) {
         collected.issues.push(
@@ -451,6 +500,7 @@ interface CollectedCapabilities {
   readonly allDifferent: AllDifferent[];
   readonly covers: Cover[];
   readonly relations: Relation[];
+  readonly sums: LinearSum[];
   readonly issues: RuleIssue[];
 }
 

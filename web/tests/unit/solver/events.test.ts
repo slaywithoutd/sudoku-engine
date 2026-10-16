@@ -13,6 +13,7 @@ const changes: ChangeSet = {
   constraintIds: ["a"],
   coverIds: ["a:1"],
   relationIds: ["r"],
+  sumIds: ["s"],
   graphChanged: true,
 };
 test("invalidates every affected dependency and all graph consumers while preserving unrelated exhaustion", () => {
