@@ -121,6 +121,8 @@ describe("M2.5 composition and non-regression (T10)", () => {
     }
   });
 
+  // Harness allowance, not a latency benchmark: measured alone at 38s on mains
+  // and 86-127s on battery (Balanced plan), past the 120s project default.
   test("300 generated mixed problems: exact counts match the oracle and every accepted deduction is sound", () => {
     let deductions = 0,
       multiple = 0;
@@ -173,5 +175,5 @@ describe("M2.5 composition and non-regression (T10)", () => {
     }
     expect(deductions).toBeGreaterThan(100);
     expect(multiple).toBeGreaterThan(20);
-  });
+  }, 300_000);
 });
