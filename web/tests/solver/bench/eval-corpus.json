@@ -1,0 +1,1316 @@
+{
+  "schema": 1,
+  "cases": [
+    {
+      "id": "easy",
+      "family": "named",
+      "puzzle": "530070000600195000098000060800060003400803001700020006060000280000419005000080079",
+      "givens": 30,
+      "source": "repository fixture tests/fixtures.ts PUZZLE",
+      "count": "1",
+      "solution": "534678912672195348198342567859761423426853791713924856961537284287419635345286179",
+      "singles": "naked"
+    },
+    {
+      "id": "hidden-singles",
+      "family": "derived",
+      "puzzle": "020604003340001006009003070000000080006000500100700040000290010900500308008007000",
+      "givens": 26,
+      "source": "SOLUTION transformed and thinned while naked+hidden singles still solve it",
+      "count": "1",
+      "solution": "825674193347921856619853472534169287796482531182735649463298715971546328258317964",
+      "singles": "hidden",
+      "seed": 1
+    },
+    {
+      "id": "seventeen",
+      "family": "named",
+      "puzzle": "000000010400000000020000000000050407008000300001090000300400200050100000000806000",
+      "givens": 17,
+      "source": "17-clue puzzle, Gordon Royle's minimum-Sudoku collection",
+      "count": "1",
+      "solution": "693784512487512936125963874932651487568247391741398625319475268856129743274836159",
+      "singles": "hidden"
+    },
+    {
+      "id": "escargot",
+      "family": "named",
+      "puzzle": "100007090030020008009600500005300900010080002600004000300000010040000007007000300",
+      "givens": 23,
+      "source": "AI Escargot, Arto Inkala, 2006",
+      "count": "1",
+      "solution": "162857493534129678789643521475312986913586742628794135356478219241935867897261354",
+      "singles": "none"
+    },
+    {
+      "id": "inkala-2012",
+      "family": "named",
+      "puzzle": "800000000003600000070090200050007000000045700000100030001000068008500010090000400",
+      "givens": 21,
+      "source": "Arto Inkala, 2012 ('world's hardest Sudoku')",
+      "count": "1",
+      "solution": "812753649943682175675491283154237896369845721287169534521974368438526917796318452",
+      "singles": "none"
+    },
+    {
+      "id": "golden-nugget",
+      "family": "named",
+      "puzzle": "000000039000001005003050800008090006070002000100400000009080050020000600400700000",
+      "givens": 21,
+      "source": "Golden Nugget, tarek, Sudoku Players' Forum, 2007",
+      "count": "1",
+      "solution": "751846239892371465643259871238197546974562318165438927319684752527913684486725193",
+      "singles": "none"
+    },
+    {
+      "id": "anti-brute-force",
+      "family": "named",
+      "puzzle": "000000000000003085001020000000507000004000100090000000500000073002010000000040009",
+      "givens": 17,
+      "source": "Grid designed against brute-force search, Wikipedia 'Sudoku solving algorithms'",
+      "count": "1",
+      "solution": "987654321246173985351928746128537694634892157795461832519286473472319568863745219",
+      "singles": "hidden"
+    },
+    {
+      "id": "norvig-hard1",
+      "family": "named",
+      "puzzle": "000006000059000008200008000045000000003000000006003054000325006000000000000000000",
+      "givens": 17,
+      "source": "hard1, Peter Norvig, 'Solving Every Sudoku Puzzle' (not a proper puzzle)",
+      "count": "2+",
+      "singles": "none",
+      "heavy": true
+    },
+    {
+      "id": "empty",
+      "family": "named",
+      "puzzle": "000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+      "givens": 0,
+      "source": "empty grid",
+      "count": "2+",
+      "singles": "none"
+    },
+    {
+      "id": "seventeen-minus-one",
+      "family": "derived",
+      "puzzle": "000000010400000000020000000000050407008000300001090000300400200050100000000800000",
+      "givens": 16,
+      "source": "seventeen with its last given removed",
+      "count": "2+",
+      "singles": "none"
+    },
+    {
+      "id": "escargot-poisoned",
+      "family": "derived",
+      "puzzle": "120007090030020008009600500005300900010080002600004000300000010040000007007000300",
+      "givens": 24,
+      "source": "escargot with its first empty cell set to a non-solution digit absent from its peers",
+      "count": "0",
+      "singles": "none"
+    },
+    {
+      "id": "random-00",
+      "family": "random",
+      "puzzle": "710400009290070583800009170120064030009000000030002000000600000940080050000000006",
+      "givens": 28,
+      "source": "transformed SOLUTION thinned to random givens",
+      "count": "2+",
+      "singles": "none",
+      "seed": 1831211008
+    },
+    {
+      "id": "random-01",
+      "family": "random",
+      "puzzle": "009000800420010000010090000900060000001409260564800700030050000007000020040200076",
+      "givens": 27,
+      "source": "transformed SOLUTION thinned to random givens",
+      "count": "2+",
+      "singles": "none",
+      "seed": 1831211009
+    },
+    {
+      "id": "random-02",
+      "family": "random",
+      "puzzle": "000090008000080000790120306000050000300001257850304009070530900901000500003906400",
+      "givens": 31,
+      "source": "transformed SOLUTION thinned to random givens",
+      "count": "2+",
+      "singles": "none",
+      "seed": 1831211010
+    },
+    {
+      "id": "random-03",
+      "family": "random",
+      "puzzle": "087032000042800300003009002000000908810000040600000003096051004401203069070600530",
+      "givens": 33,
+      "source": "transformed SOLUTION thinned to random givens",
+      "count": "2+",
+      "singles": "none",
+      "seed": 1831211011
+    },
+    {
+      "id": "random-04",
+      "family": "random",
+      "puzzle": "073085000080090503500120890050000000018300000000002708004000605361950470005000089",
+      "givens": 33,
+      "source": "transformed SOLUTION thinned to random givens",
+      "count": "2+",
+      "singles": "none",
+      "seed": 1831211012
+    },
+    {
+      "id": "random-05",
+      "family": "random",
+      "puzzle": "002801496000060753046790800305482900000009005010500000400920038001000007800100609",
+      "givens": 36,
+      "source": "transformed SOLUTION thinned to random givens",
+      "count": "2+",
+      "singles": "none",
+      "seed": 1831211013
+    },
+    {
+      "id": "random-06",
+      "family": "random",
+      "puzzle": "570009000600370000120085007807060002000000090050290670905107006700802004204006703",
+      "givens": 35,
+      "source": "transformed SOLUTION thinned to random givens",
+      "count": "2+",
+      "singles": "none",
+      "seed": 1831211014
+    },
+    {
+      "id": "random-07",
+      "family": "random",
+      "puzzle": "145070693000000000000060000070025030004831570500600010000010200200480950080050000",
+      "givens": 30,
+      "source": "transformed SOLUTION thinned to random givens",
+      "count": "2+",
+      "singles": "none",
+      "seed": 1831211015
+    },
+    {
+      "id": "random-08",
+      "family": "random",
+      "puzzle": "824057000050001704060200009000000203910003640000040090090080000000002960780009000",
+      "givens": 29,
+      "source": "transformed SOLUTION thinned to random givens",
+      "count": "2+",
+      "singles": "none",
+      "seed": 1831211016
+    },
+    {
+      "id": "random-09",
+      "family": "random",
+      "puzzle": "000000800000804005007902640095200173200700450700600200514000000300009010070000364",
+      "givens": 32,
+      "source": "transformed SOLUTION thinned to random givens",
+      "count": "2+",
+      "singles": "none",
+      "seed": 1831211017
+    },
+    {
+      "id": "random-10",
+      "family": "random",
+      "puzzle": "002400007000307041000000300201000030060000000805001060004000090718000000050000078",
+      "givens": 24,
+      "source": "transformed SOLUTION thinned to random givens",
+      "count": "2+",
+      "singles": "none",
+      "seed": 1831211018
+    },
+    {
+      "id": "random-11",
+      "family": "random",
+      "puzzle": "300007405050002000760000002607000001000008000000070060000043050003010000005000043",
+      "givens": 23,
+      "source": "transformed SOLUTION thinned to random givens",
+      "count": "2+",
+      "singles": "none",
+      "seed": 1831211019
+    },
+    {
+      "id": "random-12",
+      "family": "random",
+      "puzzle": "107563800003008000685042100800400000700300082030207600204009560000020000308070004",
+      "givens": 34,
+      "source": "transformed SOLUTION thinned to random givens",
+      "count": "2+",
+      "singles": "none",
+      "seed": 1831211020
+    },
+    {
+      "id": "random-13",
+      "family": "random",
+      "puzzle": "900000000604058001000763500000000064360200000000000013000000000050000000006035092",
+      "givens": 23,
+      "source": "transformed SOLUTION thinned to random givens",
+      "count": "2+",
+      "singles": "none",
+      "seed": 1831211021
+    },
+    {
+      "id": "random-14",
+      "family": "random",
+      "puzzle": "824031000000020008017008040000000050000850971000000036000902085060080010000006029",
+      "givens": 29,
+      "source": "transformed SOLUTION thinned to random givens",
+      "count": "2+",
+      "singles": "none",
+      "seed": 1831211022
+    },
+    {
+      "id": "random-15",
+      "family": "random",
+      "puzzle": "000520001000910050000006920000000708031802000000460003040189506107003000800040000",
+      "givens": 29,
+      "source": "transformed SOLUTION thinned to random givens",
+      "count": "2+",
+      "singles": "none",
+      "seed": 1831211023
+    },
+    {
+      "id": "random-16",
+      "family": "random",
+      "puzzle": "700060000201003400003004000605108000407530600100040750010020070500017090070489000",
+      "givens": 32,
+      "source": "transformed SOLUTION thinned to random givens",
+      "count": "2+",
+      "singles": "none",
+      "seed": 1831211024
+    },
+    {
+      "id": "random-17",
+      "family": "random",
+      "puzzle": "000000000001005000000000000000504600000000000510326000800200170320001000060408032",
+      "givens": 22,
+      "source": "transformed SOLUTION thinned to random givens",
+      "count": "2+",
+      "singles": "none",
+      "seed": 1831211025
+    },
+    {
+      "id": "random-18",
+      "family": "random",
+      "puzzle": "600945210000000080009600005002000030080100000906803700007504329540208067291030050",
+      "givens": 36,
+      "source": "transformed SOLUTION thinned to random givens",
+      "count": "2+",
+      "singles": "none",
+      "seed": 1831211026
+    },
+    {
+      "id": "random-19",
+      "family": "random",
+      "puzzle": "400030900079001400000007000000000000000003010000106000003060850805304006040000090",
+      "givens": 23,
+      "source": "transformed SOLUTION thinned to random givens",
+      "count": "2+",
+      "singles": "none",
+      "seed": 1831211027
+    },
+    {
+      "id": "random-20",
+      "family": "random",
+      "puzzle": "000009700209300060700000000003804000960003800180006502020000690000100400800490003",
+      "givens": 28,
+      "source": "transformed SOLUTION thinned to random givens",
+      "count": "2+",
+      "singles": "none",
+      "seed": 1831211028
+    },
+    {
+      "id": "random-21",
+      "family": "random",
+      "puzzle": "000090213390010050100000640800000000400000060006009038000871090000954000000300080",
+      "givens": 27,
+      "source": "transformed SOLUTION thinned to random givens",
+      "count": "2+",
+      "singles": "none",
+      "seed": 1831211029
+    },
+    {
+      "id": "random-22",
+      "family": "random",
+      "puzzle": "000000800380950700019680004000020000206000087001008063000000100094260308000010609",
+      "givens": 30,
+      "source": "transformed SOLUTION thinned to random givens",
+      "count": "2+",
+      "singles": "none",
+      "seed": 1831211030
+    },
+    {
+      "id": "random-23",
+      "family": "random",
+      "puzzle": "008001005030000070001050000700008094050007000089504000300002050007600030500090806",
+      "givens": 27,
+      "source": "transformed SOLUTION thinned to random givens",
+      "count": "2+",
+      "singles": "none",
+      "seed": 1831211031
+    },
+    {
+      "id": "random-24",
+      "family": "random",
+      "puzzle": "000800000081030760023000050000000000000028604038049520854060003369280000010003000",
+      "givens": 31,
+      "source": "transformed SOLUTION thinned to random givens",
+      "count": "2+",
+      "singles": "none",
+      "seed": 1831211032
+    },
+    {
+      "id": "random-25",
+      "family": "random",
+      "puzzle": "000000007050700000784060009061802705000600800872010000420006000107000200006027980",
+      "givens": 31,
+      "source": "transformed SOLUTION thinned to random givens",
+      "count": "2+",
+      "singles": "none",
+      "seed": 1831211033
+    },
+    {
+      "id": "random-26",
+      "family": "random",
+      "puzzle": "000004000807002395952730010030009020000000009296080050009810600000000031070040002",
+      "givens": 31,
+      "source": "transformed SOLUTION thinned to random givens",
+      "count": "2+",
+      "singles": "none",
+      "seed": 1831211034
+    },
+    {
+      "id": "random-27",
+      "family": "random",
+      "puzzle": "013492086000017005620380940000803070000051000000920510004070060002038000750006000",
+      "givens": 34,
+      "source": "transformed SOLUTION thinned to random givens",
+      "count": "2+",
+      "singles": "none",
+      "seed": 1831211035
+    },
+    {
+      "id": "random-28",
+      "family": "random",
+      "puzzle": "300001067190000080060003000007800051000000070620000843010090725080000000000100000",
+      "givens": 26,
+      "source": "transformed SOLUTION thinned to random givens",
+      "count": "2+",
+      "singles": "none",
+      "seed": 1831211036
+    },
+    {
+      "id": "random-29",
+      "family": "random",
+      "puzzle": "900000001007401305410500607050100803000002150060053042030000010890005000100048039",
+      "givens": 34,
+      "source": "transformed SOLUTION thinned to random givens",
+      "count": "2+",
+      "singles": "none",
+      "seed": 1831211037
+    },
+    {
+      "id": "random-30",
+      "family": "random",
+      "puzzle": "600000503871400000300070004080049000050006000200000000060000000729064031503090000",
+      "givens": 27,
+      "source": "transformed SOLUTION thinned to random givens",
+      "count": "2+",
+      "singles": "none",
+      "seed": 1831211038
+    },
+    {
+      "id": "random-31",
+      "family": "random",
+      "puzzle": "000100002620000058010008407040300005900027801100004030000402000580000206231000000",
+      "givens": 30,
+      "source": "transformed SOLUTION thinned to random givens",
+      "count": "2+",
+      "singles": "none",
+      "seed": 1831211039
+    },
+    {
+      "id": "random-32",
+      "family": "random",
+      "puzzle": "001002000000369000632010079270100064503000007006000900700001205005080010004600708",
+      "givens": 32,
+      "source": "transformed SOLUTION thinned to random givens",
+      "count": "2+",
+      "singles": "none",
+      "seed": 1831211040
+    },
+    {
+      "id": "random-33",
+      "family": "random",
+      "puzzle": "000000000000000980060000020040030700037009504500000000080001400000203890004800000",
+      "givens": 22,
+      "source": "transformed SOLUTION thinned to random givens",
+      "count": "2+",
+      "singles": "none",
+      "seed": 1831211041
+    },
+    {
+      "id": "random-34",
+      "family": "random",
+      "puzzle": "000873060007610004630490000072300001000200000100700000010920000009500070025030090",
+      "givens": 29,
+      "source": "transformed SOLUTION thinned to random givens",
+      "count": "2+",
+      "singles": "none",
+      "seed": 1831211042
+    },
+    {
+      "id": "random-35",
+      "family": "random",
+      "puzzle": "070548026054923107020000000030004051006000790900700832498000200000081000007050400",
+      "givens": 35,
+      "source": "transformed SOLUTION thinned to random givens",
+      "count": "2+",
+      "singles": "none",
+      "seed": 1831211043
+    },
+    {
+      "id": "random-36",
+      "family": "random",
+      "puzzle": "453000092000039008879040006087004300900200000000003004000400000308000201010000800",
+      "givens": 28,
+      "source": "transformed SOLUTION thinned to random givens",
+      "count": "2+",
+      "singles": "none",
+      "seed": 1831211044
+    },
+    {
+      "id": "random-37",
+      "family": "random",
+      "puzzle": "000890001069200080000500200054120008030007000016000005000003007097400000000005092",
+      "givens": 27,
+      "source": "transformed SOLUTION thinned to random givens",
+      "count": "2+",
+      "singles": "none",
+      "seed": 1831211045
+    },
+    {
+      "id": "random-38",
+      "family": "random",
+      "puzzle": "000000300007000600509080000600700000100000080000010007960000040000104700054039020",
+      "givens": 23,
+      "source": "transformed SOLUTION thinned to random givens",
+      "count": "2+",
+      "singles": "none",
+      "seed": 1831211046
+    },
+    {
+      "id": "random-39",
+      "family": "random",
+      "puzzle": "005970200764000009009000040000000925002018063603040800308400000000082000400050090",
+      "givens": 30,
+      "source": "transformed SOLUTION thinned to random givens",
+      "count": "2+",
+      "singles": "none",
+      "seed": 1831211047
+    },
+    {
+      "id": "random-40",
+      "family": "random",
+      "puzzle": "293004500008029010000007209900000000384005092600008100000003005400700000800062001",
+      "givens": 30,
+      "source": "transformed SOLUTION thinned to random givens",
+      "count": "2+",
+      "singles": "none",
+      "seed": 1831211048
+    },
+    {
+      "id": "random-41",
+      "family": "random",
+      "puzzle": "200000039000720008000300125001000000000007006040001000003500000900073004106040903",
+      "givens": 26,
+      "source": "transformed SOLUTION thinned to random givens",
+      "count": "2+",
+      "singles": "none",
+      "seed": 1831211049
+    },
+    {
+      "id": "random-42",
+      "family": "random",
+      "puzzle": "000000300900000780037000006090608027780304915002070630000000000008000090500000070",
+      "givens": 27,
+      "source": "transformed SOLUTION thinned to random givens",
+      "count": "2+",
+      "singles": "none",
+      "seed": 1831211050
+    },
+    {
+      "id": "random-43",
+      "family": "random",
+      "puzzle": "000600409060001002009002050040100200000030000000000000004327061010080000090000000",
+      "givens": 22,
+      "source": "transformed SOLUTION thinned to random givens",
+      "count": "2+",
+      "singles": "none",
+      "seed": 1831211051
+    },
+    {
+      "id": "random-44",
+      "family": "random",
+      "puzzle": "178020000020160500605700020000450001001600490500900872006017000057006018010000000",
+      "givens": 33,
+      "source": "transformed SOLUTION thinned to random givens",
+      "count": "2+",
+      "singles": "none",
+      "seed": 1831211052
+    },
+    {
+      "id": "random-45",
+      "family": "random",
+      "puzzle": "000006450604009800023000006009800000030000704000000008002008100000215300081000000",
+      "givens": 25,
+      "source": "transformed SOLUTION thinned to random givens",
+      "count": "2+",
+      "singles": "none",
+      "seed": 1831211053
+    },
+    {
+      "id": "random-46",
+      "family": "random",
+      "puzzle": "000406002800000970000001060003000010000000705600000400205600007000000850100004000",
+      "givens": 22,
+      "source": "transformed SOLUTION thinned to random givens",
+      "count": "2+",
+      "singles": "none",
+      "seed": 1831211054
+    },
+    {
+      "id": "random-47",
+      "family": "random",
+      "puzzle": "000030000090000008048709300900000080800207000073008002000000070010900263002006051",
+      "givens": 27,
+      "source": "transformed SOLUTION thinned to random givens",
+      "count": "2+",
+      "singles": "none",
+      "seed": 1831211055
+    },
+    {
+      "id": "random-48",
+      "family": "random",
+      "puzzle": "768000030010300000324006950090000806000850100007619500056003410209000080003590062",
+      "givens": 36,
+      "source": "transformed SOLUTION thinned to random givens",
+      "count": "2+",
+      "singles": "none",
+      "seed": 1831211056
+    },
+    {
+      "id": "random-49",
+      "family": "random",
+      "puzzle": "060004000500290004390075000170009600000320040900001000000002000000050000000700452",
+      "givens": 25,
+      "source": "transformed SOLUTION thinned to random givens",
+      "count": "2+",
+      "singles": "none",
+      "seed": 1831211057
+    },
+    {
+      "id": "random-50",
+      "family": "random",
+      "puzzle": "970000480000947000000005000000200059209053600000000840690024730040798520708500900",
+      "givens": 34,
+      "source": "transformed SOLUTION thinned to random givens",
+      "count": "2+",
+      "singles": "none",
+      "seed": 1831211058
+    },
+    {
+      "id": "random-51",
+      "family": "random",
+      "puzzle": "000000000010006000009000080400200307050063000030000000620345090040000026705020803",
+      "givens": 26,
+      "source": "transformed SOLUTION thinned to random givens",
+      "count": "2+",
+      "singles": "none",
+      "seed": 1831211059
+    },
+    {
+      "id": "random-52",
+      "family": "random",
+      "puzzle": "003079200002000000650003007009000000030002710040050600004000000070806000000700300",
+      "givens": 23,
+      "source": "transformed SOLUTION thinned to random givens",
+      "count": "2+",
+      "singles": "none",
+      "seed": 1831211060
+    },
+    {
+      "id": "random-53",
+      "family": "random",
+      "puzzle": "004236108801000300300100020085001000000090080000800060000087403048000070000004000",
+      "givens": 27,
+      "source": "transformed SOLUTION thinned to random givens",
+      "count": "2+",
+      "singles": "none",
+      "seed": 1831211061
+    },
+    {
+      "id": "random-54",
+      "family": "random",
+      "puzzle": "809302000020048000003095286000800005000000000200506007490000012000900000000280954",
+      "givens": 29,
+      "source": "transformed SOLUTION thinned to random givens",
+      "count": "2+",
+      "singles": "none",
+      "seed": 1831211062
+    },
+    {
+      "id": "random-55",
+      "family": "random",
+      "puzzle": "800500649906000080000000070090010050000000021041000060009002000080000006000000890",
+      "givens": 23,
+      "source": "transformed SOLUTION thinned to random givens",
+      "count": "2+",
+      "singles": "none",
+      "seed": 1831211063
+    },
+    {
+      "id": "random-56",
+      "family": "random",
+      "puzzle": "000000000020000008090000001040107050010326780032800600009630075004270093000008040",
+      "givens": 30,
+      "source": "transformed SOLUTION thinned to random givens",
+      "count": "2+",
+      "singles": "none",
+      "seed": 1831211064
+    },
+    {
+      "id": "random-57",
+      "family": "random",
+      "puzzle": "280030000600000010500609300307008290048070500900000070001380000430700050896005000",
+      "givens": 31,
+      "source": "transformed SOLUTION thinned to random givens",
+      "count": "1",
+      "solution": "289137645673854912514629387367518294148972563925463178751386429432791856896245731",
+      "singles": "naked",
+      "seed": 1831211065
+    },
+    {
+      "id": "random-58",
+      "family": "random",
+      "puzzle": "020690000000002000600057002000900007800000205700000004170000000940000100063400000",
+      "givens": 23,
+      "source": "transformed SOLUTION thinned to random givens",
+      "count": "2+",
+      "singles": "none",
+      "seed": 1831211066
+    },
+    {
+      "id": "random-59",
+      "family": "random",
+      "puzzle": "000083002680000400001060850006730090300000008000810030005000000030050940700000005",
+      "givens": 26,
+      "source": "transformed SOLUTION thinned to random givens",
+      "count": "2+",
+      "singles": "none",
+      "seed": 1831211067
+    },
+    {
+      "id": "poisoned-00",
+      "family": "poisoned",
+      "puzzle": "020500069005023710001006025089352107054060803063400050016005280092004000000018036",
+      "givens": 41,
+      "source": "transformed SOLUTION thinned, one empty cell set to a wrong non-conflicting digit",
+      "count": "0",
+      "singles": "none",
+      "seed": 1831215104
+    },
+    {
+      "id": "poisoned-01",
+      "family": "poisoned",
+      "puzzle": "704000630050030000980050020306000004000807000821003000005000010290000006100925040",
+      "givens": 29,
+      "source": "transformed SOLUTION thinned, one empty cell set to a wrong non-conflicting digit",
+      "count": "2+",
+      "singles": "none",
+      "seed": 1831215105
+    },
+    {
+      "id": "poisoned-02",
+      "family": "poisoned",
+      "puzzle": "510900200980000370070640000000300050600875400751409008030000065160082000020060000",
+      "givens": 33,
+      "source": "transformed SOLUTION thinned, one empty cell set to a wrong non-conflicting digit",
+      "count": "0",
+      "singles": "none",
+      "seed": 1831215106
+    },
+    {
+      "id": "poisoned-03",
+      "family": "poisoned",
+      "puzzle": "400037000013400607507206000340760050060080040008000000609000810001020060000000009",
+      "givens": 29,
+      "source": "transformed SOLUTION thinned, one empty cell set to a wrong non-conflicting digit",
+      "count": "2+",
+      "singles": "none",
+      "seed": 1831215107
+    },
+    {
+      "id": "poisoned-04",
+      "family": "poisoned",
+      "puzzle": "710090004060008000809602010001706300000000040030200506004060078005800092108407603",
+      "givens": 34,
+      "source": "transformed SOLUTION thinned, one empty cell set to a wrong non-conflicting digit",
+      "count": "0",
+      "singles": "none",
+      "seed": 1831215108
+    },
+    {
+      "id": "poisoned-05",
+      "family": "poisoned",
+      "puzzle": "003208100010000038080631004021083070069007040350010002000005019000060027070902600",
+      "givens": 35,
+      "source": "transformed SOLUTION thinned, one empty cell set to a wrong non-conflicting digit",
+      "count": "0",
+      "singles": "none",
+      "seed": 1831215109
+    },
+    {
+      "id": "poisoned-06",
+      "family": "poisoned",
+      "puzzle": "000020800960050000800406000200305678005900240100084000500100700041500003600790015",
+      "givens": 33,
+      "source": "transformed SOLUTION thinned, one empty cell set to a wrong non-conflicting digit",
+      "count": "0",
+      "singles": "none",
+      "seed": 1831215110
+    },
+    {
+      "id": "poisoned-07",
+      "family": "poisoned",
+      "puzzle": "180647903000000200003902406000501800000070000065000020607000100030020500501000030",
+      "givens": 29,
+      "source": "transformed SOLUTION thinned, one empty cell set to a wrong non-conflicting digit",
+      "count": "0",
+      "singles": "none",
+      "seed": 1831215111
+    },
+    {
+      "id": "poisoned-08",
+      "family": "poisoned",
+      "puzzle": "005700000100400005006890030250008704640052083001047006503000007760500300080000000",
+      "givens": 32,
+      "source": "transformed SOLUTION thinned, one empty cell set to a wrong non-conflicting digit",
+      "count": "2+",
+      "singles": "none",
+      "seed": 1831215112
+    },
+    {
+      "id": "poisoned-09",
+      "family": "poisoned",
+      "puzzle": "918040653052100000060090000030410068000300002605982731000000300500704080006820105",
+      "givens": 37,
+      "source": "transformed SOLUTION thinned, one empty cell set to a wrong non-conflicting digit",
+      "count": "0",
+      "singles": "none",
+      "seed": 1831215113
+    },
+    {
+      "id": "poisoned-10",
+      "family": "poisoned",
+      "puzzle": "009020400008695001600000000060070140007002300050003020020107600000200800000930200",
+      "givens": 28,
+      "source": "transformed SOLUTION thinned, one empty cell set to a wrong non-conflicting digit",
+      "count": "2+",
+      "singles": "none",
+      "seed": 1831215114
+    },
+    {
+      "id": "poisoned-11",
+      "family": "poisoned",
+      "puzzle": "000170835400030000035980240000500620056302900000607000217040000000003070300751492",
+      "givens": 36,
+      "source": "transformed SOLUTION thinned, one empty cell set to a wrong non-conflicting digit",
+      "count": "0",
+      "singles": "none",
+      "seed": 1831215115
+    },
+    {
+      "id": "poisoned-12",
+      "family": "poisoned",
+      "puzzle": "048070603000046057007931482800000200000000870052498010280100064601009508375680000",
+      "givens": 41,
+      "source": "transformed SOLUTION thinned, one empty cell set to a wrong non-conflicting digit",
+      "count": "0",
+      "singles": "none",
+      "seed": 1831215116
+    },
+    {
+      "id": "poisoned-13",
+      "family": "poisoned",
+      "puzzle": "003804000050003008090000423009780000080000290042000000030406100001300700900200300",
+      "givens": 28,
+      "source": "transformed SOLUTION thinned, one empty cell set to a wrong non-conflicting digit",
+      "count": "2+",
+      "singles": "none",
+      "seed": 1831215117
+    },
+    {
+      "id": "poisoned-14",
+      "family": "poisoned",
+      "puzzle": "206000700105030460900060500050180027700050806680300100069003204420000008038000000",
+      "givens": 34,
+      "source": "transformed SOLUTION thinned, one empty cell set to a wrong non-conflicting digit",
+      "count": "0",
+      "singles": "none",
+      "seed": 1831215118
+    },
+    {
+      "id": "poisoned-15",
+      "family": "poisoned",
+      "puzzle": "531207000009460005640859127820546091010720060060000800100970604050000200400600008",
+      "givens": 40,
+      "source": "transformed SOLUTION thinned, one empty cell set to a wrong non-conflicting digit",
+      "count": "0",
+      "singles": "none",
+      "seed": 1831215119
+    },
+    {
+      "id": "poisoned-16",
+      "family": "poisoned",
+      "puzzle": "060210000030908100001300470900400527073102004040605091000001200100060700050020900",
+      "givens": 34,
+      "source": "transformed SOLUTION thinned, one empty cell set to a wrong non-conflicting digit",
+      "count": "2+",
+      "singles": "none",
+      "seed": 1831215120
+    },
+    {
+      "id": "poisoned-17",
+      "family": "poisoned",
+      "puzzle": "002000400063870050079000030400532100730080000205017060024763005907140020316290780",
+      "givens": 41,
+      "source": "transformed SOLUTION thinned, one empty cell set to a wrong non-conflicting digit",
+      "count": "0",
+      "singles": "none",
+      "seed": 1831215121
+    },
+    {
+      "id": "poisoned-18",
+      "family": "poisoned",
+      "puzzle": "300080100000609300070000000005040093004713265763090000009002870150408000008900500",
+      "givens": 33,
+      "source": "transformed SOLUTION thinned, one empty cell set to a wrong non-conflicting digit",
+      "count": "0",
+      "singles": "none",
+      "seed": 1831215122
+    },
+    {
+      "id": "poisoned-19",
+      "family": "poisoned",
+      "puzzle": "000000403800530000009001000902070000000010029100000000000750090045009307098203104",
+      "givens": 28,
+      "source": "transformed SOLUTION thinned, one empty cell set to a wrong non-conflicting digit",
+      "count": "2+",
+      "singles": "none",
+      "seed": 1831215123
+    },
+    {
+      "id": "poisoned-20",
+      "family": "poisoned",
+      "puzzle": "000002560000507200020410380000800006004009830780004951000070000006205003000600020",
+      "givens": 30,
+      "source": "transformed SOLUTION thinned, one empty cell set to a wrong non-conflicting digit",
+      "count": "2+",
+      "singles": "none",
+      "seed": 1831215124
+    },
+    {
+      "id": "poisoned-21",
+      "family": "poisoned",
+      "puzzle": "064080090589026004007450000635000009002007006791032080020000050000010302050200000",
+      "givens": 33,
+      "source": "transformed SOLUTION thinned, one empty cell set to a wrong non-conflicting digit",
+      "count": "2+",
+      "singles": "none",
+      "seed": 1831215125
+    },
+    {
+      "id": "poisoned-22",
+      "family": "poisoned",
+      "puzzle": "600001308530006791000000400090000800050030040740905206060000000000090680481000009",
+      "givens": 30,
+      "source": "transformed SOLUTION thinned, one empty cell set to a wrong non-conflicting digit",
+      "count": "2+",
+      "singles": "none",
+      "seed": 1831215126
+    },
+    {
+      "id": "poisoned-23",
+      "family": "poisoned",
+      "puzzle": "000540000000030956000809020486003509100600002000978000601005037500012004000780000",
+      "givens": 32,
+      "source": "transformed SOLUTION thinned, one empty cell set to a wrong non-conflicting digit",
+      "count": "0",
+      "singles": "none",
+      "seed": 1831215127
+    },
+    {
+      "id": "poisoned-24",
+      "family": "poisoned",
+      "puzzle": "000056004013840600000020130000095000930408060070200900000072050090000300000600028",
+      "givens": 29,
+      "source": "transformed SOLUTION thinned, one empty cell set to a wrong non-conflicting digit",
+      "count": "0",
+      "singles": "none",
+      "seed": 1831215128
+    },
+    {
+      "id": "poisoned-25",
+      "family": "poisoned",
+      "puzzle": "005070009469003007081040300210400980500800400046900071602095010070020095950000030",
+      "givens": 37,
+      "source": "transformed SOLUTION thinned, one empty cell set to a wrong non-conflicting digit",
+      "count": "0",
+      "singles": "none",
+      "seed": 1831215129
+    },
+    {
+      "id": "poisoned-26",
+      "family": "poisoned",
+      "puzzle": "090032050030007460500040000150000070940065300673009000300008007085174600010306584",
+      "givens": 37,
+      "source": "transformed SOLUTION thinned, one empty cell set to a wrong non-conflicting digit",
+      "count": "2+",
+      "singles": "none",
+      "seed": 1831215130
+    },
+    {
+      "id": "poisoned-27",
+      "family": "poisoned",
+      "puzzle": "000201540924306010000870690040738060800009000070060984600407000002053406490600001",
+      "givens": 38,
+      "source": "transformed SOLUTION thinned, one empty cell set to a wrong non-conflicting digit",
+      "count": "0",
+      "singles": "none",
+      "seed": 1831215131
+    },
+    {
+      "id": "poisoned-28",
+      "family": "poisoned",
+      "puzzle": "060048020058270300000006817090700600500000040400000000010090504900000000000015200",
+      "givens": 27,
+      "source": "transformed SOLUTION thinned, one empty cell set to a wrong non-conflicting digit",
+      "count": "0",
+      "singles": "none",
+      "seed": 1831215132
+    },
+    {
+      "id": "poisoned-29",
+      "family": "poisoned",
+      "puzzle": "000029500509070400020508000903006204200004600400000050830907002000180379000600000",
+      "givens": 31,
+      "source": "transformed SOLUTION thinned, one empty cell set to a wrong non-conflicting digit",
+      "count": "2+",
+      "singles": "none",
+      "seed": 1831215133
+    },
+    {
+      "id": "poisoned-30",
+      "family": "poisoned",
+      "puzzle": "061050907000186020003007600010700590205600080080510300730840209900270034842060100",
+      "givens": 40,
+      "source": "transformed SOLUTION thinned, one empty cell set to a wrong non-conflicting digit",
+      "count": "0",
+      "singles": "none",
+      "seed": 1831215134
+    },
+    {
+      "id": "poisoned-31",
+      "family": "poisoned",
+      "puzzle": "015406820060000040970000036097000008620780305803960000189640050430008670000050084",
+      "givens": 39,
+      "source": "transformed SOLUTION thinned, one empty cell set to a wrong non-conflicting digit",
+      "count": "0",
+      "singles": "none",
+      "seed": 1831215135
+    },
+    {
+      "id": "poisoned-32",
+      "family": "poisoned",
+      "puzzle": "070309015650008040090000002030050096005600384946000500401000700000000020000000000",
+      "givens": 28,
+      "source": "transformed SOLUTION thinned, one empty cell set to a wrong non-conflicting digit",
+      "count": "2+",
+      "singles": "none",
+      "seed": 1831215136
+    },
+    {
+      "id": "poisoned-33",
+      "family": "poisoned",
+      "puzzle": "400673020200410900050289300706002190980506000000000000375104009809067002624000007",
+      "givens": 38,
+      "source": "transformed SOLUTION thinned, one empty cell set to a wrong non-conflicting digit",
+      "count": "0",
+      "singles": "none",
+      "seed": 1831215137
+    },
+    {
+      "id": "poisoned-34",
+      "family": "poisoned",
+      "puzzle": "005407800010006000300200105053670001006020000040850000004060012531002000620003000",
+      "givens": 31,
+      "source": "transformed SOLUTION thinned, one empty cell set to a wrong non-conflicting digit",
+      "count": "2+",
+      "singles": "none",
+      "seed": 1831215138
+    },
+    {
+      "id": "poisoned-35",
+      "family": "poisoned",
+      "puzzle": "035000810004800000208060040006008590103050200040030170007601000050000000402087000",
+      "givens": 30,
+      "source": "transformed SOLUTION thinned, one empty cell set to a wrong non-conflicting digit",
+      "count": "2+",
+      "singles": "none",
+      "seed": 1831215139
+    },
+    {
+      "id": "poisoned-36",
+      "family": "poisoned",
+      "puzzle": "040000700003692150090041000405010080908054361301000005057439600839105000600070000",
+      "givens": 38,
+      "source": "transformed SOLUTION thinned, one empty cell set to a wrong non-conflicting digit",
+      "count": "0",
+      "singles": "none",
+      "seed": 1831215140
+    },
+    {
+      "id": "poisoned-37",
+      "family": "poisoned",
+      "puzzle": "080020000004007008203080005009305020008402000300090400900001004807240500000070100",
+      "givens": 29,
+      "source": "transformed SOLUTION thinned, one empty cell set to a wrong non-conflicting digit",
+      "count": "2+",
+      "singles": "none",
+      "seed": 1831215141
+    },
+    {
+      "id": "poisoned-38",
+      "family": "poisoned",
+      "puzzle": "080500730007008016512007000804306001920704000001000000030062400000905200260480090",
+      "givens": 34,
+      "source": "transformed SOLUTION thinned, one empty cell set to a wrong non-conflicting digit",
+      "count": "2+",
+      "singles": "none",
+      "seed": 1831215142
+    },
+    {
+      "id": "poisoned-39",
+      "family": "poisoned",
+      "puzzle": "748120000009540700006908021204650010800030000000019050500090602460000080902065074",
+      "givens": 37,
+      "source": "transformed SOLUTION thinned, one empty cell set to a wrong non-conflicting digit",
+      "count": "0",
+      "singles": "none",
+      "seed": 1831215143
+    },
+    {
+      "id": "poisoned-40",
+      "family": "poisoned",
+      "puzzle": "070006130549203680036008900080000000003042800000009000005071060014860000762394508",
+      "givens": 37,
+      "source": "transformed SOLUTION thinned, one empty cell set to a wrong non-conflicting digit",
+      "count": "0",
+      "singles": "none",
+      "seed": 1831215144
+    },
+    {
+      "id": "poisoned-41",
+      "family": "poisoned",
+      "puzzle": "051006000000050002000007300894020006360074580017000043006091000000502061000700000",
+      "givens": 30,
+      "source": "transformed SOLUTION thinned, one empty cell set to a wrong non-conflicting digit",
+      "count": "2+",
+      "singles": "none",
+      "seed": 1831215145
+    },
+    {
+      "id": "poisoned-42",
+      "family": "poisoned",
+      "puzzle": "000000206053010487067030050306920005510080023090001600070005302800002001020103000",
+      "givens": 35,
+      "source": "transformed SOLUTION thinned, one empty cell set to a wrong non-conflicting digit",
+      "count": "1",
+      "solution": "148579236953216487267438159386924715514687923792351648471865392839742561625193874",
+      "singles": "naked",
+      "seed": 1831215146
+    },
+    {
+      "id": "poisoned-43",
+      "family": "poisoned",
+      "puzzle": "400008070100000300003000100300201700092807051708900602070600814800470000200080907",
+      "givens": 34,
+      "source": "transformed SOLUTION thinned, one empty cell set to a wrong non-conflicting digit",
+      "count": "1",
+      "solution": "456318279187592346923746185345261798692837451718954632579623814861479523234185967",
+      "singles": "hidden",
+      "seed": 1831215147
+    },
+    {
+      "id": "poisoned-44",
+      "family": "poisoned",
+      "puzzle": "009104030002596400030070005097000000500000090406950800000000042340000000900700081",
+      "givens": 29,
+      "source": "transformed SOLUTION thinned, one empty cell set to a wrong non-conflicting digit",
+      "count": "0",
+      "singles": "none",
+      "seed": 1831215148
+    },
+    {
+      "id": "poisoned-45",
+      "family": "poisoned",
+      "puzzle": "734000020680004003512703600450370109097815000060240580001060000000080006900500012",
+      "givens": 38,
+      "source": "transformed SOLUTION thinned, one empty cell set to a wrong non-conflicting digit",
+      "count": "0",
+      "singles": "none",
+      "seed": 1831215149
+    },
+    {
+      "id": "poisoned-46",
+      "family": "poisoned",
+      "puzzle": "764000980000069421210504063400006000078340102050071604100650200090013078005400006",
+      "givens": 41,
+      "source": "transformed SOLUTION thinned, one empty cell set to a wrong non-conflicting digit",
+      "count": "0",
+      "singles": "none",
+      "seed": 1831215150
+    },
+    {
+      "id": "poisoned-47",
+      "family": "poisoned",
+      "puzzle": "900008640000140900041976050010709402209804500704520300508037000406210890000080700",
+      "givens": 40,
+      "source": "transformed SOLUTION thinned, one empty cell set to a wrong non-conflicting digit",
+      "count": "0",
+      "singles": "none",
+      "seed": 1831215151
+    },
+    {
+      "id": "poisoned-48",
+      "family": "poisoned",
+      "puzzle": "090018400600523090000060007130802760000609010960040008009000070000000683086301200",
+      "givens": 34,
+      "source": "transformed SOLUTION thinned, one empty cell set to a wrong non-conflicting digit",
+      "count": "0",
+      "singles": "none",
+      "seed": 1831215152
+    },
+    {
+      "id": "poisoned-49",
+      "family": "poisoned",
+      "puzzle": "100806730000010200600270109500400608010650040040700002000500093907100406300024871",
+      "givens": 37,
+      "source": "transformed SOLUTION thinned, one empty cell set to a wrong non-conflicting digit",
+      "count": "0",
+      "singles": "none",
+      "seed": 1831215153
+    },
+    {
+      "id": "poisoned-50",
+      "family": "poisoned",
+      "puzzle": "001007083000805701075003000080070200000000040204000007100000008348060000590008470",
+      "givens": 29,
+      "source": "transformed SOLUTION thinned, one empty cell set to a wrong non-conflicting digit",
+      "count": "2+",
+      "singles": "none",
+      "seed": 1831215154
+    },
+    {
+      "id": "poisoned-51",
+      "family": "poisoned",
+      "puzzle": "300507000100002003000309000208630000070008002009005000760000300081253000030080000",
+      "givens": 27,
+      "source": "transformed SOLUTION thinned, one empty cell set to a wrong non-conflicting digit",
+      "count": "0",
+      "singles": "none",
+      "seed": 1831215155
+    },
+    {
+      "id": "poisoned-52",
+      "family": "poisoned",
+      "puzzle": "800100000215038007000605800000000000403860790000340062100053000068000000059080000",
+      "givens": 29,
+      "source": "transformed SOLUTION thinned, one empty cell set to a wrong non-conflicting digit",
+      "count": "0",
+      "singles": "none",
+      "seed": 1831215156
+    },
+    {
+      "id": "poisoned-53",
+      "family": "poisoned",
+      "puzzle": "000206000836475000025000400000000000050001700080020004590100048768000501314087600",
+      "givens": 33,
+      "source": "transformed SOLUTION thinned, one empty cell set to a wrong non-conflicting digit",
+      "count": "0",
+      "singles": "none",
+      "seed": 1831215157
+    },
+    {
+      "id": "poisoned-54",
+      "family": "poisoned",
+      "puzzle": "200000091309000040600901008400000003005000160018069005000000000001090032000020609",
+      "givens": 27,
+      "source": "transformed SOLUTION thinned, one empty cell set to a wrong non-conflicting digit",
+      "count": "0",
+      "singles": "none",
+      "seed": 1831215158
+    },
+    {
+      "id": "poisoned-55",
+      "family": "poisoned",
+      "puzzle": "106008020040602018030400706000016200900205060000040000067020030021304009000067082",
+      "givens": 34,
+      "source": "transformed SOLUTION thinned, one empty cell set to a wrong non-conflicting digit",
+      "count": "2+",
+      "singles": "none",
+      "seed": 1831215159
+    },
+    {
+      "id": "poisoned-56",
+      "family": "poisoned",
+      "puzzle": "050000096000049001090000030000000702200405008804020903341950000089060000500213000",
+      "givens": 31,
+      "source": "transformed SOLUTION thinned, one empty cell set to a wrong non-conflicting digit",
+      "count": "0",
+      "singles": "none",
+      "seed": 1831215160
+    },
+    {
+      "id": "poisoned-57",
+      "family": "poisoned",
+      "puzzle": "001607000000058060005034010300000080800006100000280659960310478208000006473060501",
+      "givens": 36,
+      "source": "transformed SOLUTION thinned, one empty cell set to a wrong non-conflicting digit",
+      "count": "0",
+      "singles": "none",
+      "seed": 1831215161
+    },
+    {
+      "id": "poisoned-58",
+      "family": "poisoned",
+      "puzzle": "000010470097042608500800009000008063005300804009065701086034000100059087950200046",
+      "givens": 38,
+      "source": "transformed SOLUTION thinned, one empty cell set to a wrong non-conflicting digit",
+      "count": "2+",
+      "singles": "none",
+      "seed": 1831215162
+    },
+    {
+      "id": "poisoned-59",
+      "family": "poisoned",
+      "puzzle": "068301274003000089000800000001042800624089000005706090057908046006217058010065000",
+      "givens": 39,
+      "source": "transformed SOLUTION thinned, one empty cell set to a wrong non-conflicting digit",
+      "count": "0",
+      "singles": "none",
+      "seed": 1831215163
+    }
+  ]
+}
