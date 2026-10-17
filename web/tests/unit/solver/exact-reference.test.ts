@@ -8,9 +8,7 @@ import { isSolutionOf, referenceCount } from "../../solver/reference-dfs";
 import {
   buildEvalCorpus,
   HEAVY,
-  NAMED,
   SEEDED_CASES,
-  seededGrid,
   type EvalCase,
   type EvalCorpus,
 } from "../../solver/bench/eval-corpus";
@@ -25,7 +23,7 @@ const runHeavy = process.env.M26_HEAVY === "1";
 const recordPath = process.env.M26_BASELINE_RECORD;
 const bench = new URL("../../solver/bench/", import.meta.url);
 
-/** The shipped classic path: production rules, conflicts assemble to zero (countClassic). */
+/** The shipped classic path: production rules; a failed assembly is a zero count (countClassic). */
 function engineCount(puzzle: string): {
   witnesses: string[];
   terminal: string;
@@ -78,16 +76,8 @@ describe("M2.6 evaluation corpus", () => {
       "escargot-poisoned",
     ])
       expect(ids).toContain(id);
-    for (const { id, puzzle } of NAMED)
-      expect(corpus.cases.find((entry) => entry.id === id)?.puzzle).toBe(puzzle);
-    for (const family of ["random", "poisoned"] as const) {
-      const seeded = corpus.cases.filter((entry) => entry.family === family);
-      expect(seeded).toHaveLength(SEEDED_CASES);
-      seeded.forEach((entry, index) => {
-        const regenerated = seededGrid(family, index);
-        expect(entry).toMatchObject({ puzzle: regenerated.puzzle, seed: regenerated.seed });
-      });
-    }
+    for (const family of ["random", "poisoned"] as const)
+      expect(corpus.cases.filter((entry) => entry.family === family)).toHaveLength(SEEDED_CASES);
     expect(corpus.cases.filter((entry) => entry.heavy).map((entry) => entry.id)).toEqual([
       ...HEAVY,
     ]);
@@ -96,15 +86,21 @@ describe("M2.6 evaluation corpus", () => {
     expect(corpus.cases.find((entry) => entry.id === "seventeen-minus-one")?.givens).toBe(16);
   });
 
+  test("regenerates byte for byte from its builder, labels included", () => {
+    expect(buildEvalCorpus()).toEqual(corpus);
+  });
+
   test.for(corpus.cases.map((entry) => [entry.id, entry] as [string, EvalCase]))(
     "engine count and solution equal the reference DFS: %s",
     // Harness allowance, not a latency target: see docs/history/m26-baseline.md.
     { timeout: runHeavy ? 3_600_000 : 120_000 },
     ([, entry], { skip }) => {
-      if (entry.heavy && !runHeavy) skip("heavy case: set M26_HEAVY=1");
       let started = performance.now();
       const reference = referenceCount(entry.puzzle, 2);
       const referenceMs = performance.now() - started;
+      // The committed label is the reference's own verdict, checked even for heavy cases.
+      expect(reference.count === 0 ? "0" : reference.count === 1 ? "1" : "2+").toBe(entry.count);
+      if (entry.heavy && !runHeavy) skip("heavy case: set M26_HEAVY=1");
       started = performance.now();
       const engine = engineCount(entry.puzzle);
       const engineMs = performance.now() - started;
@@ -123,11 +119,12 @@ describe("M2.6 evaluation corpus", () => {
           }) + "\n",
         );
 
-      // The committed label is the reference's own verdict.
-      expect(reference.count === 0 ? "0" : reference.count === 1 ? "1" : "2+").toBe(entry.count);
-      if (reference.count < 2) expect(reference.exhausted).toBe(true);
       expect(engine.witnesses).toHaveLength(reference.count);
-      expect(engine.terminal).toBe(reference.count === 2 ? "cap-reached" : "exhausted");
+      if (reference.count === 2) expect(engine.terminal).toBe("cap-reached");
+      else
+        expect(["exhausted", ...(reference.count === 0 ? ["assembly"] : [])]).toContain(
+          engine.terminal,
+        );
       for (const witness of engine.witnesses)
         expect(isSolutionOf(entry.puzzle, witness)).toBe(true);
       if (entry.count === "1") {

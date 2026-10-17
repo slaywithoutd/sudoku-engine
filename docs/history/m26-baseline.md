@@ -15,7 +15,7 @@ engine change. T02 and later tasks compare against these numbers.
   independent bitmask DFS `web/tests/solver/reference-dfs.ts` (limit 2), and
   checks count and solution. `M26_BASELINE_RECORD=<file>` writes one JSON line
   per case; milliseconds are wall time around each search in the same process.
-- Machine: Intel Core i5-1345U, Windows 11, Node 22.13.1, vitest 5.0.0, **on
+- Machine: Intel Core i5-1345U, Windows 11, Node v24.19.0, npm 11.17.0, vitest 5.0.0, **on
   battery** (the M2.5 T17 run measured this laptop at about 2.7x slower on
   battery than on mains). One vitest process, nothing else running.
 - Commands, from `web/`:
@@ -28,7 +28,10 @@ engine change. T02 and later tasks compare against these numbers.
 ## Result
 
 Engine and reference agree on count and solution on all 131 cases (0
-disagreements). Node, backtrack and depth counts were identical on every run;
+disagreements). Count labels: 10 unique, 38 with no solution, 83 with at
+least two; the seeded grids are mostly `2+` (random) or refuted at the first
+node (poisoned), so the unique-solution comparison rests mostly on the named
+cases. Node, backtrack and depth counts were identical on every run;
 only times vary.
 
 - The default run (130 cases, `norvig-hard1` skipped) took 7.7–8.3 s for the
@@ -37,7 +40,11 @@ only times vary.
   Escargot (143 nodes, 213–239 ms).
 - `norvig-hard1` (17 givens, at least two solutions): **658,727 nodes, 786 s**
   (≈ 1.19 ms per node). The reference needs 1,526,541 nodes in 1.8 s. The node
-  count equals the 2026-09-21 evaluation's 658k; its 367 s was on mains.
+  count equals the 2026-09-21 evaluation's 658k; its 367 s was on mains. The
+  spec's "5.3 M nodes" for its reference DFS came from the evaluation's probe
+  script, which is not in the repository, so the gap is not reconciled here;
+  this reference counts one node per search state entered and propagates
+  naked singles inside each node.
 - Against the spec §6 targets: `hard1` needs < 5 s (now 786 s), Escargot < 50 ms
   (now 213–239 ms) and every other case < 1 s (all are, Golden Nugget closest).
 - The first pass of each measurement was disturbed (default run 117 s with
