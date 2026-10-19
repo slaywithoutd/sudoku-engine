@@ -159,8 +159,15 @@ export function exactInitializationReservation(
     symbols = problem.symbols.length;
   const scalarWork = 8 * (first.entries + second.entries + first.characters + second.characters);
   const peerWork = 4 * cells * (problem.constraints.length + first.scopes + cells);
-  // Locked-candidate pairs: each scope cell against every rule that may share it.
-  const pairWork = 4 * first.scopes * problem.constraints.length;
+  // Locked-candidate pairs: at most one per two full houses sharing a cell,
+  // each holding at most 2 * symbols cells.
+  const memberships = new Map<unknown, number>();
+  for (const rule of problem.constraints)
+    if (rule.type === "all-different@1" && rule.cells.length === symbols)
+      for (const cell of rule.cells) memberships.set(cell, (memberships.get(cell) ?? 0) + 1);
+  let pairs = 0;
+  for (const houses of memberships.values()) pairs += (houses * (houses - 1)) / 2;
+  const pairWork = 4 * (first.scopes + pairs * (1 + 2 * symbols));
   return Object.freeze({
     workUnits: 1 + scalarWork + peerWork + pairWork,
     workspaceBytes:
@@ -169,7 +176,7 @@ export function exactInitializationReservation(
           second.entries +
           cells * cells +
           cells * symbols * (2 * cells + 4) +
-          2 * first.scopes * problem.constraints.length) +
+          pairs * 2 * symbols) +
       4 * (first.characters + second.characters),
   });
 }
@@ -286,7 +293,7 @@ interface Frame {
    * The parent's fixed-point masks with the branched cell already narrowed to
    * its symbol, or null at the root.
    */
-  masks: readonly number[] | null;
+  masks: number[] | null;
   /** The branched cell whose symbol still has to leave its peers; -1 at the root. */
   branch: number;
   decisions: readonly Literal[];
@@ -314,7 +321,11 @@ class ExactSearchSession {
   private backtracks = 0;
   private maxDepth = 0;
   private witnesses = 0;
-  /** Primitive operations of the current node, reported by its single work event. */
+  /**
+   * Counted operations of the current node, reported by its single work event
+   * (spec §4.1): one for the node, one per mask computed, assignment, prune
+   * call and leaf rule check.
+   */
   private units = 0;
   private readonly reservation: ExactInitializationReservation;
   constructor(problem: EngineProblem, assembly: Assembly) {
@@ -355,8 +366,9 @@ class ExactSearchSession {
     const values = frame.values;
     let masks: number[];
     if (frame.masks) {
-      // The parent's masks already exclude every other placed symbol.
-      masks = frame.masks.slice();
+      // The parent's masks already exclude every other placed symbol; the
+      // frame owns this copy.
+      masks = frame.masks;
       if (!this.assign(values, masks, frame.branch, masks[frame.branch])) return null;
     } else {
       masks = [];
@@ -377,7 +389,6 @@ class ExactSearchSession {
           changed = true;
         }
       for (const house of fullHouses) {
-        this.units++;
         let once = 0,
           twice = 0;
         for (const cell of house) {
@@ -387,9 +398,14 @@ class ExactSearchSession {
         if (once !== full) return null;
         for (let singles = once & ~twice; singles !== 0; singles &= singles - 1) {
           const bit = singles & -singles;
-          const cell = house.find((member) => (masks[member] & bit) !== 0);
+          let cell = -1;
+          for (const member of house)
+            if ((masks[member] & bit) !== 0) {
+              cell = member;
+              break;
+            }
           // An assignment earlier in this sweep removed the house's only support.
-          if (cell === undefined) return null;
+          if (cell < 0) return null;
           if (values[cell] === 0) {
             if (!this.assign(values, masks, cell, bit)) return null;
             changed = true;
@@ -414,7 +430,6 @@ class ExactSearchSession {
       }
       if (changed) continue;
       for (const { shared, onlyFirst, onlySecond } of lockedPairs) {
-        this.units++;
         let inside = 0,
           first = 0,
           second = 0;
@@ -424,14 +439,16 @@ class ExactSearchSession {
         // Confined to the shared cells in one house: gone from the other's rest.
         const fromSecond = inside & ~first & second,
           fromFirst = inside & ~second & first;
-        for (const cell of fromSecond === 0 ? [] : onlySecond) {
-          masks[cell] &= ~fromSecond;
-          if (masks[cell] === 0) return null;
-        }
-        for (const cell of fromFirst === 0 ? [] : onlyFirst) {
-          masks[cell] &= ~fromFirst;
-          if (masks[cell] === 0) return null;
-        }
+        if (fromSecond !== 0)
+          for (const cell of onlySecond) {
+            masks[cell] &= ~fromSecond;
+            if (masks[cell] === 0) return null;
+          }
+        if (fromFirst !== 0)
+          for (const cell of onlyFirst) {
+            masks[cell] &= ~fromFirst;
+            if (masks[cell] === 0) return null;
+          }
         if (fromSecond !== 0 || fromFirst !== 0) changed = true;
       }
       if (!changed) return masks;

@@ -79,14 +79,19 @@ describe("original-problem exact enumeration", () => {
       stats: { nodes: 0 },
     });
     // original-dfs@2: one work event per node. The empty root counts 1 (node) +
-    // 81 masks + 27 house scans + 54 box/line pairs, with nothing to assign.
-    expect(events[1]).toMatchObject({ kind: "work", units: 163, stats: { nodes: 1 } });
+    // 81 masks, with nothing to assign.
+    expect(events[1]).toMatchObject({ kind: "work", units: 82, stats: { nodes: 1 } });
     const witnesses = events.filter((event) => event.kind === "witness");
     expect(witnesses[0].decisions[0]).toEqual({ cell: 0, symbol: 1, positive: true });
     expect(witnesses[0].values).not.toEqual(witnesses[1].values);
     const work = events.slice(1).filter((event) => event.kind === "work");
     expect(work.map((event) => event.stats.nodes)).toEqual(work.map((_, index) => index + 1));
-    for (const event of work) expect(event.units).toBeGreaterThan(0);
+    // Bounded per node: 1 + a mask or an assignment per cell (a child computes
+    // no masks) + the 27 leaf rule checks; classic registers no prune hook.
+    for (const event of work) {
+      expect(event.units).toBeGreaterThan(0);
+      expect(event.units).toBeLessThanOrEqual(1 + 81 + 81 + 27);
+    }
   });
   test("checks additional complete-rule semantics without discovery", () => {
     const problem = canonicalProblem({

@@ -206,19 +206,23 @@ frames, one work event per node). Same machine and Node, **on mains**
 battery, so compare nodes, not milliseconds, between the two rows.
 
 - Engine and reference agree on all 131 cases.
-- `norvig-hard1`: **244,463 nodes, 2.95 s** (target < 5 s), against 658,727
-  nodes. Every other case < 20 ms (target < 1 s); Escargot 14–16 ms (target
+- `norvig-hard1`: **244,463 nodes, 2.95 s on mains** (target < 5 s), against
+  658,727 nodes; 7.1–7.5 s on battery, so the target holds on mains only. Every other case < 20 ms (target < 1 s); Escargot 14–16 ms (target
   < 50 ms). Median 3.8–3.9 ms, p90 4.8–5.6 ms. The test file runs in about 10 s.
+- Work units (spec §4.1: one per node, mask computed at the root, assignment,
+  prune call and leaf check; review fix): `hard1` 1,075,513 units after the
+  198,301-unit reservation, at most 83 units per node on the corpus.
 - Nodes: 689 against 991 on the 48 exhaustive cases (count `0` or `1`), none
   above baseline; 1,443 against 1,749 on all cases except `hard1`.
 - **Gate miss**: five `2+` cases need 1–3 more nodes than the baseline
   (random-14, -23, -33, -41, -53, marked below). These searches stop at the
   second witness, so their node count is the length of the path to it; the
   stronger propagation places more singles after a decision and MRV then
-  breaks ties on other cells. Four tie-break rules were tried (lowest index:
-  5 misses; most unassigned peers: 25; fewest: 28; MRV on peer-only masks: 1,
-  with `hard1` at 248k nodes); the tie-break also moves `hard1` between 49 and
-  244k nodes, so none was tuned to the corpus. T02 keeps the spec's MRV with
+  breaks ties on other cells. Four tie-break rules were tried, with misses and
+  `hard1` nodes: lowest index 5 and 244,463; most unassigned peers 25 and
+  4,835; fewest unassigned peers 28 and 49; MRV on peer-only masks 1 and
+  248,085. `hard1` stops at its second witness, so its node count is as
+  tie-dependent as the small cases; no rule was tuned to the corpus. T02 keeps the spec's MRV with
   lowest-index ties; the strict "≤ baseline on every case" gate is open and
   was raised for a decision.
 

@@ -47,8 +47,9 @@ function run(problem: EngineProblem, assembly: Assembly) {
 
 describe("exact enumeration with module forward checking (T06)", () => {
   test("classic puzzles keep their statistics: no module offers a hook, only houses prune", () => {
-    // Golden values pinned on this branch; classic problems register no prune
-    // hook, so the loop is the same singles-plus-peers search as before.
+    // Classic problems register no prune hook, so production rules and the
+    // all-different rule alone must run the same search (singles and locked
+    // candidates over the houses) with the same statistics and witness.
     const problem = normalizeClassic({
       kind: "classic",
       version: 1,
@@ -161,6 +162,7 @@ describe("exact enumeration with module forward checking (T06)", () => {
     };
     for (let seed = 1; seed <= 40; seed += 1) {
       const { small, problem } = engineProblem(seed, {
+        width: seed % 2 === 0 ? 6 : 4,
         cages: 3,
         arrows: 2,
         orders: 2,
