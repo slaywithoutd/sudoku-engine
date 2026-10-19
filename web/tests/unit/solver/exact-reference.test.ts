@@ -15,8 +15,8 @@ import {
 import corpusJson from "../../solver/bench/eval-corpus.json";
 
 // M2.6 T01: the engine's exact count against the independent reference DFS on
-// the evaluation corpus. Heavy cases (minutes with the baseline engine) run
-// only with M26_HEAVY=1; M26_BASELINE_RECORD=<file> appends one JSON line of
+// the evaluation corpus. Heavy cases (none since T02; hard1 was 786 s on the
+// baseline engine) run only with M26_HEAVY=1; M26_BASELINE_RECORD=<file> appends one JSON line of
 // nodes and milliseconds per case for docs/history/m26-baseline.md.
 const corpus = corpusJson as EvalCorpus;
 const runHeavy = process.env.M26_HEAVY === "1";

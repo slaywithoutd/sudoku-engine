@@ -65,7 +65,7 @@ describe("bounded solver phases", () => {
       profile: "classic-expanded@1",
       scheduler: "scheduler@1",
       checker: "checker@1",
-      exact: "original-dfs@1",
+      exact: "original-dfs@2",
       optionsKey: "options",
       parentEvidenceId: null,
     };
@@ -132,7 +132,7 @@ describe("bounded solver phases", () => {
       profile: "classic-expanded@1",
       scheduler: "scheduler@1",
       checker: "checker@1",
-      exact: "original-dfs@1",
+      exact: "original-dfs@2",
       optionsKey: "options",
       parentEvidenceId: null,
     };

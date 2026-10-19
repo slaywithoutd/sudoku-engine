@@ -78,11 +78,15 @@ describe("original-problem exact enumeration", () => {
       units: exactInitializationReservation(problem, assembly).workUnits,
       stats: { nodes: 0 },
     });
-    expect(events[1]).toMatchObject({ kind: "work", units: 1, stats: { nodes: 1 } });
+    // original-dfs@2: one work event per node. The empty root counts 1 (node) +
+    // 81 masks + 27 house scans + 54 box/line pairs, with nothing to assign.
+    expect(events[1]).toMatchObject({ kind: "work", units: 163, stats: { nodes: 1 } });
     const witnesses = events.filter((event) => event.kind === "witness");
     expect(witnesses[0].decisions[0]).toEqual({ cell: 0, symbol: 1, positive: true });
     expect(witnesses[0].values).not.toEqual(witnesses[1].values);
-    for (const event of events.slice(1)) if (event.kind === "work") expect(event.units).toBe(1);
+    const work = events.slice(1).filter((event) => event.kind === "work");
+    expect(work.map((event) => event.stats.nodes)).toEqual(work.map((_, index) => index + 1));
+    for (const event of work) expect(event.units).toBeGreaterThan(0);
   });
   test("checks additional complete-rule semantics without discovery", () => {
     const problem = canonicalProblem({

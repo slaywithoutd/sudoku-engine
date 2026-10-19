@@ -195,3 +195,163 @@ target (`hard1` < 5 s) should let it leave the heavy gate.
 | poisoned-57 | 0 | 36 | 1 | 1 | 0 | 10 / 5.9 | 1 | 0 / 0 |
 | poisoned-58 | 2+ | 38 | 3 | 0 | 1 | 13.7 / 14.3 | 3 | 0 / 0 |
 | poisoned-59 | 0 | 39 | 1 | 1 | 0 | 5.3 / 11.3 | 1 | 0 / 0 |
+
+## T02 row: `original-dfs@2`
+
+Measured on 2026-10-19 on `feat/m26-hardening` after T02 (bulk naked and hidden
+singles, locked candidates over pairs of full houses, masks inherited by child
+frames, one work event per node). Same machine and Node, **on mains**
+(`BatteryStatus` 2), two passes of the default run, which now includes
+`norvig-hard1` (no case is `heavy` any more). Baseline times above are on
+battery, so compare nodes, not milliseconds, between the two rows.
+
+- Engine and reference agree on all 131 cases.
+- `norvig-hard1`: **244,463 nodes, 2.95 s** (target < 5 s), against 658,727
+  nodes. Every other case < 20 ms (target < 1 s); Escargot 14–16 ms (target
+  < 50 ms). Median 3.8–3.9 ms, p90 4.8–5.6 ms. The test file runs in about 10 s.
+- Nodes: 689 against 991 on the 48 exhaustive cases (count `0` or `1`), none
+  above baseline; 1,443 against 1,749 on all cases except `hard1`.
+- **Gate miss**: five `2+` cases need 1–3 more nodes than the baseline
+  (random-14, -23, -33, -41, -53, marked below). These searches stop at the
+  second witness, so their node count is the length of the path to it; the
+  stronger propagation places more singles after a decision and MRV then
+  breaks ties on other cells. Four tie-break rules were tried (lowest index:
+  5 misses; most unassigned peers: 25; fewest: 28; MRV on peer-only masks: 1,
+  with `hard1` at 248k nodes); the tie-break also moves `hard1` between 49 and
+  244k nodes, so none was tuned to the corpus. T02 keeps the spec's MRV with
+  lowest-index ties; the strict "≤ baseline on every case" gate is open and
+  was raised for a decision.
+
+| Case | Count | Baseline nodes | T02 nodes | T02 backtracks | T02 depth | T02 engine ms (run 1 / run 2) |
+| --- | :-: | ---: | ---: | ---: | ---: | ---: |
+| easy | 1 | 1 | 1 | 0 | 0 | 12.4 / 10.1 |
+| hidden-singles | 1 | 1 | 1 | 0 | 0 | 5 / 6.8 |
+| seventeen | 1 | 1 | 1 | 0 | 0 | 6.3 / 5 |
+| escargot | 1 | 143 | 131 | 65 | 9 | 16.2 / 14.2 |
+| inkala-2012 | 1 | 321 | 107 | 53 | 11 | 10.1 / 8.8 |
+| golden-nugget | 1 | 470 | 394 | 198 | 10 | 18.4 / 16.1 |
+| anti-brute-force | 1 | 1 | 1 | 0 | 0 | 4.7 / 4.7 |
+| norvig-hard1 | 2+ | 658,727 | 244,463 | 123,538 | 27 | 2,950.9 / 2,956.9 |
+| empty | 2+ | 49 | 49 | 0 | 47 | 4.1 / 4.5 |
+| seventeen-minus-one | 2+ | 14 | 14 | 0 | 12 | 3.7 / 4.2 |
+| escargot-poisoned | 0 | 13 | 13 | 7 | 5 | 4.5 / 4 |
+| random-00 | 2+ | 9 | 9 | 0 | 7 | 3.9 / 6.4 |
+| random-01 | 2+ | 9 | 9 | 0 | 7 | 3.6 / 4.1 |
+| random-02 | 2+ | 5 | 5 | 0 | 3 | 3.9 / 3.4 |
+| random-03 | 2+ | 6 | 6 | 0 | 4 | 3.4 / 3.3 |
+| random-04 | 2+ | 5 | 5 | 0 | 3 | 3.4 / 4.3 |
+| random-05 | 2+ | 4 | 4 | 0 | 2 | 3.5 / 3.4 |
+| random-06 | 2+ | 4 | 4 | 0 | 2 | 4.8 / 4.1 |
+| random-07 | 2+ | 6 | 6 | 0 | 4 | 3.6 / 4.8 |
+| random-08 | 2+ | 7 | 7 | 0 | 5 | 3.4 / 3.6 |
+| random-09 | 2+ | 7 | 7 | 0 | 5 | 3.6 / 3.5 |
+| random-10 | 2+ | 13 | 13 | 0 | 11 | 4.2 / 3.7 |
+| random-11 | 2+ | 22 | 22 | 0 | 20 | 4.1 / 4.5 |
+| random-12 | 2+ | 7 | 7 | 0 | 5 | 3.5 / 3.6 |
+| random-13 | 2+ | 16 | 15 | 0 | 13 | 3.9 / 3.7 |
+| random-14 | 2+ | 11 | 12 **(+1)** | 1 | 9 | 4.8 / 3.5 |
+| random-15 | 2+ | 6 | 6 | 0 | 4 | 3.3 / 3.9 |
+| random-16 | 2+ | 8 | 8 | 0 | 6 | 3.3 / 3.7 |
+| random-17 | 2+ | 21 | 21 | 0 | 19 | 3.9 / 4.1 |
+| random-18 | 2+ | 3 | 3 | 0 | 1 | 3.3 / 3.7 |
+| random-19 | 2+ | 17 | 17 | 0 | 15 | 3.5 / 3.7 |
+| random-20 | 2+ | 5 | 5 | 0 | 3 | 3.9 / 3.2 |
+| random-21 | 2+ | 13 | 13 | 1 | 10 | 5.1 / 3.6 |
+| random-22 | 2+ | 9 | 9 | 0 | 7 | 4.7 / 4.7 |
+| random-23 | 2+ | 9 | 10 **(+1)** | 0 | 8 | 3.9 / 4.7 |
+| random-24 | 2+ | 11 | 11 | 1 | 8 | 4.7 / 3.5 |
+| random-25 | 2+ | 8 | 8 | 0 | 6 | 4.4 / 3.5 |
+| random-26 | 2+ | 6 | 6 | 0 | 4 | 4.2 / 4.5 |
+| random-27 | 2+ | 5 | 5 | 0 | 3 | 3.3 / 3.7 |
+| random-28 | 2+ | 9 | 9 | 0 | 7 | 7.2 / 4.8 |
+| random-29 | 2+ | 5 | 5 | 0 | 3 | 4.1 / 4.3 |
+| random-30 | 2+ | 7 | 7 | 0 | 5 | 3.8 / 3.5 |
+| random-31 | 2+ | 5 | 5 | 0 | 3 | 2.9 / 3.8 |
+| random-32 | 2+ | 6 | 6 | 0 | 4 | 3.1 / 4.3 |
+| random-33 | 2+ | 12 | 15 **(+3)** | 1 | 12 | 3.6 / 5.4 |
+| random-34 | 2+ | 10 | 10 | 0 | 8 | 4.4 / 4.2 |
+| random-35 | 2+ | 4 | 4 | 0 | 2 | 3.4 / 3.1 |
+| random-36 | 2+ | 7 | 7 | 0 | 5 | 3.3 / 3.5 |
+| random-37 | 2+ | 9 | 9 | 0 | 7 | 3.5 / 3.4 |
+| random-38 | 2+ | 12 | 12 | 0 | 10 | 4.3 / 3.7 |
+| random-39 | 2+ | 8 | 8 | 0 | 6 | 3.3 / 4.1 |
+| random-40 | 2+ | 7 | 7 | 0 | 5 | 3.5 / 3.9 |
+| random-41 | 2+ | 7 | 10 **(+3)** | 0 | 8 | 3.5 / 3.6 |
+| random-42 | 2+ | 15 | 15 | 0 | 13 | 4.3 / 4 |
+| random-43 | 2+ | 17 | 17 | 0 | 15 | 3.5 / 4.6 |
+| random-44 | 2+ | 6 | 6 | 0 | 4 | 3.3 / 5.3 |
+| random-45 | 2+ | 13 | 13 | 1 | 10 | 4.8 / 4.1 |
+| random-46 | 2+ | 14 | 12 | 0 | 10 | 4.7 / 3.3 |
+| random-47 | 2+ | 10 | 10 | 0 | 8 | 3.7 / 3.9 |
+| random-48 | 2+ | 5 | 5 | 0 | 3 | 3.2 / 3.4 |
+| random-49 | 2+ | 15 | 15 | 1 | 12 | 3.2 / 4.3 |
+| random-50 | 2+ | 3 | 3 | 0 | 1 | 3.7 / 5.3 |
+| random-51 | 2+ | 11 | 11 | 0 | 9 | 3.5 / 4.7 |
+| random-52 | 2+ | 14 | 14 | 0 | 12 | 4 / 4.3 |
+| random-53 | 2+ | 9 | 10 **(+1)** | 0 | 8 | 3.4 / 4.2 |
+| random-54 | 2+ | 11 | 11 | 0 | 9 | 3.7 / 4.5 |
+| random-55 | 2+ | 19 | 18 | 0 | 16 | 3.4 / 3.7 |
+| random-56 | 2+ | 10 | 8 | 0 | 6 | 3.8 / 4.1 |
+| random-57 | 1 | 1 | 1 | 0 | 0 | 3.1 / 4.9 |
+| random-58 | 2+ | 20 | 20 | 0 | 18 | 4.2 / 3.3 |
+| random-59 | 2+ | 11 | 11 | 0 | 9 | 3.4 / 3.8 |
+| poisoned-00 | 0 | 1 | 1 | 1 | 0 | 3.2 / 4.6 |
+| poisoned-01 | 2+ | 6 | 6 | 0 | 4 | 4.1 / 5.6 |
+| poisoned-02 | 0 | 1 | 1 | 1 | 0 | 4.6 / 5.8 |
+| poisoned-03 | 2+ | 7 | 7 | 0 | 5 | 4 / 5.4 |
+| poisoned-04 | 0 | 1 | 1 | 1 | 0 | 3.7 / 3.9 |
+| poisoned-05 | 0 | 1 | 1 | 1 | 0 | 3.8 / 3.1 |
+| poisoned-06 | 0 | 1 | 1 | 1 | 0 | 3.8 / 3.6 |
+| poisoned-07 | 0 | 1 | 1 | 1 | 0 | 3.1 / 5.3 |
+| poisoned-08 | 2+ | 6 | 6 | 0 | 4 | 4 / 4.7 |
+| poisoned-09 | 0 | 1 | 1 | 1 | 0 | 4.6 / 4.2 |
+| poisoned-10 | 2+ | 5 | 4 | 0 | 2 | 3.3 / 6 |
+| poisoned-11 | 0 | 1 | 1 | 1 | 0 | 3.2 / 3.1 |
+| poisoned-12 | 0 | 1 | 1 | 1 | 0 | 3.5 / 2.9 |
+| poisoned-13 | 2+ | 10 | 5 | 0 | 3 | 4.3 / 3.5 |
+| poisoned-14 | 0 | 1 | 1 | 1 | 0 | 3.4 / 3.4 |
+| poisoned-15 | 0 | 1 | 1 | 1 | 0 | 3.1 / 3.5 |
+| poisoned-16 | 2+ | 7 | 7 | 1 | 4 | 3.8 / 3.9 |
+| poisoned-17 | 0 | 1 | 1 | 1 | 0 | 3.3 / 4.6 |
+| poisoned-18 | 0 | 1 | 1 | 1 | 0 | 3.2 / 4.1 |
+| poisoned-19 | 2+ | 11 | 10 | 0 | 8 | 3.6 / 3.9 |
+| poisoned-20 | 2+ | 6 | 6 | 0 | 4 | 3.9 / 3.3 |
+| poisoned-21 | 2+ | 3 | 3 | 0 | 1 | 4.7 / 5.7 |
+| poisoned-22 | 2+ | 6 | 6 | 0 | 4 | 4.2 / 3.7 |
+| poisoned-23 | 0 | 1 | 1 | 1 | 0 | 3.1 / 3.2 |
+| poisoned-24 | 0 | 1 | 1 | 1 | 0 | 2.8 / 3.6 |
+| poisoned-25 | 0 | 1 | 1 | 1 | 0 | 3.9 / 3.2 |
+| poisoned-26 | 2+ | 4 | 4 | 0 | 2 | 3.3 / 3.8 |
+| poisoned-27 | 0 | 1 | 1 | 1 | 0 | 3.3 / 4.4 |
+| poisoned-28 | 0 | 1 | 1 | 1 | 0 | 3.1 / 6.8 |
+| poisoned-29 | 2+ | 5 | 5 | 0 | 3 | 3.5 / 4.4 |
+| poisoned-30 | 0 | 1 | 1 | 1 | 0 | 3.4 / 4.1 |
+| poisoned-31 | 0 | 1 | 1 | 1 | 0 | 3.3 / 4.7 |
+| poisoned-32 | 2+ | 8 | 8 | 0 | 6 | 4.2 / 3.7 |
+| poisoned-33 | 0 | 1 | 1 | 1 | 0 | 5.4 / 3.8 |
+| poisoned-34 | 2+ | 8 | 8 | 0 | 6 | 4.8 / 4.7 |
+| poisoned-35 | 2+ | 5 | 5 | 0 | 3 | 4.4 / 4.6 |
+| poisoned-36 | 0 | 1 | 1 | 1 | 0 | 3.8 / 3.4 |
+| poisoned-37 | 2+ | 12 | 12 | 0 | 10 | 4.5 / 3.9 |
+| poisoned-38 | 2+ | 4 | 4 | 0 | 2 | 3.4 / 7.3 |
+| poisoned-39 | 0 | 1 | 1 | 1 | 0 | 3.6 / 4.4 |
+| poisoned-40 | 0 | 1 | 1 | 1 | 0 | 5.5 / 6.9 |
+| poisoned-41 | 2+ | 3 | 3 | 0 | 1 | 4.4 / 5.3 |
+| poisoned-42 | 1 | 1 | 1 | 0 | 0 | 4.5 / 3.8 |
+| poisoned-43 | 1 | 1 | 1 | 0 | 0 | 4.7 / 4.3 |
+| poisoned-44 | 0 | 1 | 1 | 1 | 0 | 3.3 / 3.9 |
+| poisoned-45 | 0 | 1 | 1 | 1 | 0 | 2.9 / 3.3 |
+| poisoned-46 | 0 | 1 | 1 | 1 | 0 | 3 / 3 |
+| poisoned-47 | 0 | 1 | 1 | 1 | 0 | 3.1 / 3.3 |
+| poisoned-48 | 0 | 1 | 1 | 1 | 0 | 3.4 / 4 |
+| poisoned-49 | 0 | 1 | 1 | 1 | 0 | 3.9 / 3.2 |
+| poisoned-50 | 2+ | 6 | 6 | 0 | 4 | 3.5 / 3.4 |
+| poisoned-51 | 0 | 1 | 1 | 1 | 0 | 4.1 / 3.2 |
+| poisoned-52 | 0 | 1 | 1 | 1 | 0 | 4.3 / 3.4 |
+| poisoned-53 | 0 | 1 | 1 | 1 | 0 | 3.9 / 3.2 |
+| poisoned-54 | 0 | 1 | 1 | 1 | 0 | 3.8 / 3 |
+| poisoned-55 | 2+ | 7 | 7 | 1 | 3 | 5.1 / 3.6 |
+| poisoned-56 | 0 | 1 | 1 | 1 | 0 | 3.7 / 3.6 |
+| poisoned-57 | 0 | 1 | 1 | 1 | 0 | 3.3 / 3.4 |
+| poisoned-58 | 2+ | 3 | 3 | 0 | 1 | 4.4 / 4 |
+| poisoned-59 | 0 | 1 | 1 | 1 | 0 | 4.2 / 4.8 |

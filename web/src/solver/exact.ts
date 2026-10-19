@@ -2,7 +2,7 @@ import { canonicalProblem } from "./problem";
 import type { EngineProblem, ConstraintInstance } from "./problem";
 import type { Assembly, RuleModule } from "./rules/types";
 import type { Literal } from "./state/types";
-import { hasSingleCandidate, symbolMask } from "./state/read";
+import { symbolMask } from "./state/read";
 import { defined } from "./invariants";
 
 export interface ExactStats {
@@ -20,7 +20,7 @@ export type ExactEvent =
     }
   | { readonly kind: "exhausted" | "cap-reached"; readonly stats: ExactStats };
 
-export const EXACT_METHOD = "original-dfs@1";
+export const EXACT_METHOD = "original-dfs@2";
 
 export interface ExactInitializationReservation {
   readonly workUnits: number;
@@ -131,8 +131,9 @@ function inputSize(problem: EngineProblem): {
 /**
  * Reserve before calling exactSteps and check deadline before/after construction.
  * This conservative entry/character model covers one caller reservation preflight,
- * one internal preflight, both canonical copies, peer construction and the maximum
- * explicit frontier. The first work event reports this same reservation ONCE;
+ * one internal preflight, both canonical copies, peer and house-pair construction
+ * and the maximum explicit frontier (values and masks per frame). The first work
+ * event reports this same reservation ONCE;
  * it is not an ordinary cooperative unit. Extra caller preflights need extra budget.
  * Workspace is accounted storage, not measured JavaScript heap. Scalar parameters
  * have <=16 integer/boolean fields, identifiers <=16Ki characters, key <=1Mi
@@ -158,10 +159,17 @@ export function exactInitializationReservation(
     symbols = problem.symbols.length;
   const scalarWork = 8 * (first.entries + second.entries + first.characters + second.characters);
   const peerWork = 4 * cells * (problem.constraints.length + first.scopes + cells);
+  // Locked-candidate pairs: each scope cell against every rule that may share it.
+  const pairWork = 4 * first.scopes * problem.constraints.length;
   return Object.freeze({
-    workUnits: 1 + scalarWork + peerWork,
+    workUnits: 1 + scalarWork + peerWork + pairWork,
     workspaceBytes:
-      64 * (first.entries + second.entries + cells * cells + cells * symbols * (cells + 4)) +
+      64 *
+        (first.entries +
+          second.entries +
+          cells * cells +
+          cells * symbols * (2 * cells + 4) +
+          2 * first.scopes * problem.constraints.length) +
       4 * (first.characters + second.characters),
   });
 }
@@ -173,6 +181,19 @@ class OriginalSemantics {
   readonly checks: readonly ((values: readonly number[]) => boolean)[];
   readonly houses: readonly ConstraintInstance[];
   readonly peers: readonly (readonly number[])[];
+  /** All-different houses that hold every symbol once; they support hidden singles. */
+  readonly fullHouses: readonly (readonly number[])[];
+  /**
+   * Pairs of full houses sharing at least two cells (box and line in classic).
+   * A symbol confined to the shared cells in one house leaves the rest of the
+   * other house (locked candidates: pointing and claiming).
+   */
+  readonly lockedPairs: readonly {
+    readonly shared: readonly number[];
+    readonly onlyFirst: readonly number[];
+    readonly onlySecond: readonly number[];
+  }[];
+  readonly full: number;
   /** Rules whose module offers a forward check (spec §3.13); all-different is covered by peers. */
   readonly pruners: readonly {
     readonly rule: ConstraintInstance;
@@ -219,6 +240,32 @@ class OriginalSemantics {
         ),
       ].sort((left, right) => left - right),
     );
+    this.full = this.problem.symbols.reduce((mask, symbol) => mask | symbolMask(symbol), 0);
+    const full = this.houses.filter((rule) => rule.cells.length === this.problem.symbols.length);
+    this.fullHouses = full.map((rule) => [...rule.cells]);
+    const membership = this.problem.cells.map(() => [] as number[]);
+    full.forEach((rule, index) => {
+      for (const cell of rule.cells) membership[cell].push(index);
+    });
+    const pairs = new Map<number, number>();
+    for (const houses of membership)
+      for (let left = 0; left < houses.length; left++)
+        for (let right = left + 1; right < houses.length; right++) {
+          const key = houses[left] * full.length + houses[right];
+          pairs.set(key, (pairs.get(key) ?? 0) + 1);
+        }
+    this.lockedPairs = [...pairs]
+      .filter(([, shared]) => shared >= 2)
+      .sort(([left], [right]) => left - right)
+      .map(([key]) => {
+        const first = new Set(full[Math.floor(key / full.length)].cells),
+          second = new Set(full[key % full.length].cells);
+        return {
+          shared: [...first].filter((cell) => second.has(cell)),
+          onlyFirst: [...first].filter((cell) => !second.has(cell)),
+          onlySecond: [...second].filter((cell) => !first.has(cell)),
+        };
+      });
   }
   validValues(values: unknown): values is readonly number[] {
     if (!Array.isArray(values) || values.length !== this.problem.cells.length) return false;
@@ -235,22 +282,47 @@ class OriginalSemantics {
 
 interface Frame {
   values: number[];
+  /**
+   * The parent's fixed-point masks with the branched cell already narrowed to
+   * its symbol, or null at the root.
+   */
+  masks: readonly number[] | null;
+  /** The branched cell whose symbol still has to leave its peers; -1 at the root. */
+  branch: number;
   decisions: readonly Literal[];
 }
 
-/** One explicit DFS frontier. Backtracks count rejected terminal branches. */
+/** Symbol of a single-bit mask (symbol s is bit s - 1, as in symbolMask). */
+function symbolOf(mask: number): number {
+  return 32 - Math.clz32(mask);
+}
+function popcount(mask: number): number {
+  let count = 0;
+  for (let rest = mask; rest !== 0; rest &= rest - 1) count++;
+  return count;
+}
+
+/**
+ * One explicit DFS frontier. A node is one popped frame: propagation to a fixed
+ * point, then MRV branching in ascending symbol order. Backtracks count rejected
+ * nodes. Sibling branches differ in the branched cell, so witnesses are distinct.
+ */
 class ExactSearchSession {
   private readonly semantics: OriginalSemantics;
   private readonly frontier: Frame[];
-  private readonly seen = new Set<string>();
   private nodes = 0;
   private backtracks = 0;
   private maxDepth = 0;
+  private witnesses = 0;
+  /** Primitive operations of the current node, reported by its single work event. */
+  private units = 0;
   private readonly reservation: ExactInitializationReservation;
   constructor(problem: EngineProblem, assembly: Assembly) {
     this.semantics = new OriginalSemantics(problem, assembly);
     this.reservation = this.semantics.reservation;
-    this.frontier = [{ values: [...this.semantics.problem.givens], decisions: [] }];
+    this.frontier = [
+      { values: [...this.semantics.problem.givens], masks: null, branch: -1, decisions: [] },
+    ];
   }
   private stats(): ExactStats {
     return Object.freeze({
@@ -259,69 +331,116 @@ class ExactSearchSession {
       maxDepth: this.maxDepth,
     });
   }
-  private work(): ExactEvent {
-    return Object.freeze({ kind: "work", units: 1, stats: this.stats() });
+
+  /** Places a symbol and removes it from every peer; false on a contradiction. */
+  private assign(values: number[], masks: number[], cell: number, bit: number): boolean {
+    this.units++;
+    values[cell] = symbolOf(bit);
+    masks[cell] = bit;
+    for (const peer of this.semantics.peers[cell])
+      if ((masks[peer] & bit) !== 0) {
+        masks[peer] &= ~bit;
+        if (masks[peer] === 0) return false;
+      }
+    return true;
   }
 
-  /** Each yield follows one bounded cell scan, house/symbol scan or assignment. */
-  private *propagate(values: number[]): Generator<ExactEvent, number[] | null, void> {
-    const { problem, peers, houses, pruners } = this.semantics;
-    const full = (1 << problem.symbols.length) - 1;
-    for (;;) {
-      const masks: number[] = [];
+  /**
+   * Bulk naked and hidden singles, module forward checks and locked candidates
+   * to a fixed point. Every step only removes candidates that no completion of
+   * `values` uses. Returns the masks, or null on a contradiction.
+   */
+  private propagate(frame: Frame): number[] | null {
+    const { problem, peers, pruners, fullHouses, lockedPairs, full } = this.semantics;
+    const values = frame.values;
+    let masks: number[];
+    if (frame.masks) {
+      // The parent's masks already exclude every other placed symbol.
+      masks = frame.masks.slice();
+      if (!this.assign(values, masks, frame.branch, masks[frame.branch])) return null;
+    } else {
+      masks = [];
       for (const cell of problem.cells) {
         let mask = full;
         for (const peer of peers[cell]) if (values[peer] !== 0) mask &= ~symbolMask(values[peer]);
         if (values[cell] !== 0) mask &= symbolMask(values[cell]);
-        masks[cell] = mask;
-        yield this.work();
+        this.units++;
         if (mask === 0) return null;
+        masks[cell] = mask;
       }
-      // Module forward checks to a fixed point. A hook may only shrink the
-      // masks of its own cells; anything else it returns is ignored.
-      let narrowed = true;
-      while (narrowed) {
-        narrowed = false;
-        for (const { rule, prune } of pruners) {
-          const next = prune(rule, problem, values, masks);
-          yield this.work();
-          if (next === null) return null;
-          for (const cell of rule.cells) {
-            const mask = next[cell] & masks[cell];
-            if (mask === 0) return null;
-            if (mask !== masks[cell]) {
-              masks[cell] = mask;
-              narrowed = true;
-            }
-          }
-        }
-      }
-      let single = -1;
-      for (const cell of problem.cells)
-        if (values[cell] === 0 && hasSingleCandidate(masks[cell])) {
-          single = cell;
-          break;
-        }
-      if (single >= 0) {
-        values[single] = Math.log2(masks[single]) + 1;
-        yield this.work();
-        continue;
-      }
-      let hidden: { cell: number; symbol: number } | undefined;
-      for (const house of houses)
-        if (house.cells.length === problem.symbols.length) {
-          for (const symbol of problem.symbols) {
-            const supports = house.cells.filter((cell) => (masks[cell] & symbolMask(symbol)) !== 0);
-            yield this.work();
-            if (supports.length === 0) return null;
-            if (supports.length === 1 && values[supports[0]] === 0 && !hidden)
-              hidden = { cell: supports[0], symbol };
-          }
-        }
-      if (!hidden) return masks;
-      values[hidden.cell] = hidden.symbol;
-      yield this.work();
     }
+    for (;;) {
+      let changed = false;
+      for (const cell of problem.cells)
+        if (values[cell] === 0 && (masks[cell] & (masks[cell] - 1)) === 0) {
+          if (!this.assign(values, masks, cell, masks[cell])) return null;
+          changed = true;
+        }
+      for (const house of fullHouses) {
+        this.units++;
+        let once = 0,
+          twice = 0;
+        for (const cell of house) {
+          twice |= once & masks[cell];
+          once |= masks[cell];
+        }
+        if (once !== full) return null;
+        for (let singles = once & ~twice; singles !== 0; singles &= singles - 1) {
+          const bit = singles & -singles;
+          const cell = house.find((member) => (masks[member] & bit) !== 0);
+          // An assignment earlier in this sweep removed the house's only support.
+          if (cell === undefined) return null;
+          if (values[cell] === 0) {
+            if (!this.assign(values, masks, cell, bit)) return null;
+            changed = true;
+          }
+        }
+      }
+      if (changed) continue;
+      // Module forward checks. A hook may only shrink the masks of its own
+      // cells; anything else it returns is ignored.
+      for (const { rule, prune } of pruners) {
+        this.units++;
+        const next = prune(rule, problem, values, masks);
+        if (next === null) return null;
+        for (const cell of rule.cells) {
+          const mask = next[cell] & masks[cell];
+          if (mask === 0) return null;
+          if (mask !== masks[cell]) {
+            masks[cell] = mask;
+            changed = true;
+          }
+        }
+      }
+      if (changed) continue;
+      for (const { shared, onlyFirst, onlySecond } of lockedPairs) {
+        this.units++;
+        let inside = 0,
+          first = 0,
+          second = 0;
+        for (const cell of shared) inside |= masks[cell];
+        for (const cell of onlyFirst) first |= masks[cell];
+        for (const cell of onlySecond) second |= masks[cell];
+        // Confined to the shared cells in one house: gone from the other's rest.
+        const fromSecond = inside & ~first & second,
+          fromFirst = inside & ~second & first;
+        for (const cell of fromSecond === 0 ? [] : onlySecond) {
+          masks[cell] &= ~fromSecond;
+          if (masks[cell] === 0) return null;
+        }
+        for (const cell of fromFirst === 0 ? [] : onlyFirst) {
+          masks[cell] &= ~fromFirst;
+          if (masks[cell] === 0) return null;
+        }
+        if (fromSecond !== 0 || fromFirst !== 0) changed = true;
+      }
+      if (!changed) return masks;
+    }
+  }
+
+  /** Propagation alone from `values`, as at the root; see exactFixedPoint. */
+  fixedPoint(values: readonly number[]): readonly number[] | null {
+    return this.propagate({ values: [...values], masks: null, branch: -1, decisions: [] });
   }
 
   *steps(): Generator<ExactEvent, void, void> {
@@ -331,66 +450,65 @@ class ExactSearchSession {
       const frame = defined(this.frontier.pop(), "frontier");
       this.nodes++;
       this.maxDepth = Math.max(this.maxDepth, frame.decisions.length);
-      yield this.work();
-      const masks = yield* this.propagate(frame.values);
-      if (!masks) {
-        this.backtracks++;
-        continue;
-      }
+      this.units = 1;
+      const masks = this.propagate(frame);
       let selected = -1,
         size = Infinity;
-      for (const cell of problem.cells) {
-        if (frame.values[cell] !== 0) continue;
-        const count = problem.symbols.filter(
-          (symbol) => (masks[cell] & symbolMask(symbol)) !== 0,
-        ).length;
-        if (count < size) {
-          selected = cell;
-          size = count;
+      if (masks)
+        for (const cell of problem.cells) {
+          if (frame.values[cell] !== 0) continue;
+          const count = popcount(masks[cell]);
+          if (count < size) {
+            selected = cell;
+            size = count;
+          }
         }
-        yield this.work();
-      }
-      if (selected < 0) {
+      let valid = masks !== null;
+      if (masks && selected < 0) {
         const values = Object.freeze([...frame.values]);
-        let valid = this.semantics.validValues(values);
+        valid = this.semantics.validValues(values);
         for (const check of checks) {
           if (!valid) break;
           valid = check(values);
-          yield this.work();
+          this.units++;
         }
-        if (!valid) {
-          this.backtracks++;
-          continue;
+      }
+      // One work event per node, carrying the node's counted operations.
+      yield Object.freeze({ kind: "work", units: this.units, stats: this.stats() });
+      if (!masks || !valid) {
+        this.backtracks++;
+        continue;
+      }
+      if (selected < 0) {
+        yield Object.freeze({
+          kind: "witness",
+          values: Object.freeze([...frame.values]),
+          decisions: Object.freeze([...frame.decisions]),
+          stats: this.stats(),
+        });
+        if (++this.witnesses === 2) {
+          yield Object.freeze({ kind: "cap-reached", stats: this.stats() });
+          return;
         }
-        const key = values.join(",");
-        if (!this.seen.has(key)) {
-          this.seen.add(key);
-          yield Object.freeze({
-            kind: "witness",
-            values,
-            decisions: Object.freeze([...frame.decisions]),
-            stats: this.stats(),
-          });
-          if (this.seen.size === 2) {
-            yield Object.freeze({ kind: "cap-reached", stats: this.stats() });
-            return;
-          }
-        }
-      } else {
-        for (let index = problem.symbols.length - 1; index >= 0; index--) {
-          const symbol = problem.symbols[index];
-          if ((masks[selected] & symbolMask(symbol)) === 0) continue;
-          const values = [...frame.values];
-          values[selected] = symbol;
-          this.frontier.push({
-            values,
-            decisions: [
-              ...frame.decisions,
-              Object.freeze({ cell: selected, symbol, positive: true }),
-            ],
-          });
-          yield this.work();
-        }
+        continue;
+      }
+      for (let index = problem.symbols.length - 1; index >= 0; index--) {
+        const symbol = problem.symbols[index],
+          bit = symbolMask(symbol);
+        if ((masks[selected] & bit) === 0) continue;
+        const values = frame.values.slice(),
+          childMasks = masks.slice();
+        values[selected] = symbol;
+        childMasks[selected] = bit;
+        this.frontier.push({
+          values,
+          masks: childMasks,
+          branch: selected,
+          decisions: [
+            ...frame.decisions,
+            Object.freeze({ cell: selected, symbol, positive: true }),
+          ],
+        });
       }
     }
     // Deliberately not in finally: iterator.return() is never exhaustion.
@@ -404,6 +522,19 @@ export function exactSteps(
   assembly: Assembly,
 ): Generator<ExactEvent, void, void> {
   return new ExactSearchSession(problem, assembly).steps();
+}
+
+/**
+ * The exact phase's propagation fixed point for a partial assignment, without
+ * branching: null on a contradiction, otherwise the candidate masks. Exposed
+ * for soundness property tests (spec M2.6 §7); the search never calls it.
+ */
+export function exactFixedPoint(
+  problem: EngineProblem,
+  assembly: Assembly,
+  values: readonly number[],
+): readonly number[] | null {
+  return new ExactSearchSession(problem, assembly).fixedPoint(values);
 }
 
 /** Global domain/clue validation precedes every declared complete-rule check. */
