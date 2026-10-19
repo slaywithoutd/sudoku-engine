@@ -292,6 +292,9 @@ export async function solveProblem(
   const progressEvery = ports.progressEveryMs ?? 250;
   let lastProgress = ports.clock.now(),
     work = 0,
+    // Logical-phase work only, as the step event documents; `work` also counts
+    // the exact phases for progress.
+    logicalWork = 0,
     steps = 0;
   const tiersSeen: number[] = [];
   let pending:
@@ -351,6 +354,7 @@ export async function solveProblem(
             ports.emit({ kind: "precount", solution: [...count.witness] });
         } else if (event.kind === "work") {
           work += event.units ?? 0;
+          if (event.phase !== "exact") logicalWork += event.units ?? 0;
           const now = ports.clock.now();
           if (pending) {
             emitStep(pending);
@@ -371,7 +375,7 @@ export async function solveProblem(
             effects: event.step.proposal.effects,
             candidates: [...view.state.domains],
             cells: patternCells(event.step.proposal.pattern),
-            workUnits: work,
+            workUnits: logicalWork,
           };
         } else if (event.kind === "terminal") {
           if (pending) {

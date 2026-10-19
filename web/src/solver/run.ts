@@ -120,8 +120,9 @@ export async function runSolver(
     lease?.dispose();
     lease = undefined;
   };
-  // Work is published, and the clock read, once per quantum of exact nodes,
-  // not once per node (spec §4.2); the work cut itself stays per node.
+  // Work is published, and the clock read, once per quantum of exact events
+  // (one work event per node), not per node (spec §4.2); the work cut itself
+  // stays per node.
   let ticks = 0,
     unpublished = 0,
     unpublishedStats: ExactStats | undefined;
@@ -152,6 +153,7 @@ export async function runSolver(
       if (carried) event = carried;
       else {
         const next = exact.next();
+        // The generator always yields a terminal event before it ends.
         if (next.done) return exactTerminal ? "complete" : "resource-limit";
         event = next.value;
       }
@@ -210,11 +212,18 @@ export async function runSolver(
 
   try {
     // Count first, within its share of the work and the time (spec §4.3).
+    let reserved = 0;
     if (!request.conditional && count.kind === "unknown") {
+      const share = Math.floor(request.limits.workUnits * PRECOUNT_SHARE);
       const drive = await driveExact(
-        Math.floor(request.limits.workUnits * PRECOUNT_SHARE),
+        share,
         start + Math.floor(request.limits.timeMs * PRECOUNT_SHARE),
       );
+      // An inconclusive precount keeps its unspent share for the resumed
+      // search. Its time cap makes `exactUsed` clock-dependent, so the logical
+      // phase is cut at limits - share either way, never at a clock-dependent
+      // remainder (spec §3.4: the logical phase is cut by work units).
+      if (drive !== "complete") reserved = share - exactUsed;
       if (drive === "complete") release();
       // driveExact updates `count` through its closure.
       const precount = count as CountEvidence;
@@ -238,7 +247,7 @@ export async function runSolver(
       ...request.options,
       workspace: request.workspace,
       budget: totalBudget,
-      phaseWorkUnits: totalBudget.remaining(),
+      phaseWorkUnits: Math.max(0, totalBudget.remaining() - reserved),
       phaseTimeMs: Math.max(0, Math.floor(totalDeadline - ports.clock.now())),
       clock: ports.clock,
       accept: (step: CheckedStep) => {
@@ -277,9 +286,10 @@ export async function runSolver(
       await ports.publish({ kind: "terminal", outcome: "complete", human, count, logicalStop });
       return;
     }
-    if (count.kind !== "unknown") {
-      // A conclusive count is reused, never recomputed; the merge only checks
-      // it against the accepted logical path.
+    {
+      // A conclusive count is reused, never recomputed; this merge only checks
+      // it, or the witnesses of an inconclusive precount, against the accepted
+      // logical path (which may itself add a witness).
       const merged = mergeEvidence(count, unknownCount, context("terminal"));
       count = merged.count;
       human = merged.human;

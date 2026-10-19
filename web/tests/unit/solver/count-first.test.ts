@@ -43,6 +43,8 @@ async function solve(givens: string, limits = CLASSIC_SOLVE_LIMITS) {
 }
 
 describe("count-first pipeline (spec M2.6 §4.3, T03)", () => {
+  // Wall-clock dependent by nature: the precount must finish hard1 inside 30 %
+  // of 15 s (about 2-3 s on mains on the development laptop).
   test("Norvig hard1 at the 15 s preset reports multiple solutions", async () => {
     const { result } = await solve(puzzle("norvig-hard1").puzzle, {
       ...CLASSIC_SOLVE_LIMITS,
@@ -122,6 +124,98 @@ describe("count-first pipeline (spec M2.6 §4.3, T03)", () => {
     );
     expect(exactSteps).toHaveBeenCalledTimes(1);
     expect(published.find((event) => event.kind === "precount")?.count?.kind).toBe("unknown");
+    expect(published.at(-1)).toMatchObject({
+      kind: "terminal",
+      outcome: "complete",
+      count: { kind: "multiple" },
+    });
+    expect(workspace.usage.bytes).toBe(0);
+  });
+
+  test("a precount cut mid-search resumes with its pending node charged once", async () => {
+    // 4x4 classic with no givens: rows, columns and 2x2 boxes.
+    const houses = [
+      ...[0, 1, 2, 3].map((row) => [0, 1, 2, 3].map((column) => row * 4 + column)),
+      ...[0, 1, 2, 3].map((column) => [0, 1, 2, 3].map((row) => row * 4 + column)),
+      ...[0, 2, 8, 10].map((corner) => [corner, corner + 1, corner + 4, corner + 5]),
+    ];
+    const problem = canonicalProblem({
+        schema: 1,
+        cells: Array.from({ length: 16 }, (_, cell) => cell),
+        symbols: [1, 2, 3, 4],
+        givens: Array(16).fill(0),
+        constraints: houses.map((cells, index) => ({
+          id: `h${index}`,
+          type: "all-different@1",
+          cells,
+          parameters: {},
+        })),
+      }),
+      assembled = assemble(problem, [new AllDifferentRule()]);
+    if (!assembled.ok) throw Error("fixture");
+    // A fresh search: total work, and the work up to its first witness.
+    let total = 0,
+      atFirst = 0;
+    for (const event of exact.exactSteps(problem, assembled.value))
+      if (event.kind === "work") total += event.units;
+      else if (event.kind === "witness" && atFirst === 0) atFirst = total;
+    const workUnits = Math.ceil((atFirst + 1) / PRECOUNT_SHARE);
+    expect(Math.floor(workUnits * PRECOUNT_SHARE)).toBe(atFirst + 1);
+    const snapshot = makeSnapshot(problem, { kind: "manual" }, "carry-test", 0),
+      view = initialize(assembled.value, "primary"),
+      workspace = new IndexWorkspace({ entryLimit: 100000, byteLimit: 64000000 });
+    const limits = { ...CLASSIC_SOLVE_LIMITS, timeMs: 10_000, workUnits };
+    const published: {
+      kind?: string;
+      phase?: string;
+      units?: number;
+      count?: { kind?: string; witnesses?: unknown[] };
+    }[] = [];
+    exactSteps.mockClear();
+    await runSolver(
+      {
+        snapshot,
+        assembly: assembled.value,
+        view,
+        registry: { rules: [], techniques: [] },
+        workspace,
+        limits,
+        options: { ...schedulingOptions({ limits }), workspace },
+        run: {
+          requestId: "carry-test",
+          snapshotId: snapshot.snapshotId,
+          inputRevision: 0,
+          problemKey: problem.key,
+          operation: "primary",
+          mode: "explain",
+          engine: "engine@1",
+          profile: "classic-expanded@1",
+          scheduler: "scheduler@1",
+          checker: "checker@1",
+          exact: exact.EXACT_METHOD,
+          optionsKey: "options",
+          parentEvidenceId: null,
+        },
+        accept: () => view,
+      },
+      {
+        clock: { now: () => performance.now() },
+        yieldTask: async () => {},
+        publish: async (event) => {
+          published.push(event as (typeof published)[number]);
+        },
+        awaitAcceptance: async () => "accepted",
+      },
+    );
+    expect(exactSteps).toHaveBeenCalledTimes(1);
+    const precount = published.find((event) => event.kind === "precount");
+    expect(precount?.count).toMatchObject({ kind: "unknown" });
+    expect(precount?.count?.witnesses).toHaveLength(1);
+    // Published exact work equals a fresh run's: the carried node is charged once.
+    const charged = published
+      .filter((event) => event.kind === "work" && event.phase === "exact")
+      .reduce((sum, event) => sum + (event.units ?? 0), 0);
+    expect(charged).toBe(total);
     expect(published.at(-1)).toMatchObject({
       kind: "terminal",
       outcome: "complete",

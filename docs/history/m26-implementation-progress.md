@@ -6,7 +6,7 @@ Branch `feat/m26-hardening`, worktree `.claude/worktrees/gifted-feistel-d36469`,
 | --- | --- | --- | --- |
 | T01 evaluation corpus, reference DFS, baseline | `c51de80` | `exact-reference.test.ts`: engine = reference on 131 cases; baseline in [m26-baseline](m26-baseline.md) (battery) | `2883163` (assembly zero, full regeneration check, Node version, README scope); merged to `master` at `ffbd872` |
 | T02 exact propagation (`original-dfs@2`) | `5b0ee1b` | see below; `npm test` 83 files, 2,010 passed, 6 skipped, 0 failed (2,379 s, mains then battery); typecheck clean | `fix(solver): T02 review`: no soundness defect (reviewer's 600-problem 4x4/6x6 variant differential matched the oracle); units now count only what §4.1 lists, reservation bounded by full-house pairs, per-node unit bound asserted, 6x6 in the property test |
-| T03 count-first pipeline | pending | see below; `npm test` 84 files, 2,013 passed, 7 skipped, 0 failed (2,229 s, mains); typecheck clean | pending |
+| T03 count-first pipeline | `69040ae` | see below; `npm test` 84 files, 2,013 passed, 7 skipped, 0 failed (2,229 s, mains); typecheck clean | `fix(solver): T03 review`: logical cut made clock-independent when the precount is inconclusive, witnesses of an inconclusive precount re-checked against the logical path, step work counts logical work only, mid-search carry test |
 
 ## T02
 
@@ -20,9 +20,16 @@ Exact search: bulk naked and hidden singles, locked candidates over every pair o
 
 ## T03
 
-Count first (spec §4.3): `runSolver` drives one exact search with up to 30 % of the work and 30 % of the time (`PRECOUNT_SHARE`), publishes a `precount` event, ends before the logical phase on zero or multiple, reuses a conclusive count (checked against the accepted logical path, never recomputed), and otherwise suspends the same generator and resumes it after the logical phase with the remaining budget. The logical phase gets the remaining work as its deterministic cut and the remaining time as a safety stop; `humanSteps` now reports `work-limit` and `time-limit` instead of folding both into `logical-budget`, and `runSolver` reports its own deadline stop as `time-limit`. `classic-run` drops its separate 10 % precount (`countClassic`, the correctness marks, now uses the same 30 % share). Exact work is published, and the clock read, once per 256 nodes.
+Count first (spec §4.3): `runSolver` drives one exact search with up to 30 % of the work and 30 % of the time (`PRECOUNT_SHARE`), publishes a `precount` event, ends before the logical phase on zero or multiple, reuses a conclusive count (checked against the accepted logical path, never recomputed), and otherwise suspends the same generator and resumes it after the logical phase with the remaining budget. The logical phase gets the remaining work as its deterministic cut and the remaining time as a safety stop; `humanSteps` now reports `work-limit` and `time-limit` instead of folding both into `logical-budget`, and `runSolver` reports its own deadline stop as `time-limit`. `classic-run` drops its separate 10 % precount (`countClassic`, the correctness marks, now uses the same 30 % share). Exact work is published, and the clock read, once per 256 exact events (one work event per node).
 
 Exact speed, needed for the 15 s check on this laptop's slower states: propagation is now incremental (a naked-single queue; only houses and locked pairs touched by a mask change are re-examined; module hooks rerun only after a change). Same fixed point, so node counts are identical on all 131 cases; `hard1` 2.1–2.8 s against 5.6–7.2 s for the T02 code, measured alternately in one process on mains.
 
 - `count-first.test.ts`, mains: `hard1` at the 15 s preset reports `multiple`; every corpus case starts `exactSteps` exactly once (spy) and reports its label's count; an inconclusive precount (share below the reservation) is resumed after the logical phase, not restarted, and ends `multiple`.
 - Determinism (`M26_DETERMINISM=1`, 851 s, mains): three runs of every corpus case at 60 s gave identical results and step sequences on all 131 (7 solved, 3 incomplete at 27–28 steps, 83 multiple and 38 zero at the precount).
+
+Review fixes and recorded choices (T03):
+
+- When the precount is inconclusive (its 30 % time cap usually binds first: about 0.5M exact units per second against an 18M work share at the defaults), the work it used depends on the clock. The logical phase is therefore cut at `workUnits` minus the whole precount share, not at a clock-dependent remainder, and the resumed search gets the unspent share plus whatever the logical phase leaves. Read literally, §4.3 gives the resume only the leftovers; the unspent share is the floor chosen here.
+- After the logical phase the count is always merged against the accepted path, so a witness carried by an inconclusive precount is checked even when the resumed search gets no time.
+- While a precount is suspended its exact workspace reservation (about 8 MB of 64 MB on 9x9) stays held through the logical phase. Exact setup failures (reservation, unsupported rule) now end the run before the logical phase.
+- `hard1` at the 15 s preset depends on wall time: it passes when the precount finishes inside 4.5 s (2.1–2.8 s on mains here).
