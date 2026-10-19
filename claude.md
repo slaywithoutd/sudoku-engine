@@ -5,6 +5,43 @@
 - Do not add `Co-Authored-By` trailers to commit messages.
 - Do not add "Generated with Claude Code" lines to pull request descriptions.
 
+# Autonomous Work
+
+The user hands over work with an approved spec or plan and expects it back finished and verified, not in pieces. Work alone until the acceptance criteria pass, and come back only with a result.
+
+## The loop for each task
+
+1. Read the task's deliverable and acceptance in the spec or plan. The acceptance is the definition of done. "Looks right" is not done. A measured result is, for example "engine and reference agree on all 131 cases".
+2. Implement, then run the task's own acceptance checks.
+3. If a check fails, find the cause and fix it, then run the checks again. Keep iterating, trying another approach when one does not work. Do not report a failure you have not investigated.
+4. Have a subagent that has not seen your reasoning review the diff independently. Fix its findings, commit them as `fix(<area>): <task> review`, and re-run the checks.
+5. Commit the task (one commit per task) and move straight to the next one. Do not stop for approval between tasks.
+
+## When to come back before the end
+
+Come back only when you cannot continue without the user:
+
+- A decision outside the approved scope: changing a spec decision, an acceptance target or a `D<n>` entry, or adding a new dependency or technique.
+- An acceptance target you cannot reach after real attempts. Bring the measurements, the approaches you tried, two or three options and your recommendation. Never lower a target silently, and never mark a task done while it misses its acceptance.
+- An action that needs permission: a push, deleting a remote branch, a force operation, or touching files another session owns.
+
+Everything else is yours to decide. Record each choice in the commit message or in the progress record.
+
+## The final report
+
+When the whole milestone (or the batch you were given) is done, deliver one report:
+
+- What was built, task by task, with commit hashes.
+- The evidence: each acceptance check with its command and result, and the whole-suite gate (`npm test`, `npm run typecheck`, `npm run lint`, run one at a time).
+- Deviations from the spec and why, open risks, and what was not verified, such as measurements taken on battery.
+- A merge recommendation, yes or no, with the reason. Merge into `master` only after the user says yes. Push only after the user asks.
+
+Do not narrate progress along the way. Keep the progress record in `docs/history/` current, so the user can look whenever they want.
+
+## Measurements
+
+Before a timing or benchmark run, check whether the laptop is on battery (`Win32_Battery.BatteryStatus`; 2 means mains). Record the power state next to every timing. A target judged on battery must be confirmed on mains before the final report, or reported as unconfirmed.
+
 # Git Workflow
 
 `master` is the only long-lived branch. Everything else is short-lived and is deleted once it is merged.
