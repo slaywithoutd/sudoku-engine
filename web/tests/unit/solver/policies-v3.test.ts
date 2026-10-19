@@ -13,6 +13,9 @@ import { POLICY_IDS, schedulingOptions, type PolicyId } from "../../../src/solve
 import { commitChecked, initialize } from "../../../src/solver/state/candidates";
 import { coverageEntries } from "../../../src/solver/techniques/manifest";
 import { assembleTechniqueJobs } from "../../../src/solver/techniques/registry";
+import type { TechniqueDescriptor } from "../../../src/solver/techniques/types";
+import { canonicalProblem } from "../../../src/solver/problem";
+import { AllDifferentRule } from "../../../src/solver/rules/all-different";
 import evalCorpus from "../../solver/bench/eval-corpus.json";
 
 // M2.6 T05 (spec §4.4): explain-fair@3 / analyze-fair@3.
@@ -73,7 +76,12 @@ describe("explain-fair@3 tier cap", () => {
             (job) => job.tier < tier && job.status === "capped",
           );
           checked += 1;
-          expect(event.canClaimSimplerExhausted).toBe(selection.ledger.simplerExhausted(tier));
+          // Independently of the ledger helpers: a claim needs every simpler job
+          // exhausted or excluded.
+          const unsettled = selection.ledger.jobs.some(
+            (job) => job.tier < tier && job.status !== "exhausted" && job.status !== "excluded",
+          );
+          expect(event.canClaimSimplerExhausted).toBe(!unsettled);
           if (lowerCapped) {
             pastCapped += 1;
             expect(event.canClaimSimplerExhausted).toBe(false);
@@ -120,6 +128,13 @@ describe("analyze-fair@3", () => {
     for (const entry of unique) {
       const { steps } = await run(entry.puzzle, "analyze-fair@3", 4_000_000);
       expect(steps.length, entry.id).toBeGreaterThan(0);
+      // Where singles solve the grid, Analyze must reach technique steps, not
+      // only rule maintenance (rule-propagation@1): the @3 window fix.
+      if (entry.singles !== "none")
+        expect(
+          steps.some((step) => !step.startsWith("rule-")),
+          entry.id,
+        ).toBe(true);
     }
   }, 1_200_000);
 });
@@ -187,4 +202,98 @@ describe("explain-fair@3 at the 15 s preset", () => {
     },
     60_000,
   );
+});
+
+describe("explain-fair@3 reopening ends", () => {
+  // Review regression (T05): a tier-3 job that keeps hitting the same
+  // interruption must not be reopened forever on one state.
+  const limits = { ...CLASSIC_SOLVE_LIMITS, timeMs: 10_000, workUnits: 1_000_000 };
+  const fixture = () => {
+    const assembled = assemble(
+      canonicalProblem({
+        schema: 1,
+        cells: [0, 1, 2, 3],
+        symbols: [1, 2],
+        givens: [1, 0, 0, 0],
+        constraints: [
+          { id: "a", type: "all-different@1", cells: [0, 1], parameters: {} },
+          { id: "b", type: "all-different@1", cells: [1, 2], parameters: {} },
+        ],
+      }),
+      [new AllDifferentRule()],
+    );
+    if (!assembled.ok) throw Error("fixture");
+    return initialize(assembled.value, "primary");
+  };
+  const stub = (discover: TechniqueDescriptor["discover"]) =>
+    ({
+      id: "stub@1",
+      aliases: [],
+      tier: 3,
+      requires: [],
+      assumptionPolicy: "unconditional",
+      bounds: {
+        maxLength: 0,
+        maxBranchDepth: 0,
+        maxAlternatives: 0,
+        maxPatternCells: 0,
+        maxSetSize: 0,
+      },
+      watches: () => [{ kind: "all" }],
+      eligible: () => ({ kind: "yes" }),
+      estimate: () => ({ hit: 0, gain: 0, cost: 1 }),
+      discover,
+    }) as unknown as TechniqueDescriptor;
+  const select = (technique: TechniqueDescriptor) => {
+    const selection = new StepSelection(
+      fixture(),
+      { rules: [], techniques: [technique] },
+      {
+        ...schedulingOptions({
+          limits,
+          mode: "explain",
+          policy: "explain-fair@3",
+          tierCap: { fromTier: 3, unitsPerJobPerState: 1_000 },
+        }),
+        workspace: new IndexWorkspace({ entryLimit: 100_000, byteLimit: limits.workspaceBytes }),
+        clock: { now: () => 0 },
+      },
+    );
+    let reason: string | undefined;
+    try {
+      for (const event of selection.select())
+        if (event.kind === "logical-stop") reason = event.reason;
+    } finally {
+      selection.dispose();
+    }
+    return reason;
+  };
+  test.each([[0], [10]] as const)(
+    "an interrupted job is not reopened (%i units first)",
+    (units) => {
+      let opens = 0;
+      const reason = select(
+        stub(function* () {
+          opens += 1;
+          if (units) yield { kind: "work", units };
+          yield { kind: "interrupted", reason: "proof-step-limit" };
+        }),
+      );
+      expect(opens).toBe(1);
+      expect(reason).toBeDefined();
+    },
+  );
+  test("a capped job is reopened with a doubled cap until the budget ends", () => {
+    let opens = 0;
+    const reason = select(
+      stub(function* () {
+        opens += 1;
+        for (;;) yield { kind: "work", units: 50 };
+      }),
+    );
+    // 1k + 2k + 4k + ... units: about log2(1M / 1k) rounds, then the work limit.
+    expect(opens).toBeGreaterThan(5);
+    expect(opens).toBeLessThan(15);
+    expect(reason).toBe("work-limit");
+  });
 });

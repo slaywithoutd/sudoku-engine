@@ -214,7 +214,7 @@ battery, so compare nodes, not milliseconds, between the two rows.
   198,301-unit reservation, at most 83 units per node on the corpus.
 - Nodes: 689 against 991 on the 48 exhaustive cases (count `0` or `1`), none
   above baseline; 1,443 against 1,749 on all cases except `hard1`.
-- **Gate miss**: five `2+` cases need 1–3 more nodes than the baseline
+- **Gate (accepted reading)**: five `2+` cases need 1–3 more nodes than the baseline
   (random-14, -23, -33, -41, -53, marked below). These searches stop at the
   second witness, so their node count is the length of the path to it; the
   stronger propagation places more singles after a decision and MRV then
@@ -223,8 +223,9 @@ battery, so compare nodes, not milliseconds, between the two rows.
   4,835; fewest unassigned peers 28 and 49; MRV on peer-only masks 1 and
   248,085. `hard1` stops at its second witness, so its node count is as
   tie-dependent as the small cases; no rule was tuned to the corpus. T02 keeps the spec's MRV with
-  lowest-index ties; the strict "≤ baseline on every case" gate is open and
-  was raised for a decision.
+  lowest-index ties. The user accepted the gate as "≤ baseline on every
+  exhaustive case (count 0 or 1), and total nodes ≤ baseline" (option A),
+  which T02 meets.
 
 | Case | Count | Baseline nodes | T02 nodes | T02 backtracks | T02 depth | T02 engine ms (run 1 / run 2) |
 | --- | :-: | ---: | ---: | ---: | ---: | ---: |

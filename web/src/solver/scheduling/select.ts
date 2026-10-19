@@ -517,10 +517,13 @@ export class StepSelection {
   }
   /** Analyze selection window: 4096 units, or under @3 twice the rule pass (spec §4.4). */
   #windowLimit(window: Window): number {
-    return this.options.policy === "analyze-fair@3" ? Math.max(4096, 2 * window.rules) : 4096;
+    if (this.options.policy !== "analyze-fair@3") return 4096;
+    // Under @3 the window only closes once a candidate is buffered: an empty
+    // window would end Analyze before its first checked technique step.
+    return this.#buffers.length ? Math.max(4096, 2 * window.rules) : Infinity;
   }
   /**
-   * Restarts the jobs from `fromTier` up that were capped or interrupted on this
+   * Restarts the jobs from `fromTier` up that were capped on this
    * state, from scratch and with twice their previous cap (iterative deepening:
    * a capped cursor was closed to free its workspace, so a retry must reach
    * further). Returns whether any job was reopened.
@@ -528,9 +531,12 @@ export class StepSelection {
   #reopenSettled(): boolean {
     const cap = this.#tierCap;
     if (!cap) return false;
+    // Capped jobs only: an interruption (a workspace or proof-size limit)
+    // recurs identically on the same state, while a reopened capped job must
+    // spend its whole doubled cap before it caps again, so every round
+    // consumes budget and the loop ends.
     const reopened = this.ledger.jobs.filter(
-      (job) =>
-        job.tier >= cap.fromTier && (job.status === "capped" || job.status === "interrupted"),
+      (job) => job.tier >= cap.fromTier && job.status === "capped",
     );
     for (const job of reopened) {
       const cursor = this.#cursors.get(job);
