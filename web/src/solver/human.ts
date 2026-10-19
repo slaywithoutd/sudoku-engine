@@ -34,6 +34,18 @@ function budgetReason(reason: string): "work-limit" | "time-limit" | "logical-bu
   return reason === "work-limit" || reason === "time-limit" ? reason : "logical-budget";
 }
 
+/**
+ * A filled grid satisfying every rule. An open cell can never be a witness, so
+ * the full rule check (which rebuilds the exact semantics) runs only on a
+ * filled grid.
+ */
+function complete(view: ReadView): boolean {
+  return (
+    view.state.values.every((value) => value !== 0) &&
+    isWitness(view.assembly.problem, view.assembly, view.state.values)
+  );
+}
+
 function stopStatus(
   view: ReadView,
   event: Extract<SelectionEvent, { kind: "logical-stop" }>,
@@ -45,10 +57,7 @@ function stopStatus(
     event.reason === "time-limit"
   )
     return "incomplete";
-  if (event.complete)
-    return isWitness(view.assembly.problem, view.assembly, view.state.values)
-      ? "solved"
-      : "stalled-within-profile";
+  if (event.complete) return complete(view) ? "solved" : "stalled-within-profile";
   return event.reason.includes("contradiction") ? "contradiction" : "incomplete";
 }
 
@@ -127,7 +136,7 @@ export function* humanSteps(
         view = next;
         // A filled grid satisfying every rule is solved; rescanning the whole profile cannot add
         // information.
-        if (isWitness(view.assembly.problem, view.assembly, view.state.values)) {
+        if (complete(view)) {
           yield {
             kind: "logical-stop",
             human: "solved",

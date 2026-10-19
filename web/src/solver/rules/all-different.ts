@@ -12,6 +12,7 @@ import type {
   RuleModule,
 } from "./types";
 import { symbolMask } from "../state/read";
+import { matchingFacts } from "../state/source-index";
 import { symbolValue } from "../problem";
 import { canonicalEquation, type Equation } from "./linear-rule";
 
@@ -129,15 +130,12 @@ export class AllDifferentRule implements RuleModule {
           continue;
         if (seen.has(`${cell}:${symbol}`)) continue;
         seen.add(`${cell}:${symbol}`);
-        const fact = [...view.facts.values()].find(
-          (candidate) =>
-            candidate.proposition.kind === "literal" &&
-            candidate.proposition.value.positive &&
-            candidate.proposition.value.cell === source &&
-            candidate.proposition.value.symbol === symbol &&
-            !candidate.conditional &&
-            !candidate.openAssumptions.length,
-        );
+        // Facts with exactly this literal, in publication order, through the
+        // prepared source index instead of a scan of every fact (spec M2.6 §4.2).
+        const fact = matchingFacts(view, {
+          kind: "literal",
+          value: { cell: source, symbol, positive: true },
+        }).find((candidate) => !candidate.conditional && !candidate.openAssumptions.length);
         if (!fact) throw Error("missing-value-evidence");
         builder.peer(fact.root, source, cell, symbol, rule.cells);
       }

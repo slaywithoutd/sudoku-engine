@@ -254,7 +254,82 @@ export function assertM2RootAssemblyBounds(assembly: Assembly): void {
 }
 /** Exact structural comparison also rejects ignored/unsupported fields. */
 export function sameValue(left: unknown, right: unknown): boolean {
-  return canonicalJson(left as Json) === canonicalJson(right as Json);
+  return plainEqual(left, right, 0) ?? canonicalJson(left as Json) === canonicalJson(right as Json);
+}
+/**
+ * canonicalJson(left) === canonicalJson(right) for ordinary JSON without
+ * building either text: finite numbers (-0 equals 0), strings, booleans, null,
+ * dense data-only arrays and plain objects compared by key set. Anything else
+ * returns undefined, and the caller falls back to the canonical texts, which
+ * also raise the same input errors (spec M2.6 §4.2).
+ */
+function plainEqual(left: unknown, right: unknown, depth: number): boolean | undefined {
+  if (depth > 32) return undefined;
+  const kind = jsonKind(left);
+  if (kind === undefined || jsonKind(right) === undefined) return undefined;
+  if (kind !== jsonKind(right)) return false;
+  if (kind === "scalar") return left === right;
+  if (kind === "array") {
+    const a = left as unknown[],
+      b = right as unknown[];
+    let equal = a.length === b.length;
+    for (let index = 0; index < Math.max(a.length, b.length); index++) {
+      const result =
+        index < a.length && index < b.length
+          ? plainEqual(a[index], b[index], depth + 1)
+          : plainEqual(index < a.length ? a[index] : null, null, depth + 1);
+      if (result === undefined) return undefined;
+      if (!result) equal = false;
+    }
+    return equal;
+  }
+  const a = left as Record<string, unknown>,
+    b = right as Record<string, unknown>;
+  const keys = Object.keys(a),
+    other = Object.keys(b);
+  let equal = keys.length === other.length;
+  for (const key of keys) {
+    const present = Object.hasOwn(b, key);
+    const result = plainEqual(a[key], present ? b[key] : null, depth + 1);
+    if (result === undefined) return undefined;
+    if (!result || !present) equal = false;
+  }
+  for (const key of other)
+    if (!Object.hasOwn(a, key) && plainEqual(b[key], null, depth + 1) === undefined)
+      return undefined;
+  return equal;
+}
+/** "scalar", "array" or "object" for valid JSON; undefined for anything canonicalJson rejects or may reject. */
+function jsonKind(value: unknown): "scalar" | "array" | "object" | undefined {
+  if (value === null || typeof value === "string" || typeof value === "boolean") return "scalar";
+  if (typeof value === "number") return Number.isFinite(value) ? "scalar" : undefined;
+  if (typeof value !== "object") return undefined;
+  const known = shapes.get(value);
+  if (known) return known;
+  const shape = objectKind(value);
+  // A frozen object keeps its keys, descriptors and prototype.
+  if (shape && Object.isFrozen(value)) shapes.set(value, shape);
+  return shape;
+}
+const shapes = new WeakMap<object, "array" | "object">();
+function objectKind(value: object): "array" | "object" | undefined {
+  const keys = Reflect.ownKeys(value);
+  if (Array.isArray(value)) {
+    if (keys.length !== value.length + 1) return undefined;
+    for (let index = 0; index < value.length; index++) {
+      const descriptor = Object.getOwnPropertyDescriptor(value, index);
+      if (!descriptor || !descriptor.enumerable || !("value" in descriptor)) return undefined;
+    }
+    return "array";
+  }
+  const prototype = Object.getPrototypeOf(value);
+  if (prototype !== Object.prototype && prototype !== null) return undefined;
+  for (const key of keys) {
+    const descriptor = Object.getOwnPropertyDescriptor(value, key);
+    if (typeof key !== "string" || !descriptor?.enumerable || !("value" in descriptor))
+      return undefined;
+  }
+  return "object";
 }
 export function inference(input: PrimitiveInput, rules: readonly string[] = []): CheckedInference {
   return Object.freeze({

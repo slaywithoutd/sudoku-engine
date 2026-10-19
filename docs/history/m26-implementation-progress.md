@@ -7,6 +7,7 @@ Branch `feat/m26-hardening`, worktree `.claude/worktrees/gifted-feistel-d36469`,
 | T01 evaluation corpus, reference DFS, baseline | `c51de80` | `exact-reference.test.ts`: engine = reference on 131 cases; baseline in [m26-baseline](m26-baseline.md) (battery) | `2883163` (assembly zero, full regeneration check, Node version, README scope); merged to `master` at `ffbd872` |
 | T02 exact propagation (`original-dfs@2`) | `5b0ee1b` | see below; `npm test` 83 files, 2,010 passed, 6 skipped, 0 failed (2,379 s, mains then battery); typecheck clean | `fix(solver): T02 review`: no soundness defect (reviewer's 600-problem 4x4/6x6 variant differential matched the oracle); units now count only what §4.1 lists, reservation bounded by full-house pairs, per-node unit bound asserted, 6x6 in the property test |
 | T03 count-first pipeline | `69040ae` | see below; `npm test` 84 files, 2,013 passed, 7 skipped, 0 failed (2,229 s, mains); typecheck clean | `fix(solver): T03 review`: logical cut made clock-independent when the precount is inconclusive, witnesses of an inconclusive precount re-checked against the logical path, step work counts logical work only, mid-search carry test |
+| T04 trace-preserving cost reductions | pending | see below; `npm test` 85 files, 2,018 passed, 7 skipped, 0 failed (1,193 s, mains); typecheck clean | pending |
 
 ## T02
 
@@ -33,3 +34,26 @@ Review fixes and recorded choices (T03):
 - After the logical phase the count is always merged against the accepted path, so a witness carried by an inconclusive precount is checked even when the resumed search gets no time.
 - While a precount is suspended its exact workspace reservation (about 8 MB of 64 MB on 9x9) stays held through the logical phase. Exact setup failures (reservation, unsupported rule) now end the run before the logical phase.
 - `hard1` at the 15 s preset depends on wall time: it passes when the precount finishes inside 4.5 s (2.1–2.8 s on mains here).
+
+## T04
+
+Trace-preserving cost reductions (spec §4.2). Baseline on the easy puzzle before T04: 14.3 s, 78 steps, 93k units and about 183 ms per step (mains). Changes, each keeping every observable the scheduler acts on:
+
+- `SourceIndex.advance(parent, view)`: facts are append-only between an accepted parent and its successor, so the successor shares the parent's frozen tables, takes over its lease, adds only the new facts, and copies only the lists they touch. Relation facts (domain-dependent conflicts) rebuild the conflict map in publication order; any view that does not extend the parent falls back to a cold `prepare`. `StepSelection.advance()` keeps the index as the parent instead of disposing it.
+- Cold incidence: one work event per cell pair instead of per unit, and an all-different pair visits only its equal symbols (the only ones that conflict).
+- The checker re-measured every retained node with a full bounded copy per proposal; byte counts of frozen records are now cached (`boundedBytes`), copies stay fresh.
+- `#pump` drains consecutive events of one cursor while the quantum loop would keep pumping it, and pays debt in one event; the checker reports the retained-node bookkeeping of a drain as one event (`batchUnits`) when every per-unit tick would pass. Charges, quanta and job work are unchanged.
+- Clock reads once per quantum (selection) or per 64 ticks (checker); logical work published once per 256 units in `runSolver`.
+- `humanSteps` skips the full witness check while a cell is open; the checker derives placement peers from a per-capability table; `sameValue` compares ordinary JSON structurally and caches canonical texts of frozen values; `AllDifferentRule.propagate` finds value facts through the source index.
+
+Not done: keeping discovery cursors of untouched jobs across `advance()`. A retained cursor would skip proposals a restarted discovery yields again, so it is not trace-preserving under `@1`/`@2`; the targets were met without it.
+
+Evidence:
+
+- Golden traces byte-identical (`golden-traces.test.ts`, 6 tests).
+- Whole-corpus trace comparison against `bad2593` (temporary worktree, scratch dump outside the repository, fake clock): all 131 cases under `explain-fair@1` and `explain-fair@2`, at 40M work units, identical step sequences (technique, effects, cells) and results on 262 of 262; at 4M units 248 identical and 14 where the old run is a strict prefix (fewer units per step reach further).
+- `logical-cost.test.ts`: incremental index equals a cold rebuild on more than 300 accepted states (6 classic grids and 4 kropki/mixed grids with relation facts, both index levels), with lease handover and fallback. Basic steps on the easy puzzle average 7.1–7.5k units (deterministic, always asserted; baseline 87k).
+- Wall time (`M26_TIMING=1`, median of 3 after a warm-up, mains). This laptop runs in two states the session cannot control; the exact precount of the same easy grid is the calibrator (about 22 ms in the fast state, 50–130 ms in the slow one):
+  - fast state: easy 0.35–0.47 s end to end (target < 1 s), basic steps 4.5–7 ms (< 10 ms), 17-clue 0.39–0.42 s (< 3 s): **met**;
+  - slow state: easy 1.2–1.3 s, basic steps 15–17 ms, 17-clue 1.3–1.5 s: easy and basic step **missed**, 17-clue met.
+  The time targets are therefore met only in the fast state; they are re-measured for the final report. The assertions run only with `M26_TIMING=1` so the deterministic suite does not depend on machine load.

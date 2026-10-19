@@ -15,7 +15,7 @@ import {
   type HumanStatus,
 } from "./evidence";
 import type { ExactEvent, ExactStats } from "./exact";
-import { WorkBudget } from "./scheduling/work";
+import { QUANTUM, WorkBudget } from "./scheduling/work";
 
 export interface SolverRunRequest {
   readonly snapshot: SolverSnapshot;
@@ -257,18 +257,34 @@ export async function runSolver(
         return next;
       },
     });
+    // Logical work is published, the task yielded and the clock read once per
+    // quantum of units (spec §4.2), and before every other event.
+    let pendingUnits = 0;
+    const flushHuman = async () => {
+      if (pendingUnits === 0) return;
+      const units = pendingUnits;
+      pendingUnits = 0;
+      await ports.publish({ kind: "work", phase: "human", units });
+      await ports.yieldTask();
+    };
     let next = cursor.next();
     while (!next.done) {
       const event = next.value;
       if (event.kind === "work") {
-        await ports.publish({ kind: "work", phase: "human", units: event.units });
-        await ports.yieldTask();
+        pendingUnits += event.units;
+        if (pendingUnits < QUANTUM) {
+          next = cursor.next();
+          continue;
+        }
+        await flushHuman();
       } else if (event.kind === "proposal") {
+        await flushHuman();
         await ports.publish(event);
         const ack = await ports.awaitAcceptance(event.stepId);
         next = cursor.next(ack);
         continue;
       } else {
+        await flushHuman();
         human = status(event.human);
         logicalStop = event.reason;
         await ports.publish(event);
@@ -281,6 +297,7 @@ export async function runSolver(
       }
       next = cursor.next();
     }
+    await flushHuman();
     cursor.return();
     if (request.conditional) {
       await ports.publish({ kind: "terminal", outcome: "complete", human, count, logicalStop });
