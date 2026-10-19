@@ -262,6 +262,8 @@ export class StepSelection {
    * pump per loop iteration did; only the loop's bookkeeping is saved.
    */
   #pump(job: ScheduledJob, cursor: Cursor, room: number): void {
+    // Set before anything here can throw: the caller pays it on a throw.
+    this.#owedBeforeLast = cursor.debt;
     this.#checkpoint();
     defined(this.#sources, "source-index").assertActive();
     this.#draining = cursor;
@@ -541,8 +543,9 @@ export class StepSelection {
     // the same units, quanta and job work as paying after every pump, with
     // far fewer events (spec M2.6 §4.2). As before, a pump that ends the job
     // leaves its own units unpaid.
-    const pay = function* (this: StepSelection, units: number) {
-      this.#checkpoint();
+    const pay = function* (this: StepSelection, units: number, checkpoint = true) {
+      // On a throw the debt is paid without a checkpoint, so the original error stays.
+      if (checkpoint) this.#checkpoint();
       cursor.debt -= units;
       quantum += units;
       window.used += units;
@@ -564,7 +567,7 @@ export class StepSelection {
       try {
         this.#pump(job, cursor, room());
       } catch (error) {
-        if (this.#owedBeforeLast) yield* pay(this.#owedBeforeLast);
+        if (this.#owedBeforeLast) yield* pay(this.#owedBeforeLast, false);
         throw error;
       }
       if (this.#owedBeforeLast && !active()) yield* pay(this.#owedBeforeLast);

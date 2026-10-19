@@ -267,7 +267,10 @@ function plainEqual(left: unknown, right: unknown, depth: number): boolean | und
   if (depth > 32) return undefined;
   const kind = jsonKind(left);
   if (kind === undefined || jsonKind(right) === undefined) return undefined;
-  if (kind !== jsonKind(right)) return false;
+  // Unequal shapes: false only when both sides are valid JSON throughout,
+  // otherwise canonicalJson decides (and raises the same input errors).
+  if (kind !== jsonKind(right))
+    return validJson(left, depth) && validJson(right, depth) ? false : undefined;
   if (kind === "scalar") return left === right;
   if (kind === "array") {
     const a = left as unknown[],
@@ -277,7 +280,9 @@ function plainEqual(left: unknown, right: unknown, depth: number): boolean | und
       const result =
         index < a.length && index < b.length
           ? plainEqual(a[index], b[index], depth + 1)
-          : plainEqual(index < a.length ? a[index] : null, null, depth + 1);
+          : validJson(index < a.length ? a[index] : b[index], depth + 1)
+            ? false
+            : undefined;
       if (result === undefined) return undefined;
       if (!result) equal = false;
     }
@@ -290,14 +295,25 @@ function plainEqual(left: unknown, right: unknown, depth: number): boolean | und
   let equal = keys.length === other.length;
   for (const key of keys) {
     const present = Object.hasOwn(b, key);
-    const result = plainEqual(a[key], present ? b[key] : null, depth + 1);
+    const result = present
+      ? plainEqual(a[key], b[key], depth + 1)
+      : validJson(a[key], depth + 1)
+        ? false
+        : undefined;
     if (result === undefined) return undefined;
     if (!result || !present) equal = false;
   }
   for (const key of other)
-    if (!Object.hasOwn(a, key) && plainEqual(b[key], null, depth + 1) === undefined)
-      return undefined;
+    if (!Object.hasOwn(a, key) && !validJson(b[key], depth + 1)) return undefined;
   return equal;
+}
+/** Whether canonicalJson certainly accepts the value (bounded depth, so no cycle). */
+function validJson(value: unknown, depth: number): boolean {
+  if (depth > 32) return false;
+  const kind = jsonKind(value);
+  if (kind === undefined) return false;
+  if (kind === "scalar") return true;
+  return Object.values(value as object).every((child) => validJson(child, depth + 1));
 }
 /** "scalar", "array" or "object" for valid JSON; undefined for anything canonicalJson rejects or may reject. */
 function jsonKind(value: unknown): "scalar" | "array" | "object" | undefined {

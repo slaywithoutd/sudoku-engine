@@ -99,16 +99,27 @@ describe("incremental source index (spec §4.2)", () => {
     let states = 0,
       relations = 0;
     for (const problem of problems) {
+      // The production workspace (100k entries): a leaking index would cut
+      // the trajectory short instead of failing a comparison.
       const views = trajectory(problem, 60);
+      const variant = problem.constraints.some((rule) => rule.type !== "all-different@1");
+      if (variant) expect(views.length).toBeGreaterThan(20);
       const workspace = new IndexWorkspace({ entryLimit: 1_000_000, byteLimit: 512_000_000 });
       for (const level of ["complete", "facts"] as const) {
         let previous = drain(SourceIndex.prepare(views[0], workspace, { level }));
         for (const view of views.slice(1)) {
           const advanced = drain(SourceIndex.advance(previous, view, workspace, { level }));
-          const cold = drain(SourceIndex.prepare(view, workspace, { level }));
-          expect(advanced.contents()).toEqual(cold.contents());
           // The parent handed its lease over and no longer answers.
           expect(() => previous.maximumId).toThrow("disposed-source-index");
+          // Only the advanced index holds this workspace now: its leases
+          // account for exactly what a cold index of the same view holds.
+          const coldWorkspace = new IndexWorkspace({
+            entryLimit: 1_000_000,
+            byteLimit: 512_000_000,
+          });
+          const cold = drain(SourceIndex.prepare(view, coldWorkspace, { level }));
+          expect(advanced.contents()).toEqual(cold.contents());
+          expect(workspace.usage).toEqual(coldWorkspace.usage);
           cold.dispose();
           previous = advanced;
           if (level === "complete") {
@@ -134,9 +145,17 @@ describe("incremental source index (spec §4.2)", () => {
     const workspace = new IndexWorkspace({ entryLimit: 1_000_000, byteLimit: 512_000_000 });
     const parent = drain(SourceIndex.prepare(first[2], workspace));
     const advanced = drain(SourceIndex.advance(parent, other[1], workspace));
+    // The parent that could not be extended is released by advance itself.
+    expect(() => parent.maximumId).toThrow("disposed-source-index");
     const cold = drain(SourceIndex.prepare(other[1], workspace));
     expect(advanced.contents()).toEqual(cold.contents());
-    for (const index of [parent, advanced, cold]) index.dispose();
+    for (const index of [advanced, cold]) index.dispose();
+    expect(workspace.usage.bytes).toBe(0);
+    // A scan stopped by its consumer also releases the parent.
+    const stopped = drain(SourceIndex.prepare(first[2], workspace));
+    const cursor = SourceIndex.advance(stopped, first[3], workspace);
+    cursor.next();
+    cursor.return(undefined as never);
     expect(workspace.usage.bytes).toBe(0);
   });
 });

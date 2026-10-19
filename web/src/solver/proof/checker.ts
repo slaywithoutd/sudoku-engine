@@ -174,9 +174,14 @@ function capabilityPeers(
   cell: number,
 ): readonly number[] {
   let table = peerTables.get(scopes);
-  if (!table || !Object.isFrozen(scopes)) {
+  if (!table) {
     table = new Map();
-    if (Object.isFrozen(scopes)) peerTables.set(scopes, table);
+    // Only an immutable capability list (and cell lists) can share a table.
+    if (
+      Object.isFrozen(scopes) &&
+      scopes.every((scope) => Object.isFrozen(scope) && Object.isFrozen(scope.cells))
+    )
+      peerTables.set(scopes, table);
   }
   let peers = table.get(cell);
   if (!peers) {
@@ -300,7 +305,8 @@ function boundedBytes(input: unknown, limit: number): number {
 }
 function copyBounded<T>(input: T, limit: number): { value: T; bytes: number } {
   let remaining = limit;
-  let frozen = true;
+  // Whether every object visited so far is frozen (the input's byte count is then stable).
+  const input_ = { frozen: true };
   const active = new WeakSet<object>();
   const charge = (bytes: number) => {
     remaining -= bytes;
@@ -325,7 +331,7 @@ function copyBounded<T>(input: T, limit: number): { value: T; bytes: number } {
     requireProof(typeof value === "object", "invalid-proof-json");
     requireProof(!active.has(value), "cyclic-proof-json");
     active.add(value);
-    if (!Object.isFrozen(value)) frozen = false;
+    if (!Object.isFrozen(value)) input_.frozen = false;
     const array = Array.isArray(value);
     requireProof(
       array ||
@@ -391,7 +397,7 @@ function copyBounded<T>(input: T, limit: number): { value: T; bytes: number } {
   const bytes = limit - remaining;
   if (typeof value === "object" && value !== null) {
     boundedCopies.set(value, bytes);
-    if (frozen) boundedCopies.set(input as object, bytes);
+    if (input_.frozen) boundedCopies.set(input as object, bytes);
   }
   return { value, bytes };
 }

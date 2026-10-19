@@ -91,7 +91,7 @@ export class SourceIndex {
           right = proposition.cells[j],
           pair = left < right ? `${left}:${right}` : `${right}:${left}`;
         if (proposition.kind === "all-different" && !this.#scopePairs.has(pair)) {
-          this.#lease.grow(1, 128);
+          this.#tableLease.grow(1, 128);
           this.#scopePairs.set(pair, fact);
         }
         const allowed = new Set<string>();
@@ -114,7 +114,7 @@ export class SourceIndex {
                 { cell: right, symbol: y, positive: true },
               );
               if (!this.#conflicts.has(identity)) {
-                this.#lease.grow(1, 128);
+                this.#tableLease.grow(1, 128);
                 this.#conflicts.set(identity, fact);
               }
             }
@@ -124,12 +124,20 @@ export class SourceIndex {
       }
   }
   readonly #source: ReadView;
+  /** Fact records and lists; the conflict and scope-pair tables have their own lease. */
   readonly #lease: WorkspaceReservation;
-  /** Set when a successor took over the lease; dispose() then releases nothing. */
+  #tableLease: WorkspaceReservation;
+  /** Set when a successor took over the leases; dispose() then releases nothing. */
   #handedOver = false;
-  private constructor(source: ReadView, lease: WorkspaceReservation, level: "facts" | "complete") {
+  private constructor(
+    source: ReadView,
+    lease: WorkspaceReservation,
+    tableLease: WorkspaceReservation,
+    level: "facts" | "complete",
+  ) {
     this.#source = source;
     this.#lease = lease;
+    this.#tableLease = tableLease;
     this.#level = level;
   }
   static *prepare(
@@ -138,7 +146,12 @@ export class SourceIndex {
     options: SourcePreparationOptions = {},
   ): Generator<SourceWork, SourceIndex, void> {
     assertOwnedView(view);
-    const index = new SourceIndex(view, workspace.reserve(1, 65536), options.level ?? "complete");
+    const index = new SourceIndex(
+      view,
+      workspace.reserve(1, 65536),
+      workspace.reserve(0, 0),
+      options.level ?? "complete",
+    );
     let published = false;
     try {
       yield* index.#addAll(view.facts.values(), workspace, options, index.complete);
@@ -164,22 +177,27 @@ export class SourceIndex {
   ): Generator<SourceWork, SourceIndex, void> {
     assertOwnedView(view);
     const level = options.level ?? "complete";
-    if (previous.#active && previous.#level === level) {
-      previous.assertActive();
-      const added: Fact[] = [];
-      let kept = 0,
-        same = true;
-      for (const fact of view.facts.values()) {
-        if (fact.id > previous.#maximum) added.push(fact);
-        else if (previous.#source.facts.get(fact.id) === fact) kept++;
-        else {
-          same = false;
-          break;
+    try {
+      if (previous.#active && previous.#level === level) {
+        previous.assertActive();
+        const added: Fact[] = [];
+        let kept = 0,
+          same = true;
+        for (const fact of view.facts.values()) {
+          if (fact.id > previous.#maximum) added.push(fact);
+          else if (previous.#source.facts.get(fact.id) === fact) kept++;
+          else {
+            same = false;
+            break;
+          }
         }
+        yield { kind: "work", units: 1 + Math.ceil(view.facts.size / 256) };
+        if (same && kept === previous.#count)
+          return yield* SourceIndex.#extend(previous, view, added, workspace, options);
       }
-      yield { kind: "work", units: 1 + Math.ceil(view.facts.size / 256) };
-      if (same && kept === previous.#count)
-        return yield* SourceIndex.#extend(previous, view, added, workspace, options);
+    } finally {
+      // A parent that was not extended is released, also when the scan stops.
+      if (!previous.#handedOver) previous.dispose();
     }
     return yield* SourceIndex.prepare(view, workspace, options);
   }
@@ -192,7 +210,7 @@ export class SourceIndex {
   ): Generator<SourceWork, SourceIndex, void> {
     // The successor takes over the lease, which already accounts for
     // everything it shares; the parent stops answering.
-    const index = new SourceIndex(view, previous.#lease, previous.#level);
+    const index = new SourceIndex(view, previous.#lease, previous.#tableLease, previous.#level);
     previous.#handedOver = true;
     index.#byProposition = new Map(previous.#byProposition);
     index.#byKind = new Map(previous.#byKind);
@@ -210,9 +228,13 @@ export class SourceIndex {
         (previous.#relations || added.some((fact) => fact.proposition.kind === "relation"))
       ) {
         // Relation conflicts follow the current domains: rebuild every pair
-        // projection in publication order, as a cold prepare does.
+        // projection in publication order, as a cold prepare does, on a fresh
+        // table lease (the parent tables are dropped).
         index.#conflicts = new Map();
         index.#scopePairs = new Map();
+        const parentTables = index.#tableLease;
+        index.#tableLease = workspace.reserve(0, 0);
+        parentTables.dispose();
         for (const fact of view.facts.values()) yield* index.#incidence(fact, workspace);
         incidence = false;
       } else if (
@@ -390,7 +412,10 @@ export class SourceIndex {
     this.#byKind = new Map();
     this.#scopePairs = new Map();
     this.#conflicts = new Map();
-    if (!this.#handedOver) this.#lease.dispose();
+    if (!this.#handedOver) {
+      this.#lease.dispose();
+      this.#tableLease.dispose();
+    }
   }
 }
 /** Independent leases for dual owners; disposing one never revokes another. */

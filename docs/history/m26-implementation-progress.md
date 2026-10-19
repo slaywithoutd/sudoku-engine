@@ -7,7 +7,7 @@ Branch `feat/m26-hardening`, worktree `.claude/worktrees/gifted-feistel-d36469`,
 | T01 evaluation corpus, reference DFS, baseline | `c51de80` | `exact-reference.test.ts`: engine = reference on 131 cases; baseline in [m26-baseline](m26-baseline.md) (battery) | `2883163` (assembly zero, full regeneration check, Node version, README scope); merged to `master` at `ffbd872` |
 | T02 exact propagation (`original-dfs@2`) | `5b0ee1b` | see below; `npm test` 83 files, 2,010 passed, 6 skipped, 0 failed (2,379 s, mains then battery); typecheck clean | `fix(solver): T02 review`: no soundness defect (reviewer's 600-problem 4x4/6x6 variant differential matched the oracle); units now count only what §4.1 lists, reservation bounded by full-house pairs, per-node unit bound asserted, 6x6 in the property test |
 | T03 count-first pipeline | `69040ae` | see below; `npm test` 84 files, 2,013 passed, 7 skipped, 0 failed (2,229 s, mains); typecheck clean | `fix(solver): T03 review`: logical cut made clock-independent when the precount is inconclusive, witnesses of an inconclusive precount re-checked against the logical path, step work counts logical work only, mid-search carry test |
-| T04 trace-preserving cost reductions | pending | see below; `npm test` 85 files, 2,018 passed, 7 skipped, 0 failed (1,193 s, mains); typecheck clean | pending |
+| T04 trace-preserving cost reductions | `8612a7a` | see below; `npm test` 85 files, 2,018 passed, 7 skipped, 0 failed (1,193 s, mains); typecheck clean | `fix(solver): T04 review`: relation-board lease leak fixed (separate table lease), parent released on fallback, owed-debt and error-preserving pay fixes, plainEqual validity, trace claim restated as identical for complete runs and a prefix under a binding budget; suite rerun 85 files, 2,018 passed |
 
 ## T02
 
@@ -37,7 +37,11 @@ Review fixes and recorded choices (T03):
 
 ## T04
 
-Trace-preserving cost reductions (spec §4.2). Baseline on the easy puzzle before T04: 14.3 s, 78 steps, 93k units and about 183 ms per step (mains). Changes, each keeping every observable the scheduler acts on:
+Trace-preserving cost reductions (spec §4.2). Baseline on the easy puzzle before T04: 14.3 s, 78 steps, 93k units and about 183 ms per step (mains).
+
+What "trace-preserving" means here (recorded after the T04 review): job-level accounting is unchanged (the units each job is charged, quanta, `job.work`, the analyze window, the order of checks), so the sequence of accepted steps under a policy id is unchanged **whenever the work budget does not cut the run**. Source-index preparation now charges fewer units to the budget (one per cell pair and per visited equal symbol instead of every symbol pair, nothing for shared tables), which is what brings a basic step from 87k to about 7.5k units, the T04 target. Under a binding work budget a run therefore gets further: the old trace is a strict prefix of the new one, never a different sequence. D094's "same policy id, same trace" holds for complete runs and for the golden traces; for budget-cut runs it holds as a prefix. The spec asks for both "trace-preserving" and fewer units per step; this reading is the only one that satisfies both.
+
+Changes:
 
 - `SourceIndex.advance(parent, view)`: facts are append-only between an accepted parent and its successor, so the successor shares the parent's frozen tables, takes over its lease, adds only the new facts, and copies only the lists they touch. Relation facts (domain-dependent conflicts) rebuild the conflict map in publication order; any view that does not extend the parent falls back to a cold `prepare`. `StepSelection.advance()` keeps the index as the parent instead of disposing it.
 - Cold incidence: one work event per cell pair instead of per unit, and an all-different pair visits only its equal symbols (the only ones that conflict).
@@ -51,6 +55,8 @@ Not done: keeping discovery cursors of untouched jobs across `advance()`. A reta
 Evidence:
 
 - Golden traces byte-identical (`golden-traces.test.ts`, 6 tests).
+- T04 review (independent): a relation-board lease leak (each conflict rebuild re-grew the inherited lease, so kropki boards stopped on the 100k-entry workspace cap after about 7 steps instead of about 36) was fixed by giving the conflict tables their own lease; an unextended parent is now released on the fallback and stopped-scan paths; `#owedBeforeLast` is set before anything in `#pump` can throw and a debt paid on a throw no longer checkpoints; `plainEqual` returns `false` only for fully valid JSON. The differential test now also compares the workspace usage of the incremental index with a cold one and requires variant trajectories longer than 20 states in the production workspace (a reintroduced leak fails it at 8).
+- Variant trace comparison against `bad2593` (after the review fixes; 4 cases per family from the M2.5 bench corpus: arrow, classic, killer, kropki, mixed, thermometer; explain-fair@1, 8M units, fake clock): no mismatch on 24 cases, 4 identical, 20 where the old run is a strict prefix (for example kropki-103 now solves in 189 steps; the parent stopped at 79).
 - Whole-corpus trace comparison against `bad2593` (temporary worktree, scratch dump outside the repository, fake clock): all 131 cases under `explain-fair@1` and `explain-fair@2`, at 40M work units, identical step sequences (technique, effects, cells) and results on 262 of 262; at 4M units 248 identical and 14 where the old run is a strict prefix (fewer units per step reach further).
 - `logical-cost.test.ts`: incremental index equals a cold rebuild on more than 300 accepted states (6 classic grids and 4 kropki/mixed grids with relation facts, both index levels), with lease handover and fallback. Basic steps on the easy puzzle average 7.1–7.5k units (deterministic, always asserted; baseline 87k).
 - Wall time (`M26_TIMING=1`, median of 3 after a warm-up, mains). This laptop runs in two states the session cannot control; the exact precount of the same easy grid is the calibrator (about 22 ms in the fast state, 50–130 ms in the slow one):
