@@ -16,3 +16,11 @@ web/.vercel/
 
 # Linter toolchain (installed on demand by `npm run lint`)
 web/tooling/lint/node_modules/
+
+# npm runs only in web/; a root install is always a mistake
+/node_modules/
+/package.json
+/package-lock.json
+
+# Solver probe outputs belong in the session scratchpad, not the repository
+web/solver-audit-*
