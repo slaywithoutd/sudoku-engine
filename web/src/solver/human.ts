@@ -4,6 +4,7 @@ import type { TechniqueJobs } from "./scheduling/ledger";
 import { StepSelection, type SelectionEvent, type SelectionOptions } from "./scheduling/select";
 import { isWitness } from "./exact";
 import type { IndexWorkspace } from "./indexes/workspace";
+import type { Ledger } from "./techniques/types";
 
 export type HumanEvent =
   | { readonly kind: "work"; readonly units: number }
@@ -12,12 +13,16 @@ export type HumanEvent =
       readonly stepId: number;
       readonly step: CheckedStep;
       readonly budgetLimited: boolean;
+      /** The scheduler ledger when the step was selected (spec M2.6 §4.5 coverage). */
+      readonly ledger: Ledger;
     }
   | {
       readonly kind: "logical-stop";
       readonly human: "solved" | "stalled-within-profile" | "incomplete" | "contradiction";
       readonly reason: string;
       readonly accepted: readonly CheckedStep[];
+      /** The scheduler ledger at the stop, when a selection existed. */
+      readonly ledger?: Ledger;
     };
 export type HumanStopStatus = "solved" | "stalled-within-profile" | "incomplete" | "contradiction";
 export type HumanAcceptance = "accepted" | "human-stopped";
@@ -117,6 +122,7 @@ export function* humanSteps(
           stepId: ++nextStep,
           step: proposal.step,
           budgetLimited: proposal.budgetLimited,
+          ledger: selection.ledger.rows,
         };
         if (ack !== "accepted") {
           if (ack === "human-stopped") {
@@ -125,6 +131,7 @@ export function* humanSteps(
               human: "incomplete",
               reason: "logical-budget",
               accepted: Object.freeze([...accepted]),
+              ledger: selection.ledger.rows,
             };
             return;
           }
@@ -142,6 +149,7 @@ export function* humanSteps(
             human: "solved",
             reason: "solved",
             accepted: Object.freeze([...accepted]),
+            ledger: selection.ledger.rows,
           };
           return;
         }
@@ -154,6 +162,7 @@ export function* humanSteps(
           human,
           reason: human === "incomplete" ? budgetReason(stopped.reason) : stopped.reason,
           accepted: Object.freeze([...accepted]),
+          ledger: stopped.ledger,
         };
         return;
       }

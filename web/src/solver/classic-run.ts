@@ -21,6 +21,7 @@ import { EXACT_METHOD, exactSteps } from "./exact";
 import { PRECOUNT_SHARE, runSolver } from "./run";
 import { coverageEntries, variantEntries } from "./techniques/manifest";
 import { defined } from "./invariants";
+import type { Ledger } from "./techniques/types";
 
 const techniqueTiers = new Map<string, number>(
   [...coverageEntries, ...variantEntries].map((entry) => [entry.version, entry.tier] as const),
@@ -64,6 +65,8 @@ export type ClassicSolveEvent =
       readonly cells: readonly number[];
       /** Accounted work units of the logical phase when the step was proposed (informative). */
       readonly workUnits: number;
+      /** A simpler step may exist: the selection was cut by a budget (spec M2.6 §4.5). */
+      readonly budgetLimited: boolean;
     }
   | { readonly kind: "precount"; readonly solution: readonly number[] }
   | { readonly kind: "progress"; readonly phase: "human" | "exact"; readonly workUnits: number }
@@ -86,7 +89,87 @@ export type ClassicSolveEvent =
         readonly maxTier: number;
         readonly stepsByTier: readonly number[];
       };
+      /** Why the run ended (spec M2.6 §4.5); see stopReasonOf. */
+      readonly stopReason: StopReason;
+      /** Milliseconds from the start until the count was proved, when it was. */
+      readonly countVerifiedMs?: number;
+      /** What the logical phase covered, by technique display name. */
+      readonly coverage: Coverage;
+      /** Accepted steps a budget may have kept from being the simplest. */
+      readonly budgetLimitedSteps: number;
     };
+
+export type StopReason =
+  | "solved"
+  | "profile-stall"
+  | "work-limit"
+  | "time-limit"
+  | "tier-cap"
+  | "contradiction"
+  | "not-started";
+export interface Coverage {
+  /** Proved to have nothing more to offer on the final state (exhausted or excluded). */
+  readonly exhausted: readonly string[];
+  /** Served, but stopped by a budget: its cap, its own allowance or the run's limits. */
+  readonly capped: readonly string[];
+  /** Never served on any state. */
+  readonly notStarted: readonly string[];
+  /** Highest catalogue tier with any served work; -1 when none. */
+  readonly highestTierTried: number;
+}
+
+/**
+ * Technique rows of a scheduler ledger as display-name lists; every technique
+ * row lands in exactly one list (rule jobs, tier -1, are not techniques).
+ * Without a ledger every profile technique is "not started".
+ */
+export function coverageOf(ledger: Ledger | undefined, techniques: readonly string[]): Coverage {
+  const name = (version: string) => techniqueNames.get(version) ?? version;
+  const rows = ledger
+    ? ledger.filter((row) => techniqueTiers.has(row.technique))
+    : techniques.map((technique) => ({ technique, status: "pending" as const, work: 0 }));
+  const exhausted: string[] = [],
+    capped: string[] = [],
+    notStarted: string[] = [];
+  let highestTierTried = -1;
+  for (const row of rows) {
+    if (row.work > 0)
+      highestTierTried = Math.max(highestTierTried, techniqueTiers.get(row.technique) ?? -1);
+    if (row.status === "exhausted" || row.status === "excluded")
+      exhausted.push(name(row.technique));
+    else if (row.work > 0) capped.push(name(row.technique));
+    else notStarted.push(name(row.technique));
+  }
+  // At most 60 entries in all (spec §4.5); the catalogue is smaller today.
+  const bound = (list: string[]) => Object.freeze(list.slice(0, 60));
+  return Object.freeze({
+    exhausted: bound(exhausted),
+    capped: bound(capped),
+    notStarted: bound(notStarted),
+    highestTierTried,
+  });
+}
+
+/**
+ * The stop reason of a run from its logical status, the logical phase's own
+ * stop reason and the final ledger. An incomplete or stalled run with a
+ * capped technique (explain-fair@3) stopped at a tier cap; one interrupted on its
+ * own allowance is a work limit.
+ */
+export function stopReasonOf(
+  human: HumanStatus,
+  logicalStop: string | undefined,
+  ledger: Ledger | undefined,
+): StopReason {
+  if (human === "not-started") return "not-started";
+  if (human === "solved") return "solved";
+  if (human === "contradiction" || human === "invalidated") return "contradiction";
+  if (logicalStop === "time-limit") return "time-limit";
+  const capped = !!ledger?.some((row) => row.status === "capped");
+  if (human === "stalled-within-profile") return capped ? "tier-cap" : "profile-stall";
+  if (capped && logicalStop !== "work-limit") return "tier-cap";
+  return "work-limit";
+}
 
 /**
  * Interactive ceilings for one classic 9x9 run; the exact phase inherits what the logical phase
@@ -240,6 +323,7 @@ export async function solveProblem(
   const limits = input.limits ?? CLASSIC_SOLVE_LIMITS,
     mode = input.mode ?? "explain",
     requestId = input.requestId ?? "solve";
+  const started = ports.clock.now();
   const empty = (code: string, human: HumanStatus = "not-started") =>
     ports.emit({
       kind: "result",
@@ -251,6 +335,9 @@ export async function solveProblem(
       logicalValues: [...problem.givens],
       steps: 0,
       difficulty: noDifficulty(),
+      stopReason: "not-started",
+      coverage: coverageOf(undefined, []),
+      budgetLimitedSteps: 0,
     });
   const assembled = assemble(problem, productionRules());
   if (!assembled.ok) {
@@ -310,8 +397,17 @@ export async function solveProblem(
         candidates: readonly number[];
         cells: readonly number[];
         workUnits: number;
+        budgetLimited: boolean;
       }
     | undefined;
+  let ledger: Ledger | undefined,
+    budgetLimitedSteps = 0,
+    countVerifiedMs: number | undefined;
+  const registry = assembleTechniqueJobs(assembly, PROFILE);
+  const noteCount = (count: CountEvidence | undefined) => {
+    if (countVerifiedMs === undefined && count && count.kind !== "unknown")
+      countVerifiedMs = Math.max(0, Math.round(ports.clock.now() - started));
+  };
   const emitStep = (step: NonNullable<typeof pending>) =>
     ports.emit({
       kind: "step",
@@ -323,13 +419,14 @@ export async function solveProblem(
       candidates: step.candidates,
       cells: step.cells,
       workUnits: step.workUnits,
+      budgetLimited: step.budgetLimited,
     });
   await runSolver(
     {
       snapshot,
       assembly,
       view,
-      registry: assembleTechniqueJobs(assembly, PROFILE),
+      registry,
       workspace,
       limits,
       options,
@@ -353,7 +450,13 @@ export async function solveProblem(
           code?: string;
           human?: HumanStatus;
           count?: CountEvidence;
+          budgetLimited?: boolean;
+          ledger?: Ledger;
+          logicalStop?: string;
         };
+        if (event.ledger) ledger = event.ledger;
+        if (event.kind === "evidence" || event.kind === "precount" || event.kind === "terminal")
+          noteCount(event.count);
         if (event.kind === "precount") {
           const count = defined(event.count, "count");
           if (count.kind === "unique")
@@ -375,6 +478,7 @@ export async function solveProblem(
           // next event.
           if (pending) emitStep(pending);
           steps++;
+          if (event.budgetLimited) budgetLimitedSteps++;
           tiersSeen.push(techniqueTiers.get(event.step.proposal.technique) ?? -1);
           pending = {
             technique: event.step.proposal.technique,
@@ -382,23 +486,32 @@ export async function solveProblem(
             candidates: [...view.state.domains],
             cells: patternCells(event.step.proposal.pattern),
             workUnits: logicalWork,
+            budgetLimited: !!event.budgetLimited,
           };
         } else if (event.kind === "terminal") {
           if (pending) {
             emitStep(pending);
             pending = undefined;
           }
-          const count = defined(event.count, "count");
+          const count = defined(event.count, "count"),
+            human = event.human ?? "not-started";
           ports.emit({
             kind: "result",
             outcome: event.outcome ?? "error",
             code: event.code,
-            human: event.human ?? "not-started",
+            human,
             count: countKind(count),
             solution: solutionOf(count),
             logicalValues: [...view.state.values],
             steps,
             difficulty: difficultyOf(tiersSeen),
+            stopReason: stopReasonOf(human, event.logicalStop, ledger),
+            ...(countVerifiedMs === undefined ? {} : { countVerifiedMs }),
+            coverage: coverageOf(
+              ledger,
+              registry.techniques.map((technique) => technique.id),
+            ),
+            budgetLimitedSteps,
           });
         }
       },
