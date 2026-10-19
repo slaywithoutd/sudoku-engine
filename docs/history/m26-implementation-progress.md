@@ -8,6 +8,7 @@ Branch `feat/m26-hardening`, worktree `.claude/worktrees/gifted-feistel-d36469`,
 | T02 exact propagation (`original-dfs@2`) | `5b0ee1b` | see below; `npm test` 83 files, 2,010 passed, 6 skipped, 0 failed (2,379 s, mains then battery); typecheck clean | `fix(solver): T02 review`: no soundness defect (reviewer's 600-problem 4x4/6x6 variant differential matched the oracle); units now count only what §4.1 lists, reservation bounded by full-house pairs, per-node unit bound asserted, 6x6 in the property test |
 | T03 count-first pipeline | `69040ae` | see below; `npm test` 84 files, 2,013 passed, 7 skipped, 0 failed (2,229 s, mains); typecheck clean | `fix(solver): T03 review`: logical cut made clock-independent when the precount is inconclusive, witnesses of an inconclusive precount re-checked against the logical path, step work counts logical work only, mid-search carry test |
 | T04 trace-preserving cost reductions | `8612a7a` | see below; `npm test` 85 files, 2,018 passed, 7 skipped, 0 failed (1,193 s, mains); typecheck clean | `fix(solver): T04 review`: relation-board lease leak fixed (separate table lease), parent released on fallback, owed-debt and error-preserving pay fixes, plainEqual validity, trace claim restated as identical for complete runs and a prefix under a binding budget; suite rerun 85 files, 2,018 passed |
+| T05 explain-fair@3 / analyze-fair@3 | pending | see below; `npm test` 145 suites, 2,030 passed, 10 skipped, 0 failed (2,301 s, battery; an earlier slow run had 2 wall-clock flakes, among them forcing.test, which passes alone) | pending |
 
 ## T02
 
@@ -63,3 +64,20 @@ Evidence:
   - fast state: easy 0.35–0.47 s end to end (target < 1 s), basic steps 4.5–7 ms (< 10 ms), 17-clue 0.39–0.42 s (< 3 s): **met**;
   - slow state: easy 1.2–1.3 s, basic steps 15–17 ms, 17-clue 1.3–1.5 s: easy and basic step **missed**, 17-clue met.
   The time targets are therefore met only in the fast state; they are re-measured for the final report. The assertions run only with `M26_TIMING=1` so the deterministic suite does not depend on machine load.
+
+## T05
+
+`explain-fair@3` / `analyze-fair@3` (spec §4.4), now the `classic-run` defaults for Explain and Analyze (`@1`/`@2` stay selectable; the golden-trace test pins `@1`).
+
+- Tier cap (`tierCap` in the canonical options of `explain-fair@3` only): from tier 3, a job that spends its cap on one state without a step becomes `capped` (`tier-work-cap`) and its cursor is closed, which frees its workspace. A job holding a checked step is not capped. Explain climbs when every lower job is exhausted, excluded, or (from tier 3) capped or interrupted on its own allowance (`simplerSettled`). Steps taken past a capped simpler job are `budgetLimited`, and `canClaimSimplerExhausted` stays the strict `simplerExhausted`.
+- Reopening: a new state reopens everything (`invalidate` keeps only exhausted/excluded rows; `stateWork` and `capRounds` reset). On one state, when every job is settled and no step was found, the capped and interrupted jobs from tier 3 up restart with twice their previous cap (iterative deepening, since a capped cursor was closed). The spec's "every 4th rotation ticket" reopening is read as this settled-tier rule; a periodic reopen of a lower tier while upper tiers still run would hand most of the time back to the capped jobs.
+- One alias per single (`revision3` in the discovery context): `NakedSingles` proposes Full House, else Last Digit, else Naked Single.
+- Analyze window: `max(4096, 2 × units served to the original rules in this selection)`, read live, so a rule pass is never cut.
+- Added for the targets, behind `@3` only: the basic fish (C06) enumerates only admissible cover sets (the supersets of the crossing lines of its base supports; the same candidates, 12k units instead of 944k on Inkala 2012), and budget-interrupted jobs from tier 3 up count as settled.
+- Cap value: the spec's provisional 2,000,000 units cannot reach tier 5 within 15 s here (tier-3/4 search costs about 5.5 µs per unit on mains; ten tier-3/4 jobs). Measured at 15 s, mains: with 50k–200k all three grids serve tier-5/6 jobs, and Golden Nugget's first tier-5 step (c31) comes at 3.7–7.1 s. The default is set to **100,000**, provisional until T08; raised for a decision.
+
+Evidence:
+
+- `policies-v3.test.ts`: under a 5k cap, every step taken past a capped simpler job has `canClaimSimplerExhausted` false and `budgetLimited` true, and `canClaimSimplerExhausted` equals strict exhaustion on every step (Escargot, Golden Nugget, Inkala); `analyze-fair@3` yields at least one step on all 10 unique corpus cases; two runs give identical steps and results under each of the eight policies; with `M26_TIMING=1` all three grids serve a tier ≥ 5 job within 15 s (mains).
+- `golden-traces.test.ts`: `@1` traces byte-identical; the `@3` tiers 0–2 prefix equals `@1` on both golden fixtures.
+- **Missed: "≥ 1 tier-5/6 step each".** Met on Golden Nugget only. Escargot finds one tier-4 fish (c07) and Inkala nothing above tier 0, even with the whole default 60M-unit budget (160–190 s): the tier-6 chain and forcing detectors (c22–c28) each spend 1.5M+ units without a step, and c22/c28 also hit the workspace byte limit. This depends on detector strength and speed, not on scheduling; raised for a decision (options: record as a catalogue limit, or open detector-performance work).

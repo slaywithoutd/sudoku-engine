@@ -357,6 +357,30 @@ class FishSearch {
             left.id.localeCompare(right.id),
           );
   }
+  /**
+   * The cover sets a finless basic fish (C06) admits for given bases: every
+   * base support lies in exactly one crossing line, so the covers must hold
+   * all of those lines; the rest of the n lines are any other cover-pool
+   * lines (smaller equivalent fish). Every other cover set leaves a base
+   * support uncovered, a fin C06 rejects, so the candidates are the same as
+   * from ordered(coverPool, n); only the work differs (@3 only).
+   */
+  *finlessCovers(
+    coverPool: readonly House[],
+    n: number,
+    current: readonly number[],
+    baseCount: readonly number[],
+  ): Generator<House[]> {
+    const supports = current.filter((_, i) => baseCount[i] > 0);
+    const required = coverPool.filter((house) =>
+      supports.some((cell) => house.cells.includes(cell)),
+    );
+    if (required.length > n) return;
+    if (supports.some((cell) => !required.some((house) => house.cells.includes(cell)))) return;
+    const others = coverPool.filter((house) => !required.includes(house));
+    for (const extra of this.ordered(others, n - required.length))
+      yield [...required, ...extra].sort((left, right) => left.id.localeCompare(right.id));
+  }
   /** Enumerate house sets, never candidate assignments. Every admissible count
    * must cover each base occurrence not visible to its target, and the target
    * needs capacity greater than its base multiplicity. Branch on a still-unmet
@@ -540,7 +564,9 @@ class FishSearch {
               };
               try {
                 const coverCursor = simple
-                  ? this.ordered(pools.coverPool, n)
+                  ? this.family === "C06" && this.context.revision3
+                    ? this.finlessCovers(pools.coverPool, n, geometry.current, baseCount)
+                    : this.ordered(pools.coverPool, n)
                   : this.coverSets(
                       pools.coverPool,
                       n,

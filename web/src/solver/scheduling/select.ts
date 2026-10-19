@@ -25,6 +25,7 @@ import {
   WorkBudget,
   WorkLimit,
   QUANTUM,
+  isRevision3,
   schedulingOptions,
   type SchedulingOptions,
   type WorkClock,
@@ -55,6 +56,11 @@ export type SelectionEvent =
       readonly reason: string;
       readonly ledger: Ledger;
     };
+interface Window {
+  used: number;
+  /** Units served to the original rules (tier -1) in this selection. */
+  rules: number;
+}
 /** Job statuses that keep a quantum running. */
 const ACTIVE: ReadonlySet<string> = new Set(["pending", "in-progress", "found"]);
 /** Read after the quantum ran; the generator may have flipped the flag meanwhile. */
@@ -352,6 +358,7 @@ export class StepSelection {
           limits: { ...this.options.limits, workUnits: this.#budget.remaining() },
           templates: this.#templates,
           uniqueAuthority: this.context.uniqueAuthority,
+          ...(isRevision3(this.options.policy) ? { revision3: true } : {}),
         });
     this.ledger.status(job.key, "in-progress");
     return discovery;
@@ -496,13 +503,55 @@ export class StepSelection {
   /** Services jobs in policy order until a step is buffered or the window closes.
    * Returns the reason the loop stopped early, if any. */
   *#fillBuffers(): Generator<SelectionEvent, string | undefined, void> {
-    const window = { used: 0 };
+    const window: Window = { used: 0, rules: 0 };
+    for (;;) {
+      const reason = yield* this.#fillFromActive(window);
+      // explain-fair@3: when every job is settled and no step was found, the
+      // jobs that stopped on a budget are reopened (spec M2.6 §4.4).
+      if (reason !== undefined || this.#buffers.length || !this.#reopenSettled()) return reason;
+    }
+  }
+  /** The per-state tier cap of this selection's policy, if any. */
+  get #tierCap() {
+    return this.options.tierCap;
+  }
+  /** Analyze selection window: 4096 units, or under @3 twice the rule pass (spec §4.4). */
+  #windowLimit(window: Window): number {
+    return this.options.policy === "analyze-fair@3" ? Math.max(4096, 2 * window.rules) : 4096;
+  }
+  /**
+   * Restarts the jobs from `fromTier` up that were capped or interrupted on this
+   * state, from scratch and with twice their previous cap (iterative deepening:
+   * a capped cursor was closed to free its workspace, so a retry must reach
+   * further). Returns whether any job was reopened.
+   */
+  #reopenSettled(): boolean {
+    const cap = this.#tierCap;
+    if (!cap) return false;
+    const reopened = this.ledger.jobs.filter(
+      (job) =>
+        job.tier >= cap.fromTier && (job.status === "capped" || job.status === "interrupted"),
+    );
+    for (const job of reopened) {
+      const cursor = this.#cursors.get(job);
+      if (cursor) this.#closeCursor(cursor);
+      this.#cursors.delete(job);
+      job.stateWork = 0;
+      job.capRounds += 1;
+      this.ledger.status(job.key, "pending");
+    }
+    return reopened.length > 0;
+  }
+  *#fillFromActive(window: Window): Generator<SelectionEvent, string | undefined, void> {
     while (this.ledger.active.length) {
       const key = this.#policy.next(this.ledger, this.#view),
         job = this.ledger.job(key);
       // An interrupted rule/cheaper tier cannot authorize later Explain claims.
+      // Under explain-fair@3 a capped lower job counts as settled.
       if (
-        !this.ledger.simplerExhausted(job.tier) &&
+        !(this.#tierCap
+          ? this.ledger.simplerSettled(job.tier, this.#tierCap.fromTier)
+          : this.ledger.simplerExhausted(job.tier)) &&
         (this.options.mode === "explain" ||
           (job.tier >= 0 &&
             this.ledger.jobs.some((j) => j.tier === -1 && j.status === "interrupted")))
@@ -513,6 +562,11 @@ export class StepSelection {
       this.#cursors.set(job, cursor);
       cursor.proposed = false;
       yield* this.#serviceQuantum(job, cursor, window);
+      if (job.status === "capped") {
+        // A capped cursor would keep its workspace while later tiers need it.
+        this.#closeCursor(cursor);
+        this.#cursors.delete(job);
+      }
       if (!proposedDuring(cursor)) this.ledger.noteEmptyQuantum(key);
       // A checker result paid at the last unit belongs to this quantum.
       if (cursor.checked && !cursor.debt) this.#bufferChecked(cursor);
@@ -521,10 +575,11 @@ export class StepSelection {
         (job.tier === -1 ||
           this.options.mode === "explain" ||
           this.#buffers.length >= 4 ||
-          window.used >= 4096)
+          window.used >= this.#windowLimit(window))
       )
         return undefined;
-      if (this.options.mode === "analyze" && window.used >= 4096) return "selection-window";
+      if (this.options.mode === "analyze" && window.used >= this.#windowLimit(window))
+        return "selection-window";
     }
     return undefined;
   }
@@ -532,12 +587,18 @@ export class StepSelection {
   *#serviceQuantum(
     job: ScheduledJob,
     cursor: Cursor,
-    window: { used: number },
+    window: Window,
   ): Generator<SelectionEvent, void, void> {
     const analyze = this.options.mode === "analyze";
+    const cap =
+      this.#tierCap && job.tier >= this.#tierCap.fromTier
+        ? this.#tierCap.unitsPerJobPerState * 2 ** Math.min(job.capRounds, 20)
+        : Infinity;
     let quantum = 0;
     const active = () => ACTIVE.has(job.status);
-    const room = () => Math.min(QUANTUM - quantum, analyze ? 4096 - window.used : Infinity);
+    // The window limit is read live: under analyze-fair@3 it grows with the rule pass.
+    const room = () =>
+      Math.min(QUANTUM - quantum, analyze ? this.#windowLimit(window) - window.used : Infinity);
     // Debt is paid in one work event once it fills the quantum's room, before a
     // checked step is buffered, and before a pump that ends the job or throws:
     // the same units, quanta and job work as paying after every pump, with
@@ -549,10 +610,20 @@ export class StepSelection {
       cursor.debt -= units;
       quantum += units;
       window.used += units;
+      if (job.tier === -1) window.rules += units;
       job.work += units;
+      job.stateWork += units;
       yield { kind: "work" as const, units };
+      // explain-fair@3: the job spent its cap on this state without a step
+      // (one with a checked step waiting for its debt is left to finish).
+      if (job.stateWork >= cap && active() && !cursor.checked)
+        this.ledger.status(job.key, "capped", "tier-work-cap");
     }.bind(this);
-    while (quantum < QUANTUM && active() && !(analyze && window.used >= 4096)) {
+    while (
+      quantum < QUANTUM &&
+      active() &&
+      !(analyze && window.used >= this.#windowLimit(window))
+    ) {
       if (cursor.debt && (cursor.debt >= room() || cursor.checked)) {
         yield* pay(Math.min(cursor.debt, room()));
         continue;
@@ -673,7 +744,13 @@ export class StepSelection {
       kind: "checked-step",
       step: selected,
       bundleId: ++this.#bundle,
-      budgetLimited: !!reason || this.ledger.jobs.some((j) => j.status === "interrupted"),
+      // A capped simpler job means a simpler step may exist (explain-fair@3).
+      budgetLimited:
+        !!reason ||
+        this.ledger.jobs.some(
+          (j) => j.status === "interrupted" || (j.status === "capped" && j.tier < tier),
+          // (an interrupted job always marked the step, at any tier)
+        ),
       canClaimSimplerExhausted: this.ledger.simplerExhausted(tier),
     };
   }

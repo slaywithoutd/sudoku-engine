@@ -12,6 +12,7 @@ import {
   schedulingOptions,
   type PolicyId,
   type PolicyParameters,
+  type TierCap,
   canonicalOptionsKey,
   SCHEDULER_VERSION,
 } from "./scheduling/work";
@@ -112,6 +113,8 @@ export interface ClassicSolveInput {
   /** Engine-side override for ablations; the application keeps the mode's default policy. */
   readonly policy?: PolicyId;
   readonly policyParameters?: PolicyParameters;
+  /** Engine-side override of the explain-fair@3 tier cap (benchmarks, T08). */
+  readonly tierCap?: TierCap;
 }
 export interface ClassicSolvePorts {
   readonly clock: { now(): number };
@@ -271,8 +274,11 @@ export async function solveProblem(
     limits,
     mode,
     profile: PROFILE,
-    ...(input.policy ? { policy: input.policy } : {}),
+    // The M2.6 policies are the defaults (D103); @1/@2 stay selectable and
+    // keep their traces (D094).
+    policy: input.policy ?? (mode === "explain" ? "explain-fair@3" : "analyze-fair@3"),
     ...(input.policyParameters ? { policyParameters: input.policyParameters } : {}),
+    ...(input.tierCap ? { tierCap: input.tierCap } : {}),
   });
   const run: RunKey = {
     requestId,

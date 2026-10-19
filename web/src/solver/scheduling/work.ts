@@ -24,7 +24,9 @@ export type PolicyId =
   | "fixed-scan@1"
   | "event-fixed@1"
   | "explain-fair@2"
-  | "analyze-fair@2";
+  | "analyze-fair@2"
+  | "explain-fair@3"
+  | "analyze-fair@3";
 export const POLICY_IDS: readonly PolicyId[] = Object.freeze([
   "explain-fair@1",
   "analyze-fair@1",
@@ -32,7 +34,31 @@ export const POLICY_IDS: readonly PolicyId[] = Object.freeze([
   "event-fixed@1",
   "explain-fair@2",
   "analyze-fair@2",
+  "explain-fair@3",
+  "analyze-fair@3",
 ]);
+/**
+ * Explain tier cap of explain-fair@3 (spec M2.6 §4.4): from `fromTier` up, a
+ * job that spends `unitsPerJobPerState` units on one state without a step is
+ * capped, and Explain may climb past it with budget-limited steps. Part of the
+ * canonical options (RunKey); provisional until T08 re-derives it (D094: a
+ * new value needs a new parameter version).
+ */
+export interface TierCap {
+  readonly fromTier: number;
+  readonly unitsPerJobPerState: number;
+}
+// The spec's provisional 2,000,000 cannot reach tier 5 within 15 s (about 11 s
+// per capped tier-3/4 job on the development laptop); 100,000 is measured in
+// docs/history/m26-implementation-progress.md (T05) and T08 re-derives it.
+export const DEFAULT_TIER_CAP: TierCap = Object.freeze({
+  fromTier: 3,
+  unitsPerJobPerState: 100_000,
+});
+/** The @3 behaviours: tier cap (Explain), one alias per single, Analyze window. */
+export function isRevision3(policy: PolicyId): boolean {
+  return policy === "explain-fair@3" || policy === "analyze-fair@3";
+}
 /**
  * Parameters of the @2 policies (spec §3.7, §3.11). They are part of the
  * canonical options, hence of the RunKey; the @1 policies carry none so
@@ -118,6 +144,8 @@ export interface SchedulingOptions {
   readonly phaseTimeMs: number;
   /** Present exactly when the policy is scored (@2). */
   readonly policyParameters?: PolicyParameters;
+  /** Present exactly for explain-fair@3. */
+  readonly tierCap?: TierCap;
 }
 /** Logical options only: task slices do not enter deterministic decisions. */
 export function schedulingOptions(
@@ -142,6 +170,9 @@ export function schedulingOptions(
           }),
         }
       : {}),
+    ...(policy === "explain-fair@3"
+      ? { tierCap: Object.freeze({ ...DEFAULT_TIER_CAP, ...(input.tierCap ?? {}) }) }
+      : {}),
   };
   if (!["explain", "analyze"].includes(mode) || !(POLICY_IDS as readonly string[]).includes(policy))
     throw Error("invalid-scheduler-policy");
@@ -151,6 +182,18 @@ export function schedulingOptions(
   )
     throw Error("policy-mode-mismatch");
   if (!scored && input.policyParameters !== undefined) throw Error("policy-parameters-unscored");
+  if (policy !== "explain-fair@3" && input.tierCap !== undefined) throw Error("tier-cap-policy");
+  if (options.tierCap) {
+    const { fromTier, unitsPerJobPerState } = options.tierCap;
+    if (
+      !Number.isSafeInteger(fromTier) ||
+      fromTier < 3 ||
+      !Number.isSafeInteger(unitsPerJobPerState) ||
+      unitsPerJobPerState < 1 ||
+      Object.keys(options.tierCap).length !== 2
+    )
+      throw Error("invalid-tier-cap");
+  }
   if (options.policyParameters) {
     const { scoreFromTier, rotationEvery, decayShiftCap } = options.policyParameters;
     if (

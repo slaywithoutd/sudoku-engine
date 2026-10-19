@@ -15,6 +15,13 @@ export interface DiscoveryContext {
   /** Explicit operation-owned per-candidate-revision C33 exploration allowance. */
   readonly templates?: TemplateOperationContext;
   readonly uniqueAuthority?: UniqueAuthority;
+  /**
+   * The @3 policies (spec M2.6 §4.4): a technique with several presentation
+   * aliases for one deduction proposes only the most specific one, and the
+   * basic fish enumerates only admissible cover sets. Under @1/@2 discovery,
+   * and so the trace, is unchanged.
+   */
+  readonly revision3?: boolean;
 }
 
 export type DiscoveryEvent =
@@ -73,7 +80,15 @@ export interface TechniqueDescriptor {
 }
 
 export type DetectorStatus =
-  "pending" | "in-progress" | "found" | "exhausted" | "excluded" | "disabled" | "interrupted";
+  | "pending"
+  | "in-progress"
+  | "found"
+  | "exhausted"
+  | "excluded"
+  | "disabled"
+  | "interrupted"
+  /** explain-fair@3: spent its per-state work cap without a step (spec M2.6 §4.4). */
+  | "capped";
 /** Type-only scheduler handoff; resumable detector cursors are owned elsewhere. */
 export interface LedgerEntry {
   readonly technique: VersionId;

@@ -36,6 +36,10 @@ export interface ScheduledJob {
   lastService: number;
   /** Consecutive served quanta without a proposal; reset on a proposal or an advance. */
   emptyQuanta: number;
+  /** Units served on the current state (explain-fair@3 tier cap); reset on an advance. */
+  stateWork: number;
+  /** Times the job was reopened on the current state; each doubles its cap. */
+  capRounds: number;
   reason?: string;
 }
 export function compareJob(left: ScheduledJob, right: ScheduledJob): number {
@@ -70,6 +74,8 @@ export class SchedulingLedger {
         work: 0,
         lastService: 0,
         emptyQuanta: 0,
+        stateWork: 0,
+        capRounds: 0,
       })),
       ...registry.techniques.map((descriptor) => ({
         key: { technique: descriptor.id, scopeKey: "" },
@@ -82,6 +88,8 @@ export class SchedulingLedger {
         work: 0,
         lastService: 0,
         emptyQuanta: 0,
+        stateWork: 0,
+        capRounds: 0,
       })),
     ].sort(compareJob);
     if (new Set(this.jobs.map((j) => JSON.stringify(j.key))).size !== this.jobs.length)
@@ -145,6 +153,24 @@ export class SchedulingLedger {
       .filter((j) => j.tier < tier)
       .every((j) => j.status === "exhausted" || j.status === "excluded");
   }
+  /**
+   * Every lower-tier job exhausted, excluded, or (from `fromTier` up) capped or
+   * interrupted by its own allowance: explain-fair@3 may climb past a job that
+   * stopped on a budget, and says so (spec M2.6 §4.4).
+   */
+  simplerSettled(tier: number, fromTier: number): boolean {
+    return this.jobs
+      .filter((j) => j.tier < tier)
+      .every(
+        (j) =>
+          j.status === "exhausted" ||
+          j.status === "excluded" ||
+          (j.tier >= fromTier && (j.status === "capped" || j.status === "interrupted")),
+      );
+  }
+  get capped(): readonly ScheduledJob[] {
+    return this.jobs.filter((j) => j.status === "capped");
+  }
   /** Exact accepted ChangeSet required, including same-revision proof additions. */
   advance(view: ReadView, changes: ChangeSet, cold = false): void {
     const rows = invalidate(changes, this.rows);
@@ -156,6 +182,10 @@ export class SchedulingLedger {
       job.status = cold ? "pending" : rows[i].status;
       job.reason = cold ? undefined : rows[i].reason;
       job.lastService = 0;
+      // A capped job is reopened on a new state (invalidate keeps only
+      // exhausted/excluded rows), with a fresh per-state cap.
+      job.stateWork = 0;
+      job.capRounds = 0;
       if (revised) job.emptyQuanta = 0;
       if (job.descriptor) {
         const carried = !cold && (job.status === "exhausted" || job.status === "excluded");

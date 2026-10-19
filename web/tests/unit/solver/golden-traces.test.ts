@@ -2,7 +2,7 @@ import { describe, expect, test } from "vitest";
 import { readFileSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { solveClassic, type ClassicSolveEvent } from "../../../src/solver/classic-run";
-import type { PolicyParameters } from "../../../src/solver/scheduling/work";
+import type { PolicyId, PolicyParameters } from "../../../src/solver/scheduling/work";
 import { coverageEntries } from "../../../src/solver/techniques/manifest";
 
 /**
@@ -43,6 +43,7 @@ async function trace(
   id: string,
   puzzle: string,
   policyParameters?: PolicyParameters,
+  policy: PolicyId = policyParameters ? "explain-fair@2" : "explain-fair@1",
 ): Promise<GoldenTrace> {
   const events: ClassicSolveEvent[] = [];
   await solveClassic(
@@ -50,7 +51,9 @@ async function trace(
       givens: [...puzzle].map(Number),
       limits,
       mode: "explain",
-      ...(policyParameters ? { policy: "explain-fair@2" as const, policyParameters } : {}),
+      // Pinned: the solver's default Explain policy is explain-fair@3 since M2.6 T05.
+      policy,
+      ...(policyParameters ? { policyParameters } : {}),
     },
     { clock: { now: () => Date.now() }, emit: (event) => events.push(event) },
   );
@@ -117,6 +120,17 @@ describe("metric F on the golden fixtures: explain-fair@2 keeps the tiers 0-2 pr
     "%s",
     async (_id, entry, parameters) => {
       const current = await trace(entry.id, entry.puzzle, parameters);
+      expect(lowPrefix(current.steps)).toEqual(lowPrefix(entry.steps));
+    },
+    600_000,
+  );
+});
+
+describe("explain-fair@3 keeps the tiers 0-2 prefix of explain-fair@1 (spec M2.6 §5 T05)", () => {
+  test.each(golden.traces.map((entry) => [entry.id, entry] as const))(
+    "%s",
+    async (_id, entry) => {
+      const current = await trace(entry.id, entry.puzzle, undefined, "explain-fair@3");
       expect(lowPrefix(current.steps)).toEqual(lowPrefix(entry.steps));
     },
     600_000,
