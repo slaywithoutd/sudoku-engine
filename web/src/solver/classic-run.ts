@@ -17,7 +17,7 @@ import {
 } from "./scheduling/work";
 import { assembleTechniqueJobs } from "./techniques/registry";
 import { EXACT_METHOD, exactSteps } from "./exact";
-import { runSolver } from "./run";
+import { PRECOUNT_SHARE, runSolver } from "./run";
 import { coverageEntries, variantEntries } from "./techniques/manifest";
 import { defined } from "./invariants";
 
@@ -126,8 +126,8 @@ function exactPrecount(
   clock: { now(): number },
 ):
   { kind: "zero" | "multiple" | "inconclusive" } | { kind: "unique"; solution: readonly number[] } {
-  const deadline = clock.now() + Math.floor(limits.timeMs * 0.1),
-    cap = Math.floor(limits.workUnits * 0.1);
+  const deadline = clock.now() + Math.floor(limits.timeMs * PRECOUNT_SHARE),
+    cap = Math.floor(limits.workUnits * PRECOUNT_SHARE);
   let used = 0;
   const witnesses: (readonly number[])[] = [];
   const exact = exactSteps(problem, assembly);
@@ -206,8 +206,8 @@ function solutionOf(count: CountEvidence): readonly number[] | null {
 
 /**
  * Composes the existing M2 pipeline for one 9x9 classic grid:
- * normalizeClassic -> assemble -> initialize -> logical phase (auto-accepted) ->
- * independent exact count.
+ * normalizeClassic -> assemble -> initialize -> exact count (reused) -> logical
+ * phase (auto-accepted) -> exact count resumed only when still unknown.
  * Throws ProblemInputError for malformed givens; reports rule conflicts as an "error" result.
  */
 export async function solveClassic(
@@ -256,25 +256,8 @@ export async function solveProblem(
   }
   const assembly = assembled.value,
     snapshot = makeSnapshot(problem, { kind: "manual" }, requestId, 0);
-  // Cheap exact pre-count: zero or multiple solutions make the explained logical phase meaningless,
-  // so report them immediately. Inconclusive or unique grids continue through the full pipeline,
-  // whose own exact phase independently re-establishes the count.
-  const precheck = exactPrecount(problem, assembly, limits, ports.clock);
-  if (precheck.kind !== "inconclusive" && precheck.kind !== "unique") {
-    ports.emit({
-      kind: "result",
-      outcome: "complete",
-      human: "not-started",
-      count: precheck.kind,
-      solution: null,
-      logicalValues: [...problem.givens],
-      steps: 0,
-      difficulty: noDifficulty(),
-    });
-    return;
-  }
-  if (precheck.kind === "unique")
-    ports.emit({ kind: "precount", solution: [...precheck.solution] });
+  // runSolver counts first (spec M2.6 §4.3): zero or multiple solutions end the
+  // run before the logical phase, and a conclusive count is reused, never recomputed.
   let view = initialize(assembly, "primary");
   const workspace = new IndexWorkspace({ entryLimit: 100_000, byteLimit: limits.workspaceBytes });
   // Classic input keeps the classic profile and RunKey; a declared variant rule
@@ -362,7 +345,11 @@ export async function solveProblem(
           human?: HumanStatus;
           count?: CountEvidence;
         };
-        if (event.kind === "work") {
+        if (event.kind === "precount") {
+          const count = defined(event.count, "count");
+          if (count.kind === "unique")
+            ports.emit({ kind: "precount", solution: [...count.witness] });
+        } else if (event.kind === "work") {
           work += event.units ?? 0;
           const now = ports.clock.now();
           if (pending) {

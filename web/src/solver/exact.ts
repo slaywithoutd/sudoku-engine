@@ -201,6 +201,9 @@ class OriginalSemantics {
     readonly onlySecond: readonly number[];
   }[];
   readonly full: number;
+  /** Full houses and locked pairs each cell belongs to, for dirty tracking. */
+  readonly cellHouses: readonly (readonly number[])[];
+  readonly cellPairs: readonly (readonly number[])[];
   /** Rules whose module offers a forward check (spec §3.13); all-different is covered by peers. */
   readonly pruners: readonly {
     readonly rule: ConstraintInstance;
@@ -273,6 +276,13 @@ class OriginalSemantics {
           onlySecond: [...second].filter((cell) => !first.has(cell)),
         };
       });
+    this.cellHouses = membership;
+    const cellPairs = this.problem.cells.map(() => [] as number[]);
+    this.lockedPairs.forEach((pair, index) => {
+      for (const cell of [...pair.shared, ...pair.onlyFirst, ...pair.onlySecond])
+        cellPairs[cell].push(index);
+    });
+    this.cellPairs = cellPairs;
   }
   validValues(values: unknown): values is readonly number[] {
     if (!Array.isArray(values) || values.length !== this.problem.cells.length) return false;
@@ -296,7 +306,18 @@ interface Frame {
   masks: number[] | null;
   /** The branched cell whose symbol still has to leave its peers; -1 at the root. */
   branch: number;
-  decisions: readonly Literal[];
+  /** The decision that created this frame, linked to its parent's; null at the root. */
+  decision: Decision | null;
+  depth: number;
+}
+interface Decision {
+  readonly literal: Literal;
+  readonly parent: Decision | null;
+}
+function decisionList(decision: Decision | null): readonly Literal[] {
+  const literals: Literal[] = [];
+  for (let link = decision; link; link = link.parent) literals.push(link.literal);
+  return Object.freeze(literals.reverse());
 }
 
 /** Symbol of a single-bit mask (symbol s is bit s - 1, as in symbolMask). */
@@ -328,11 +349,32 @@ class ExactSearchSession {
    */
   private units = 0;
   private readonly reservation: ExactInitializationReservation;
+  /**
+   * Propagation work lists of the current node: cells whose mask became a
+   * single, and houses and locked pairs with a cell whose mask changed since
+   * they were last examined. A child starts from its parent's fixed point, so
+   * only what its own changes touch is examined again.
+   */
+  private readonly queue: number[] = [];
+  private readonly houseDirty: Uint8Array;
+  private readonly pairDirty: Uint8Array;
+  private dirtyHouses = 0;
+  private dirtyPairs = 0;
+  /** Bumped on every mask change; module hooks rerun only after one. */
+  private version = 0;
   constructor(problem: EngineProblem, assembly: Assembly) {
     this.semantics = new OriginalSemantics(problem, assembly);
     this.reservation = this.semantics.reservation;
+    this.houseDirty = new Uint8Array(this.semantics.fullHouses.length);
+    this.pairDirty = new Uint8Array(this.semantics.lockedPairs.length);
     this.frontier = [
-      { values: [...this.semantics.problem.givens], masks: null, branch: -1, decisions: [] },
+      {
+        values: [...this.semantics.problem.givens],
+        masks: null,
+        branch: -1,
+        decision: null,
+        depth: 0,
+      },
     ];
   }
   private stats(): ExactStats {
@@ -343,16 +385,40 @@ class ExactSearchSession {
     });
   }
 
+  /** Records a mask change of `cell`: its houses and pairs are examined again. */
+  private touched(values: readonly number[], masks: readonly number[], cell: number): void {
+    this.version++;
+    for (const house of this.semantics.cellHouses[cell])
+      if (this.houseDirty[house] === 0) {
+        this.houseDirty[house] = 1;
+        this.dirtyHouses++;
+      }
+    for (const pair of this.semantics.cellPairs[cell])
+      if (this.pairDirty[pair] === 0) {
+        this.pairDirty[pair] = 1;
+        this.dirtyPairs++;
+      }
+    if (values[cell] === 0 && (masks[cell] & (masks[cell] - 1)) === 0) this.queue.push(cell);
+  }
+
+  /** Narrows a mask; false on a contradiction. */
+  private narrow(values: number[], masks: number[], cell: number, mask: number): boolean {
+    if (mask === masks[cell]) return true;
+    masks[cell] = mask;
+    if (mask === 0) return false;
+    this.touched(values, masks, cell);
+    return true;
+  }
+
   /** Places a symbol and removes it from every peer; false on a contradiction. */
   private assign(values: number[], masks: number[], cell: number, bit: number): boolean {
     this.units++;
     values[cell] = symbolOf(bit);
     masks[cell] = bit;
+    this.touched(values, masks, cell);
     for (const peer of this.semantics.peers[cell])
-      if ((masks[peer] & bit) !== 0) {
-        masks[peer] &= ~bit;
-        if (masks[peer] === 0) return false;
-      }
+      if ((masks[peer] & bit) !== 0 && !this.narrow(values, masks, peer, masks[peer] & ~bit))
+        return false;
     return true;
   }
 
@@ -363,11 +429,18 @@ class ExactSearchSession {
    */
   private propagate(frame: Frame): number[] | null {
     const { problem, peers, pruners, fullHouses, lockedPairs, full } = this.semantics;
+    const { queue, houseDirty, pairDirty } = this;
     const values = frame.values;
+    queue.length = 0;
+    houseDirty.fill(0);
+    pairDirty.fill(0);
+    this.dirtyHouses = 0;
+    this.dirtyPairs = 0;
     let masks: number[];
+    let pruned = -1;
     if (frame.masks) {
-      // The parent's masks already exclude every other placed symbol; the
-      // frame owns this copy.
+      // The parent's masks are a fixed point that already excludes every other
+      // placed symbol; the frame owns this copy.
       masks = frame.masks;
       if (!this.assign(values, masks, frame.branch, masks[frame.branch])) return null;
     } else {
@@ -380,56 +453,67 @@ class ExactSearchSession {
         if (mask === 0) return null;
         masks[cell] = mask;
       }
+      houseDirty.fill(1);
+      pairDirty.fill(1);
+      this.dirtyHouses = fullHouses.length;
+      this.dirtyPairs = lockedPairs.length;
+      for (const cell of problem.cells)
+        if (values[cell] === 0 && (masks[cell] & (masks[cell] - 1)) === 0) queue.push(cell);
     }
     for (;;) {
-      let changed = false;
-      for (const cell of problem.cells)
-        if (values[cell] === 0 && (masks[cell] & (masks[cell] - 1)) === 0) {
-          if (!this.assign(values, masks, cell, masks[cell])) return null;
-          changed = true;
-        }
-      for (const house of fullHouses) {
-        let once = 0,
-          twice = 0;
-        for (const cell of house) {
-          twice |= once & masks[cell];
-          once |= masks[cell];
-        }
-        if (once !== full) return null;
-        for (let singles = once & ~twice; singles !== 0; singles &= singles - 1) {
-          const bit = singles & -singles;
-          let cell = -1;
-          for (const member of house)
-            if ((masks[member] & bit) !== 0) {
-              cell = member;
-              break;
-            }
-          // An assignment earlier in this sweep removed the house's only support.
-          if (cell < 0) return null;
-          if (values[cell] === 0) {
-            if (!this.assign(values, masks, cell, bit)) return null;
-            changed = true;
+      // Naked singles.
+      while (queue.length > 0) {
+        const cell = queue.pop() as number;
+        if (values[cell] === 0 && !this.assign(values, masks, cell, masks[cell])) return null;
+      }
+      // Hidden singles in the houses a change touched.
+      if (this.dirtyHouses > 0) {
+        for (let index = 0; index < fullHouses.length; index++) {
+          if (houseDirty[index] === 0) continue;
+          houseDirty[index] = 0;
+          this.dirtyHouses--;
+          const house = fullHouses[index];
+          let once = 0,
+            twice = 0;
+          for (const cell of house) {
+            twice |= once & masks[cell];
+            once |= masks[cell];
+          }
+          if (once !== full) return null;
+          for (let singles = once & ~twice; singles !== 0; singles &= singles - 1) {
+            const bit = singles & -singles;
+            let cell = -1;
+            for (const member of house)
+              if ((masks[member] & bit) !== 0) {
+                cell = member;
+                break;
+              }
+            // An assignment earlier in this sweep removed the house's only support.
+            if (cell < 0) return null;
+            if (values[cell] === 0 && !this.assign(values, masks, cell, bit)) return null;
           }
         }
+        continue;
       }
-      if (changed) continue;
-      // Module forward checks. A hook may only shrink the masks of its own
-      // cells; anything else it returns is ignored.
-      for (const { rule, prune } of pruners) {
-        this.units++;
-        const next = prune(rule, problem, values, masks);
-        if (next === null) return null;
-        for (const cell of rule.cells) {
-          const mask = next[cell] & masks[cell];
-          if (mask === 0) return null;
-          if (mask !== masks[cell]) {
-            masks[cell] = mask;
-            changed = true;
-          }
+      // Module forward checks, after any mask change. A hook may only shrink
+      // the masks of its own cells; anything else it returns is ignored.
+      if (pruners.length > 0 && pruned !== this.version) {
+        pruned = this.version;
+        for (const { rule, prune } of pruners) {
+          this.units++;
+          const next = prune(rule, problem, values, masks);
+          if (next === null) return null;
+          for (const cell of rule.cells)
+            if (!this.narrow(values, masks, cell, next[cell] & masks[cell])) return null;
         }
+        if (pruned !== this.version) continue;
       }
-      if (changed) continue;
-      for (const { shared, onlyFirst, onlySecond } of lockedPairs) {
+      if (this.dirtyPairs === 0) return masks;
+      for (let index = 0; index < lockedPairs.length; index++) {
+        if (pairDirty[index] === 0) continue;
+        pairDirty[index] = 0;
+        this.dirtyPairs--;
+        const { shared, onlyFirst, onlySecond } = lockedPairs[index];
         let inside = 0,
           first = 0,
           second = 0;
@@ -440,24 +524,24 @@ class ExactSearchSession {
         const fromSecond = inside & ~first & second,
           fromFirst = inside & ~second & first;
         if (fromSecond !== 0)
-          for (const cell of onlySecond) {
-            masks[cell] &= ~fromSecond;
-            if (masks[cell] === 0) return null;
-          }
+          for (const cell of onlySecond)
+            if (!this.narrow(values, masks, cell, masks[cell] & ~fromSecond)) return null;
         if (fromFirst !== 0)
-          for (const cell of onlyFirst) {
-            masks[cell] &= ~fromFirst;
-            if (masks[cell] === 0) return null;
-          }
-        if (fromSecond !== 0 || fromFirst !== 0) changed = true;
+          for (const cell of onlyFirst)
+            if (!this.narrow(values, masks, cell, masks[cell] & ~fromFirst)) return null;
       }
-      if (!changed) return masks;
     }
   }
 
   /** Propagation alone from `values`, as at the root; see exactFixedPoint. */
   fixedPoint(values: readonly number[]): readonly number[] | null {
-    return this.propagate({ values: [...values], masks: null, branch: -1, decisions: [] });
+    return this.propagate({
+      values: [...values],
+      masks: null,
+      branch: -1,
+      decision: null,
+      depth: 0,
+    });
   }
 
   *steps(): Generator<ExactEvent, void, void> {
@@ -466,7 +550,7 @@ class ExactSearchSession {
     while (this.frontier.length > 0) {
       const frame = defined(this.frontier.pop(), "frontier");
       this.nodes++;
-      this.maxDepth = Math.max(this.maxDepth, frame.decisions.length);
+      this.maxDepth = Math.max(this.maxDepth, frame.depth);
       this.units = 1;
       const masks = this.propagate(frame);
       let selected = -1,
@@ -500,7 +584,7 @@ class ExactSearchSession {
         yield Object.freeze({
           kind: "witness",
           values: Object.freeze([...frame.values]),
-          decisions: Object.freeze([...frame.decisions]),
+          decisions: decisionList(frame.decision),
           stats: this.stats(),
         });
         if (++this.witnesses === 2) {
@@ -521,10 +605,11 @@ class ExactSearchSession {
           values,
           masks: childMasks,
           branch: selected,
-          decisions: [
-            ...frame.decisions,
-            Object.freeze({ cell: selected, symbol, positive: true }),
-          ],
+          decision: {
+            literal: Object.freeze({ cell: selected, symbol, positive: true }),
+            parent: frame.decision,
+          },
+          depth: frame.depth + 1,
         });
       }
     }

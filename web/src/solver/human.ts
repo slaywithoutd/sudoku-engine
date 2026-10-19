@@ -26,6 +26,14 @@ export interface HumanOptions extends SelectionOptions {
   readonly accept: (step: CheckedStep) => ReadView;
 }
 
+/**
+ * The budget behind an incomplete stop: the deterministic work cut or the
+ * time safety stop (spec M2.6 §4.3), anything else a generic logical budget.
+ */
+function budgetReason(reason: string): "work-limit" | "time-limit" | "logical-budget" {
+  return reason === "work-limit" || reason === "time-limit" ? reason : "logical-budget";
+}
+
 function stopStatus(
   view: ReadView,
   event: Extract<SelectionEvent, { kind: "logical-stop" }>,
@@ -63,7 +71,7 @@ export function* humanSteps(
         yield {
           kind: "logical-stop",
           human: "incomplete",
-          reason: "logical-budget",
+          reason: budgetReason(/time-limit/.test(error.message) ? "time-limit" : "work-limit"),
           accepted: Object.freeze([...accepted]),
         };
         return;
@@ -135,7 +143,7 @@ export function* humanSteps(
         yield {
           kind: "logical-stop",
           human,
-          reason: human === "incomplete" ? "logical-budget" : stopped.reason,
+          reason: human === "incomplete" ? budgetReason(stopped.reason) : stopped.reason,
           accepted: Object.freeze([...accepted]),
         };
         return;
