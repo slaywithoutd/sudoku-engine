@@ -8,13 +8,7 @@ import {
   type Value,
 } from "../domain/model";
 import { reduceEditor } from "../domain/editor";
-import {
-  conflictingCells,
-  effectiveValues,
-  isComplete,
-  peersOf,
-  toPuzzleString,
-} from "../domain/classic";
+import { effectiveValues, isComplete, peersOf, toPuzzleString } from "../domain/classic";
 import { lookup } from "../domain/invariants";
 import { createDraft, nextPuzzleName } from "../domain/library";
 import { createSolverController, type SolverController } from "../app/solver-controller";
@@ -675,7 +669,8 @@ export function mountSolver(
     feedback.textContent = conflicts
       ? "These clues conflict: solving will report that there is no solution."
       : "";
-    feedback.classList.toggle("error", !!conflicts);
+    // Conflicts no longer block solving: a notice, not an error.
+    feedback.classList.toggle("error", false);
     status.hidden = phase === "edit";
     renderProgress();
     const explaining = s.solverView === "explain" && phase !== "edit";
@@ -699,13 +694,16 @@ export function mountSolver(
             : (result?.solution ?? result?.logicalValues ?? clues);
         display.update(
           editorFrom(shown),
-          { ...s, highlightPeers: false, highlightSameDigit: false },
+          {
+            ...s,
+            highlightPeers: false,
+            highlightSameDigit: false,
+            // A "No solution" from conflicting clues points at the conflict,
+            // with the board's conflict style and label (not colour only).
+            ...(phase === "result" && result?.count === "zero" ? { showConflicts: true } : {}),
+          },
           {
             derived: new Set(shown.flatMap((v, i) => (v && !clues[i] ? [i] : []))),
-            // A "No solution" from conflicting clues points at the conflict.
-            ...(phase === "result" && result?.count === "zero"
-              ? { focus: new Set(conflictingCells(clues)) }
-              : {}),
           },
         );
       }

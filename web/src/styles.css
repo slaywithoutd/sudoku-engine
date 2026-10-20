@@ -2354,7 +2354,7 @@ dialog .actions .ghost:first-child {
   letter-spacing: 0.05em;
   color: var(--warning-ink);
 }
-.step-note {
+.step-card .step-note {
   margin: 0.35rem 0 0;
   font-size: 0.8rem;
   color: var(--warning-ink);

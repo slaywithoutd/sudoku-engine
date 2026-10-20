@@ -133,7 +133,8 @@ test("runs conflicting clues to No solution and cancels a running analysis", asy
     timeout: 15_000,
   });
   // The conflicting clues are highlighted on the result board.
-  await expect(page.locator(".cell.focus")).toHaveCount(2);
+  await expect(page.locator(".cell.conflict")).toHaveCount(2);
+  await expect(page.getByRole("gridcell", { name: /conflict/ })).toHaveCount(2);
   await page.getByRole("button", { name: "Edit puzzle", exact: true }).click();
   await importPuzzle(page, unique);
   await solve(page).click();
