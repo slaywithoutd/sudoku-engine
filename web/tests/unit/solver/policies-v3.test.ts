@@ -1,6 +1,7 @@
 import { describe, expect, test } from "vitest";
 import {
   CLASSIC_SOLVE_LIMITS,
+  classicLimitsFor,
   solveClassic,
   type ClassicSolveEvent,
 } from "../../../src/solver/classic-run";
@@ -170,7 +171,7 @@ describe("explain-fair@3 at the 15 s preset", () => {
       const assembled = assemble(problem, productionRules());
       if (!assembled.ok) throw new Error("assembly");
       let view = initialize(assembled.value, "primary");
-      const limits = { ...CLASSIC_SOLVE_LIMITS, timeMs: 15_000 };
+      const limits = classicLimitsFor(15_000);
       const selection = new StepSelection(
         view,
         assembleTechniqueJobs(assembled.value, "classic-expanded@1"),

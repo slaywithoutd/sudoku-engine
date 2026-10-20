@@ -179,18 +179,36 @@ export function stopReasonOf(
   if (human === "solved") return "solved";
   if (human === "contradiction" || human === "invalidated") return "contradiction";
   if (logicalStop === "time-limit") return "time-limit";
-  if (ledger?.some((row) => row.status === "capped")) return "tier-cap";
+  // Capped now, or reopened after a cap on this state (reason kept).
+  if (ledger?.some((row) => row.status === "capped" || row.reason === "tier-work-cap"))
+    return "tier-cap";
   if (human === "stalled-within-profile") return "profile-stall";
   return "work-limit";
 }
 
 /**
- * Interactive ceilings for one classic 9x9 run; the exact phase inherits what the logical phase
- * leaves.
+ * Work budget per millisecond of the time limit (spec M2.6 §4.3, T08,
+ * docs/history/m26-benchmark.md). The logical phase is cut by work, so a run
+ * gives the same result on every machine as long as it ends before the time
+ * safety stop: at about 150k units per second in the slowest measured tiers
+ * (Chromium, battery), the 55 % logical share of 15 s ends near 11 s.
+ */
+export const WORK_UNITS_PER_MS = 200;
+/** Limits for a time preset of the Solve screen: the work budget scales with the time. */
+export function classicLimitsFor(timeMs: number): Readonly<Limits> {
+  return Object.freeze({
+    ...CLASSIC_SOLVE_LIMITS,
+    timeMs,
+    workUnits: Math.round(timeMs * WORK_UNITS_PER_MS),
+  });
+}
+/**
+ * Interactive ceilings for one classic 9x9 run (the 60 s preset); the exact phase inherits what
+ * the logical phase leaves.
  */
 export const CLASSIC_SOLVE_LIMITS: Readonly<Limits> = Object.freeze({
   timeMs: 60_000,
-  workUnits: 60_000_000,
+  workUnits: 60_000 * WORK_UNITS_PER_MS,
   exactNodes: 1_000_000,
   stepNodes: 4096,
   runNodes: 65536,

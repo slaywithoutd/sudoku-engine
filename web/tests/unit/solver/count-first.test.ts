@@ -3,6 +3,7 @@ import { describe, expect, test, vi } from "vitest";
 import * as exact from "../../../src/solver/exact";
 import {
   CLASSIC_SOLVE_LIMITS,
+  classicLimitsFor,
   solveClassic,
   type ClassicSolveEvent,
 } from "../../../src/solver/classic-run";
@@ -46,10 +47,7 @@ describe("count-first pipeline (spec M2.6 §4.3, T03)", () => {
   // Wall-clock dependent by nature: the precount must finish hard1 inside 30 %
   // of 15 s (about 2-3 s on mains on the development laptop).
   test("Norvig hard1 at the 15 s preset reports multiple solutions", async () => {
-    const { result } = await solve(puzzle("norvig-hard1").puzzle, {
-      ...CLASSIC_SOLVE_LIMITS,
-      timeMs: 15_000,
-    });
+    const { result } = await solve(puzzle("norvig-hard1").puzzle, classicLimitsFor(15_000));
     expect(result).toMatchObject({ outcome: "complete", count: "multiple", steps: 0 });
   }, 120_000);
 
@@ -239,7 +237,10 @@ describe("count-first pipeline (spec M2.6 §4.3, T03)", () => {
           const steps = events.flatMap((event) =>
             event.kind === "step" ? [`${event.technique}:${JSON.stringify(event.effects)}`] : [],
           );
-          runs.push(JSON.stringify({ result, steps }));
+          // Timings aside (spec §6): countVerifiedMs is wall time.
+          const { countVerifiedMs: _timing, ...stable } = result;
+          void _timing;
+          runs.push(JSON.stringify({ result: stable, steps }));
         }
         if (process.env.M26_DETERMINISM_RECORD)
           appendFileSync(

@@ -2,6 +2,7 @@ import {
   solveClassic,
   countClassic,
   CLASSIC_SOLVE_LIMITS,
+  classicLimitsFor,
   type ClassicSolveEvent,
   type ClassicMode,
 } from "../solver/classic-run";
@@ -50,7 +51,8 @@ self.onmessage = (event: MessageEvent<WorkerRequest | null | undefined>) => {
         givens: request.givens,
         mode: request.mode,
         requestId: request.requestId,
-        limits: { ...CLASSIC_SOLVE_LIMITS, timeMs },
+        // The work budget scales with the preset (spec M2.6 T08).
+        limits: classicLimitsFor(timeMs),
       },
       {
         clock: { now: () => performance.now() },
