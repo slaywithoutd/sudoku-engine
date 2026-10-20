@@ -15,6 +15,7 @@ import {
   type HumanStatus,
 } from "./evidence";
 import type { ExactEvent, ExactStats } from "./exact";
+import type { Ledger } from "./techniques/types";
 import { QUANTUM, WorkBudget } from "./scheduling/work";
 
 export interface SolverRunRequest {
@@ -95,6 +96,8 @@ export async function runSolver(
   let human: HumanStatus = "not-started";
   /** Why the logical phase stopped: its own reason, or "time-limit" for the safety stop. */
   let logicalStop: string | undefined;
+  /** The logical phase's final ledger, for the result's coverage. */
+  const report: { ledger?: Ledger } = {};
   const totalBudget = new WorkBudget(request.limits.workUnits);
   let count: CountEvidence = request.priorCount ?? unknownCount;
   const evidenceRun = request.run;
@@ -244,6 +247,7 @@ export async function runSolver(
     // The logical phase gets the remaining work, which deterministically cuts
     // it; the remaining time is only a safety stop.
     const cursor = humanSteps(view, request.registry, {
+      report,
       ...request.options,
       workspace: request.workspace,
       budget: totalBudget,
@@ -300,7 +304,14 @@ export async function runSolver(
     await flushHuman();
     cursor.return();
     if (request.conditional) {
-      await ports.publish({ kind: "terminal", outcome: "complete", human, count, logicalStop });
+      await ports.publish({
+        kind: "terminal",
+        outcome: "complete",
+        human,
+        count,
+        logicalStop,
+        ledger: report.ledger,
+      });
       return;
     }
     {
@@ -319,11 +330,19 @@ export async function runSolver(
         count,
         stats: exactTerminal,
         logicalStop,
+        ledger: report.ledger,
       });
       return;
     }
     if (ports.clock.now() >= totalDeadline) {
-      await ports.publish({ kind: "terminal", outcome: "timeout", human, count, logicalStop });
+      await ports.publish({
+        kind: "terminal",
+        outcome: "timeout",
+        human,
+        count,
+        logicalStop,
+        ledger: report.ledger,
+      });
       return;
     }
     const outcome =
@@ -335,6 +354,7 @@ export async function runSolver(
       count,
       stats: exactTerminal,
       logicalStop,
+      ledger: report.ledger,
     });
   } catch (error) {
     await ports.publish({
@@ -343,6 +363,8 @@ export async function runSolver(
       code: error instanceof Error ? error.message : "solver-error",
       human,
       count,
+      logicalStop,
+      ledger: report.ledger,
     });
   } finally {
     release();

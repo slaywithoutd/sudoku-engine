@@ -29,6 +29,12 @@ export type HumanAcceptance = "accepted" | "human-stopped";
 export interface HumanOptions extends SelectionOptions {
   readonly workspace: IndexWorkspace;
   readonly accept: (step: CheckedStep) => ReadView;
+  /**
+   * Receives the scheduler ledger of the final state when the phase ends,
+   * also when the caller closes it (its own deadline), for the result's
+   * coverage (spec M2.6 §4.5).
+   */
+  readonly report?: { ledger?: Ledger };
 }
 
 /**
@@ -169,6 +175,7 @@ export function* humanSteps(
     }
   } finally {
     activeCursor?.return();
+    if (options.report && selection) options.report.ledger = selection.ledger.rows;
     selection?.dispose();
   }
 }

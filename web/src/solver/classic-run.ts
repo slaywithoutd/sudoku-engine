@@ -89,7 +89,7 @@ export type ClassicSolveEvent =
         readonly maxTier: number;
         readonly stepsByTier: readonly number[];
       };
-      /** Why the run ended (spec M2.6 §4.5); see stopReasonOf. */
+      /** Why the logical phase ended (spec M2.6 §4.5); see stopReasonOf and `outcome`. */
       readonly stopReason: StopReason;
       /** Milliseconds from the start until the count was proved, when it was. */
       readonly countVerifiedMs?: number;
@@ -108,9 +108,16 @@ export type StopReason =
   | "contradiction"
   | "not-started";
 export interface Coverage {
-  /** Proved to have nothing more to offer on the final state (exhausted or excluded). */
+  /**
+   * Nothing more to offer when the logical phase ended: exhausted or excluded
+   * on the final state, or, on a solved grid, every technique that ran.
+   */
   readonly exhausted: readonly string[];
-  /** Served, but stopped by a budget: its cap, its own allowance or the run's limits. */
+  /**
+   * Served but not finished on the final state of an unsolved run: capped by
+   * the tier cap, interrupted on its own allowance, or still in progress or
+   * pending when a budget ended the phase.
+   */
   readonly capped: readonly string[];
   /** Never served on any state. */
   readonly notStarted: readonly string[];
@@ -119,11 +126,15 @@ export interface Coverage {
 }
 
 /**
- * Technique rows of a scheduler ledger as display-name lists; every technique
- * row lands in exactly one list (rule jobs, tier -1, are not techniques).
- * Without a ledger every profile technique is "not started".
+ * Technique rows of the final scheduler ledger as display-name lists; every
+ * technique row lands in exactly one list (rule jobs, tier -1, are not
+ * techniques). Without a ledger every profile technique is "not started".
  */
-export function coverageOf(ledger: Ledger | undefined, techniques: readonly string[]): Coverage {
+export function coverageOf(
+  ledger: Ledger | undefined,
+  techniques: readonly string[],
+  solved = false,
+): Coverage {
   const name = (version: string) => techniqueNames.get(version) ?? version;
   const rows = ledger
     ? ledger.filter((row) => techniqueTiers.has(row.technique))
@@ -135,12 +146,12 @@ export function coverageOf(ledger: Ledger | undefined, techniques: readonly stri
   for (const row of rows) {
     if (row.work > 0)
       highestTierTried = Math.max(highestTierTried, techniqueTiers.get(row.technique) ?? -1);
-    if (row.status === "exhausted" || row.status === "excluded")
+    if (row.status === "exhausted" || row.status === "excluded" || (solved && row.work > 0))
       exhausted.push(name(row.technique));
     else if (row.work > 0) capped.push(name(row.technique));
     else notStarted.push(name(row.technique));
   }
-  // At most 60 entries in all (spec §4.5); the catalogue is smaller today.
+  // Each list holds at most 60 names (spec §4.5); the catalogue has 40 versions.
   const bound = (list: string[]) => Object.freeze(list.slice(0, 60));
   return Object.freeze({
     exhausted: bound(exhausted),
@@ -151,10 +162,13 @@ export function coverageOf(ledger: Ledger | undefined, techniques: readonly stri
 }
 
 /**
- * The stop reason of a run from its logical status, the logical phase's own
- * stop reason and the final ledger. An incomplete or stalled run with a
- * capped technique (explain-fair@3) stopped at a tier cap; one interrupted on its
- * own allowance is a work limit.
+ * Why the logical phase ended, from its status, its own stop reason and the
+ * final ledger (spec §4.5); the result's `outcome` says how the whole run
+ * ended (an exact phase that timed out afterwards is a "timeout" outcome).
+ * Order: not started, solved, contradiction (also a logical path the count
+ * invalidated), the time safety stop, then a tier cap whenever a technique
+ * is capped (explain-fair@3 reopens capped jobs until the work runs out),
+ * then a stall, then any other work or resource limit.
  */
 export function stopReasonOf(
   human: HumanStatus,
@@ -165,9 +179,8 @@ export function stopReasonOf(
   if (human === "solved") return "solved";
   if (human === "contradiction" || human === "invalidated") return "contradiction";
   if (logicalStop === "time-limit") return "time-limit";
-  const capped = !!ledger?.some((row) => row.status === "capped");
-  if (human === "stalled-within-profile") return capped ? "tier-cap" : "profile-stall";
-  if (capped && logicalStop !== "work-limit") return "tier-cap";
+  if (ledger?.some((row) => row.status === "capped")) return "tier-cap";
+  if (human === "stalled-within-profile") return "profile-stall";
   return "work-limit";
 }
 
@@ -494,7 +507,9 @@ export async function solveProblem(
             pending = undefined;
           }
           const count = defined(event.count, "count"),
-            human = event.human ?? "not-started";
+            human = event.human ?? "not-started",
+            // An error during the logical phase leaves its status unset.
+            logicalHuman = human === "not-started" && steps > 0 ? "incomplete" : human;
           ports.emit({
             kind: "result",
             outcome: event.outcome ?? "error",
@@ -505,11 +520,12 @@ export async function solveProblem(
             logicalValues: [...view.state.values],
             steps,
             difficulty: difficultyOf(tiersSeen),
-            stopReason: stopReasonOf(human, event.logicalStop, ledger),
+            stopReason: stopReasonOf(logicalHuman, event.logicalStop, ledger),
             ...(countVerifiedMs === undefined ? {} : { countVerifiedMs }),
             coverage: coverageOf(
               ledger,
               registry.techniques.map((technique) => technique.id),
+              human === "solved",
             ),
             budgetLimitedSteps,
           });
