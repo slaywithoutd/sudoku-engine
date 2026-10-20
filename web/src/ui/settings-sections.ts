@@ -375,7 +375,7 @@ export function renderSettingsSections(
           { value: 60, label: "1 min" },
           { value: 180, label: "3 min" },
         ],
-        "Longer limits help very hard puzzles",
+        "A safety stop: below it the solver gives the same result on every run. Longer limits help very hard puzzles",
       ),
     ],
   };

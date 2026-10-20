@@ -2346,6 +2346,19 @@ dialog .actions .ghost:first-child {
   color: var(--muted);
   font-variant-numeric: tabular-nums;
 }
+/* A technique stopped by its budget (spec M2.6 §4.5). */
+.technique-list .badge.capped {
+  margin-left: auto;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--warning-ink);
+}
+.step-note {
+  margin: 0.35rem 0 0;
+  font-size: 0.8rem;
+  color: var(--warning-ink);
+}
 .solver-explain {
   display: grid;
   gap: 0.6rem;

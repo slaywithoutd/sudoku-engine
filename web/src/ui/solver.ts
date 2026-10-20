@@ -8,14 +8,28 @@ import {
   type Value,
 } from "../domain/model";
 import { reduceEditor } from "../domain/editor";
-import { effectiveValues, isComplete, peersOf, toPuzzleString } from "../domain/classic";
+import {
+  conflictingCells,
+  effectiveValues,
+  isComplete,
+  peersOf,
+  toPuzzleString,
+} from "../domain/classic";
 import { lookup } from "../domain/invariants";
 import { createDraft, nextPuzzleName } from "../domain/library";
 import { createSolverController, type SolverController } from "../app/solver-controller";
 import { startWorker } from "../app/solver-worker";
 import { formatDuration } from "../app/play-clock";
 import { mountBoard, type BoardOverlay, type BoardView } from "./board";
-import { countSummary, logicalSummary, solverStatus, cellName } from "./solver-copy";
+import {
+  BUDGET_LIMITED_NOTE,
+  cellName,
+  countSummary,
+  countVerification,
+  logicalSummary,
+  logicStop,
+  solverStatus,
+} from "./solver-copy";
 import { el, button } from "./dom";
 import { icon } from "./icons";
 import {
@@ -44,6 +58,7 @@ interface SolveStep {
   readonly values: readonly number[];
   readonly candidates?: readonly number[];
   readonly cells?: readonly number[];
+  readonly budgetLimited?: boolean;
 }
 interface SolveResult {
   readonly outcome: string;
@@ -53,6 +68,15 @@ interface SolveResult {
   readonly solution: readonly number[] | null;
   readonly logicalValues: readonly number[];
   readonly steps: number;
+  readonly stopReason?: string;
+  readonly countVerifiedMs?: number;
+  readonly coverage?: {
+    readonly exhausted: readonly string[];
+    readonly capped: readonly string[];
+    readonly notStarted: readonly string[];
+    readonly highestTierTried: number;
+  };
+  readonly budgetLimitedSteps?: number;
 }
 type SolveEvent =
   | ({ readonly kind: "step" } & SolveStep)
@@ -272,7 +296,9 @@ export function mountSolver(
   const stepCard = el("div", undefined, "step-card"),
     stepName = el("h3"),
     stepText = el("p");
-  stepCard.append(stepName, stepText);
+  const stepNote = el("p", BUDGET_LIMITED_NOTE, "step-note");
+  stepNote.hidden = true;
+  stepCard.append(stepName, stepText, stepNote);
   const stepList = el("ol", undefined, "step-list");
   const legend = el("div", undefined, "legend");
   for (const [cls, label] of [
@@ -353,8 +379,8 @@ export function mountSolver(
     } else toast("That puzzle is no longer in your library.");
   };
   const run = () => {
+    // Conflicting clues run too: the engine proves there is no solution (spec M2.6 §4.5).
     const values = editor.cells.map((c) => c.value);
-    if (clueSummary(editor).conflicts) return;
     clues = values;
     steps = [];
     result = null;
@@ -457,23 +483,44 @@ export function mountSolver(
       "result-detail",
     );
     const logic = el("p", logicalSummary(result.human ?? "", result.steps ?? 0), "result-detail");
+    const verification = el(
+      "p",
+      result.error
+        ? ""
+        : countVerification(result.count ?? "unknown", result.countVerifiedMs, result.outcome),
+      "result-detail",
+    );
+    verification.dataset.testid = "count-verification";
+    const stop = el(
+      "p",
+      logicStop(result.human ?? "", result.stopReason, result.coverage),
+      "result-detail",
+    );
+    stop.dataset.testid = "logic-stop";
     const stats = el("dl", undefined, "stats");
     stat(stats, "Clues", String(clues.filter(Boolean).length));
     stat(stats, "Logical steps", String(steps.length));
     stat(stats, "Solved by logic", result.human === "solved" ? "Yes" : "No");
     stat(stats, "Time", `${((finishedAt - startedAt) / 1000).toFixed(1)} s`);
     analysis.append(headline, detail);
+    if (verification.textContent) analysis.append(verification);
     if (logic.textContent) analysis.append(logic);
+    if (stop.textContent) analysis.append(stop);
     analysis.append(stats);
-    if (steps.length) {
+    const capped = new Set(result.coverage?.capped ?? []);
+    if (steps.length || capped.size) {
       const counts = new Map<string, number>();
       for (const step of steps) counts.set(step.name, (counts.get(step.name) ?? 0) + 1);
+      // Techniques cut by a budget are listed with a badge even without a step.
+      for (const technique of capped) if (!counts.has(technique)) counts.set(technique, 0);
       const techniques = el("div", undefined, "technique-list");
       techniques.append(el("h3", "Techniques"));
       const list = el("ul");
       for (const [technique, count] of [...counts].sort((a, b) => b[1] - a[1])) {
         const item = el("li");
-        item.append(el("span", technique), el("span", `×${count}`, "count"));
+        item.append(el("span", technique));
+        if (capped.has(technique)) item.append(el("span", "capped", "badge capped"));
+        item.append(el("span", `×${count}`, "count"));
         list.append(item);
       }
       techniques.append(list);
@@ -525,6 +572,7 @@ export function mountSolver(
     play.setAttribute("aria-label", autoplay ? "Pause steps" : "Play steps");
     stepName.textContent = step.name;
     stepText.textContent = describeStep(step);
+    stepNote.hidden = !step.budgetLimited;
     // Board shows the grid *before* the step, with its reasoning highlighted.
     const before = order === 0 ? clues : steps[order - 1].values;
     const focus = new Set(step.effects.map((e) => e.cell));
@@ -615,12 +663,8 @@ export function mountSolver(
     summary.classList.toggle("danger", !!conflicts);
     shell.root.dataset.phase = phase;
     solve.hidden = phase !== "edit";
-    solve.disabled = !!conflicts || !editor.cells.some((c) => c.value);
-    solve.title = conflicts
-      ? "Resolve the highlighted conflicts first"
-      : solve.disabled
-        ? "Enter or import clues first"
-        : "";
+    solve.disabled = !editor.cells.some((c) => c.value);
+    solve.title = solve.disabled ? "Enter or import clues first" : "";
     cancel.hidden = !running;
     edit.hidden = phase !== "result";
     library.setDisabled(running);
@@ -628,7 +672,9 @@ export function mountSolver(
     name.disabled = running;
     panel.setAttribute("aria-busy", String(running));
     feedback.hidden = phase !== "edit" || !conflicts;
-    feedback.textContent = conflicts ? "Resolve the highlighted conflicts before solving." : "";
+    feedback.textContent = conflicts
+      ? "These clues conflict: solving will report that there is no solution."
+      : "";
     feedback.classList.toggle("error", !!conflicts);
     status.hidden = phase === "edit";
     renderProgress();
@@ -656,6 +702,10 @@ export function mountSolver(
           { ...s, highlightPeers: false, highlightSameDigit: false },
           {
             derived: new Set(shown.flatMap((v, i) => (v && !clues[i] ? [i] : []))),
+            // A "No solution" from conflicting clues points at the conflict.
+            ...(phase === "result" && result?.count === "zero"
+              ? { focus: new Set(conflictingCells(clues)) }
+              : {}),
           },
         );
       }
