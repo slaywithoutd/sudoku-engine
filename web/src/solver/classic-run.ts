@@ -18,7 +18,7 @@ import {
 } from "./scheduling/work";
 import { assembleTechniqueJobs } from "./techniques/registry";
 import { EXACT_METHOD, exactSteps } from "./exact";
-import { PRECOUNT_SHARE, runSolver } from "./run";
+import { runSolver } from "./run";
 import { coverageEntries, variantEntries } from "./techniques/manifest";
 import { defined } from "./invariants";
 import type { Ledger } from "./techniques/types";
@@ -189,11 +189,15 @@ export function stopReasonOf(
 /**
  * Work budget per millisecond of the time limit (spec M2.6 §4.3, T08,
  * docs/history/m26-benchmark.md). The logical phase is cut by work, so a run
- * gives the same result on every machine as long as it ends before the time
- * safety stop: at about 150k units per second in the slowest measured tiers
- * (Chromium, battery), the 55 % logical share of 15 s ends near 11 s.
+ * gives the same result every time as long as it ends before the time safety
+ * stop. After a conclusive count the logical phase gets nearly the whole
+ * budget; at 137k units per second, the slowest rate measured over a whole
+ * 60 s run (Chromium, the laptop's slow state), 120 units per ms ends it at
+ * about 88 % of the time limit. Escargot, Inkala 2012 and Golden Nugget reach tier 5
+ * within 1.8M units (the 15 s preset); Golden Nugget's tier-5 step comes at
+ * 1.16M.
  */
-export const WORK_UNITS_PER_MS = 200;
+export const WORK_UNITS_PER_MS = 120;
 /** Limits for a time preset of the Solve screen: the work budget scales with the time. */
 export function classicLimitsFor(timeMs: number): Readonly<Limits> {
   return Object.freeze({
@@ -239,12 +243,12 @@ export interface ClassicSolvePorts {
 function exactPrecount(
   problem: ReturnType<typeof normalizeClassic>,
   assembly: Parameters<typeof exactSteps>[1],
-  limits: Readonly<Limits>,
+  limits: Readonly<Pick<Limits, "workUnits" | "timeMs">>,
   clock: { now(): number },
 ):
   { kind: "zero" | "multiple" | "inconclusive" } | { kind: "unique"; solution: readonly number[] } {
-  const deadline = clock.now() + Math.floor(limits.timeMs * PRECOUNT_SHARE),
-    cap = Math.floor(limits.workUnits * PRECOUNT_SHARE);
+  const deadline = clock.now() + limits.timeMs,
+    cap = limits.workUnits;
   let used = 0;
   const witnesses: (readonly number[])[] = [];
   const exact = exactSteps(problem, assembly);
@@ -293,13 +297,19 @@ export function patternCells(pattern: unknown): number[] {
   return [...found].sort((left, right) => left - right);
 }
 /**
- * Independent exact count for a 9x9 grid (used for correctness marks), bounded by the precount
- * share.
+ * Budget of the independent count behind the correctness marks: its own
+ * fixed caps, the 18M units and 18 s it had before T08 tied the Solve
+ * screen's work budget to the time preset (T08 review).
  */
+export const COUNT_CLASSIC_LIMITS: Readonly<Pick<Limits, "workUnits" | "timeMs">> = Object.freeze({
+  workUnits: 18_000_000,
+  timeMs: 18_000,
+});
+/** Independent exact count for a 9x9 grid (used for correctness marks). */
 export function countClassic(
   givens: readonly number[],
   clock: { now(): number },
-  limits: Readonly<Limits> = CLASSIC_SOLVE_LIMITS,
+  limits: Readonly<Pick<Limits, "workUnits" | "timeMs">> = COUNT_CLASSIC_LIMITS,
 ):
   { kind: "zero" | "multiple" | "inconclusive" } | { kind: "unique"; solution: readonly number[] } {
   const problem = normalizeClassic({

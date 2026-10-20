@@ -544,8 +544,8 @@ export class StepSelection {
       this.#cursors.delete(job);
       job.stateWork = 0;
       job.capRounds += 1;
-      // The reason stays: this state's search is bounded by the tier cap.
-      this.ledger.status(job.key, "pending", "tier-work-cap");
+      // Its ledger row keeps the tier-work-cap reason while capRounds > 0.
+      this.ledger.status(job.key, "pending");
     }
     return reopened.length > 0;
   }

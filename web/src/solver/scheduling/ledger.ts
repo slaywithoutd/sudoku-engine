@@ -116,7 +116,13 @@ export class SchedulingLedger {
         status: j.status,
         dependencies: j.dependencies,
         work: j.work,
-        ...(j.reason ? { reason: j.reason } : {}),
+        // A capped job reopened on this state (explain-fair@3) stays bounded by
+        // the tier cap while it runs again; its row says so (T08 review).
+        ...(j.reason
+          ? { reason: j.reason }
+          : j.capRounds > 0 && (j.status === "pending" || j.status === "in-progress")
+            ? { reason: "tier-work-cap" }
+            : {}),
       }),
     );
   }

@@ -22,6 +22,8 @@ function runOne(request: Request): Promise<Record<string, unknown>> {
       basic = 0,
       progressUnits = 0,
       logicalUnits = 0;
+    // The step sequence, so two runs can be compared step by step.
+    const trace: string[] = [];
     const handle = startWorker(
       {
         kind: "solve-classic",
@@ -41,6 +43,7 @@ function runOne(request: Request): Promise<Record<string, unknown>> {
           if (event.kind === "progress") progressUnits = event.workUnits ?? progressUnits;
           if (event.kind === "step") {
             steps += 1;
+            trace.push(event.technique ?? "?");
             logicalUnits = event.workUnits ?? logicalUnits;
             const tier = tiers.get(event.technique ?? "") ?? -1;
             if (tier < 0) basic += 1;
@@ -69,6 +72,7 @@ function runOne(request: Request): Promise<Record<string, unknown>> {
               highestTierTried: (result.coverage as { highestTierTried?: number } | undefined)
                 ?.highestTierTried,
               logicalValues: (result.logicalValues as number[] | undefined)?.join(""),
+              stepTrace: trace.join(" "),
             });
           }
         },

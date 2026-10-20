@@ -60,10 +60,13 @@ function status(value: HumanStopStatus): HumanStopStatus {
 /**
  * Share of the work and time limits the exact count may use before the logical
  * phase (spec M2.6 §4.3). Re-derived in T08 (docs/history/m26-benchmark.md):
- * at the 15 s preset (3M units) 45 % covers Norvig hard1's 1.27M exact units,
- * the costliest exact count measured; the spec's provisional 30 % did not.
+ * at the 15 s preset (1.8M units) 80 % covers Norvig hard1's 1.27M exact
+ * units, the costliest exact count measured, with about 10 % to spare. A
+ * conclusive count returns what it did not use to the logical phase, so the
+ * share binds only when the count is inconclusive; exact units cost about a
+ * third of the time of logical ones.
  */
-export const PRECOUNT_SHARE = 0.45;
+export const PRECOUNT_SHARE = 0.8;
 
 type ExactDrive = "complete" | "resource-limit" | "timeout";
 /** Exact nodes per publish and clock read. */

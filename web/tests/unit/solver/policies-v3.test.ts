@@ -3,6 +3,7 @@ import {
   CLASSIC_SOLVE_LIMITS,
   classicLimitsFor,
   solveClassic,
+  stopReasonOf,
   type ClassicSolveEvent,
 } from "../../../src/solver/classic-run";
 import { IndexWorkspace } from "../../../src/solver/indexes/workspace";
@@ -14,7 +15,7 @@ import { POLICY_IDS, schedulingOptions, type PolicyId } from "../../../src/solve
 import { commitChecked, initialize } from "../../../src/solver/state/candidates";
 import { coverageEntries } from "../../../src/solver/techniques/manifest";
 import { assembleTechniqueJobs } from "../../../src/solver/techniques/registry";
-import type { TechniqueDescriptor } from "../../../src/solver/techniques/types";
+import type { Ledger, TechniqueDescriptor } from "../../../src/solver/techniques/types";
 import { canonicalProblem } from "../../../src/solver/problem";
 import { AllDifferentRule } from "../../../src/solver/rules/all-different";
 import evalCorpus from "../../solver/bench/eval-corpus.json";
@@ -264,11 +265,13 @@ describe("explain-fair@3 reopening ends", () => {
     try {
       for (const event of selection.select())
         if (event.kind === "logical-stop") reason = event.reason;
+      rows = selection.ledger.rows;
     } finally {
       selection.dispose();
     }
     return reason;
   };
+  let rows: Ledger = [];
   test.each([[0], [10]] as const)(
     "an interrupted job is not reopened (%i units first)",
     (units) => {
@@ -296,5 +299,9 @@ describe("explain-fair@3 reopening ends", () => {
     expect(opens).toBeGreaterThan(5);
     expect(opens).toBeLessThan(15);
     expect(reason).toBe("work-limit");
+    // T08 review: the budget ends the last reopened round while the job runs,
+    // so its row is in progress, not capped; the stop is still a tier cap.
+    expect(rows.map((row) => [row.status, row.reason])).toEqual([["in-progress", "tier-work-cap"]]);
+    expect(stopReasonOf("incomplete", reason, rows)).toBe("tier-cap");
   });
 });

@@ -44,16 +44,16 @@ async function solve(givens: string, limits = CLASSIC_SOLVE_LIMITS) {
 }
 
 describe("count-first pipeline (spec M2.6 §4.3, T03)", () => {
-  // Wall-clock dependent by nature: the precount must finish hard1 inside 30 %
-  // of 15 s (about 2-3 s on mains on the development laptop).
+  // The precount must finish hard1 inside its share of the 15 s preset: 1.44M
+  // units (hard1 needs about 1.3M with the reservation) and 12 s.
   test("Norvig hard1 at the 15 s preset reports multiple solutions", async () => {
     const { result } = await solve(puzzle("norvig-hard1").puzzle, classicLimitsFor(15_000));
     expect(result).toMatchObject({ outcome: "complete", count: "multiple", steps: 0 });
   }, 120_000);
 
   test("no corpus case starts the exact search twice", async () => {
-    // A small work budget keeps the logical phase short; the 30 % precount share
-    // (1.8M units) still covers hard1 (about 1.3M units with the reservation).
+    // A small work budget keeps the logical phase short; the 80 % precount share
+    // (4.8M units) still covers hard1 (about 1.3M units with the reservation).
     const limits = { ...CLASSIC_SOLVE_LIMITS, workUnits: 6_000_000 };
     for (const entry of corpus.cases) {
       exactSteps.mockClear();

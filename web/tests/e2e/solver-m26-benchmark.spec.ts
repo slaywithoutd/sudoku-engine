@@ -6,7 +6,8 @@ import { resolve } from "node:path";
  * M2.6 T08 benchmark (spec §5 T08, §6): the evaluation corpus's named cases
  * and every unique case through the real worker at the UI presets, in this
  * Playwright browser. Runs only with M26_BENCH=1; M26_BENCH_OUT=<file>
- * receives the raw rows for docs/history/m26-benchmark.md.
+ * receives the raw rows; tests/browser/m26-bench-table.mjs turns them into the
+ * table of docs/history/m26-benchmark.md.
  */
 const corpus = JSON.parse(
   readFileSync(resolve(process.cwd(), "tests/solver/bench/eval-corpus.json"), "utf8"),
@@ -31,7 +32,7 @@ test("M2.6 presets on the evaluation corpus", async ({ page, browserName }) => {
   const requests = presets.flatMap((timeLimitMs) =>
     Array.from({ length: runs }, () =>
       cases.flatMap((entry) =>
-        (["explain", "analyze"] as const).map((mode) => ({
+        modes.map((mode) => ({
           id: entry.id,
           puzzle: entry.puzzle,
           mode,
@@ -47,4 +48,6 @@ test("M2.6 presets on the evaluation corpus", async ({ page, browserName }) => {
   if (process.env.M26_BENCH_OUT)
     writeFileSync(process.env.M26_BENCH_OUT, JSON.stringify({ browserName, rows }, null, 1));
   expect(rows.length).toBe(requests.length);
+  // A worker error is a failed benchmark, not a row.
+  expect(rows.filter((row) => (row as { error?: boolean }).error)).toEqual([]);
 });
