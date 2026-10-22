@@ -32,8 +32,8 @@ Puzzle: `1....7.9..3..2...8..96..5....53..9...1..8...26....4...3......1..4......
 
 | Result | Techniques |
 | --- | --- |
-| Exhausted, no proposal | t-whips, Bivalue chains, OR-k forcing, Digit forcing chains (≈ 96 s), Fireworks, Exocet, Tridagon, SK Loops, ALS chains, Sue de Coq |
-| No proposal within the probe's time cap | Kraken Fish and Braids (10 min each); Static forcing nets (20 min); Aligned Pair Exclusion, Continuous Nice Loops, WXYZ-Wing, Endo-fin fish (10 min each); Franken fish (150 s) |
+| Exhausted, no proposal | t-whips, Bivalue chains, OR-k forcing, Digit forcing chains (≈ 96 s), Kraken Fish (≈ 17 min), Fireworks, Exocet, Tridagon, SK Loops, ALS chains, Sue de Coq |
+| No proposal within the probe's time cap | Braids (20 min); Static forcing nets (20 min); Aligned Pair Exclusion, Continuous Nice Loops, WXYZ-Wing, Endo-fin fish (10 min each); Franken fish (150 s) |
 | Interrupted by a fixed bound | Per-digit templates: `work-limit` after ≈ 265k work units, which matches the by-design bound `maxTupleTestsPerRevision: 100000` in `techniques/templates.ts` |
 
 At the state after step 27 (before the Finned fish), each of Finned fish, Bivalue chains, Kraken Fish, t-whips, Braids and Per-digit templates was run alone together with the two singles. Each produced between 1 and 4 elimination steps and **none placed a digit**. The 22 techniques below the heavy families, run together, performed the Finned fish and ended in `stalled-within-profile` after 263 s.
