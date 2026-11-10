@@ -6,7 +6,7 @@ import { makeSnapshot, type RunKey } from "./snapshot";
 import { assemble } from "./rules/assemble";
 import { productionRules } from "./rules/registry";
 import { profileFor, profileReadiness } from "./techniques/registry";
-import { initialize, commitChecked } from "./state/candidates";
+import { initialize, commitChecked, retainCheckedFacts } from "./state/candidates";
 import { IndexWorkspace } from "./indexes/workspace";
 import {
   schedulingOptions,
@@ -473,7 +473,13 @@ export async function solveProblem(
       options,
       run,
       accept: (step: CheckedStep) => {
-        view = commitChecked(view, step).view;
+        // An effect-free step only publishes checked facts (a Tridagon guardian
+        // clause, for example): it is retained at the same revision, as replay
+        // and the conditional profile do. Committing it throws `unproductive-step`.
+        view =
+          step.proposal.effects.length > 0
+            ? commitChecked(view, step).view
+            : retainCheckedFacts(view, step);
         return view;
       },
     },
