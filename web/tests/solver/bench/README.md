@@ -66,6 +66,6 @@ and the generator seed where there is one.
 
 `tests/unit/solver/exact-reference.test.ts` checks that the engine count and
 solution equal the reference on every case. Cases marked `heavy` (Norvig
-`hard1`, minutes on the baseline engine) run only with `M26_HEAVY=1`;
+`hard1` until T02; none since) run only with `M26_HEAVY=1`;
 `M26_BASELINE_RECORD=<file>` appends nodes and milliseconds per case for
 `docs/history/m26-baseline.md`.

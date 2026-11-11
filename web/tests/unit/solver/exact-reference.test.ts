@@ -4,6 +4,7 @@ import { exactSteps, type ExactStats } from "../../../src/solver/exact";
 import { normalizeClassic } from "../../../src/solver/problem";
 import { assemble } from "../../../src/solver/rules/assemble";
 import { productionRules } from "../../../src/solver/rules/registry";
+import { oracle } from "../../solver/oracle";
 import { isSolutionOf, referenceCount } from "../../solver/reference-dfs";
 import {
   buildEvalCorpus,
@@ -15,8 +16,8 @@ import {
 import corpusJson from "../../solver/bench/eval-corpus.json";
 
 // M2.6 T01: the engine's exact count against the independent reference DFS on
-// the evaluation corpus. Heavy cases (minutes with the baseline engine) run
-// only with M26_HEAVY=1; M26_BASELINE_RECORD=<file> appends one JSON line of
+// the evaluation corpus. Heavy cases (none since T02; hard1 was 786 s on the
+// baseline engine) run only with M26_HEAVY=1; M26_BASELINE_RECORD=<file> appends one JSON line of
 // nodes and milliseconds per case for docs/history/m26-baseline.md.
 const corpus = corpusJson as EvalCorpus;
 const runHeavy = process.env.M26_HEAVY === "1";
@@ -132,6 +133,27 @@ describe("M2.6 evaluation corpus", () => {
         expect(entry.solution).toBe(reference.solutions[0]);
       }
       if (entry.count === "2+") expect(engine.witnesses[0]).not.toBe(engine.witnesses[1]);
+    },
+  );
+
+  // Spec §6: 0 disagreements against the Algorithm X oracle as well, on every
+  // corpus case (its 120 seeded grids included), capped at two solutions.
+  test.for(corpus.cases.map((entry) => [entry.id, entry] as [string, EvalCase]))(
+    "engine count and witnesses equal the Algorithm X oracle: %s",
+    { timeout: 120_000 },
+    ([, entry]) => {
+      const independent = oracle({
+        givens: [...entry.puzzle].map(Number),
+        limit: 2,
+        maxNodes: 50_000_000,
+      });
+      expect(independent.interrupted).toBe(false);
+      const engine = engineCount(entry.puzzle);
+      expect(engine.witnesses.length).toBe(independent.witnesses.length);
+      expect(
+        independent.witnesses.length === 0 ? "0" : independent.witnesses.length === 1 ? "1" : "2+",
+      ).toBe(entry.count);
+      if (entry.count === "1") expect(engine.witnesses[0]).toBe(independent.witnesses[0].join(""));
     },
   );
 });

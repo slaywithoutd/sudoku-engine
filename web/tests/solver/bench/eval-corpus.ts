@@ -72,8 +72,11 @@ export const NAMED: readonly { id: string; puzzle: string; source: string }[] = 
   { id: "empty", puzzle: "0".repeat(81), source: "empty grid" },
 ];
 
-/** Measured on the baseline engine (docs/history/m26-baseline.md): minutes per run. */
-export const HEAVY = new Set(["norvig-hard1"]);
+/**
+ * Cases too slow for the default suite. norvig-hard1 took 786 s on the baseline
+ * engine and about 3 s after T02 (docs/history/m26-baseline.md), so none remain.
+ */
+export const HEAVY = new Set<string>();
 
 function shuffle<T>(values: readonly T[], random: () => number): T[] {
   const copy = [...values];

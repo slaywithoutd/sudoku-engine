@@ -6,12 +6,13 @@ import { makeSnapshot, type RunKey } from "./snapshot";
 import { assemble } from "./rules/assemble";
 import { productionRules } from "./rules/registry";
 import { profileFor, profileReadiness } from "./techniques/registry";
-import { initialize, commitChecked } from "./state/candidates";
+import { initialize, commitChecked, retainCheckedFacts } from "./state/candidates";
 import { IndexWorkspace } from "./indexes/workspace";
 import {
   schedulingOptions,
   type PolicyId,
   type PolicyParameters,
+  type TierCap,
   canonicalOptionsKey,
   SCHEDULER_VERSION,
 } from "./scheduling/work";
@@ -20,6 +21,7 @@ import { EXACT_METHOD, exactSteps } from "./exact";
 import { runSolver } from "./run";
 import { coverageEntries, variantEntries } from "./techniques/manifest";
 import { defined } from "./invariants";
+import type { Ledger } from "./techniques/types";
 
 const techniqueTiers = new Map<string, number>(
   [...coverageEntries, ...variantEntries].map((entry) => [entry.version, entry.tier] as const),
@@ -63,6 +65,8 @@ export type ClassicSolveEvent =
       readonly cells: readonly number[];
       /** Accounted work units of the logical phase when the step was proposed (informative). */
       readonly workUnits: number;
+      /** A simpler step may exist: the selection was cut by a budget (spec M2.6 §4.5). */
+      readonly budgetLimited: boolean;
     }
   | { readonly kind: "precount"; readonly solution: readonly number[] }
   | { readonly kind: "progress"; readonly phase: "human" | "exact"; readonly workUnits: number }
@@ -85,15 +89,130 @@ export type ClassicSolveEvent =
         readonly maxTier: number;
         readonly stepsByTier: readonly number[];
       };
+      /** Why the logical phase ended (spec M2.6 §4.5); see stopReasonOf and `outcome`. */
+      readonly stopReason: StopReason;
+      /** Milliseconds from the start until the count was proved, when it was. */
+      readonly countVerifiedMs?: number;
+      /** What the logical phase covered, by technique display name. */
+      readonly coverage: Coverage;
+      /** Accepted steps a budget may have kept from being the simplest. */
+      readonly budgetLimitedSteps: number;
     };
 
+export type StopReason =
+  | "solved"
+  | "profile-stall"
+  | "work-limit"
+  | "time-limit"
+  | "tier-cap"
+  | "contradiction"
+  | "not-started";
+export interface Coverage {
+  /**
+   * Nothing more to offer when the logical phase ended: exhausted or excluded
+   * on the final state, or, on a solved grid, every technique that ran.
+   */
+  readonly exhausted: readonly string[];
+  /**
+   * Served but not finished on the final state of an unsolved run: capped by
+   * the tier cap, interrupted on its own allowance, or still in progress or
+   * pending when a budget ended the phase.
+   */
+  readonly capped: readonly string[];
+  /** Never served on any state. */
+  readonly notStarted: readonly string[];
+  /** Highest catalogue tier with any served work; -1 when none. */
+  readonly highestTierTried: number;
+}
+
 /**
- * Interactive ceilings for one classic 9x9 run; the exact phase inherits what the logical phase
- * leaves.
+ * Technique rows of the final scheduler ledger as display-name lists; every
+ * technique row lands in exactly one list (rule jobs, tier -1, are not
+ * techniques). Without a ledger every profile technique is "not started".
+ */
+export function coverageOf(
+  ledger: Ledger | undefined,
+  techniques: readonly string[],
+  solved = false,
+): Coverage {
+  const name = (version: string) => techniqueNames.get(version) ?? version;
+  const rows = ledger
+    ? ledger.filter((row) => techniqueTiers.has(row.technique))
+    : techniques.map((technique) => ({ technique, status: "pending" as const, work: 0 }));
+  const exhausted: string[] = [],
+    capped: string[] = [],
+    notStarted: string[] = [];
+  let highestTierTried = -1;
+  for (const row of rows) {
+    if (row.work > 0)
+      highestTierTried = Math.max(highestTierTried, techniqueTiers.get(row.technique) ?? -1);
+    if (row.status === "exhausted" || row.status === "excluded" || (solved && row.work > 0))
+      exhausted.push(name(row.technique));
+    else if (row.work > 0) capped.push(name(row.technique));
+    else notStarted.push(name(row.technique));
+  }
+  // Each list holds at most 60 names (spec §4.5); the catalogue has 40 versions.
+  const bound = (list: string[]) => Object.freeze(list.slice(0, 60));
+  return Object.freeze({
+    exhausted: bound(exhausted),
+    capped: bound(capped),
+    notStarted: bound(notStarted),
+    highestTierTried,
+  });
+}
+
+/**
+ * Why the logical phase ended, from its status, its own stop reason and the
+ * final ledger (spec §4.5); the result's `outcome` says how the whole run
+ * ended (an exact phase that timed out afterwards is a "timeout" outcome).
+ * Order: not started, solved, contradiction (also a logical path the count
+ * invalidated), the time safety stop, then a tier cap whenever a technique
+ * is capped (explain-fair@3 reopens capped jobs until the work runs out),
+ * then a stall, then any other work or resource limit.
+ */
+export function stopReasonOf(
+  human: HumanStatus,
+  logicalStop: string | undefined,
+  ledger: Ledger | undefined,
+): StopReason {
+  if (human === "not-started") return "not-started";
+  if (human === "solved") return "solved";
+  if (human === "contradiction" || human === "invalidated") return "contradiction";
+  if (logicalStop === "time-limit") return "time-limit";
+  // Capped now, or reopened after a cap on this state (reason kept).
+  if (ledger?.some((row) => row.status === "capped" || row.reason === "tier-work-cap"))
+    return "tier-cap";
+  if (human === "stalled-within-profile") return "profile-stall";
+  return "work-limit";
+}
+
+/**
+ * Work budget per millisecond of the time limit (spec M2.6 §4.3, T08,
+ * docs/history/m26-benchmark.md). The logical phase is cut by work, so a run
+ * gives the same result every time as long as it ends before the time safety
+ * stop. After a conclusive count the logical phase gets nearly the whole
+ * budget; at 137k units per second, the slowest rate measured over a whole
+ * 60 s run (Chromium, the laptop's slow state), 120 units per ms ends it at
+ * about 88 % of the time limit. Escargot, Inkala 2012 and Golden Nugget reach tier 5
+ * within 1.8M units (the 15 s preset); Golden Nugget's tier-5 step comes at
+ * 1.16M.
+ */
+export const WORK_UNITS_PER_MS = 120;
+/** Limits for a time preset of the Solve screen: the work budget scales with the time. */
+export function classicLimitsFor(timeMs: number): Readonly<Limits> {
+  return Object.freeze({
+    ...CLASSIC_SOLVE_LIMITS,
+    timeMs,
+    workUnits: Math.round(timeMs * WORK_UNITS_PER_MS),
+  });
+}
+/**
+ * Interactive ceilings for one classic 9x9 run (the 60 s preset); the exact phase inherits what
+ * the logical phase leaves.
  */
 export const CLASSIC_SOLVE_LIMITS: Readonly<Limits> = Object.freeze({
   timeMs: 60_000,
-  workUnits: 60_000_000,
+  workUnits: 60_000 * WORK_UNITS_PER_MS,
   exactNodes: 1_000_000,
   stepNodes: 4096,
   runNodes: 65536,
@@ -112,6 +231,8 @@ export interface ClassicSolveInput {
   /** Engine-side override for ablations; the application keeps the mode's default policy. */
   readonly policy?: PolicyId;
   readonly policyParameters?: PolicyParameters;
+  /** Engine-side override of the explain-fair@3 tier cap (benchmarks, T08). */
+  readonly tierCap?: TierCap;
 }
 export interface ClassicSolvePorts {
   readonly clock: { now(): number };
@@ -122,12 +243,12 @@ export interface ClassicSolvePorts {
 function exactPrecount(
   problem: ReturnType<typeof normalizeClassic>,
   assembly: Parameters<typeof exactSteps>[1],
-  limits: Readonly<Limits>,
+  limits: Readonly<Pick<Limits, "workUnits" | "timeMs">>,
   clock: { now(): number },
 ):
   { kind: "zero" | "multiple" | "inconclusive" } | { kind: "unique"; solution: readonly number[] } {
-  const deadline = clock.now() + Math.floor(limits.timeMs * 0.1),
-    cap = Math.floor(limits.workUnits * 0.1);
+  const deadline = clock.now() + limits.timeMs,
+    cap = limits.workUnits;
   let used = 0;
   const witnesses: (readonly number[])[] = [];
   const exact = exactSteps(problem, assembly);
@@ -176,13 +297,19 @@ export function patternCells(pattern: unknown): number[] {
   return [...found].sort((left, right) => left - right);
 }
 /**
- * Independent exact count for a 9x9 grid (used for correctness marks), bounded by the precount
- * share.
+ * Budget of the independent count behind the correctness marks: its own
+ * fixed caps, the 18M units and 18 s it had before T08 tied the Solve
+ * screen's work budget to the time preset (T08 review).
  */
+export const COUNT_CLASSIC_LIMITS: Readonly<Pick<Limits, "workUnits" | "timeMs">> = Object.freeze({
+  workUnits: 18_000_000,
+  timeMs: 18_000,
+});
+/** Independent exact count for a 9x9 grid (used for correctness marks). */
 export function countClassic(
   givens: readonly number[],
   clock: { now(): number },
-  limits: Readonly<Limits> = CLASSIC_SOLVE_LIMITS,
+  limits: Readonly<Pick<Limits, "workUnits" | "timeMs">> = COUNT_CLASSIC_LIMITS,
 ):
   { kind: "zero" | "multiple" | "inconclusive" } | { kind: "unique"; solution: readonly number[] } {
   const problem = normalizeClassic({
@@ -206,8 +333,8 @@ function solutionOf(count: CountEvidence): readonly number[] | null {
 
 /**
  * Composes the existing M2 pipeline for one 9x9 classic grid:
- * normalizeClassic -> assemble -> initialize -> logical phase (auto-accepted) ->
- * independent exact count.
+ * normalizeClassic -> assemble -> initialize -> exact count (reused) -> logical
+ * phase (auto-accepted) -> exact count resumed only when still unknown.
  * Throws ProblemInputError for malformed givens; reports rule conflicts as an "error" result.
  */
 export async function solveClassic(
@@ -237,6 +364,7 @@ export async function solveProblem(
   const limits = input.limits ?? CLASSIC_SOLVE_LIMITS,
     mode = input.mode ?? "explain",
     requestId = input.requestId ?? "solve";
+  const started = ports.clock.now();
   const empty = (code: string, human: HumanStatus = "not-started") =>
     ports.emit({
       kind: "result",
@@ -248,6 +376,9 @@ export async function solveProblem(
       logicalValues: [...problem.givens],
       steps: 0,
       difficulty: noDifficulty(),
+      stopReason: "not-started",
+      coverage: coverageOf(undefined, []),
+      budgetLimitedSteps: 0,
     });
   const assembled = assemble(problem, productionRules());
   if (!assembled.ok) {
@@ -256,25 +387,8 @@ export async function solveProblem(
   }
   const assembly = assembled.value,
     snapshot = makeSnapshot(problem, { kind: "manual" }, requestId, 0);
-  // Cheap exact pre-count: zero or multiple solutions make the explained logical phase meaningless,
-  // so report them immediately. Inconclusive or unique grids continue through the full pipeline,
-  // whose own exact phase independently re-establishes the count.
-  const precheck = exactPrecount(problem, assembly, limits, ports.clock);
-  if (precheck.kind !== "inconclusive" && precheck.kind !== "unique") {
-    ports.emit({
-      kind: "result",
-      outcome: "complete",
-      human: "not-started",
-      count: precheck.kind,
-      solution: null,
-      logicalValues: [...problem.givens],
-      steps: 0,
-      difficulty: noDifficulty(),
-    });
-    return;
-  }
-  if (precheck.kind === "unique")
-    ports.emit({ kind: "precount", solution: [...precheck.solution] });
+  // runSolver counts first (spec M2.6 §4.3): zero or multiple solutions end the
+  // run before the logical phase, and a conclusive count is reused, never recomputed.
   let view = initialize(assembly, "primary");
   const workspace = new IndexWorkspace({ entryLimit: 100_000, byteLimit: limits.workspaceBytes });
   // Classic input keeps the classic profile and RunKey; a declared variant rule
@@ -288,8 +402,11 @@ export async function solveProblem(
     limits,
     mode,
     profile: PROFILE,
-    ...(input.policy ? { policy: input.policy } : {}),
+    // The M2.6 policies are the defaults (D103); @1/@2 stay selectable and
+    // keep their traces (D094).
+    policy: input.policy ?? (mode === "explain" ? "explain-fair@3" : "analyze-fair@3"),
     ...(input.policyParameters ? { policyParameters: input.policyParameters } : {}),
+    ...(input.tierCap ? { tierCap: input.tierCap } : {}),
   });
   const run: RunKey = {
     requestId,
@@ -309,6 +426,9 @@ export async function solveProblem(
   const progressEvery = ports.progressEveryMs ?? 250;
   let lastProgress = ports.clock.now(),
     work = 0,
+    // Logical-phase work only, as the step event documents; `work` also counts
+    // the exact phases for progress.
+    logicalWork = 0,
     steps = 0;
   const tiersSeen: number[] = [];
   let pending:
@@ -318,8 +438,17 @@ export async function solveProblem(
         candidates: readonly number[];
         cells: readonly number[];
         workUnits: number;
+        budgetLimited: boolean;
       }
     | undefined;
+  let ledger: Ledger | undefined,
+    budgetLimitedSteps = 0,
+    countVerifiedMs: number | undefined;
+  const registry = assembleTechniqueJobs(assembly, PROFILE);
+  const noteCount = (count: CountEvidence | undefined) => {
+    if (countVerifiedMs === undefined && count && count.kind !== "unknown")
+      countVerifiedMs = Math.max(0, Math.round(ports.clock.now() - started));
+  };
   const emitStep = (step: NonNullable<typeof pending>) =>
     ports.emit({
       kind: "step",
@@ -331,19 +460,26 @@ export async function solveProblem(
       candidates: step.candidates,
       cells: step.cells,
       workUnits: step.workUnits,
+      budgetLimited: step.budgetLimited,
     });
   await runSolver(
     {
       snapshot,
       assembly,
       view,
-      registry: assembleTechniqueJobs(assembly, PROFILE),
+      registry,
       workspace,
       limits,
       options,
       run,
       accept: (step: CheckedStep) => {
-        view = commitChecked(view, step).view;
+        // An effect-free step only publishes checked facts (a Tridagon guardian
+        // clause, for example): it is retained at the same revision, as replay
+        // and the conditional profile do. Committing it throws `unproductive-step`.
+        view =
+          step.proposal.effects.length > 0
+            ? commitChecked(view, step).view
+            : retainCheckedFacts(view, step);
         return view;
       },
     },
@@ -361,9 +497,20 @@ export async function solveProblem(
           code?: string;
           human?: HumanStatus;
           count?: CountEvidence;
+          budgetLimited?: boolean;
+          ledger?: Ledger;
+          logicalStop?: string;
         };
-        if (event.kind === "work") {
+        if (event.ledger) ledger = event.ledger;
+        if (event.kind === "evidence" || event.kind === "precount" || event.kind === "terminal")
+          noteCount(event.count);
+        if (event.kind === "precount") {
+          const count = defined(event.count, "count");
+          if (count.kind === "unique")
+            ports.emit({ kind: "precount", solution: [...count.witness] });
+        } else if (event.kind === "work") {
           work += event.units ?? 0;
+          if (event.phase !== "exact") logicalWork += event.units ?? 0;
           const now = ports.clock.now();
           if (pending) {
             emitStep(pending);
@@ -378,30 +525,43 @@ export async function solveProblem(
           // next event.
           if (pending) emitStep(pending);
           steps++;
+          if (event.budgetLimited) budgetLimitedSteps++;
           tiersSeen.push(techniqueTiers.get(event.step.proposal.technique) ?? -1);
           pending = {
             technique: event.step.proposal.technique,
             effects: event.step.proposal.effects,
             candidates: [...view.state.domains],
             cells: patternCells(event.step.proposal.pattern),
-            workUnits: work,
+            workUnits: logicalWork,
+            budgetLimited: !!event.budgetLimited,
           };
         } else if (event.kind === "terminal") {
           if (pending) {
             emitStep(pending);
             pending = undefined;
           }
-          const count = defined(event.count, "count");
+          const count = defined(event.count, "count"),
+            human = event.human ?? "not-started",
+            // An error during the logical phase leaves its status unset.
+            logicalHuman = human === "not-started" && steps > 0 ? "incomplete" : human;
           ports.emit({
             kind: "result",
             outcome: event.outcome ?? "error",
             code: event.code,
-            human: event.human ?? "not-started",
+            human,
             count: countKind(count),
             solution: solutionOf(count),
             logicalValues: [...view.state.values],
             steps,
             difficulty: difficultyOf(tiersSeen),
+            stopReason: stopReasonOf(logicalHuman, event.logicalStop, ledger),
+            ...(countVerifiedMs === undefined ? {} : { countVerifiedMs }),
+            coverage: coverageOf(
+              ledger,
+              registry.techniques.map((technique) => technique.id),
+              human === "solved",
+            ),
+            budgetLimitedSteps,
           });
         }
       },

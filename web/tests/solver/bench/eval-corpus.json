@@ -79,8 +79,7 @@
       "givens": 17,
       "source": "hard1, Peter Norvig, 'Solving Every Sudoku Puzzle' (not a proper puzzle)",
       "count": "2+",
-      "singles": "none",
-      "heavy": true
+      "singles": "none"
     },
     {
       "id": "empty",

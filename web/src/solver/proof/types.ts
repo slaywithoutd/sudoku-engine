@@ -50,6 +50,13 @@ export interface CheckContext {
   readonly limits: Limits;
   /** Optional live narrowing gate; it cannot increase the frozen checker limits. */
   readonly remainingWork?: () => number;
+  /**
+   * Optional: how many units the caller would consume right now as
+   * consecutive one-unit events with nothing in between. The checker may then
+   * report that many bookkeeping units as one event (spec M2.6 §4.2); without
+   * it, every unit is its own event.
+   */
+  readonly batchUnits?: () => number;
   /** Checker-populated metadata for the exact admitted premise objects. */
   readonly premiseInferences?: ReadonlyMap<NodeId, CheckedInference>;
   /** Checker-owned lexical position, never taken from detector metadata. */

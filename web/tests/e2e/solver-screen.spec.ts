@@ -120,15 +120,67 @@ test("reports puzzles without a unique solution quickly", async ({ page }) => {
   await expect(page.locator(".empty-note")).toContainText("no logical steps");
 });
 
-test("blocks conflicting clues and cancels a running analysis", async ({ page }) => {
+test("runs conflicting clues to No solution and cancels a running analysis", async ({ page }) => {
   await page.goto("#/solve");
+  await page.getByRole("radio", { name: "Analyze" }).click();
   await importPuzzle(page, "55" + "0".repeat(79));
-  await expect(page.getByText("Resolve the highlighted conflicts before solving.")).toBeVisible();
-  await expect(solve(page)).toBeDisabled();
+  await expect(
+    page.getByText("These clues conflict: solving will report that there is no solution."),
+  ).toBeVisible();
+  await expect(solve(page)).toBeEnabled();
+  await solve(page).click();
+  await expect(page.getByRole("heading", { name: "No solution" })).toBeVisible({
+    timeout: 15_000,
+  });
+  // The conflicting clues are highlighted on the result board.
+  await expect(page.locator(".cell.conflict")).toHaveCount(2);
+  await expect(page.getByRole("gridcell", { name: /conflict/ })).toHaveCount(2);
+  await page.getByRole("button", { name: "Edit puzzle", exact: true }).click();
   await importPuzzle(page, unique);
   await solve(page).click();
   await expect(page.getByRole("button", { name: "Cancel", exact: true })).toBeEnabled();
   await page.getByRole("button", { name: "Cancel", exact: true }).click();
   await expect(page.getByTestId("solver-status")).toHaveText("Cancelled");
   await expect(solve(page)).toBeEnabled();
+});
+
+/** The 15 s preset of the time limit (spec M2.6 §5 T07). */
+async function fifteenSeconds(page: Page) {
+  await page.getByText("Solver options").click();
+  await page.getByRole("radio", { name: "15 s" }).click();
+  await page.getByText("Solver options").click();
+}
+const hard1 = "000006000059000008200008000045000000003000000006003054000325006000000000000000000";
+const escargot =
+  "100007090030020008009600500005300900010080002600004000300000010040000007007000300";
+
+test("Norvig hard1 at the 15 s preset shows multiple solutions", async ({ page }) => {
+  test.setTimeout(60_000);
+  await page.goto("#/solve");
+  await fifteenSeconds(page);
+  await page.getByRole("radio", { name: "Analyze" }).click();
+  await importPuzzle(page, hard1);
+  await solve(page).click();
+  await expect(page.getByRole("heading", { name: "Multiple solutions" })).toBeVisible({
+    timeout: 30_000,
+  });
+  await expect(page.getByTestId("count-verification")).toContainText("Count: verified in");
+});
+
+test("Escargot at the 15 s preset is verified unique in under a second and reports where logic stalled", async ({
+  page,
+}) => {
+  test.setTimeout(90_000);
+  await page.goto("#/solve");
+  await fifteenSeconds(page);
+  await page.getByRole("radio", { name: "Analyze" }).click();
+  await importPuzzle(page, escargot);
+  await solve(page).click();
+  await expect(page.getByRole("heading", { name: "Unique solution" })).toBeVisible({
+    timeout: 60_000,
+  });
+  const verified = await page.getByTestId("count-verification").textContent();
+  const seconds = Number(/verified in ([\d.]+) s/.exec(verified ?? "")?.[1]);
+  expect(seconds).toBeLessThan(1);
+  await expect(page.getByTestId("logic-stop")).toContainText(/stalled at tier \d/);
 });

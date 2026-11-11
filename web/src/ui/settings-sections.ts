@@ -375,7 +375,7 @@ export function renderSettingsSections(
           { value: 60, label: "1 min" },
           { value: 180, label: "3 min" },
         ],
-        "Longer limits help very hard puzzles",
+        "A safety stop behind the work budget: a run the budget ends gives the same result every time. Longer limits help very hard puzzles",
       ),
     ],
   };

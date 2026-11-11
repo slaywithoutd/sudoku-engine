@@ -3,11 +3,12 @@ import type { CheckedStep, CheckEvent, DeductionProposal } from "../proof/types"
 import {
   checkProposal,
   checkUsage,
+  checkWorkUnits,
   checkedHeaderBytes,
   checkedStepMatchesSource,
 } from "../proof/checker";
 import { assertOwnedView, acceptedStepChanges, retainedProof } from "../state/candidates";
-import { prepareSources, matchingFacts, type SourceIndex } from "../state/source-index";
+import { prepareSources, matchingFacts, SourceIndex } from "../state/source-index";
 import {
   IndexInterrupted,
   type IndexWorkspace,
@@ -24,6 +25,7 @@ import {
   WorkBudget,
   WorkLimit,
   QUANTUM,
+  isRevision3,
   schedulingOptions,
   type SchedulingOptions,
   type WorkClock,
@@ -54,6 +56,13 @@ export type SelectionEvent =
       readonly reason: string;
       readonly ledger: Ledger;
     };
+interface Window {
+  used: number;
+  /** Units served to the original rules (tier -1) in this selection. */
+  rules: number;
+}
+/** Job statuses that keep a quantum running. */
+const ACTIVE: ReadonlySet<string> = new Set(["pending", "in-progress", "found"]);
 /** Read after the quantum ran; the generator may have flipped the flag meanwhile. */
 function proposedDuring(cursor: Cursor): boolean {
   return cursor.proposed === true;
@@ -88,6 +97,8 @@ export class StepSelection {
   readonly #buffers: Buffered[] = [];
   readonly #templates: TemplateOperationContext;
   #sources?: SourceIndex;
+  /** The accepted parent's index, extended by the next #prepare (spec M2.6 §4.2). */
+  #parentSources?: SourceIndex;
   #lease?: WorkspaceReservation;
   #pending?: CheckedStep;
   #bundle = 0;
@@ -137,10 +148,19 @@ export class StepSelection {
   get usedWork(): number {
     return this.#budget.used;
   }
+  /** Units charged and checkpoints passed since the clock was last read. */
+  #sinceClock = { units: 0, calls: 0 };
   #checkpoint(): void {
     if (this.#disposed) throw Error("disposed-selection");
     this.context.workspace.checkpoint();
-    if (this.#clock.now() >= this.#deadline) throw new WorkLimit("time-limit");
+    // Time is a safety stop (spec M2.6 §4.2): read the clock once per quantum
+    // of charged work, or every 64 checkpoints, not on every charge.
+    const since = this.#sinceClock;
+    if (since.units >= QUANTUM || since.calls++ >= 64 || since.calls === 1) {
+      since.units = 0;
+      since.calls = 1;
+      if (this.#clock.now() >= this.#deadline) throw new WorkLimit("time-limit");
+    }
   }
   #remaining(): number {
     return Math.min(this.#budget.remaining(), this.context.budget?.remaining() ?? Infinity);
@@ -148,6 +168,7 @@ export class StepSelection {
   #charge(units: number): void {
     this.#checkpoint();
     if (units > this.#remaining()) throw new WorkLimit();
+    this.#sinceClock.units += units;
     this.#budget.charge(units);
     this.context.budget?.charge(units);
   }
@@ -177,9 +198,12 @@ export class StepSelection {
       this.#sources.assertActive();
       return;
     }
-    const cursor = prepareSources(this.#view, this.context.workspace, {
-      reserveWork: (n) => this.#reserveWork(n),
-    });
+    const options = { reserveWork: (n: number) => this.#reserveWork(n) };
+    const parent = this.#parentSources;
+    this.#parentSources = undefined;
+    const cursor = parent
+      ? SourceIndex.advance(parent, this.#view, this.context.workspace, options)
+      : prepareSources(this.#view, this.context.workspace, options);
     try {
       let next = cursor.next();
       while (!next.done) {
@@ -232,10 +256,35 @@ export class StepSelection {
       )
     );
   }
-  /** Advance exactly one bounded producer/checker event. Large work stays as debt. */
-  #pump(job: ScheduledJob, cursor: Cursor): void {
+  /** The cursor's debt before the last event #pump advanced. */
+  #owedBeforeLast = 0;
+  /** The cursor #pump is draining, and the room it drains into. */
+  #draining?: Cursor;
+  #drainRoom = 0;
+  /**
+   * Advances producer/checker events of one cursor while the quantum loop would
+   * keep pumping it: its debt stays below `room`, nothing is checked and the
+   * job stays active. Each event is charged as it is advanced, exactly as one
+   * pump per loop iteration did; only the loop's bookkeeping is saved.
+   */
+  #pump(job: ScheduledJob, cursor: Cursor, room: number): void {
+    // Set before anything here can throw: the caller pays it on a throw.
+    this.#owedBeforeLast = cursor.debt;
     this.#checkpoint();
     defined(this.#sources, "source-index").assertActive();
+    this.#draining = cursor;
+    this.#drainRoom = room;
+    try {
+      do {
+        this.#owedBeforeLast = cursor.debt;
+        this.#pumpOne(job, cursor);
+      } while (cursor.debt < room && !cursor.checked && ACTIVE.has(job.status));
+    } finally {
+      this.#draining = undefined;
+    }
+  }
+  /** Advance exactly one bounded producer/checker event. Large work stays as debt. */
+  #pumpOne(job: ScheduledJob, cursor: Cursor): void {
     if (cursor.checking) {
       this.#pumpChecker(job, cursor, cursor.checking);
       return;
@@ -260,9 +309,9 @@ export class StepSelection {
     cursor: Cursor,
     checking: Generator<CheckEvent, void, void>,
   ): void {
-    const before = checkUsage(checking).workUnits,
+    const before = checkWorkUnits(checking),
       next = checking.next();
-    const actual = checkUsage(checking).workUnits;
+    const actual = checkWorkUnits(checking);
     const units = actual - before;
     this.#charge(units);
     cursor.accountedCheckWork = actual;
@@ -309,6 +358,7 @@ export class StepSelection {
           limits: { ...this.options.limits, workUnits: this.#budget.remaining() },
           templates: this.#templates,
           uniqueAuthority: this.context.uniqueAuthority,
+          ...(isRevision3(this.options.policy) ? { revision3: true } : {}),
         });
     this.ledger.status(job.key, "in-progress");
     return discovery;
@@ -370,8 +420,10 @@ export class StepSelection {
       },
       remainingWork: () =>
         this.#remaining() -
-        (checkUsage(defined(cursor.checking, "checking")).workUnits -
-          (cursor.accountedCheckWork ?? 0)),
+        (checkWorkUnits(defined(cursor.checking, "checking")) - (cursor.accountedCheckWork ?? 0)),
+      // Inside #pump this cursor's one-unit events are consumed back to back
+      // until its debt reaches the room the quantum loop left.
+      batchUnits: () => (this.#draining === cursor ? this.#drainRoom - cursor.debt : 0),
       limits: {
         ...this.options.limits,
         timeMs: Math.max(0, Math.floor(this.#deadline - this.#clock.now())),
@@ -451,13 +503,62 @@ export class StepSelection {
   /** Services jobs in policy order until a step is buffered or the window closes.
    * Returns the reason the loop stopped early, if any. */
   *#fillBuffers(): Generator<SelectionEvent, string | undefined, void> {
-    const window = { used: 0 };
+    const window: Window = { used: 0, rules: 0 };
+    for (;;) {
+      const reason = yield* this.#fillFromActive(window);
+      // explain-fair@3: when every job is settled and no step was found, the
+      // jobs that stopped on a budget are reopened (spec M2.6 §4.4).
+      if (reason !== undefined || this.#buffers.length || !this.#reopenSettled()) return reason;
+    }
+  }
+  /** The per-state tier cap of this selection's policy, if any. */
+  get #tierCap() {
+    return this.options.tierCap;
+  }
+  /** Analyze selection window: 4096 units, or under @3 twice the rule pass (spec §4.4). */
+  #windowLimit(window: Window): number {
+    if (this.options.policy !== "analyze-fair@3") return 4096;
+    // Under @3 the window only closes once a candidate is buffered: an empty
+    // window would end Analyze before its first checked technique step.
+    return this.#buffers.length ? Math.max(4096, 2 * window.rules) : Infinity;
+  }
+  /**
+   * Restarts the jobs from `fromTier` up that were capped on this
+   * state, from scratch and with twice their previous cap (iterative deepening:
+   * a capped cursor was closed to free its workspace, so a retry must reach
+   * further). Returns whether any job was reopened.
+   */
+  #reopenSettled(): boolean {
+    const cap = this.#tierCap;
+    if (!cap) return false;
+    // Capped jobs only: an interruption (a workspace or proof-size limit)
+    // recurs identically on the same state, while a reopened capped job must
+    // spend its whole doubled cap before it caps again, so every round
+    // consumes budget and the loop ends.
+    const reopened = this.ledger.jobs.filter(
+      (job) => job.tier >= cap.fromTier && job.status === "capped",
+    );
+    for (const job of reopened) {
+      const cursor = this.#cursors.get(job);
+      if (cursor) this.#closeCursor(cursor);
+      this.#cursors.delete(job);
+      job.stateWork = 0;
+      job.capRounds += 1;
+      // Its ledger row keeps the tier-work-cap reason while capRounds > 0.
+      this.ledger.status(job.key, "pending");
+    }
+    return reopened.length > 0;
+  }
+  *#fillFromActive(window: Window): Generator<SelectionEvent, string | undefined, void> {
     while (this.ledger.active.length) {
       const key = this.#policy.next(this.ledger, this.#view),
         job = this.ledger.job(key);
       // An interrupted rule/cheaper tier cannot authorize later Explain claims.
+      // Under explain-fair@3 a capped lower job counts as settled.
       if (
-        !this.ledger.simplerExhausted(job.tier) &&
+        !(this.#tierCap
+          ? this.ledger.simplerSettled(job.tier, this.#tierCap.fromTier)
+          : this.ledger.simplerExhausted(job.tier)) &&
         (this.options.mode === "explain" ||
           (job.tier >= 0 &&
             this.ledger.jobs.some((j) => j.tier === -1 && j.status === "interrupted")))
@@ -468,6 +569,11 @@ export class StepSelection {
       this.#cursors.set(job, cursor);
       cursor.proposed = false;
       yield* this.#serviceQuantum(job, cursor, window);
+      if (job.status === "capped") {
+        // A capped cursor would keep its workspace while later tiers need it.
+        this.#closeCursor(cursor);
+        this.#cursors.delete(job);
+      }
       if (!proposedDuring(cursor)) this.ledger.noteEmptyQuantum(key);
       // A checker result paid at the last unit belongs to this quantum.
       if (cursor.checked && !cursor.debt) this.#bufferChecked(cursor);
@@ -476,10 +582,11 @@ export class StepSelection {
         (job.tier === -1 ||
           this.options.mode === "explain" ||
           this.#buffers.length >= 4 ||
-          window.used >= 4096)
+          window.used >= this.#windowLimit(window))
       )
         return undefined;
-      if (this.options.mode === "analyze" && window.used >= 4096) return "selection-window";
+      if (this.options.mode === "analyze" && window.used >= this.#windowLimit(window))
+        return "selection-window";
     }
     return undefined;
   }
@@ -487,33 +594,61 @@ export class StepSelection {
   *#serviceQuantum(
     job: ScheduledJob,
     cursor: Cursor,
-    window: { used: number },
+    window: Window,
   ): Generator<SelectionEvent, void, void> {
     const analyze = this.options.mode === "analyze";
+    const cap =
+      this.#tierCap && job.tier >= this.#tierCap.fromTier
+        ? this.#tierCap.unitsPerJobPerState * 2 ** Math.min(job.capRounds, 20)
+        : Infinity;
     let quantum = 0;
+    const active = () => ACTIVE.has(job.status);
+    // The window limit is read live: under analyze-fair@3 it grows with the rule pass.
+    const room = () =>
+      Math.min(QUANTUM - quantum, analyze ? this.#windowLimit(window) - window.used : Infinity);
+    // Debt is paid in one work event once it fills the quantum's room, before a
+    // checked step is buffered, and before a pump that ends the job or throws:
+    // the same units, quanta and job work as paying after every pump, with
+    // far fewer events (spec M2.6 §4.2). As before, a pump that ends the job
+    // leaves its own units unpaid.
+    const pay = function* (this: StepSelection, units: number, checkpoint = true) {
+      // On a throw the debt is paid without a checkpoint, so the original error stays.
+      if (checkpoint) this.#checkpoint();
+      cursor.debt -= units;
+      quantum += units;
+      window.used += units;
+      if (job.tier === -1) window.rules += units;
+      job.work += units;
+      job.stateWork += units;
+      yield { kind: "work" as const, units };
+      // explain-fair@3: the job spent its cap on this state without a step
+      // (one with a checked step waiting for its debt is left to finish).
+      if (job.stateWork >= cap && active() && !cursor.checked)
+        this.ledger.status(job.key, "capped", "tier-work-cap");
+    }.bind(this);
     while (
       quantum < QUANTUM &&
-      ["pending", "in-progress", "found"].includes(job.status) &&
-      !(analyze && window.used >= 4096)
+      active() &&
+      !(analyze && window.used >= this.#windowLimit(window))
     ) {
-      if (cursor.debt) {
-        this.#checkpoint();
-        const units = Math.min(
-          cursor.debt,
-          QUANTUM - quantum,
-          analyze ? 4096 - window.used : Infinity,
-        );
-        cursor.debt -= units;
-        quantum += units;
-        window.used += units;
-        job.work += units;
-        yield { kind: "work", units };
-      } else if (cursor.checked) {
+      if (cursor.debt && (cursor.debt >= room() || cursor.checked)) {
+        yield* pay(Math.min(cursor.debt, room()));
+        continue;
+      }
+      if (cursor.checked) {
         this.#bufferChecked(cursor);
         if (this.options.mode === "explain" && this.#buffers.length > 1)
           this.#discardBuffers(this.#policy.choose(this.#buffers.map((buffered) => buffered.step)));
         if (analyze && this.#buffers.length === 4) break;
-      } else this.#pump(job, cursor);
+        continue;
+      }
+      try {
+        this.#pump(job, cursor, room());
+      } catch (error) {
+        if (this.#owedBeforeLast) yield* pay(this.#owedBeforeLast, false);
+        throw error;
+      }
+      if (this.#owedBeforeLast && !active()) yield* pay(this.#owedBeforeLast);
     }
   }
   /** Moves the cursor's checked step and its lease into the buffer. */
@@ -616,7 +751,13 @@ export class StepSelection {
       kind: "checked-step",
       step: selected,
       bundleId: ++this.#bundle,
-      budgetLimited: !!reason || this.ledger.jobs.some((j) => j.status === "interrupted"),
+      // A capped simpler job means a simpler step may exist (explain-fair@3).
+      budgetLimited:
+        !!reason ||
+        this.ledger.jobs.some(
+          (j) => j.status === "interrupted" || (j.status === "capped" && j.tier < tier),
+          // (an interrupted job always marked the step, at any tier)
+        ),
       canClaimSimplerExhausted: this.ledger.simplerExhausted(tier),
     };
   }
@@ -628,7 +769,8 @@ export class StepSelection {
     this.#templates.advance(next, () => {});
     this.#headers += checkedHeaderBytes(this.#pending);
     this.#clearCursors();
-    this.#sources?.dispose();
+    this.#parentSources?.dispose();
+    this.#parentSources = this.#sources;
     this.#sources = undefined;
     this.#discardBuffers();
     this.ledger.advance(next, changes, this.options.policy === "fixed-scan@1");
@@ -644,6 +786,8 @@ export class StepSelection {
       this.#discardBuffers();
       this.#sources?.dispose();
       this.#sources = undefined;
+      this.#parentSources?.dispose();
+      this.#parentSources = undefined;
       this.#lease?.dispose();
       this.#lease = undefined;
     }
