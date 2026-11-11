@@ -139,3 +139,6 @@ Ablation refresh ([report](m25-ablation.md), section "M2.6 refresh"): `explain-f
 
 - Defect found by the first ablation attempt and fixed before this run: `b9dfaf2` (effect-free checked steps no longer end the classic run in `error`). Independent review: no defect; low findings in the T09/T10 review row below.
 
+## T10
+
+Docs: the M2.6 section of `docs/solver/architecture.md`, the D103 outcome, the roadmap row and update line, the spec's status line, the README index, and `docs/solver/scheduling.md`, which still named `explain-fair@1`/`analyze-fair@1` as the defaults (it now separates `schedulingOptions()`'s own defaults from the classic run's `@3` defaults and has a section on the `@3` policies). Every number in the D103 outcome was checked against [m26-benchmark](m26-benchmark.md) and the T02–T08 sections above.
