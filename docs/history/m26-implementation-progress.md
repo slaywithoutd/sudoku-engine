@@ -127,3 +127,15 @@ Review (independent), fixed in `fix(solver): T08 review`:
 - The reopened-cap reason was overwritten when the job restarted (`ledger.status` clears it), so a run whose budget ended while a reopened job ran still read `work-limit`. The row now derives the reason from `capRounds`; regression test in `policies-v3.test.ts`.
 - Docs: slow-state misses are reported as missed, not unconfirmed; the harness now records the step sequence and fails on worker errors, `M26_BENCH_MODES` is honoured, and `web/tests/browser/m26-bench-table.mjs` reproduces the table.
 - Open (recorded, not changed): the precount is now bounded by work as well as time, so at 15 s a zero- or multi-solution grid whose exact count costs more than 1.44M units (none in the corpus) runs the logical phase before its count is known; at 60 s the bound is 5.76M.
+
+## T09
+
+Golden traces under `explain-fair@3` (`golden-traces.test.ts`, fixture `web/tests/solver/fixtures/golden-traces-v3.json`, recorded with `GOLDEN_TRACES_V3=write`; the `@1` fixtures and their test are unchanged). Reviewed once, against the `@1` traces of the same fixtures:
+
+- golden-2: identical to `@1`, 78 steps.
+- golden-1: solved in 73 steps under both. The first 51 steps are identical; at step 52 `@1` takes a tier-3 `c15@1` (3D Medusa) with 18 eliminations, while under `@3` c15 reaches its 100,000-unit tier cap on that state without a step, Explain climbs, and the tier-4 `c19@1` removes 7 from r8c6 (one of c15's eliminations). That step is the trace's only `budgetLimited` step, as §4.4 intends; the singles that follow come in a different order. Technique counts are otherwise equal: rule propagation 26, c01 33, c02 12, c03 1, plus one c15 or one c19.
+
+Ablation refresh ([report](m25-ablation.md), section "M2.6 refresh"): `explain-fair@3`, `analyze-fair@1` and `analyze-fair@3` added to `bench-ablate.test.ts` (configurations 10–12) and run with `explain-fair@1` on the 310 held-out cases at both budgets, twice each (52 jobs, 3 h 34 min, mains). No run ended in `error`. `explain-fair@3` against `@1`: A 51.9 %, B 11.9 %, C and E pass; **D fails** (`c08@1`, `c13@1`, `c15@1`, `c19@1` lose steps to higher tiers, the tier cap's intended effect) and **F fails** on 12 of 310 cases at 16M (a different first tier-2 step, from `@3`'s cheaper basic-fish enumeration). `analyze-fair@3` takes technique steps on 301 of 310 cases where `@1` takes none. D101's conclusion (`@2` disabled) is unchanged and no default changes; the `@3` default rests on D103.
+
+- Defect found by the first ablation attempt and fixed before this run: `b9dfaf2` (effect-free checked steps no longer end the classic run in `error`). Independent review: no defect; low findings in the T09/T10 review row below.
+

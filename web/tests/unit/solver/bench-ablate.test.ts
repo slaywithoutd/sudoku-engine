@@ -1,13 +1,13 @@
 /**
  * Ablation runner (plan T15). Validation runs in the normal suite; the
  * ablation itself is opt-in:
- *   ABLATE=run ABLATE_CONFIG=<0..9> ABLATE_BUDGET=spec|stop ABLATE_CASES=grid|full
+ *   ABLATE=run ABLATE_CONFIG=<0..12> ABLATE_BUDGET=spec|stop ABLATE_CASES=grid|full
  *     ABLATE_SHARD=i/n [ABLATE_TAG=repeat] CORPUS_OUT=<dir>
  * writes `<dir>/ablation/<label>-<budget>-<cases>[-repeat]-<i>.json` (traces);
  * the `repeat` tag is a second run of the same configuration for metric E. Then
  *   ABLATE=report CORPUS_OUT=<dir>
  * merges the traces and writes `<dir>/ablation-report.json` with metrics A-F
- * for every `@2` configuration against its `@1` counterpart at both budgets,
+ * for every `@2` and `@3` configuration against its `@1` counterpart at both budgets,
  * E for every configuration (a missing repeat fails it), and the gate of
  * D101: C at the `spec` budget, A, B, D, F at `stop`, E at both.
  */
@@ -39,10 +39,11 @@ interface Config {
 }
 
 /**
- * Explain only (D101): `analyze-fair@1` stops after its first 4,096-unit
- * selection window with no step on this corpus (a pre-existing M2 defect the
- * M2.6 draft fixes under `analyze-fair@3`), so an Analyze comparison would set
- * zero steps against zero steps. The baseline first, then the grid.
+ * The baseline first, then the `@2` grid, Explain only (D101):
+ * `analyze-fair@1` stops after its first 4,096-unit selection window with no
+ * step on this corpus (a pre-existing M2 defect that M2.6 fixes under
+ * `analyze-fair@3`), so an Analyze comparison of `@2` would set zero steps
+ * against zero steps. The `@3` policies follow, with that Analyze baseline.
  */
 export const CONFIGS: readonly Config[] = [
   { mode: "explain", policy: "explain-fair@1" },
@@ -51,6 +52,11 @@ export const CONFIGS: readonly Config[] = [
     policy: "explain-fair@2" as const,
     parameters,
   })),
+  // M2.6 T09: the @3 policies against their @1 counterparts (indexes 10-12).
+  // analyze-fair@1 is kept as the Analyze baseline although it yields no step.
+  { mode: "explain", policy: "explain-fair@3" },
+  { mode: "analyze", policy: "analyze-fair@1" },
+  { mode: "analyze", policy: "analyze-fair@3" },
 ];
 
 /** `grid`: the first five held-out cases per family; `full`: every held-out case. */
@@ -104,7 +110,7 @@ describe.skipIf(mode !== "run")("ablation run", () => {
 });
 
 describe.skipIf(mode !== "report")("ablation report", () => {
-  test("compares every @2 configuration with its @1 counterpart", () => {
+  test("compares every @2 and @3 configuration with its @1 counterpart", () => {
     const out = `${process.env.CORPUS_OUT ?? bench}/ablation/`;
     const traces = new Map<string, RunTrace[]>();
     for (const name of readdirSync(out)
@@ -137,7 +143,7 @@ describe.skipIf(mode !== "report")("ablation report", () => {
       const deterministic = (label: string) =>
         Object.keys(ABLATION_BUDGETS).every((budget) => determinism[`${budget} ${label}`] === true);
       for (const config of CONFIGS) {
-        if (!config.parameters) continue;
+        if (config.policy.endsWith("@1")) continue;
         const label = configLabel(config.policy, config.parameters);
         const baseLabel = config.mode === "explain" ? "explain-fair@1" : "analyze-fair@1";
         const metrics: Partial<Record<Budget, Metrics & { cases: number }>> = {};
