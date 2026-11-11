@@ -12,7 +12,21 @@ import { assemble } from "../../../src/solver/rules/assemble";
 import { productionRules } from "../../../src/solver/rules/registry";
 import { StepSelection } from "../../../src/solver/scheduling/select";
 import { POLICY_IDS, schedulingOptions, type PolicyId } from "../../../src/solver/scheduling/work";
-import { commitChecked, initialize } from "../../../src/solver/state/candidates";
+import {
+  commitChecked,
+  initialize,
+  retainCheckedFacts,
+} from "../../../src/solver/state/candidates";
+
+/** Commits a step, or retains an effect-free one as the classic run does (b9dfaf2). */
+function accept(
+  view: Parameters<typeof commitChecked>[0],
+  step: Parameters<typeof commitChecked>[1],
+) {
+  return step.proposal.effects.length > 0
+    ? commitChecked(view, step).view
+    : retainCheckedFacts(view, step);
+}
 import { coverageEntries } from "../../../src/solver/techniques/manifest";
 import { assembleTechniqueJobs } from "../../../src/solver/techniques/registry";
 import type { Ledger, TechniqueDescriptor } from "../../../src/solver/techniques/types";
@@ -89,7 +103,7 @@ describe("explain-fair@3 tier cap", () => {
             expect(event.canClaimSimplerExhausted).toBe(false);
             expect(event.budgetLimited).toBe(true);
           }
-          view = commitChecked(view, event.step).view;
+          view = accept(view, event.step);
           selection.advance(view);
         }
       } finally {
@@ -194,7 +208,7 @@ describe("explain-fair@3 at the 15 s preset", () => {
           for (const job of selection.ledger.jobs)
             if (job.work > 0) highestServed = Math.max(highestServed, job.tier);
           if (stopped || !step) break;
-          view = commitChecked(view, step).view;
+          view = accept(view, step);
           selection.advance(view);
         }
       } finally {

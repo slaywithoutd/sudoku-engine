@@ -24,7 +24,12 @@ import {
 } from "../../../src/solver/problem";
 import { assemble } from "../../../src/solver/rules/assemble";
 import { productionRules } from "../../../src/solver/rules/registry";
-import { initialize, commitChecked, retainedProof } from "../../../src/solver/state/candidates";
+import {
+  initialize,
+  commitChecked,
+  retainCheckedFacts,
+  retainedProof,
+} from "../../../src/solver/state/candidates";
 import type { ReadView } from "../../../src/solver/state/types";
 import { assembleTechniqueJobs, profileFor } from "../../../src/solver/techniques/registry";
 import { checkProposal } from "../../../src/solver/proof/checker";
@@ -181,7 +186,12 @@ export function sampleCase(entry: CorpusEntry, cap = DEFAULT_CAP): StateSample[]
     })) {
       if (event.kind === "checked-step") {
         chosen = event.step.proposal.technique;
-        next = commitChecked(view, event.step).view;
+        // An effect-free step (a guardian clause) is retained, not committed,
+        // as the classic run does (b9dfaf2).
+        next =
+          event.step.proposal.effects.length > 0
+            ? commitChecked(view, event.step).view
+            : retainCheckedFacts(view, event.step);
         break;
       }
       if (event.kind === "logical-stop") chosen = `stop:${event.reason}`;
