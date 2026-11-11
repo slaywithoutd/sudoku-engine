@@ -127,7 +127,8 @@ at `b9dfaf2` plus the T09 harness change (configurations 10–12 in
 (310 cases), same budgets, every configuration run twice at both. 52 jobs, 11 at
 a time on 12 logical cores, 3 h 34 min of wall time (2026-11-10 23:01 to
 2026-11-11 02:35 -03:00), on mains (`BatteryStatus` 2 at the start and the end).
-Every run ends on its work cap, so the numbers do not depend on the machine.
+Every run uses a fixed clock (`now: () => 0`) and ends at a logical stop or on its
+work cap, never on time, so the numbers do not depend on the machine.
 
 **The `@1` baseline is not the M2.5 one.** M2.6 T04 cut the units charged for
 source-index preparation (a basic step on the easy puzzle went from about 87k to
@@ -136,7 +137,8 @@ budgets `@1` now goes much further: at 16M units it reaches a logical stop on
 195 of 310 cases (84 in M2.5) and ends `incomplete` on 115 (226). Only the rows
 below compare with each other; the M2.5 tables above are kept as they were.
 
-No run ended in `error` (1,240 runs). The first attempt on 2026-11-10 did, on five
+No run ended in `error` (4,960 runs: four policies, two budgets, 310 cases, each
+run twice). The first attempt on 2026-11-10 did, on five
 variant boards; that was the defect fixed in `b9dfaf2` (effect-free steps), and
 its outputs were discarded.
 
@@ -163,15 +165,17 @@ except one more thermometer case. The losses in D are the intended effect of the
 tier cap: a tier-3/4 job that spends its 100,000 units on a state without a step
 is capped, Explain climbs, and the state is resolved by a step from a higher tier
 or a different tier-3/4 family (`c12@1` 1 → 9, `c18@1` 58 → 63). `c13@1` (Remote
-Pairs, tier 2) loses its only step because that case's trajectory changed earlier.
+Pairs, tier 2) loses its only step (on `classic-312`) because that case's
+trajectory diverged earlier, at a `c06@1` step (see F).
 
 F's misses are not caused by the tier cap, which starts at tier 3. At 16M all 12
 diverge at a tier-2 step: in ten, `@3` takes a `c10@1` (single-digit pattern) step
 where `@1` takes a `c11@1` (wing) step; the other two differ at a `c06@1` and a
-`k02@1` step. `@3`'s basic fish (C06) enumerates only admissible cover sets,
-which finds the same candidates for far less work (T05), so the tier-2 jobs are
-served in a different order and the first tier-2 step can come from another
-family. At 2M, 10 cases diverge the same way and 29 more are `@1` prefixes cut by
+`k02@1` step. The likely cause, consistent with these divergences but not
+isolated by an experiment: `@3`'s basic fish (C06) enumerates only admissible
+cover sets, which finds the same candidates for far less work (T05), so the
+tier-2 jobs are served in a different order and the first tier-2 step can come
+from another family. At 2M, 10 cases diverge the same way and 29 more are `@1` prefixes cut by
 the budget that `@3` extends because it spends less. T05's "tiers 0–2 identical
 to `@1`" holds on the golden fixtures, as its acceptance states, not on the
 whole held-out partition.
