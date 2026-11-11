@@ -954,3 +954,12 @@ Record each answer here with its rationale and consequences. If an answer change
 - Exit gate: the spec's §6 targets in vitest and on the D063 benchmark matrix, 0 count disagreements against the reference DFS and the Algorithm X oracle, unchanged `@1`/`@2` traces. Provisional values (tier cap 2,000,000 units per job per state, the 30/70 split, `workUnits`) are re-derived in T08.
 - Consequence: the roadmap gains the M2.6 row between M2.5 and M3. No code exists yet; M3 waits for M2.6.
 
+
+## D104 - User-requested pause of 2026-11-10 and durable handoff
+
+- Status: confirmed user instruction, 2026-11-10 ("pare todo mundo, vamos dar uma pausa no sudoku, registre o estado atual de todos").
+- Context: the same day the user asked to move the plan forward in parallel. Seven sessions ran: one resumed M2.6, six wrote proposals or research. Usage limits and a network outage interrupted them. All seven were stopped idle; nothing was merged into `master` and nothing was pushed.
+- State: the [pause record](history/pause-2026-11-10.md) lists every branch, its commit, what is done, what is not, and the decisions each proposal leaves to the user. Loose work was committed as WIP on its own branch (M2.6 T09/T10, the M3 and M5 drafts), so no worktree holds uncommitted files.
+- M2.6: a defect found by the T09 ablation is fixed in `b9dfaf2` (effect-free checked steps no longer end the classic run in `error`), unreviewed. The ablation re-run, the T09/T10 reviews, T11 and the verification record remain. The user's conditional yes to merging M2.6 (a passing suite and a merge recommendation) was given before the pause; neither condition was met, so the merge is confirmed again on resumption.
+- The proposals of 2026-11-10 (training puzzles, M3, M4, M5 engine, detector performance, technique set semantics, hard corpus sources) stay proposals. None is approved and none has a `D` number.
+- Consequence: the pause changes scheduling only, not approved scope or correctness requirements. Resume only when the user asks, starting with the order in §5 of the record.
