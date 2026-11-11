@@ -117,7 +117,7 @@ Default limits re-derived from a browser benchmark ([m26-benchmark](m26-benchmar
 
 - Measured in Chromium only (Firefox and WebKit are not installed; installing them was not authorised), on mains. The final pass ran in the laptop's slow state throughout (CPU at its 1.6 GHz base clock). §6 verdicts: exact count, 17-clue (fast state), tier ≥ 5 at 15 s, Analyze and determinism at 60 s **met**; Easy < 1 s and Escargot count < 50 ms **met in the fast state only, missed in the slow state** (Easy 0.9–9.3 s, Escargot 64–185 ms); the 17-clue puzzle took 4.2 s once at 15 s in the slow state; ≥ 1 tier-5/6 step on Golden Nugget only (accepted, T05).
 - At 15 s in the slow state Analyze on the three hard grids, and one Inkala Explain run, still reach the time safety stop; their 15 s results therefore depend on machine speed (§6 asks for determinism at 60 s, where every run ended on work).
-- Determinism on the first defaults (`M26_DETERMINISM=1`, vitest, mains, 332 s): three runs of every corpus case at 60 s identical on all 131; the comparison leaves out `countVerifiedMs`, a timing. Re-run on the final defaults: see the review paragraph.
+- Determinism on the first defaults (`M26_DETERMINISM=1`, vitest, mains, 332 s): three runs of every corpus case at 60 s identical on all 131; the comparison leaves out `countVerifiedMs`, a timing. Re-run on the final defaults on 2026-11-11 (`M26_DETERMINISM=1`, vitest, mains, 400 s, at `07db66f`): identical on all 131 (7 solved, 3 incomplete on `tier-cap`: Escargot, Inkala 2012 and Golden Nugget, highest tier tried 6; 83 multiple and 38 zero at the precount).
 - Tests adjusted to the preset limits (`count-first` and the gated 15 s tier test use `classicLimitsFor(15_000)`).
 
 Review (independent), fixed in `fix(solver): T08 review`:
@@ -137,7 +137,7 @@ Golden traces under `explain-fair@3` (`golden-traces.test.ts`, fixture `web/test
 
 Ablation refresh ([report](m25-ablation.md), section "M2.6 refresh"): `explain-fair@3`, `analyze-fair@1` and `analyze-fair@3` added to `bench-ablate.test.ts` (configurations 10–12) and run with `explain-fair@1` on the 310 held-out cases at both budgets, twice each (52 jobs, 3 h 34 min, mains). No run ended in `error`. `explain-fair@3` against `@1`: A 51.9 %, B 11.9 %, C and E pass; **D fails** (`c08@1`, `c13@1`, `c15@1`, `c19@1` lose steps to higher tiers, the tier cap's intended effect) and **F fails** on 12 of 310 cases at 16M (a different first tier-2 step, from `@3`'s cheaper basic-fish enumeration). `analyze-fair@3` takes technique steps on 301 of 310 cases where `@1` takes none. D101's conclusion (`@2` disabled) is unchanged and no default changes; the `@3` default rests on D103.
 
-- Defect found by the first ablation attempt and fixed before this run: `b9dfaf2` (effect-free checked steps no longer end the classic run in `error`). Independent review: no defect; low findings in the T09/T10 review row below.
+- Defect found by the first ablation attempt and fixed before this run: `b9dfaf2` (effect-free checked steps no longer end the classic run in `error`).
 
 ## T10
 

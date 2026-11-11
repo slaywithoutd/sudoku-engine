@@ -1,6 +1,6 @@
 # Sudoku platform roadmap
 
-Updated: 2026-11-10. M1 and M2 are merged on master; the solver ships in the app (Analyze/Explain). Benchmark calibration of solver resource defaults is still open. M2 direction is D046–D057; completed planning and proposed choices are D059–D064; integration is D099. M2.5 (D100) is merged on master after the [whole-suite gate](history/m25-verification.md) passed; the `@2` policies ship disabled (D101). M2.6 engine hardening (D103) is implemented on `feat/m26-hardening` through T10 ([progress](history/m26-implementation-progress.md)); its T08 benchmark re-derived the solver defaults in Chromium only. The whole-suite verification (T11) and the merge into master are pending.
+Updated: 2026-11-10. M1 and M2 are merged on master; the solver ships in the app (Analyze/Explain). Solver resource defaults were re-derived from a benchmark in Chromium only (M2.6 T08); other browsers are not measured. M2 direction is D046–D057; completed planning and proposed choices are D059–D064; integration is D099. M2.5 (D100) is merged on master after the [whole-suite gate](history/m25-verification.md) passed; the `@2` policies ship disabled (D101). M2.6 engine hardening (D103) is implemented on `feat/m26-hardening` through T10 ([progress](history/m26-implementation-progress.md)); its T08 benchmark re-derived the solver defaults in Chromium only. The whole-suite verification (T11) and the merge into master are pending.
 
 ## Delivery sequence
 
