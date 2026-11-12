@@ -10,7 +10,7 @@ What the app does today:
 
 - **Play**: board-first screen with an honest timer, pause cover, corner and center notes, six cell colors with color-blind patterns, multi-selection, Fill notes from constraints only, full undo/redo, cell copy/paste and "mark correct digits" backed by the unique solution found in a worker.
 - **Create and import**: autosaved drafts, Finish locks the clues, import from 81-character strings, decorated grids, `.sdk`/`.ss`/`.sdm`/`.txt` collections and JSON game exports, with a live preview and precise errors.
-- **Solve**: 33 primary technique families plus five uniqueness-conditional ones, independently checked proofs, a separate exact solution count, Analyze (summary) and Explain (step by step with board highlights), running in a Web Worker with cancellation. Rollout of the engine's Analyze mode stays off and its resource defaults are not yet benchmarked (D063, D099).
+- **Solve**: 33 primary technique families plus five uniqueness-conditional ones, independently checked proofs, a separate exact solution count, one Solve view (steps with board highlights under a summary header, M2.7) and user-selectable technique sets, running in a Web Worker with cancellation. Rollout of the engine's Analyze mode stays off and its resource defaults are not yet benchmarked (D063, D099).
 - **Library, settings and data**: local IndexedDB storage, versioned JSON backups, light/dark and five pastel themes, accessibility options, configurable shortcuts, collapsible sidebar and fullscreen.
 
 ## Run and test

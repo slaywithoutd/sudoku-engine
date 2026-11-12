@@ -79,10 +79,17 @@ export function mountHelp(container: HTMLElement, services: ScreenServices): () 
   section(
     "Solver",
     list([
-      ["Analyze", "Result, solution count and statistics for the whole run."],
       [
-        "Explain",
+        "Steps",
         "Step through each deduction: highlighted cells show what it reasons about, struck-through candidates show what it removes.",
+      ],
+      [
+        "Summary",
+        "The header above the steps: solution count, where the logic stopped, and which techniques were used. Open it for the details.",
+      ],
+      [
+        "Techniques",
+        "Choose which technique families the explanation may use in Solver options. The solution count never depends on them.",
       ],
     ]),
     "Solving happens in the background and does not change your saved puzzles.",

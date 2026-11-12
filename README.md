@@ -37,7 +37,7 @@ Everything runs in your browser. There is no account, no server and no tracking;
 
 - 33 primary technique families plus five uniqueness-conditional ones, from singles and subsets through fish, wings, coloring, chains, ALS, forcing nets, Exocet, SK loops, Fireworks, Tridagon and templates.
 - Discovery proposes a step; an independent checker accepts it. A separate exact search counts solutions, so "unique" is never inferred from the logical path, and a "Perfect" result never depends on uniqueness.
-- Analyze shows the summary (solution count, technique statistics); Explain steps through each deduction with the reasoning cells, the changed cell and the eliminated candidates highlighted on the board.
+- Solve shows one view: the steps of the logical explanation, with the reasoning cells, the changed cell and the eliminated candidates highlighted on the board, under a one-line summary (solution count, where the logic stopped) that opens for the details. Solver options choose which technique families the explanation may use (All, Singles only, Up to subsets, Up to wings and fish, No fish, or a custom set); the solution count never depends on them.
 - Runs in a Web Worker with cancellation and honest progress (phase, steps found, elapsed time; no invented percentage).
 - The engine's time and work defaults have not been benchmark-calibrated yet, and the engine's Analyze mode and confined rollout stay off by default. See [docs/roadmap.md](docs/roadmap.md).
 

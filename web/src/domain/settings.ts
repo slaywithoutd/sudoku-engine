@@ -6,7 +6,6 @@ import {
   SCALES,
   SHORTCUT_ACTIONS,
   SOLVER_TIME_LIMITS,
-  SOLVER_VIEWS,
   THEMES,
   TIMER_STARTS,
   type Settings,
@@ -69,7 +68,6 @@ export function defaultSettings(): Settings {
     highContrast: false,
     colorPatterns: false,
     reduceMotion: false,
-    solverView: "explain",
     solverCandidates: true,
     solverHideBasic: false,
     solverAutoplayMs: 0,
@@ -88,7 +86,6 @@ const CHOICES: { [K in keyof Settings]?: readonly unknown[] } = {
   textScale: SCALES,
   digitScale: SCALES,
   palette: PALETTES,
-  solverView: SOLVER_VIEWS,
   solverAutoplayMs: AUTOPLAY_SPEEDS,
   solverTimeLimitS: SOLVER_TIME_LIMITS,
 };
@@ -99,7 +96,9 @@ export const SHORTCUT_PATTERN =
 
 /**
  * Missing fields belong to older libraries and take defaults; explicit invalid
- * values are rejected so corrupted backups never import silently.
+ * values are rejected so corrupted backups never import silently. Fields a
+ * build no longer knows are dropped: `solverView` (the Analyze/Explain switch,
+ * removed by M2.7 S4, D105) is ignored when an older library still has it.
  */
 export function normalizeSettings(
   raw: Record<string, unknown>,

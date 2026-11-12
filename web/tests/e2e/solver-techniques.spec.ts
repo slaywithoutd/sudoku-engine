@@ -2,7 +2,7 @@ import { expect, test, type Page } from "@playwright/test";
 
 // M2.7 S3 (D105): the technique selector on the Solve screen.
 
-/** The technique selection proposal's §2 puzzle: unique, and the logic stalls. */
+/** The technique selection proposal's §2 puzzle (it is AI Escargot): unique, and the logic stalls. */
 const stall = "1....7.9..3..2...8..96..5....53..9...1..8...26....4...3......1..4......7..7...3..";
 
 async function importPuzzle(page: Page, puzzle: string) {
@@ -12,12 +12,19 @@ async function importPuzzle(page: Page, puzzle: string) {
 }
 const solve = (page: Page) => page.getByRole("button", { name: "Solve", exact: true });
 const techniques = (page: Page) => page.getByRole("radiogroup", { name: "Techniques" });
+/** Opens the run's summary header (M2.7 S4: one view, the summary above the steps). */
+async function openSummary(page: Page) {
+  const header = page.getByTestId("solve-summary");
+  await expect(header).toBeVisible();
+  if ((await header.getAttribute("open")) === null) await header.locator("summary").click();
+}
 
 async function solveAndRead(page: Page) {
   await solve(page).click();
   await expect(page.locator(".game-solve")).toHaveAttribute("data-phase", "result", {
     timeout: 90_000,
   });
+  await openSummary(page);
   return {
     heading: await page.locator(".result-headline h2").textContent(),
     count: await page.locator(".solver-analysis .result-detail").first().textContent(),
@@ -38,7 +45,6 @@ test("switching No fish on the stall puzzle changes the technique coverage shown
     "aria-checked",
     "true",
   );
-  await page.getByRole("radio", { name: "Analyze" }).click();
   await importPuzzle(page, stall);
   const all = await solveAndRead(page);
   expect(all.heading).toBe("Unique solution");
@@ -90,8 +96,8 @@ test("a custom set is chosen family by family and survives a reload", async ({ p
   await expect(page.locator(".game-solve")).toHaveAttribute("data-phase", "result", {
     timeout: 60_000,
   });
-  await page.getByRole("radio", { name: "Analyze" }).click();
   await expect(page.getByRole("heading", { name: "Unique solution" })).toBeVisible();
+  await openSummary(page);
   await expect(page.getByTestId("logic-stop")).toContainText(
     "no step with the selected techniques",
   );

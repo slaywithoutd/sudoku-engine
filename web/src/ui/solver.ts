@@ -42,7 +42,6 @@ import {
   iconButton,
   labeledButton,
   menuButton,
-  segmented,
   selectControl,
   type SelectSection,
 } from "./components";
@@ -50,7 +49,7 @@ import { copyText, gameShell, toast } from "./game";
 import { clueSummary, mountPuzzleSurface, type PuzzleSurface } from "./puzzle-editor";
 import { openImportDialog } from "./import-dialog";
 import { nameField } from "./creator";
-import { renderSettingsSections, updateSetting } from "./settings-sections";
+import { renderSettingsSections } from "./settings-sections";
 
 interface Effect {
   readonly kind: "place" | "remove";
@@ -84,6 +83,7 @@ interface SolveResult {
     readonly highestTierTried: number;
   };
   readonly budgetLimitedSteps?: number;
+  readonly difficulty?: { readonly maxTier: number; readonly stepsByTier: readonly number[] };
   readonly techniqueSet?: {
     readonly enabled: readonly string[];
     readonly notSelected: readonly string[];
@@ -115,8 +115,8 @@ export function classicSolverController(services: ScreenServices): SolverControl
           input: { givens: number[] };
           options: { timeLimitMs?: number; techniqueSelection?: unknown } | null;
         };
-        // Engine Analyze stays disabled (docs/decisions.md D063): every run uses
-        // Explain, and the Analyze/Explain switch only changes the presentation.
+        // Engine Analyze stays disabled (docs/decisions.md D063, D105): every run
+        // uses Explain, and the Solve screen has one view, the steps with a summary.
         return startWorker(
           {
             kind: "solve-classic",
@@ -288,20 +288,6 @@ export function mountSolver(
   // Solver panel --------------------------------------------------------------
   const panel = el("section", undefined, "solver-panel");
   panel.setAttribute("aria-label", "Solver");
-  const view = segmented<Settings["solverView"]>({
-    label: "Solver view",
-    items: [
-      { value: "analyze", label: "Analyze", icon: "eye" },
-      { value: "explain", label: "Explain", icon: "flag" },
-    ],
-    value: settings().solverView,
-    onChange: (value) => {
-      updateSetting(services, "solverView", value);
-      stopAutoplay();
-      render();
-    },
-    className: "view-switch",
-  });
   const solve = labeledButton("play", "Solve", () => run(), "primary solve-button");
   const cancel = labeledButton("stop", "Cancel", () => solver.cancel("user"), "cancel-button");
   const edit = labeledButton("pen", "Edit puzzle", () => backToEdit(), "edit-button");
@@ -320,8 +306,15 @@ export function mountSolver(
   progressBar.append(el("span"));
   const progressStats = el("dl", undefined, "stats compact");
   progress.append(progressBar, progressStats);
+  // One Solve view (M2.7 S4, D105): the run's summary is a header above the
+  // step list, collapsed to one line so the steps stay in view.
+  const header = el("details", undefined, "solve-summary");
+  header.dataset.testid = "solve-summary";
+  const headerLine = el("summary");
   const analysis = el("div", undefined, "solver-analysis");
   analysis.dataset.testid = "solver-verification";
+  header.append(headerLine, analysis);
+  let showSolution = false;
   const explain = el("div", undefined, "solver-explain");
   const options = el("details", undefined, "solver-options");
   const optionsSummary = el("summary");
@@ -330,17 +323,7 @@ export function mountSolver(
   const offOptions = renderSettingsSections(options, services, ["solver"]);
   const controls = el("div", undefined, "solver-actions");
   controls.append(solve, cancel, edit);
-  panel.append(
-    view.node,
-    controls,
-    techniqueSet,
-    status,
-    progress,
-    feedback,
-    analysis,
-    explain,
-    options,
-  );
+  panel.append(controls, techniqueSet, status, progress, feedback, header, explain, options);
   shell.side.append(panel);
 
   // Explain navigator
@@ -479,6 +462,7 @@ export function mountSolver(
     const shown = visible();
     if (!shown.length) return;
     current = Math.max(0, Math.min(shown.length - 1, index));
+    showSolution = false;
     if (current === shown.length - 1) stopAutoplay();
     render();
     stepList.children.item(current)?.scrollIntoView({ block: "nearest" });
@@ -497,7 +481,6 @@ export function mountSolver(
   const onKey = (event: KeyboardEvent) => {
     if (
       phase !== "result" ||
-      settings().solverView !== "explain" ||
       event.target instanceof HTMLInputElement ||
       document.querySelector("dialog[open]")
     )
@@ -519,6 +502,7 @@ export function mountSolver(
     list.append(el("dt", label), el("dd", value));
   const renderAnalysis = () => {
     analysis.replaceChildren();
+    headerLine.replaceChildren();
     if (phase !== "result" || !result) return;
     const headline = el("div", undefined, "result-headline");
     const solved = result.count === "unique";
@@ -586,13 +570,76 @@ export function mountSolver(
     stat(stats, "Logical steps", String(steps.length));
     stat(stats, "Solved by logic", result.human === "solved" ? "Yes" : "No");
     stat(stats, "Time", `${((finishedAt - startedAt) / 1000).toFixed(1)} s`);
-    analysis.append(headline, detail);
+    // The collapsed line: the count's verdict and where the logic ended.
+    const line = el(
+      "span",
+      result.error
+        ? ""
+        : result.human === "solved"
+          ? "Solved by logic"
+          : stop.textContent?.replace(/^Logic: /, "") ||
+            logicalSummary(result.human ?? "", result.steps ?? 0, restricted),
+      "summary-line",
+    );
+    headerLine.append(headline, line);
+    const difficulty = result.difficulty;
+    const highest = el(
+      "p",
+      !difficulty || result.error
+        ? ""
+        : `Highest tier used: ${
+            difficulty.maxTier < 0 ? "none, basic eliminations only" : difficulty.maxTier
+          }${restricted ? " (with the selected techniques)" : ""}`,
+      "result-detail",
+    );
+    highest.dataset.testid = "highest-tier";
+    const perTier = el(
+      "p",
+      !difficulty || result.error
+        ? ""
+        : `Steps per tier: ${
+            difficulty.stepsByTier
+              .flatMap((count, index) =>
+                count
+                  ? [`${index === 0 ? "Basic elimination" : `tier ${index - 1}`} ${count}`]
+                  : [],
+              )
+              .join(", ") || "none"
+          }`,
+      "result-detail",
+    );
+    perTier.dataset.testid = "steps-per-tier";
+    const lists = el("dl", undefined, "coverage-lists");
+    lists.dataset.testid = "coverage-lists";
+    for (const [label, names] of [
+      ["Exhausted", result.coverage?.exhausted],
+      ["Capped", result.coverage?.capped],
+      ["Not started", result.coverage?.notStarted],
+      ["Not selected", result.techniqueSet?.notSelected],
+    ] as const)
+      if (names?.length) lists.append(el("dt", label), el("dd", names.join(", ")));
+    const solutionToggle = labeledButton(
+      "eye",
+      showSolution ? "Show steps" : "Show solution",
+      () => {
+        showSolution = !showSolution;
+        stopAutoplay();
+        render();
+      },
+      "ghost solution-toggle",
+    );
+    solutionToggle.setAttribute("aria-pressed", String(showSolution));
+    analysis.append(detail);
     if (verification.textContent) analysis.append(verification);
     if (logic.textContent) analysis.append(logic);
     if (stop.textContent) analysis.append(stop);
     if (coverage.textContent && result.human !== "not-started") analysis.append(coverage);
     if (setLimited.textContent) analysis.append(setLimited);
+    if (highest.textContent) analysis.append(highest);
+    if (perTier.textContent && steps.length) analysis.append(perTier);
     analysis.append(stats);
+    if (lists.childElementCount && result.human !== "not-started") analysis.append(lists);
+    if (result.solution && steps.length) analysis.append(solutionToggle);
     const capped = new Set(result.coverage?.capped ?? []);
     if (steps.length || capped.size) {
       const counts = new Map<string, number>();
@@ -630,7 +677,9 @@ export function mountSolver(
       return undefined;
     }
     if (listedFor.length !== shown.length || listedFor.some((step, i) => step !== shown[i])) {
-      listedFor = shown;
+      // A copy: `visible()` can return the live `steps` array, which grows while
+      // the run is going, so keeping it would hide every later step.
+      listedFor = [...shown];
       stepList.replaceChildren(
         ...shown.map((step, i) => {
           const item = el("li");
@@ -749,7 +798,6 @@ export function mountSolver(
   function render() {
     const running = phase === "running",
       s = settings();
-    view.set(s.solverView);
     const { text, conflicts } = clueSummary(phase === "edit" ? editor : editorFrom(clues));
     summary.textContent = text;
     summary.classList.toggle("danger", !!conflicts);
@@ -772,13 +820,15 @@ export function mountSolver(
     status.hidden = phase === "edit";
     techniqueSet.textContent = phase === "edit" ? techniqueSetText(s) : runTechniques;
     renderProgress();
-    const explaining = s.solverView === "explain" && phase !== "edit";
+    const explaining = phase !== "edit";
     explain.hidden = !explaining;
-    analysis.hidden = s.solverView !== "analyze" || phase !== "result";
+    header.hidden = phase !== "result";
+    if (phase !== "result") showSolution = false;
     renderAnalysis();
     if (surface) surface.render();
     if (display) {
-      const explained = explaining && phase === "result" ? renderExplain() : undefined;
+      const explained =
+        explaining && phase === "result" && !showSolution ? renderExplain() : undefined;
       if (explained)
         display.update(
           editorFrom(explained.values),
@@ -851,7 +901,7 @@ export function mountSolver(
                 };
           status.textContent = solverStatus(result.outcome ?? snapshot.outcome);
           current = 0;
-          if (settings().solverAutoplayMs && settings().solverView === "explain") startAutoplay();
+          if (settings().solverAutoplayMs) startAutoplay();
         }
       }
     }

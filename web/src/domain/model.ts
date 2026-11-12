@@ -91,7 +91,6 @@ export type Theme = (typeof THEMES)[number];
 export const TIMER_STARTS = ["immediately", "first-move"] as const;
 export const SCALES = [100, 115, 130] as const;
 export const PALETTES = ["default", "colorblind"] as const;
-export const SOLVER_VIEWS = ["analyze", "explain"] as const;
 export const AUTOPLAY_SPEEDS = [0, 1500, 800, 350] as const;
 export const SOLVER_TIME_LIMITS = [15, 60, 180] as const;
 export const NOTE_MODIFIERS = ["Shift", "Control", "Alt", "None"] as const;
@@ -147,7 +146,6 @@ export interface Settings {
   highContrast: boolean;
   colorPatterns: boolean;
   reduceMotion: boolean;
-  solverView: (typeof SOLVER_VIEWS)[number];
   solverCandidates: boolean;
   /** Explain skips "Basic elimination" steps (their effects still apply). */
   solverHideBasic: boolean;

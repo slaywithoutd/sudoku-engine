@@ -2340,11 +2340,62 @@ dialog .actions .ghost:first-child {
   border-radius: var(--radius-lg);
   corner-shape: squircle;
 }
-.view-switch {
-  display: flex;
+/* One Solve view (M2.7 S4): the run's summary, collapsed to one line above the steps. */
+.solve-summary {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  corner-shape: squircle;
+  padding: 0.5rem 0.75rem;
 }
-.view-switch .segment {
-  flex: 1;
+.solve-summary[hidden] {
+  display: none;
+}
+.solve-summary > summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem 0.75rem;
+  cursor: pointer;
+  list-style: none;
+}
+.solve-summary > summary::-webkit-details-marker {
+  display: none;
+}
+.solve-summary > summary::after {
+  content: "";
+  margin-left: auto;
+  width: 0.45rem;
+  height: 0.45rem;
+  border-right: 2px solid var(--muted);
+  border-bottom: 2px solid var(--muted);
+  transform: rotate(45deg);
+  transition: transform 0.15s;
+}
+.solve-summary[open] > summary::after {
+  transform: rotate(-135deg);
+}
+.solve-summary .summary-line {
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+.solve-summary .solver-analysis {
+  margin-top: 0.6rem;
+}
+.coverage-lists {
+  display: grid;
+  gap: 0.15rem;
+  margin: 0;
+  font-size: 0.8rem;
+}
+.coverage-lists dt {
+  color: var(--muted);
+  font-weight: 600;
+}
+.coverage-lists dd {
+  margin: 0 0 0.3rem;
+}
+.solution-toggle {
+  justify-self: start;
 }
 .solver-actions {
   display: flex;
