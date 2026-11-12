@@ -1,7 +1,7 @@
 import type { Digit, EditorContext, EditorState, Settings } from "../domain/model";
 import type { BoardAction } from "../domain/editor";
 import { selectionOf } from "../domain/editor";
-import { mergedSides, selectionOutlinePath } from "./selection-outline";
+import { concaveCorners, mergedSides, selectionOutlinePath } from "./selection-outline";
 import { conflictingCells, effectiveValues, noteConflicts, peersOf } from "../domain/classic";
 import { el } from "./dom";
 
@@ -230,6 +230,11 @@ export function mountBoard(container: HTMLElement, options: BoardOptions): Board
       cell.classList.toggle("merged-right", !!merged?.right);
       cell.classList.toggle("merged-down", !!merged?.down);
       cell.classList.toggle("merged-left", !!merged?.left);
+      const notch = isSelected ? concaveCorners(i, selection) : undefined;
+      cell.classList.toggle("notch-tl", !!notch?.topLeft);
+      cell.classList.toggle("notch-tr", !!notch?.topRight);
+      cell.classList.toggle("notch-br", !!notch?.bottomRight);
+      cell.classList.toggle("notch-bl", !!notch?.bottomLeft);
       cell.classList.toggle(
         "same-digit",
         !!selectedDigit && !isSelected && display.highlightSameDigit && values[i] === selectedDigit,

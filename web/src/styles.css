@@ -1685,10 +1685,45 @@ dialog .actions .ghost:first-child {
   --merge-tl: 0;
   --merge-bl: 0;
 }
+/* At a concave corner of the region (both sides merged, diagonal cell not
+   selected) the outline cuts across the corner by the inset, so the tint
+   leaves that small square out instead of showing past the stroke. */
+.cell[aria-selected="true"] {
+  --notch-tl: 0%;
+  --notch-tr: 0%;
+  --notch-br: 0%;
+  --notch-bl: 0%;
+}
+.cell.notch-tl {
+  --notch-tl: 6%;
+}
+.cell.notch-tr {
+  --notch-tr: 6%;
+}
+.cell.notch-br {
+  --notch-br: 6%;
+}
+.cell.notch-bl {
+  --notch-bl: 6%;
+}
 .cell[data-color][aria-selected="true"]::before {
   inset: var(--merge-top) var(--merge-right) var(--merge-bottom) var(--merge-left);
   border-radius: var(--merge-tl) var(--merge-tr) var(--merge-br) var(--merge-bl);
   corner-shape: round;
+  clip-path: polygon(
+    0 var(--notch-tl),
+    var(--notch-tl) var(--notch-tl),
+    var(--notch-tl) 0,
+    calc(100% - var(--notch-tr)) 0,
+    calc(100% - var(--notch-tr)) var(--notch-tr),
+    100% var(--notch-tr),
+    100% calc(100% - var(--notch-br)),
+    calc(100% - var(--notch-br)) calc(100% - var(--notch-br)),
+    calc(100% - var(--notch-br)) 100%,
+    var(--notch-bl) 100%,
+    var(--notch-bl) calc(100% - var(--notch-bl)),
+    0 calc(100% - var(--notch-bl))
+  );
 }
 /* Highlight strength for the "seen" and selection overlays below, as a
    layer over whatever the cell already shows. Every highlighted cell keeps
@@ -1720,12 +1755,16 @@ dialog .actions .ghost:first-child {
   z-index: 1;
 }
 /* The selection fill lives in the overlay under the cells; the cell's own
-   layer stays clear (hover included) so the merged shape shows through. */
-.board .cell[aria-selected="true"]::before {
+   layer stays clear (hover included, which the :not() lifts above the hover
+   rule) so the merged shape shows through. A conflict keeps its tint. */
+.board .cell[aria-selected="true"]:not(.conflict)::before {
   background: none;
 }
 .board .cell[data-color][aria-selected="true"]::before {
   background: color-mix(in srgb, var(--selection) var(--selected-opacity), transparent);
+}
+.board .cell.conflict[aria-selected="true"]::before {
+  background: color-mix(in srgb, var(--danger-surface) 75%, transparent);
 }
 /* One merged shape per selection region: the fill sits below the cells and
    the outline above the grid lines. */

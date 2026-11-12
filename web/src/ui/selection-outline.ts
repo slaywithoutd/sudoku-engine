@@ -43,7 +43,7 @@ const direction = ({ from, to }: Edge): Point => [
 ];
 /** Clockwise quarter turn in screen coordinates (y grows downwards). */
 const turnRight = ([dx, dy]: Point): Point => [-dy, dx];
-const same = (a: Point, b: Point) => a[0] === b[0] && a[1] === b[1];
+const same = (first: Point, second: Point) => first[0] === second[0] && first[1] === second[1];
 
 /**
  * Chains boundary edges into closed loops. Where two selected cells touch
@@ -53,40 +53,43 @@ const same = (a: Point, b: Point) => a[0] === b[0] && a[1] === b[1];
 function loops(edges: Edge[]): Point[][] {
   const outgoing = new Map<string, Edge[]>();
   for (const edge of edges) {
-    const k = key(edge.from);
-    outgoing.set(k, [...(outgoing.get(k) ?? []), edge]);
+    const vertex = key(edge.from);
+    outgoing.set(vertex, [...(outgoing.get(vertex) ?? []), edge]);
   }
-  const take = (from: Point, heading: Point | undefined): Edge | undefined => {
+  const take = (from: Point, heading: Point): Edge | undefined => {
     const options = outgoing.get(key(from));
     if (!options?.length) return undefined;
-    let pick = options[0];
-    if (heading && options.length > 1) {
-      const right = turnRight(heading);
-      pick =
-        options.find((e) => same(direction(e), right)) ??
-        options.find((e) => same(direction(e), heading)) ??
-        options[0];
-    }
+    const right = turnRight(heading);
+    const pick =
+      options.find((option) => same(direction(option), right)) ??
+      options.find((option) => same(direction(option), heading)) ??
+      options[0];
     options.splice(options.indexOf(pick), 1);
     return pick;
   };
   const result: Point[][] = [];
   for (const start of edges) {
     if (!outgoing.get(key(start.from))?.includes(start)) continue;
+    // The start edge stays available while walking: the loop closes when the
+    // turn rule picks it again, not merely when the walk revisits its vertex,
+    // which a region pinched at a diagonal does before its loop is complete.
     const loop: Point[] = [];
-    let edge: Edge | undefined = take(start.from, undefined),
+    let edge: Edge | undefined = start,
       heading: Point | undefined;
     while (edge) {
-      const d = direction(edge);
+      const step = direction(edge);
       // Merge collinear runs so every vertex of the loop is a real corner.
-      if (!heading || !same(heading, d)) loop.push(edge.from);
-      heading = d;
-      edge = same(edge.to, start.from) ? undefined : take(edge.to, heading);
+      if (!heading || !same(heading, step)) loop.push(edge.from);
+      heading = step;
+      edge = take(edge.to, heading);
+      if (edge === start) edge = undefined;
     }
     result.push(loop);
   }
   return result;
 }
+
+const format = (value: number) => String(Math.round(value * 1000) / 1000);
 
 /** SVG path data for the outline of `selection`, in cell units. */
 export function selectionOutlinePath(
@@ -103,12 +106,12 @@ export function selectionOutlinePath(
         after = raw[(i + 1) % raw.length];
       return !same(direction({ from: before, to: point }), direction({ from: point, to: after }));
     });
-    const n = loop.length;
+    const count = loop.length;
     // Shift every edge inwards by `inset`; a corner is where the two shifted
     // edges meet, which works the same for convex and concave corners.
     const corners = loop.map((point, i) => {
-      const before = loop[(i - 1 + n) % n],
-        after = loop[(i + 1) % n],
+      const before = loop[(i - 1 + count) % count],
+        after = loop[(i + 1) % count],
         dIn = direction({ from: before, to: point }),
         dOut = direction({ from: point, to: after }),
         nIn = turnRight(dIn),
@@ -121,18 +124,23 @@ export function selectionOutlinePath(
         convex: same(dOut, turnRight(dIn)),
       };
     });
-    const fmt = (v: number) => String(Math.round(v * 1000) / 1000);
     const segments = corners.map(({ x, y, dIn, dOut, convex }) => {
       // Only convex corners are rounded; concave ones stay sharp so the
       // outline matches the square inner corners of the cells' own fill.
-      const r = convex ? radius : 0;
-      const a = [x - dIn[0] * r, y - dIn[1] * r],
-        b = [x + dOut[0] * r, y + dOut[1] * r];
-      return { start: a, curve: r ? `Q${fmt(x)} ${fmt(y)} ${fmt(b[0])} ${fmt(b[1])}` : "" };
+      const round = convex ? radius : 0;
+      const enter = [x - dIn[0] * round, y - dIn[1] * round],
+        leave = [x + dOut[0] * round, y + dOut[1] * round];
+      return {
+        start: enter,
+        curve: round ? `Q${format(x)} ${format(y)} ${format(leave[0])} ${format(leave[1])}` : "",
+      };
     });
     parts.push(
       segments
-        .map(({ start, curve }, i) => `${i ? "L" : "M"}${fmt(start[0])} ${fmt(start[1])}${curve}`)
+        .map(
+          ({ start, curve }, i) =>
+            `${i ? "L" : "M"}${format(start[0])} ${format(start[1])}${curve}`,
+        )
         .join("") + "Z",
     );
   }
@@ -152,5 +160,25 @@ export function mergedSides(
     down: row < size - 1 && selection.has(index + size),
     left: col > 0 && selection.has(index - 1),
     right: col < size - 1 && selection.has(index + 1),
+  };
+}
+
+/**
+ * Corners of a selected cell where the merged region turns concavely: both
+ * sides meeting at the corner touch selected cells but the diagonal cell is
+ * not selected. The outline cuts across such a corner by OUTLINE_INSET, so a
+ * cell that tints itself must leave that small square out too.
+ */
+export function concaveCorners(
+  index: number,
+  selection: ReadonlySet<number>,
+  size = 9,
+): { topLeft: boolean; topRight: boolean; bottomRight: boolean; bottomLeft: boolean } {
+  const { up, right, down, left } = mergedSides(index, selection, size);
+  return {
+    topLeft: up && left && !selection.has(index - size - 1),
+    topRight: up && right && !selection.has(index - size + 1),
+    bottomRight: down && right && !selection.has(index + size + 1),
+    bottomLeft: down && left && !selection.has(index + size - 1),
   };
 }

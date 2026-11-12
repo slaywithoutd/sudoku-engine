@@ -78,10 +78,12 @@ test("all ten appearances apply across settings, board and dialogs and survive r
           getComputedStyle(document.querySelector(selector)!, pseudo);
         // Nothing between the cell and <html> paints its own background.
         const pageBackdrop = style("html").backgroundColor;
-        const selectedBackdrop = composite(
-          style('[data-cell-index="2"]', "::before").backgroundColor,
-          pageBackdrop,
-        );
+        // The selection is painted by the merged-shape overlay under the
+        // cells, not by the selected cell's own layer.
+        const selectionFill = style(".selection-fill path").fill;
+        if (!selectionFill.includes("color(") && !selectionFill.startsWith("rgb"))
+          throw new Error(`unexpected selection fill: ${selectionFill}`);
+        const selectedBackdrop = composite(selectionFill, pageBackdrop);
         return [
           ratio(style("html").color, style("html").backgroundColor),
           ratio(style(".save-area").color, style(".sidebar").backgroundColor),
