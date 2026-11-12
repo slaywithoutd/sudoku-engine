@@ -20,10 +20,22 @@ import {
   cellName,
   countSummary,
   countVerification,
+  coverageLine,
   logicalSummary,
   logicStop,
+  SET_LIMITED_NOTE,
+  setLimitedSummary,
   solverStatus,
+  techniqueSetLine,
 } from "./solver-copy";
+import { CUSTOM_TECHNIQUE_SET } from "../domain/settings";
+import {
+  DEFAULT_TECHNIQUE_PRESET,
+  profileRowIds,
+  resolveTechniqueSet,
+  TECHNIQUE_PRESETS,
+  type TechniqueSelection,
+} from "../solver/techniques/technique-sets";
 import { el, button } from "./dom";
 import { icon } from "./icons";
 import {
@@ -53,6 +65,7 @@ interface SolveStep {
   readonly candidates?: readonly number[];
   readonly cells?: readonly number[];
   readonly budgetLimited?: boolean;
+  readonly setLimited?: boolean;
 }
 interface SolveResult {
   readonly outcome: string;
@@ -71,6 +84,12 @@ interface SolveResult {
     readonly highestTierTried: number;
   };
   readonly budgetLimitedSteps?: number;
+  readonly techniqueSet?: {
+    readonly enabled: readonly string[];
+    readonly notSelected: readonly string[];
+    readonly lowestTierNotSelected: number;
+    readonly setLimitedSteps: number;
+  };
 }
 type SolveEvent =
   | ({ readonly kind: "step" } & SolveStep)
@@ -114,6 +133,36 @@ export function classicSolverController(services: ScreenServices): SolverControl
       },
     },
   });
+}
+
+/** The families the Solve screen offers: the classic profile's rows. */
+const CLASSIC_ROWS = profileRowIds("classic-expanded@1");
+/**
+ * The run's technique selection from settings (M2.7, D105): nothing for "All",
+ * so a default run sends the same request as before; the stored switched-off
+ * ids for "Custom".
+ */
+export function techniqueSelectionOf(
+  settings: Pick<Settings, "solverTechniquePreset" | "solverTechniquesOff">,
+): TechniqueSelection | undefined {
+  if (settings.solverTechniquePreset === CUSTOM_TECHNIQUE_SET)
+    return { off: [...settings.solverTechniquesOff] };
+  return settings.solverTechniquePreset === DEFAULT_TECHNIQUE_PRESET
+    ? undefined
+    : { preset: settings.solverTechniquePreset };
+}
+/** "Techniques: No fish (28 of 33)" for the current settings. */
+function techniqueSetText(
+  settings: Pick<Settings, "solverTechniquePreset" | "solverTechniquesOff">,
+): string {
+  const selection = techniqueSelectionOf(settings),
+    enabled = resolveTechniqueSet("classic-expanded@1", selection) ?? CLASSIC_ROWS;
+  const label =
+    settings.solverTechniquePreset === CUSTOM_TECHNIQUE_SET
+      ? "Custom"
+      : (TECHNIQUE_PRESETS.find((preset) => preset.id === settings.solverTechniquePreset)?.label ??
+        settings.solverTechniquePreset);
+  return techniqueSetLine(label, enabled.length, CLASSIC_ROWS.length);
 }
 
 /** Human description of one deduction, e.g. "B4 = 5" or "Removes 7 from B3, B4". */
@@ -256,6 +305,10 @@ export function mountSolver(
   const solve = labeledButton("play", "Solve", () => run(), "primary solve-button");
   const cancel = labeledButton("stop", "Cancel", () => solver.cancel("user"), "cancel-button");
   const edit = labeledButton("pen", "Edit puzzle", () => backToEdit(), "edit-button");
+  // The set of the next run while editing, the set of the shown run afterwards.
+  const techniqueSet = el("p", undefined, "technique-set");
+  techniqueSet.dataset.testid = "technique-set";
+  let runTechniques = "";
   const status = el("p", "Ready", "solver-status");
   status.setAttribute("role", "status");
   status.dataset.testid = "solver-status";
@@ -277,7 +330,17 @@ export function mountSolver(
   const offOptions = renderSettingsSections(options, services, ["solver"]);
   const controls = el("div", undefined, "solver-actions");
   controls.append(solve, cancel, edit);
-  panel.append(view.node, controls, status, progress, feedback, analysis, explain, options);
+  panel.append(
+    view.node,
+    controls,
+    techniqueSet,
+    status,
+    progress,
+    feedback,
+    analysis,
+    explain,
+    options,
+  );
   shell.side.append(panel);
 
   // Explain navigator
@@ -293,7 +356,7 @@ export function mountSolver(
   const stepCard = el("div", undefined, "step-card"),
     stepName = el("h3"),
     stepText = el("p");
-  const stepNote = el("p", BUDGET_LIMITED_NOTE, "step-note");
+  const stepNote = el("p", undefined, "step-note");
   stepNote.hidden = true;
   stepCard.append(stepName, stepText, stepNote);
   const stepList = el("ol", undefined, "step-list");
@@ -387,7 +450,12 @@ export function mountSolver(
     finishedAt = 0;
     lastPhase = "human";
     solver.replaceInput({ givens: values });
-    solver.setOptions({ timeLimitMs: settings().solverTimeLimitS * 1000 });
+    const selection = techniqueSelectionOf(settings());
+    runTechniques = techniqueSetText(settings());
+    solver.setOptions({
+      timeLimitMs: settings().solverTimeLimitS * 1000,
+      ...(selection ? { techniqueSelection: selection } : {}),
+    });
     // Enter the running phase only after resetting input, whose "idle" notice is not a finished run.
     phase = "running";
     mountDisplay();
@@ -479,7 +547,12 @@ export function mountSolver(
       result.error ? result.error : countSummary(result.count ?? "unknown"),
       "result-detail",
     );
-    const logic = el("p", logicalSummary(result.human ?? "", result.steps ?? 0), "result-detail");
+    const restricted = !!result.techniqueSet;
+    const logic = el(
+      "p",
+      logicalSummary(result.human ?? "", result.steps ?? 0, restricted),
+      "result-detail",
+    );
     const verification = el(
       "p",
       result.error
@@ -490,10 +563,24 @@ export function mountSolver(
     verification.dataset.testid = "count-verification";
     const stop = el(
       "p",
-      logicStop(result.human ?? "", result.stopReason, result.coverage),
+      logicStop(result.human ?? "", result.stopReason, result.coverage, restricted),
       "result-detail",
     );
     stop.dataset.testid = "logic-stop";
+    const coverage = el(
+      "p",
+      result.coverage
+        ? coverageLine(result.coverage, result.techniqueSet?.notSelected.length ?? 0)
+        : "",
+      "result-detail",
+    );
+    coverage.dataset.testid = "technique-coverage";
+    const setLimited = el(
+      "p",
+      setLimitedSummary(result.techniqueSet?.setLimitedSteps ?? 0),
+      "result-detail",
+    );
+    setLimited.dataset.testid = "set-limited-summary";
     const stats = el("dl", undefined, "stats");
     stat(stats, "Clues", String(clues.filter(Boolean).length));
     stat(stats, "Logical steps", String(steps.length));
@@ -503,6 +590,8 @@ export function mountSolver(
     if (verification.textContent) analysis.append(verification);
     if (logic.textContent) analysis.append(logic);
     if (stop.textContent) analysis.append(stop);
+    if (coverage.textContent && result.human !== "not-started") analysis.append(coverage);
+    if (setLimited.textContent) analysis.append(setLimited);
     analysis.append(stats);
     const capped = new Set(result.coverage?.capped ?? []);
     if (steps.length || capped.size) {
@@ -569,7 +658,13 @@ export function mountSolver(
     play.setAttribute("aria-label", autoplay ? "Pause steps" : "Play steps");
     stepName.textContent = step.name;
     stepText.textContent = describeStep(step);
-    stepNote.hidden = !step.budgetLimited;
+    stepNote.textContent = [
+      step.budgetLimited ? BUDGET_LIMITED_NOTE : "",
+      step.setLimited ? SET_LIMITED_NOTE : "",
+    ]
+      .filter(Boolean)
+      .join(" ");
+    stepNote.hidden = !stepNote.textContent;
     // Board shows the grid *before* the step, with its reasoning highlighted.
     const before = order === 0 ? clues : steps[order - 1].values;
     const focus = new Set(step.effects.map((e) => e.cell));
@@ -675,6 +770,7 @@ export function mountSolver(
     // Conflicts no longer block solving: a notice, not an error.
     feedback.classList.toggle("error", false);
     status.hidden = phase === "edit";
+    techniqueSet.textContent = phase === "edit" ? techniqueSetText(s) : runTechniques;
     renderProgress();
     const explaining = s.solverView === "explain" && phase !== "edit";
     explain.hidden = !explaining;

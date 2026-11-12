@@ -8,7 +8,8 @@ import {
   type Settings,
   type ShortcutAction,
 } from "../domain/model";
-import { DEFAULT_SHORTCUTS } from "../domain/settings";
+import { CUSTOM_TECHNIQUE_SET, DEFAULT_SHORTCUTS } from "../domain/settings";
+import { compareIds, TECHNIQUE_PRESETS, TECHNIQUE_ROWS } from "../solver/techniques/technique-sets";
 import { parsePuzzleString } from "../domain/classic";
 import { el, button } from "./dom";
 import { comboLabel, iconButton, segmented, switchField } from "./components";
@@ -359,6 +360,16 @@ export function renderSettingsSections(
     ],
     shortcuts: () => shortcutRows(services, refreshers),
     solver: () => [
+      choice(
+        "solverTechniquePreset",
+        "Techniques",
+        [
+          ...TECHNIQUE_PRESETS.map((preset) => ({ value: preset.id, label: preset.label })),
+          { value: CUSTOM_TECHNIQUE_SET, label: "Custom" },
+        ],
+        "Families the logical explanation may use. The solution count never depends on them",
+      ),
+      customTechniques(services, refreshers),
       toggle("solverCandidates", "Show candidates while explaining"),
       toggle("solverHideBasic", "Hide basic eliminations", "Explain only named techniques"),
       choice("solverAutoplayMs", "Step playback", [
@@ -394,6 +405,61 @@ export function renderSettingsSections(
   const refresh = () => refreshers.forEach((r) => r(settings()));
   refresh();
   return services.controller.subscribe(refresh);
+}
+
+/** Primary classic rows: the families the Solve screen runs (M2.7, D105). */
+const SELECTABLE_ROWS = TECHNIQUE_ROWS.filter((row) => row.kind === "primary");
+
+/**
+ * The custom technique set: one checkbox per family, grouped by tier, shown
+ * only while the preset is "Custom". It stores the switched-off ids (D105
+ * item 4) and keeps ids of rows it does not show, such as variant rows.
+ */
+function customTechniques(services: ScreenServices, refreshers: Refresher[]): HTMLElement {
+  const settings = () => services.controller.snapshot().settings;
+  const node = el("fieldset", undefined, "technique-custom");
+  node.append(el("legend", "Custom set", "field-label"));
+  const write = (off: Iterable<string>) =>
+    updateSetting(services, "solverTechniquesOff", [...new Set(off)].sort(compareIds));
+  const shown = new Set(SELECTABLE_ROWS.map((row) => row.id));
+  const hiddenOff = () => settings().solverTechniquesOff.filter((id) => !shown.has(id));
+  const boxes = new Map<string, HTMLInputElement>();
+  const quick = el("div", undefined, "technique-quick");
+  quick.append(
+    button("Switch all on", () => write(hiddenOff()), "ghost"),
+    button("Switch all off", () => write([...hiddenOff(), ...shown]), "ghost"),
+  );
+  node.append(quick);
+  for (const tier of [...new Set(SELECTABLE_ROWS.map((row) => row.tier))].sort()) {
+    const group = el("div", undefined, "technique-tier");
+    group.setAttribute("role", "group");
+    const title = el("p", `Tier ${tier}`, "technique-tier-label");
+    title.id = crypto.randomUUID();
+    group.setAttribute("aria-labelledby", title.id);
+    group.append(title);
+    for (const row of SELECTABLE_ROWS.filter((item) => item.tier === tier)) {
+      const option = el("label", undefined, "technique-option"),
+        box = el("input");
+      box.type = "checkbox";
+      box.dataset.technique = row.id;
+      box.addEventListener("change", () => {
+        const off = new Set(settings().solverTechniquesOff);
+        if (box.checked) off.delete(row.id);
+        else off.add(row.id);
+        write(off);
+      });
+      option.append(box, el("span", row.label));
+      boxes.set(row.id, box);
+      group.append(option);
+    }
+    node.append(group);
+  }
+  refreshers.push((s) => {
+    node.hidden = s.solverTechniquePreset !== CUSTOM_TECHNIQUE_SET;
+    const off = new Set(s.solverTechniquesOff);
+    for (const [id, box] of boxes) box.checked = !off.has(id);
+  });
+  return node;
 }
 
 function shortcutRows(services: ScreenServices, refreshers: Refresher[]): HTMLElement[] {

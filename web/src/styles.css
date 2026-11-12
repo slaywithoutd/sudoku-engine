@@ -2646,6 +2646,54 @@ dialog .actions .ghost:first-child {
   flex: 1;
 }
 
+/* Technique set (M2.7, D105): the custom set's families, grouped by tier. */
+.technique-custom {
+  display: grid;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0.5rem 0 0.75rem;
+  border: 0;
+  min-width: 0;
+}
+.technique-custom[hidden] {
+  display: none;
+}
+.technique-custom legend {
+  padding: 0;
+}
+.technique-quick {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+.technique-tier {
+  display: grid;
+  gap: 0.2rem;
+}
+.technique-tier-label {
+  margin: 0.25rem 0 0;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+}
+.technique-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+.technique-option input {
+  margin: 0.15rem 0 0;
+  accent-color: var(--accent);
+}
+.technique-set {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
 /* ==========================================================================
    Motion
    ========================================================================== */

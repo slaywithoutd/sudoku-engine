@@ -1,5 +1,13 @@
 import { describe, expect, test } from "vitest";
-import { countVerification, logicStop } from "../../src/ui/solver-copy";
+import {
+  countVerification,
+  coverageLine,
+  logicalSummary,
+  logicStop,
+  SET_LIMITED_NOTE,
+  setLimitedSummary,
+  techniqueSetLine,
+} from "../../src/ui/solver-copy";
 
 // M2.6 T07: the Solve screen's count and logic lines (spec §4.5).
 describe("solver copy", () => {
@@ -36,6 +44,47 @@ describe("solver copy", () => {
     );
     expect(logicStop("invalidated", "contradiction", coverage(2))).toBe(
       "Logic: the explanation did not match the count",
+    );
+  });
+});
+
+// M2.7 S3 (D105): wording under a technique set.
+describe("solver copy for technique sets", () => {
+  const coverage = { highestTierTried: 2, notStarted: [] as string[] };
+  test("a restricted stall speaks of the selected techniques, never of the puzzle", () => {
+    expect(logicalSummary("stalled-within-profile", 27, true)).toBe(
+      "No step with the selected techniques after 27 steps.",
+    );
+    expect(logicalSummary("stalled-within-profile", 27)).toBe(
+      "Logical techniques stalled after 27 steps.",
+    );
+    expect(logicStop("stalled-within-profile", "profile-stall", coverage, true)).toBe(
+      "Logic: stalled at tier 2 (no step with the selected techniques)",
+    );
+    for (const text of [
+      logicalSummary("stalled-within-profile", 27, true),
+      logicStop("stalled-within-profile", "profile-stall", coverage, true),
+    ])
+      expect(text).not.toMatch(/no technique applies|cannot be solved|needs harder/);
+    // A budget stop is worded as before.
+    expect(logicStop("incomplete", "tier-cap", coverage, true)).toBe(
+      "Logic: stalled at tier 2 (work cap)",
+    );
+  });
+  test("set-limited notes, the set line and the coverage line", () => {
+    expect(SET_LIMITED_NOTE).toBe("A simpler step may exist: a simpler technique is switched off.");
+    expect(setLimitedSummary(0)).toBe("");
+    expect(setLimitedSummary(1)).toBe(
+      "1 step may have a simpler explanation: a simpler technique is switched off.",
+    );
+    expect(setLimitedSummary(6)).toMatch(/^6 steps may/);
+    expect(techniqueSetLine("All", 33, 33)).toBe("Techniques: All");
+    expect(techniqueSetLine("No fish", 28, 33)).toBe("Techniques: No fish (28 of 33)");
+    expect(coverageLine({ exhausted: ["a"], capped: ["b", "c"], notStarted: [] }, 5)).toBe(
+      "Coverage: 1 exhausted, 2 capped, 0 not started, 5 not selected",
+    );
+    expect(coverageLine({ exhausted: [], capped: [], notStarted: ["x"] })).toBe(
+      "Coverage: 0 exhausted, 0 capped, 1 not started",
     );
   });
 });
