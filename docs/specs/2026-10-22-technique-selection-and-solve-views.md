@@ -1,6 +1,6 @@
 # Technique selection and a single Solve view — proposal
 
-Status: **proposed, not approved.** No decision number is assigned; see §7. Drafted 2026-10-22 from a session that investigated a puzzle the Explain run could not finish, and from a user suggestion made while looking at HoDoKu.
+Status: **approved under D105** (2026-11-12; the user delegated the approval and every product decision of this milestone to the implementing agent). Implemented as milestone M2.7. Drafted 2026-10-22 from a session that investigated a puzzle the Explain run could not finish, and from a user suggestion made while looking at HoDoKu.
 
 Related: [M2.6 engine hardening](2026-09-22-m26-engine-hardening.md) (D103), [engine architecture](../solver/architecture.md), [decisions](../decisions.md) D055, D063, D094, D099
 
@@ -79,7 +79,7 @@ Both changes depend on M2.6: the summary content needs the result contract (T06)
 | Task | Deliverable | Acceptance |
 | --- | --- | --- |
 | S1 | Design note: tier-exhaustion semantics for a set with disabled families, under `explain-fair@3`; options key and `RunKey` encoding of the set. | Reviewed and approved; names the behaviour of `incomplete-cheaper-tier` for a set with gaps. |
-| S2 | Engine: profile subset selection, presets, options-key change. | The default set yields the current key and byte-identical `@1`/`@2`/`@3` golden traces; each preset terminates with a status consistent with its set (table-driven test); count and checker results are identical across sets on the evaluation corpus. |
+| S2 | Engine: profile subset selection, presets, options-key change. | The tables of the [S1 note](2026-11-10-technique-set-semantics.md) §6. The default set yields the current key and byte-identical `@1`/`@2`/`@3` golden traces; each preset terminates with a status consistent with its set (table-driven test); count and checker results are identical across sets on the evaluation corpus. |
 | S3 | Solve screen: technique selector, presets, per-set wording of the stop reason. | Playwright: switching "No fish" on the puzzle in §2 changes the technique coverage shown, not the count. |
 | S4 | Solve screen: remove the toggle, add the summary header. | Playwright: no toggle; the header shows the M2.6 summary lines; the step list is unchanged for the corpus cases. |
 | S5 | Corpus: add the §2 puzzle to the evaluation corpus as a stall case with `human` expected to be `incomplete` or `stalled-within-profile`, never asserting a solving technique. | Count `unique` and the stored solution match the Algorithm X oracle. |

@@ -970,3 +970,22 @@ Record each answer here with its rationale and consequences. If an answer change
 - M2.6: a defect found by the T09 ablation is fixed in `b9dfaf2` (effect-free checked steps no longer end the classic run in `error`), unreviewed. The ablation re-run, the T09/T10 reviews, T11 and the verification record remain. The user's conditional yes to merging M2.6 (a passing suite and a merge recommendation) was given before the pause; neither condition was met, so the merge is confirmed again on resumption.
 - The proposals of 2026-11-10 (training puzzles, M3, M4, M5 engine, detector performance, technique set semantics, hard corpus sources) stay proposals. None is approved and none has a `D` number.
 - Consequence: the pause changes scheduling only, not approved scope or correctness requirements. Resume only when the user asks, starting with the order in §5 of the record.
+
+## D105 - Approve M2.7: technique selection and a single Solve view
+
+- Status: approved 2026-11-12 by the implementing agent on the user's delegation. The user asked for four items in strict sequence (M2.6, the merged selection outline, this milestone, then training puzzles) and delegated every product decision of this milestone; each choice below is "decided by the agent on the user's delegation".
+- Source: the [technique selection proposal](specs/2026-10-22-technique-selection-and-solve-views.md) and its S1 [technique set semantics note](specs/2026-11-10-technique-set-semantics.md).
+- Decision: add user-selectable technique sets to the Solve screen and remove the Analyze/Explain toggle, sequenced after M2.6; engine Analyze mode is unchanged and stays outside the UI. Alternatives rejected: keeping the toggle with a better Analyze; deleting engine Analyze mode.
+- Semantics (S1 note): a switched-off family is removed from the run's registry before assembly. The enabled set is the optional `techniques` field of the canonical options key, absent for the full set, and `RunKey` gains no field. `stalled-within-profile` then means no step with the selected techniques, and `incomplete-cheaper-tier` keeps its meaning.
+- The nine choices of the S1 note §9, each decided by the agent on the user's delegation, all the note's recommended defaults:
+  1. Semantics B: removed before assembly.
+  2. A set-limited step carries a note on the step, and the header shows their count.
+  3. The five presets of §5.4: `all@1`, `singles@1` (C01, C02), `up-to-subsets@1` (tier ≤ 1), `up-to-wings-fish@1` (tier ≤ 2), `no-fish@1` (all but C06–C09 and C24).
+  4. A custom set stores the switched-off ids, so a family added later is on.
+  5. A stored preset follows its name to a later version.
+  6. The empty set is allowed in a custom set.
+  7. The set is persisted in settings and in backups.
+  8. A stop caused by an interrupted lower job gets a stop reason of its own, as a small task after S2–S5 inside this milestone.
+  9. An unknown preset or catalogue id is rejected, as every other settings field.
+- Deviation from the S1 note §5.6, decided by the agent on the user's delegation: the library `formatVersion` and the backup envelope `version` go from 2 to 3, with a migration that gives a version 1 or 2 library or backup the two new fields at their defaults. The note kept version 2 because no record changes shape; the version is bumped instead so that a library carrying a technique set is recognisably newer and an older build refuses it with "Unsupported data version." rather than silently dropping the custom set at its next commit. The bump is self-contained; the next format change (training puzzles) bumps it again.
+- Consequence: the roadmap gains the M2.7 row between M2.6 and M3. Implementation on `feat/m27-technique-selection`, one reviewed commit per task (S1 §7 checks, S2–S5, the stop-reason task).

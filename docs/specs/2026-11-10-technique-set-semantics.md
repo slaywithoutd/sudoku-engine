@@ -1,6 +1,6 @@
 # Technique set semantics for Explain — design note (S1)
 
-Status: **proposed, not approved.** This is task S1 of the [technique selection proposal](2026-10-22-technique-selection-and-solve-views.md) (its §4.1, §4.3, §5 and §6), which is itself not approved. No decision number is assigned; see §10. Written 2026-11-10 **by reading code only**: nothing was run, because another session was running the whole suite. Every behaviour below is either quoted from the code or marked as inferred, and §7 lists what must be run before S2 starts.
+Status: **approved under D105** (2026-11-12), with the §9 recommended defaults taken by the implementing agent on the user's delegation, and one deviation recorded in D105: the library and backup format version is bumped (§5.6). This is task S1 of the [technique selection proposal](2026-10-22-technique-selection-and-solve-views.md) (its §4.1, §4.3, §5 and §6), which is itself not approved. No decision number is assigned; see §10. Written 2026-11-10 **by reading code only**: nothing was run, because another session was running the whole suite. Every behaviour below is either quoted from the code or marked as inferred, and §7 lists what must be run before S2 starts.
 
 Code references are to `feat/m26-hardening` at `71887c8` (M2.6 T01–T08, not merged when this was written) unless a path is marked `master`. `explain-fair@3` exists only there. Line numbers shift if that branch changes before it merges.
 
