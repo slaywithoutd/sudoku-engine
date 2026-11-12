@@ -7,14 +7,16 @@ Record kept during the milestone. Spec: [proposal](../specs/2026-10-22-technique
 | Approval | done | `251be06`, merge `77856f7` | D105, roadmap row, README line; `docs/technique-set-semantics` merged and its worktree removed. |
 | S1 §7 checks | done | (this record) | Below: all seven agree with the note's reading. |
 | S2 engine, settings, backup | done | `4773fce`, review fix (next commit) | S1 §6 tables 1–5; below. |
-| S3 selector | pending | | |
-| S4 one Solve view | pending | | |
+| S3 selector | done | `e7af297`, review fix `efebe52` | `tests/e2e/solver-techniques.spec.ts`; below. |
+| S4 one Solve view | done | `eddae59`, review fix (next commit) | `tests/e2e/solver-view.spec.ts`; below. |
 | S5 corpus stall case | pending | | |
 | Stop reason for an interrupted lower job | pending | | |
 
 ## S1 §7 checks (2026-11-12, mains)
 
 Run on `master` at `77856f7` (engine identical to the M2.6 merge `846267e`) before any S2 edit was loaded, by throwaway vitest probes kept in the session scratchpad: the registry was filtered by mocking `assembleTechniqueJobs`, and each selection's raw `logical-stop` reason and final ledger were recorded by wrapping `StepSelection.select`. Every run was cut by work units (7.2M unless stated) with the time limit out of reach, so the outcomes do not depend on the machine. Power: mains (`BatteryStatus` 2). Times are one run each, informative only.
+
+**Finding (made during S5):** the proposal's §2 puzzle, `1....7.9..3..2...8..96..5....53..9...1..8...26....4...3......1..4......7..7...3..`, is AI Escargot, character for character the corpus case `escargot`. The proposal took it for "a second instance of the same stall"; it is the same puzzle. Checks 1 and 7 below therefore ran the same grid under different sets.
 
 **Check 1 — the probe's filtered sets on the proposal's §2 puzzle.** The proposal does not record its sets; five were run, chosen to hold the families the proposal names.
 
@@ -54,3 +56,19 @@ Budgets in table 3: the singles cases need about 650k logical units even on the 
 Review (independent subagent): no bug found. Fixed: the worker request now uses one field name (`techniqueSelection`) end to end and rejects any unknown key (`invalid-solve-request`), so a misspelt selection cannot run the full set (`workers/solve-request.ts`, unit-tested); `assembleRunJobs` takes the profile and the set from the normalised options; table 3 runs every assertion under both policies with the outcomes pinned; 3.5 now requires the interrupted job to be below the blocked tier; the corpus test is one test per case with `all@1` explicit; the architecture and scheduling docs and the note's §5.6 point at the D105 version bump. Not changed: `sameRun` stays private (two different `optionsKey`s make it false by its definition, `evidence.ts:194`); `Settings.solverTechniquePreset` stays `string` so a later preset needs no type change.
 
 Open risk, accepted by D105: the build writes `formatVersion` 3 on its first commit even if the user never touches technique sets, so after a rollback an older build refuses the library with "Unsupported data version." until the newer build is restored.
+
+## S3 (2026-11-12)
+
+Selector in the Solver settings section (Settings screen and the Solve screen's options): the five presets and Custom, the custom set as one checkbox per family grouped by tier with Switch all on/off. A default ("All") run sends the same worker request as before. Acceptance: `npx playwright test tests/e2e/solver-techniques.spec.ts`, 2 passed: No fish on the proposal's §2 puzzle (Escargot) keeps the count line and changes the coverage shown (33 families partitioned under All; 28 plus the five fish families "not selected" under No fish, none of which has a step); a custom set is edited, survives a reload, is kept when a preset is chosen, and the empty set runs.
+
+Review (independent subagent): no bug. Fixed in `efebe52`, applied after the S4 commit: request shape and custom-set edits moved to `ui/technique-selection.ts` and unit-tested (ids of rows the screen does not show are kept); an empty set's stall names no tier; one note sentence when a step is both budget- and set-limited; "Solved with the selected techniques" for a restricted run; the e2e checks the coverage partition and the real fish names. Kept: the selector offers the 33 classic rows (the Solve screen runs `classic-expanded@1`); Custom with nothing off sends `{off: []}`, which the engine reads as the full set.
+
+## S4 (2026-11-12)
+
+The Analyze/Explain switch and the `solverView` setting are gone; the step list is the only view and the summary is a `<details>` header above it, collapsed to one row. Acceptance: `npx playwright test tests/e2e/solver-view.spec.ts`, 3 passed: no toggle; the header carries count verification, logic status, highest tier used, steps per tier, coverage counts and lists; the step list equals the engine's own steps on `easy`, `hidden-singles` and `seventeen`; a gap set's header counts its set-limited steps.
+
+Found while doing S4: the step list kept the live steps array as its cache key, so steps arriving during a run were never listed once the list had rendered mid-run ("Step 1 of 78" with one item). Latent before S4 in the Explain view; fixed in `eddae59`.
+
+Review (independent subagent): fixed in the review commit: the Show solution toggle is created once (keeps focus, `aria-pressed` carries the state), sits under the step card, and shows the grid where the logic stopped when there is no solution; each run's header starts collapsed; the step list appends during a run instead of rebuilding; "Highest tier used" only with steps; phrasing content in `<summary>`; the error text in the collapsed row; stale Analyze/Explain wording in help, home, README and roadmap. Found by screenshots: the nowrap header row widened the whole side panel past the viewport (fixed with `min-width: 0`), and the six preset buttons wrapped unevenly (now an even grid).
+
+Power and speed: the laptop went onto battery during S4 and, back on mains, stayed in its slow state (CPU at 1.6 GHz; the engine alone ran Escargot's 1.8M-unit budget in 24–33 s, against about 9 s earlier in the day; `master`'s code measured the same, with the identical result). The solver-screen test "Escargot at the 15 s preset … reports where logic stalled" then hits the 15 s time safety stop ("stopped at tier 4 by the time limit") instead of the tier cap. It passed on mains in the fast state at S3 (`e7af297`) and is re-run in the final gate.

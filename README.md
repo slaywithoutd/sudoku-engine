@@ -14,9 +14,9 @@ A browser-only classic Sudoku platform: create, play and solve puzzles, with a h
 
 Everything runs in your browser. There is no account, no server and no tracking; your library lives in your browser's IndexedDB.
 
-| Play | Explain |
+| Play | Solve |
 | --- | --- |
-| ![Play screen: a partially solved board with corner and center notes, a running timer and the keypad](docs/media/play.png) | ![Solver Explain screen: step 2 of 14, a Naked Single highlighted on the board with the eliminated candidate struck through](docs/media/explain.png) |
+| ![Play screen: a partially solved board with corner and center notes, a running timer and the keypad](docs/media/play.png) | ![Solve screen: step 2 of 14, a Naked Single highlighted on the board with the eliminated candidate struck through](docs/media/explain.png) |
 
 ## Features
 

@@ -27,7 +27,7 @@ export function mountHome(container: HTMLElement, services: ScreenServices): () 
       services.navigate({ screen: "library", tab: "puzzles" }),
     ),
     card("Create", "pen", "Enter clues or import a puzzle.", () => newDraft(services)),
-    card("Solve", "solve", "Analyze a puzzle or step through its logic.", () =>
+    card("Solve", "solve", "Step through a puzzle's logic and check its solution.", () =>
       services.navigate({ screen: "solve" }),
     ),
   );

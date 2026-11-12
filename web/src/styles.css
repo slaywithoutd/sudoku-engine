@@ -2342,6 +2342,8 @@ dialog .actions .ghost:first-child {
 }
 /* One Solve view (M2.7 S4): the run's summary, collapsed to one line above the steps. */
 .solve-summary {
+  /* A grid item's automatic minimum is its min-content: the nowrap line would widen the panel. */
+  min-width: 0;
   border: 1px solid var(--line);
   border-radius: var(--radius);
   corner-shape: squircle;
@@ -2352,9 +2354,8 @@ dialog .actions .ghost:first-child {
 }
 .solve-summary > summary {
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
-  gap: 0.25rem 0.75rem;
+  gap: 0.75rem;
   cursor: pointer;
   list-style: none;
 }
@@ -2374,9 +2375,22 @@ dialog .actions .ghost:first-child {
 .solve-summary[open] > summary::after {
   transform: rotate(-135deg);
 }
+/* One line: the full status is inside the header and in the line's title. */
 .solve-summary .summary-line {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
   font-size: 0.85rem;
   color: var(--muted);
+}
+.solve-summary .result-headline {
+  flex: none;
+}
+.solve-summary .result-headline h2 {
+  font-size: 1rem;
+  white-space: nowrap;
 }
 .solve-summary .solver-analysis {
   margin-top: 0.6rem;
@@ -2697,7 +2711,11 @@ dialog .actions .ghost:first-child {
   flex: 1;
 }
 
-/* Technique set (M2.7, D105): the custom set's families, grouped by tier. */
+/* Technique set (M2.7, D105): the presets as an even grid, the custom set's families by tier. */
+.segmented.technique-presets {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(7rem, 1fr));
+}
 .technique-custom {
   display: grid;
   gap: 0.5rem;

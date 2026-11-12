@@ -287,7 +287,7 @@ export function mountSolver(
   panel.append(controls, techniqueSet, status, progress, feedback, header, explain, options);
   shell.side.append(panel);
 
-  // Explain navigator
+  // Step navigator
   const nav = el("div", undefined, "step-nav");
   const first = iconButton("first", "First step", () => go(0)),
     prev = iconButton("chevronLeft", "Previous step", () => go(current - 1)),
@@ -296,6 +296,19 @@ export function mountSolver(
     play = iconButton("play", "Play steps", () => (autoplay ? stopAutoplay() : startAutoplay()));
   const position = el("span", undefined, "step-position");
   position.setAttribute("aria-live", "polite");
+  // Shows the solved grid, or the grid where the logic stopped, instead of
+  // the current step. Created once so it keeps focus; aria-pressed carries
+  // its state and its label names what it shows (S4 review).
+  const solutionToggle = labeledButton(
+    "eye",
+    "Show solution",
+    () => {
+      showSolution = !showSolution;
+      stopAutoplay();
+      render();
+    },
+    "ghost solution-toggle",
+  );
   nav.append(first, prev, position, next, last, play);
   const stepCard = el("div", undefined, "step-card"),
     stepName = el("h3"),
@@ -315,7 +328,7 @@ export function mountSolver(
     legend.append(item);
   }
   const explainEmpty = el("p", undefined, "empty-note");
-  explain.append(nav, stepCard, legend, stepList, explainEmpty);
+  explain.append(nav, stepCard, solutionToggle, legend, stepList, explainEmpty);
 
   // Board: the shared editing surface while editing, a read-only view otherwise.
   let surface: PuzzleSurface | undefined, display: BoardView | undefined;
@@ -393,6 +406,8 @@ export function mountSolver(
     startedAt = performance.now();
     finishedAt = 0;
     lastPhase = "human";
+    // Each run's summary starts collapsed, so the steps stay in view (spec §4.2).
+    header.open = false;
     solver.replaceInput({ givens: values });
     const selection = techniqueSelectionOf(settings());
     runTechniques = techniqueSetText(settings());
@@ -414,11 +429,11 @@ export function mountSolver(
     render();
   };
 
-  // Explain navigation
-  /** Steps listed in Explain; hidden basic eliminations still shape each board state. */
+  // Step navigation
+  /** Steps listed; hidden basic eliminations still shape each board state. */
   const visible = () =>
     settings().solverHideBasic ? steps.filter((step) => step.name !== "Basic elimination") : steps;
-  let listedFor: unknown[] = [];
+  let listedFor: SolveStep[] = [];
   const go = (index: number) => {
     const shown = visible();
     if (!shown.length) return;
@@ -465,7 +480,8 @@ export function mountSolver(
     analysis.replaceChildren();
     headerLine.replaceChildren();
     if (phase !== "result" || !result) return;
-    const headline = el("div", undefined, "result-headline");
+    // Phrasing content only: the headline sits inside <summary>.
+    const headline = el("span", undefined, "result-headline");
     const solved = result.count === "unique";
     headline.classList.toggle("good", solved);
     headline.classList.toggle(
@@ -540,13 +556,14 @@ export function mountSolver(
     const line = el(
       "span",
       result.error
-        ? ""
+        ? result.error
         : result.human === "solved"
           ? "Solved by logic"
           : stop.textContent?.replace(/^Logic: /, "") ||
             logicalSummary(result.human ?? "", result.steps ?? 0, restricted),
       "summary-line",
     );
+    line.title = line.textContent ?? "";
     headerLine.append(headline, line);
     const difficulty = result.difficulty;
     const highest = el(
@@ -588,28 +605,16 @@ export function mountSolver(
           el("dt", label),
           el("dd", names.join(", "), label === "Not selected" ? "not-selected" : undefined),
         );
-    const solutionToggle = labeledButton(
-      "eye",
-      showSolution ? "Show steps" : "Show solution",
-      () => {
-        showSolution = !showSolution;
-        stopAutoplay();
-        render();
-      },
-      "ghost solution-toggle",
-    );
-    solutionToggle.setAttribute("aria-pressed", String(showSolution));
     analysis.append(detail);
     if (verification.textContent) analysis.append(verification);
     if (logic.textContent) analysis.append(logic);
     if (stop.textContent) analysis.append(stop);
     if (coverage.textContent && result.human !== "not-started") analysis.append(coverage);
     if (setLimited.textContent) analysis.append(setLimited);
-    if (highest.textContent) analysis.append(highest);
+    if (highest.textContent && steps.length) analysis.append(highest);
     if (perTier.textContent && steps.length) analysis.append(perTier);
     analysis.append(stats);
     if (lists.childElementCount && result.human !== "not-started") analysis.append(lists);
-    if (result.solution && steps.length) analysis.append(solutionToggle);
     const capped = new Set(result.coverage?.capped ?? []);
     if (steps.length || capped.size) {
       const counts = new Map<string, number>();
@@ -647,22 +652,30 @@ export function mountSolver(
       return undefined;
     }
     if (listedFor.length !== shown.length || listedFor.some((step, i) => step !== shown[i])) {
+      const numbers = new Map(steps.map((step, i) => [step, i + 1] as const));
+      const itemOf = (step: SolveStep, i: number) => {
+        const item = el("li");
+        const b = button("", () => go(i), "step-item");
+        b.append(
+          el("span", String(numbers.get(step)), "step-number"),
+          el("span", step.name, "step-name"),
+          el("span", describeStep(step), "step-effects"),
+        );
+        item.append(b);
+        return item;
+      };
+      // During a run the list only grows: append the new steps instead of
+      // rebuilding every item on each one (S4 review).
+      const prefix =
+        listedFor.length <= shown.length && listedFor.every((step, i) => step === shown[i]);
+      if (prefix)
+        stepList.append(
+          ...shown.slice(listedFor.length).map((step, i) => itemOf(step, listedFor.length + i)),
+        );
+      else stepList.replaceChildren(...shown.map(itemOf));
       // A copy: `visible()` can return the live `steps` array, which grows while
       // the run is going, so keeping it would hide every later step.
       listedFor = [...shown];
-      stepList.replaceChildren(
-        ...shown.map((step, i) => {
-          const item = el("li");
-          const b = button("", () => go(i), "step-item");
-          b.append(
-            el("span", String(steps.indexOf(step) + 1), "step-number"),
-            el("span", step.name, "step-name"),
-            el("span", describeStep(step), "step-effects"),
-          );
-          item.append(b);
-          return item;
-        }),
-      );
     }
     [...stepList.querySelectorAll(".step-item")].forEach((b, i) =>
       b.setAttribute("aria-current", String(i === current)),
@@ -789,6 +802,13 @@ export function mountSolver(
     explain.hidden = !explaining;
     header.hidden = phase !== "result";
     if (phase !== "result") showSolution = false;
+    // Offered only when there is a step to come back to.
+    solutionToggle.hidden = phase !== "result" || !result || !!result.error || !visible().length;
+    solutionToggle.setAttribute("aria-pressed", String(showSolution));
+    const solutionLabel = result?.solution ? "Show solution" : "Show where the logic stopped";
+    solutionToggle.setAttribute("aria-label", solutionLabel);
+    const toggleText = solutionToggle.querySelector("span");
+    if (toggleText) toggleText.textContent = solutionLabel;
     renderAnalysis();
     if (surface) surface.render();
     if (display) {

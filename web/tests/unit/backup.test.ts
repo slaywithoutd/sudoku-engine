@@ -285,3 +285,13 @@ test("5.4 every current preset and custom are accepted", () => {
     expect(validateLibrary(data).settings.solverTechniquePreset).toBe(preset);
   }
 });
+
+test("a library or backup that still has the removed solverView setting loads without it", () => {
+  const data = structuredClone(fixture()) as unknown as Record<string, any>;
+  data.settings.solverView = "analyze";
+  expect("solverView" in validateLibrary(data).settings).toBe(false);
+  const imported = parseBackup(
+    JSON.stringify({ format: "sudoku-engine-backup", version: 2, exportedAt: NOW, data }),
+  );
+  expect("solverView" in imported.data.settings).toBe(false);
+});

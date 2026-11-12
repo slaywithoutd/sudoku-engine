@@ -83,7 +83,7 @@ export function logicStop(
   const where = tier < 0 ? "before any technique" : `at tier ${tier}`;
   return `Logic: stopped ${where} by the ${stopLabels[stopReason] ?? "limit"}${tail}`;
 }
-/** Shown on Explain steps found while a simpler technique was cut by a budget. */
+/** Shown on steps found while a simpler technique was cut by a budget. */
 export const BUDGET_LIMITED_NOTE =
   "A simpler step may exist: a simpler technique stopped at its limit.";
 /** Shown on steps found while a simpler technique is switched off (M2.7, D105 item 2). */

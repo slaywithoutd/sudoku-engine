@@ -361,14 +361,16 @@ export function renderSettingsSections(
     ],
     shortcuts: () => shortcutRows(services, refreshers),
     solver: () => [
-      choice(
-        "solverTechniquePreset",
-        "Techniques",
-        [
-          ...TECHNIQUE_PRESETS.map((preset) => ({ value: preset.id, label: preset.label })),
-          { value: CUSTOM_TECHNIQUE_SET, label: "Custom" },
-        ],
-        "Families the logical explanation may use. The solution count never depends on them",
+      presetGrid(
+        choice(
+          "solverTechniquePreset",
+          "Techniques",
+          [
+            ...TECHNIQUE_PRESETS.map((preset) => ({ value: preset.id, label: preset.label })),
+            { value: CUSTOM_TECHNIQUE_SET, label: "Custom" },
+          ],
+          "Families the logical explanation may use. The solution count never depends on them",
+        ),
       ),
       customTechniques(services, refreshers),
       toggle("solverCandidates", "Show candidates while explaining"),
@@ -406,6 +408,12 @@ export function renderSettingsSections(
   const refresh = () => refreshers.forEach((r) => r(settings()));
   refresh();
   return services.controller.subscribe(refresh);
+}
+
+/** Lays the six technique presets out as an even grid instead of a wrapping row. */
+function presetGrid(row: HTMLElement): HTMLElement {
+  row.querySelector(".segmented")?.classList.add("technique-presets");
+  return row;
 }
 
 /** Primary classic rows: the families the Solve screen runs (M2.7, D105). */

@@ -45,10 +45,12 @@ test("there is no Analyze/Explain toggle and the header carries the M2.6 summary
   await expect(header).not.toHaveAttribute("open");
   await expect(header.locator("summary")).toContainText("Unique solution");
   await expect(header.locator("summary")).toContainText(/stalled at tier \d|stopped/);
-  await expect(page.locator(".step-list .step-item").first()).toBeVisible();
+  // The collapsed header is one short row and the steps start on screen.
   const box = await header.boundingBox(),
     list = await page.locator(".step-list").boundingBox();
   expect(box && list && box.y < list.y).toBe(true);
+  expect(box?.height ?? 999).toBeLessThan(90);
+  await expect(page.locator(".step-card")).toBeInViewport();
   await header.locator("summary").click();
   await expect(page.getByTestId("count-verification")).toContainText("Count: verified in");
   await expect(page.getByTestId("logic-stop")).toContainText(/Logic: (stalled|stopped) at tier \d/);
@@ -59,6 +61,41 @@ test("there is no Analyze/Explain toggle and the header carries the M2.6 summary
   // The step list is still there, and the board follows it.
   await page.getByRole("button", { name: "Next step", exact: true }).click();
   await expect(page.locator(".step-position")).toContainText("Step 2 of");
+  // Show solution keeps focus and says its state with aria-pressed.
+  const toggle = page.getByRole("button", { name: "Show solution", exact: true });
+  await toggle.focus();
+  await page.keyboard.press("Enter");
+  await expect(toggle).toHaveAttribute("aria-pressed", "true");
+  await expect(toggle).toBeFocused();
+  await page.getByRole("button", { name: "Previous step", exact: true }).click();
+  await expect(toggle).toHaveAttribute("aria-pressed", "false");
+  // The next run starts collapsed again.
+  await page.getByRole("button", { name: "Edit puzzle", exact: true }).click();
+  await solve(page).click();
+  await finished(page);
+  await expect(header).not.toHaveAttribute("open");
+});
+
+test("a run with a gap in its technique set counts its set-limited steps in the header", async ({
+  page,
+}) => {
+  test.setTimeout(120_000);
+  await page.goto("#/solve");
+  await page.getByText("Solver options").click();
+  await page.getByRole("radio", { name: "15 s" }).click();
+  await page
+    .getByRole("radiogroup", { name: "Techniques" })
+    .getByRole("radio", { name: "Custom" })
+    .click();
+  // Hidden single off: every step from tier 1 up has a simpler switched-off family.
+  await page.getByRole("checkbox", { name: "Hidden single" }).uncheck();
+  await importPuzzle(page, puzzle("seventeen"));
+  await solve(page).click();
+  await finished(page);
+  await page.getByTestId("solve-summary").locator("summary").click();
+  await expect(page.getByTestId("set-limited-summary")).toContainText(
+    /\d+ steps? may have a simpler explanation: a simpler technique is switched off\./,
+  );
 });
 
 test("the step list is unchanged for the corpus cases", async ({ page }) => {

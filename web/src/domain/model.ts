@@ -147,7 +147,7 @@ export interface Settings {
   colorPatterns: boolean;
   reduceMotion: boolean;
   solverCandidates: boolean;
-  /** Explain skips "Basic elimination" steps (their effects still apply). */
+  /** The step list skips "Basic elimination" steps (their effects still apply). */
   solverHideBasic: boolean;
   solverAutoplayMs: (typeof AUTOPLAY_SPEEDS)[number];
   solverTimeLimitS: (typeof SOLVER_TIME_LIMITS)[number];
