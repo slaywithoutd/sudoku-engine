@@ -4,6 +4,7 @@ import type { TechniqueJobs } from "./scheduling/ledger";
 import { StepSelection, type SelectionEvent, type SelectionOptions } from "./scheduling/select";
 import { isWitness } from "./exact";
 import type { IndexWorkspace } from "./indexes/workspace";
+import type { Ledger } from "./techniques/types";
 
 export type HumanEvent =
   | { readonly kind: "work"; readonly units: number }
@@ -12,18 +13,48 @@ export type HumanEvent =
       readonly stepId: number;
       readonly step: CheckedStep;
       readonly budgetLimited: boolean;
+      /** The scheduler ledger when the step was selected (spec M2.6 §4.5 coverage). */
+      readonly ledger: Ledger;
     }
   | {
       readonly kind: "logical-stop";
       readonly human: "solved" | "stalled-within-profile" | "incomplete" | "contradiction";
       readonly reason: string;
       readonly accepted: readonly CheckedStep[];
+      /** The scheduler ledger at the stop, when a selection existed. */
+      readonly ledger?: Ledger;
     };
 export type HumanStopStatus = "solved" | "stalled-within-profile" | "incomplete" | "contradiction";
 export type HumanAcceptance = "accepted" | "human-stopped";
 export interface HumanOptions extends SelectionOptions {
   readonly workspace: IndexWorkspace;
   readonly accept: (step: CheckedStep) => ReadView;
+  /**
+   * Receives the scheduler ledger of the final state when the phase ends,
+   * also when the caller closes it (its own deadline), for the result's
+   * coverage (spec M2.6 §4.5).
+   */
+  readonly report?: { ledger?: Ledger };
+}
+
+/**
+ * The budget behind an incomplete stop: the deterministic work cut or the
+ * time safety stop (spec M2.6 §4.3), anything else a generic logical budget.
+ */
+function budgetReason(reason: string): "work-limit" | "time-limit" | "logical-budget" {
+  return reason === "work-limit" || reason === "time-limit" ? reason : "logical-budget";
+}
+
+/**
+ * A filled grid satisfying every rule. An open cell can never be a witness, so
+ * the full rule check (which rebuilds the exact semantics) runs only on a
+ * filled grid.
+ */
+function complete(view: ReadView): boolean {
+  return (
+    view.state.values.every((value) => value !== 0) &&
+    isWitness(view.assembly.problem, view.assembly, view.state.values)
+  );
 }
 
 function stopStatus(
@@ -37,10 +68,7 @@ function stopStatus(
     event.reason === "time-limit"
   )
     return "incomplete";
-  if (event.complete)
-    return isWitness(view.assembly.problem, view.assembly, view.state.values)
-      ? "solved"
-      : "stalled-within-profile";
+  if (event.complete) return complete(view) ? "solved" : "stalled-within-profile";
   return event.reason.includes("contradiction") ? "contradiction" : "incomplete";
 }
 
@@ -63,7 +91,7 @@ export function* humanSteps(
         yield {
           kind: "logical-stop",
           human: "incomplete",
-          reason: "logical-budget",
+          reason: budgetReason(/time-limit/.test(error.message) ? "time-limit" : "work-limit"),
           accepted: Object.freeze([...accepted]),
         };
         return;
@@ -100,6 +128,7 @@ export function* humanSteps(
           stepId: ++nextStep,
           step: proposal.step,
           budgetLimited: proposal.budgetLimited,
+          ledger: selection.ledger.rows,
         };
         if (ack !== "accepted") {
           if (ack === "human-stopped") {
@@ -108,6 +137,7 @@ export function* humanSteps(
               human: "incomplete",
               reason: "logical-budget",
               accepted: Object.freeze([...accepted]),
+              ledger: selection.ledger.rows,
             };
             return;
           }
@@ -119,12 +149,13 @@ export function* humanSteps(
         view = next;
         // A filled grid satisfying every rule is solved; rescanning the whole profile cannot add
         // information.
-        if (isWitness(view.assembly.problem, view.assembly, view.state.values)) {
+        if (complete(view)) {
           yield {
             kind: "logical-stop",
             human: "solved",
             reason: "solved",
             accepted: Object.freeze([...accepted]),
+            ledger: selection.ledger.rows,
           };
           return;
         }
@@ -135,14 +166,16 @@ export function* humanSteps(
         yield {
           kind: "logical-stop",
           human,
-          reason: human === "incomplete" ? "logical-budget" : stopped.reason,
+          reason: human === "incomplete" ? budgetReason(stopped.reason) : stopped.reason,
           accepted: Object.freeze([...accepted]),
+          ledger: stopped.ledger,
         };
         return;
       }
     }
   } finally {
     activeCursor?.return();
+    if (options.report && selection) options.report.ledger = selection.ledger.rows;
     selection?.dispose();
   }
 }

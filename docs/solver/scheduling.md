@@ -12,8 +12,11 @@ encodes these fields with recursively sorted object keys. T20/T23 must use this
 encoder for RunKey.optionsKey and put the implementation version in RunKey.scheduler.
 Clocks, workspaces and browser slice lengths are operation resources, not options.
 
-The defaults are Explain, `explain-fair@1`, `classic-expanded@1`, rollout off and
-phase caps equal to the supplied run caps. Analyze selects `analyze-fair@1`.
+The defaults of `schedulingOptions()` itself are Explain, `explain-fair@1`,
+`classic-expanded@1`, rollout off and phase caps equal to the supplied run caps;
+Analyze selects `analyze-fair@1`. The classic run (`classic-run.ts`), which the
+Solve screen uses, passes `explain-fair@3` or `analyze-fair@3` unless the caller
+names a policy (M2.6, D103; see below).
 `fixed-scan@1` and `event-fixed@1` are canonical scan baselines; the former restarts
 all records after acceptance and the latter preserves sound exhausted/excluded
 watches. Registry input is the result of `assembleTechniqueJobs(assembly,profile)`.
@@ -64,12 +67,27 @@ trained entry keeps its declared constants, so the constant model reproduces `@1
 exactly. The trained table `scheduling/model-1.ts` is validated at load and is
 never swapped at runtime: one policy version, one weight table (D094).
 
-Both `@2` policies ship **disabled**; `explain-fair@1` and `analyze-fair@1` are
-the defaults. The ablation of spec §3.12 failed metrics A, B and D on the
-held-out partition for Explain; Analyze was not measured, and `analyze-fair@2`
-stays disabled with it — see the [ablation report](../history/m25-ablation.md)
-and D101. The estimates remain engineering hypotheses; tickets guarantee service
-independently of them.
+Both `@2` policies ship **disabled**. The ablation of spec §3.12 failed metrics
+A, B and D on the held-out partition for Explain; Analyze was not measured, and
+`analyze-fair@2` stays disabled with it — see the [ablation report](../history/m25-ablation.md)
+and D101. D101 kept `explain-fair@1` and `analyze-fair@1` as the defaults; M2.6
+replaced them with the `@3` policies below (D103). The estimates remain
+engineering hypotheses; tickets guarantee service independently of them.
+
+## Bounded-tier policies (M2.6)
+
+`explain-fair@3` and `analyze-fair@3` are the classic run's defaults since M2.6
+(D103, [spec](../specs/2026-09-22-m26-engine-hardening.md) §4.4). They are
+unscored: they take no `PolicyParameters`. `explain-fair@3` carries a frozen
+`tierCap` (`fromTier` 3, `unitsPerJobPerState` 100,000, `DEFAULT_TIER_CAP` in
+`work.ts`) in the options and therefore in `canonicalOptionsKey()`; any other
+policy given a `tierCap` is rejected (`tier-cap-policy`). From `fromTier`, a job
+that spends its cap on one state without a step is `capped`, and Explain climbs
+past settled lower tiers with `budgetLimited` steps; both `@3` policies propose
+one alias per naked single, and `analyze-fair@3` sizes its selection window from
+the selection's rule pass instead of the fixed 4,096 units. The full rules are in
+the [architecture](architecture.md) M2.6 section. `@1` and `@2` keep their
+behaviour and traces (D094).
 
 ## Selection ownership and acceptance
 

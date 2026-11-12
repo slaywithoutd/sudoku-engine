@@ -71,7 +71,7 @@ describe("human logical phase", () => {
     selection.return();
     expect(workspace.usage.bytes).toBe(0);
   });
-  test("reports logical budget interruption as incomplete", () => {
+  test("reports a work-unit cut as an incomplete work-limit stop", () => {
     const initial = view(),
       workspace = new IndexWorkspace({ entryLimit: 1000, byteLimit: limits.workspaceBytes });
     const result = [
@@ -84,7 +84,7 @@ describe("human logical phase", () => {
     expect(result).toMatchObject({
       kind: "logical-stop",
       human: "incomplete",
-      reason: "logical-budget",
+      reason: "work-limit",
     });
     expect(workspace.usage.bytes).toBe(0);
   });

@@ -2,7 +2,7 @@ import { describe, expect, test } from "vitest";
 import { readFileSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { solveClassic, type ClassicSolveEvent } from "../../../src/solver/classic-run";
-import type { PolicyParameters } from "../../../src/solver/scheduling/work";
+import type { PolicyId, PolicyParameters } from "../../../src/solver/scheduling/work";
 import { coverageEntries } from "../../../src/solver/techniques/manifest";
 
 /**
@@ -22,7 +22,8 @@ interface GoldenTrace {
   readonly id: string;
   readonly puzzle: string;
   readonly result: { human: string; count: string; steps: number };
-  readonly steps: readonly { technique: string; effects: string }[];
+  /** `budgetLimited` is recorded only when set, so the @1 traces keep their shape. */
+  readonly steps: readonly { technique: string; effects: string; budgetLimited?: true }[];
 }
 
 // The work cap, not the clock, ends the run: the recorded trace is the same on any machine.
@@ -43,6 +44,7 @@ async function trace(
   id: string,
   puzzle: string,
   policyParameters?: PolicyParameters,
+  policy: PolicyId = policyParameters ? "explain-fair@2" : "explain-fair@1",
 ): Promise<GoldenTrace> {
   const events: ClassicSolveEvent[] = [];
   await solveClassic(
@@ -50,7 +52,9 @@ async function trace(
       givens: [...puzzle].map(Number),
       limits,
       mode: "explain",
-      ...(policyParameters ? { policy: "explain-fair@2" as const, policyParameters } : {}),
+      // Pinned: the solver's default Explain policy is explain-fair@3 since M2.6 T05.
+      policy,
+      ...(policyParameters ? { policyParameters } : {}),
     },
     { clock: { now: () => Date.now() }, emit: (event) => events.push(event) },
   );
@@ -70,6 +74,9 @@ async function trace(
           .map((effect) => `${effect.kind[0]}${effect.cell}:${effect.symbol}`)
           .sort()
           .join(","),
+        // A step taken past a capped simpler job (spec M2.6 §4.4); only
+        // explain-fair@3 has a tier cap, so @1 and @2 never set it.
+        ...(step.budgetLimited ? { budgetLimited: true as const } : {}),
       })),
   };
 }
@@ -118,6 +125,51 @@ describe("metric F on the golden fixtures: explain-fair@2 keeps the tiers 0-2 pr
     async (_id, entry, parameters) => {
       const current = await trace(entry.id, entry.puzzle, parameters);
       expect(lowPrefix(current.steps)).toEqual(lowPrefix(entry.steps));
+    },
+    600_000,
+  );
+});
+
+describe("explain-fair@3 keeps the tiers 0-2 prefix of explain-fair@1 (spec M2.6 §5 T05)", () => {
+  test.each(golden.traces.map((entry) => [entry.id, entry] as const))(
+    "%s",
+    async (_id, entry) => {
+      const current = await trace(entry.id, entry.puzzle, undefined, "explain-fair@3");
+      expect(lowPrefix(current.steps)).toEqual(lowPrefix(entry.steps));
+    },
+    600_000,
+  );
+});
+
+/**
+ * Golden Explain traces under explain-fair@3 (spec M2.6 §5 T09), recorded once
+ * with GOLDEN_TRACES_V3=write and reviewed; the @1 file above is never touched
+ * by that switch. Same puzzles and limits as the @1 traces; a step also records
+ * `budgetLimited` when the engine sets it.
+ */
+const goldenV3Path = fileURLToPath(
+  new URL("../../solver/fixtures/golden-traces-v3.json", import.meta.url),
+);
+const goldenV3 = JSON.parse(readFileSync(goldenV3Path, "utf8")) as { traces: GoldenTrace[] };
+describe("golden classic traces under explain-fair@3", () => {
+  test("covers the puzzles of the @1 fixtures", () => {
+    expect(goldenV3.traces.map(({ id, puzzle }) => ({ id, puzzle }))).toEqual(
+      golden.traces.map(({ id, puzzle }) => ({ id, puzzle })),
+    );
+  });
+
+  test.each(goldenV3.traces.map((entry) => [entry.id, entry] as const))(
+    "%s keeps its deduction sequence",
+    async (_id, entry) => {
+      const current = await trace(entry.id, entry.puzzle, undefined, "explain-fair@3");
+      if (process.env.GOLDEN_TRACES_V3 === "write") {
+        const index = goldenV3.traces.findIndex((candidate) => candidate.id === entry.id);
+        goldenV3.traces[index] = current;
+        writeFileSync(goldenV3Path, `${JSON.stringify(goldenV3, null, 2)}\n`);
+        return;
+      }
+      expect(current.result).toEqual(entry.result);
+      expect(current.steps).toEqual(entry.steps);
     },
     600_000,
   );

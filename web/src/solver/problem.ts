@@ -178,7 +178,22 @@ function normalizeJsonValue(value: unknown, path: string, active: WeakSet<object
 
 /** Serializes JSON with recursively sorted object keys and retained array order. */
 export function canonicalJson(value: Json): string {
-  return JSON.stringify(normalizeJsonValue(value, "$", new WeakSet()));
+  if (typeof value !== "object" || value === null)
+    return JSON.stringify(normalizeJsonValue(value, "$", new WeakSet()));
+  const known = canonicalTexts.get(value);
+  if (known !== undefined) return known;
+  const text = JSON.stringify(normalizeJsonValue(value, "$", new WeakSet()));
+  // A value frozen at every level cannot change, so its text is reused
+  // (proof checking compares the same frozen records many times).
+  if (deeplyFrozen(value)) canonicalTexts.set(value, text);
+  return text;
+}
+const canonicalTexts = new WeakMap<object, string>();
+/** Only called on values normalizeJsonValue accepted: acyclic plain JSON. */
+function deeplyFrozen(value: unknown): boolean {
+  if (typeof value !== "object" || value === null) return true;
+  if (!Object.isFrozen(value)) return false;
+  return Object.values(value).every(deeplyFrozen);
 }
 
 function copyJson(value: unknown, path: string): Json {

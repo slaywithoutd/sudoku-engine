@@ -1,6 +1,10 @@
 import { describe, expect, test } from "vitest";
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { solveClassic, type ClassicSolveEvent } from "../../../src/solver/classic-run";
 import { utf8Length } from "../../../src/solver/utf8";
+import { ablationLimits, runCase } from "../../solver/bench/ablate";
+import type { Corpus } from "../../solver/bench/corpus-schema";
 
 const unique = "530070000600195000098000060800060003400803001700020006060000280000419005000080079";
 const solution =
@@ -56,6 +60,27 @@ describe("classic solve composition", () => {
     ).rejects.toThrow();
   });
 });
+
+/**
+ * An effect-free checked step publishes facts only (here a Tridagon guardian
+ * clause, c32@1, with no elimination). The run retains it and goes on;
+ * committing it ended the run with `unproductive-step`. Found by the M2.6 T09
+ * ablation: explain-fair@3 reaches tier 5 on this held-out thermometer board at
+ * 3,074,886 logical work units, which explain-fair@1 does not within 16M. The
+ * 4M budget ends the run before a second such step.
+ */
+test("an effect-free step is retained, not committed as a candidate change", async () => {
+  const corpus = JSON.parse(
+    readFileSync(fileURLToPath(new URL("../../solver/bench/corpus.json", import.meta.url)), "utf8"),
+  ) as Corpus;
+  const entry = corpus.heldOut.find((candidate) => candidate.id === "thermometer-1")!;
+  const trace = await runCase(entry, "explain", "explain-fair@3", undefined, {
+    ...ablationLimits("stop"),
+    workUnits: 4_000_000,
+  });
+  expect(trace.steps.some((step) => step.technique === "c32@1" && step.effects === "")).toBe(true);
+  expect(trace).toMatchObject({ outcome: "complete", human: "incomplete" });
+}, 600_000);
 
 test("utf8Length matches TextEncoder, including surrogates", () => {
   for (const text of ["", "abc", "é", "€", "😀", "a\ud800b", "\udc00", JSON.stringify('x"😀')])

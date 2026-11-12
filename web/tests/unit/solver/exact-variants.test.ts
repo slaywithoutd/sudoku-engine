@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { exactSteps, isWitness, type ExactEvent } from "../../../src/solver/exact";
+import { exactFixedPoint, exactSteps, isWitness, type ExactEvent } from "../../../src/solver/exact";
 import { canonicalProblem, normalizeClassic } from "../../../src/solver/problem";
 import type { ConstraintInstance, EngineProblem } from "../../../src/solver/problem";
 import { assemble } from "../../../src/solver/rules/assemble";
@@ -10,6 +10,7 @@ import { symbolMask } from "../../../src/solver/state/read";
 import { variantOracle } from "../../solver/oracle-variants";
 import { generateSmall, rng, toEngineConstraints } from "../../solver/generate-small";
 import { SOLUTION, PUZZLE } from "../../fixtures";
+import evalCorpus from "../../solver/bench/eval-corpus.json";
 
 function assembled(problem: EngineProblem): Assembly {
   const result = assemble(problem, productionRules());
@@ -46,8 +47,9 @@ function run(problem: EngineProblem, assembly: Assembly) {
 
 describe("exact enumeration with module forward checking (T06)", () => {
   test("classic puzzles keep their statistics: no module offers a hook, only houses prune", () => {
-    // Golden values pinned on this branch; classic problems register no prune
-    // hook, so the loop is the same singles-plus-peers search as before.
+    // Classic problems register no prune hook, so production rules and the
+    // all-different rule alone must run the same search (singles and locked
+    // candidates over the houses) with the same statistics and witness.
     const problem = normalizeClassic({
       kind: "classic",
       version: 1,
@@ -138,6 +140,58 @@ describe("exact enumeration with module forward checking (T06)", () => {
         }
     }
     expect(checks).toBeGreaterThan(500);
+  });
+
+  test("the exact fixed point never removes a value some completion of the partial assignment uses", () => {
+    // M2.6 §7: bulk singles, locked candidates and module hooks together, on
+    // generated mixed problems and on the unique classic grids of the
+    // evaluation corpus, from random subsets of a known solution.
+    const random = rng(2606);
+    let checks = 0;
+    const holds = (problem: EngineProblem, assembly: Assembly, witness: readonly number[]) => {
+      for (let trial = 0; trial < 5; trial += 1) {
+        const values = witness.map((value, cell) =>
+          problem.givens[cell] !== 0 || random() < 0.3 ? value : 0,
+        );
+        const masks = exactFixedPoint(problem, assembly, values);
+        expect(masks).not.toBeNull();
+        for (const cell of problem.cells)
+          expect((masks![cell] & symbolMask(witness[cell])) !== 0).toBe(true);
+        checks += 1;
+      }
+    };
+    for (let seed = 1; seed <= 40; seed += 1) {
+      const { small, problem } = engineProblem(seed, {
+        width: seed % 2 === 0 ? 6 : 4,
+        cages: 3,
+        arrows: 2,
+        orders: 2,
+        dots: 3,
+        negativeDots: true,
+      });
+      const assembly = assembled(problem);
+      for (const witness of variantOracle({
+        cellCount: small.cellCount,
+        symbols: small.symbols,
+        givens: small.givens,
+        constraints: small.constraints,
+        limit: 5,
+        maxNodes: 1000000,
+      }).witnesses)
+        holds(problem, assembly, witness);
+    }
+    for (const entry of evalCorpus.cases)
+      if (entry.solution) {
+        const problem = normalizeClassic({
+          kind: "classic",
+          version: 1,
+          width: 9,
+          height: 9,
+          givens: [...entry.puzzle].map(Number),
+        });
+        holds(problem, assembled(problem), [...entry.solution].map(Number));
+      }
+    expect(checks).toBeGreaterThan(200);
   });
 
   test("a 9x9 killer with no givens reaches a count within the node budget", () => {

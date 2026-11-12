@@ -1,6 +1,6 @@
 # M2.6 Engine hardening — fast exact count, bounded Explain tiers, honest results
 
-Status: **approved under D103, 2026-10-16**. Produced from the solver evaluation of 2026-09-21 and a Socratic session the same day. Sequenced **after** M2.5, which merged into `master` at `c3ced37` on 2026-10-16; no code exists for it yet.
+Status: **approved under D103, 2026-10-16; implemented on `feat/m26-hardening` from 2026-10-16 to 2026-11-11 and merged into `master` on 2026-11-11** after the whole-suite gate ([verification](../history/m26-verification.md)). Produced from the solver evaluation of 2026-09-21 and a Socratic session the same day. Sequenced after M2.5, which merged into `master` at `c3ced37` on 2026-10-16. Outcome and accepted deviations: D103 in [decisions](../decisions.md), [implementation progress](../history/m26-implementation-progress.md).
 
 Related: [M2.5 engine design](2026-09-17-engine-design.md), [M2.5 plan](../plans/2026-09-18-m25-engine.md), [M2.5 verification](../history/m25-verification.md), [engine architecture](../solver/architecture.md), [decisions](../decisions.md) D042, D049, D052, D055, D057, D063, D094, D099, D100, D101, D102, D103.
 

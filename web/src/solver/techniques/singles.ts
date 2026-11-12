@@ -5,7 +5,7 @@ import { hasSingleCandidate, symbolMask } from "../state/read";
 
 /** One canonical cursor over cells. Every alias has its own validated presentation. */
 export class NakedSingles {
-  *discover(view: ReadView): Discovery {
+  *discover(view: ReadView, context?: { readonly revision3?: boolean }): Discovery {
     for (const cell of view.assembly.problem.cells) {
       yield { kind: "work", units: 1 };
       const mask = view.state.domains[cell];
@@ -17,13 +17,22 @@ export class NakedSingles {
           house.cells.includes(cell) &&
           house.cells.filter((other) => !view.state.values[other]).length === 1,
       );
-      const aliases = [
+      const all = [
         { alias: "Naked Single", house: null as string | null },
         ...houses.flatMap((house) => [
           { alias: "Full House", house: house.id },
           { alias: "Last Digit", house: house.id },
         ]),
       ];
+      // The @3 policies propose one alias per cell, the most specific one:
+      // Full House, then Last Digit, then Naked Single (spec M2.6 §4.2).
+      const aliases = context?.revision3
+        ? [
+            all.find((entry) => entry.alias === "Full House") ??
+              all.find((entry) => entry.alias === "Last Digit") ??
+              all[0],
+          ]
+        : all;
       for (const { alias, house } of aliases) {
         yield { kind: "work", units: 1 };
         const builder = new CertificateBuilder(view);

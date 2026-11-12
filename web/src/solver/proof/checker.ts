@@ -64,6 +64,12 @@ export function checkUsage(cursor: object): Readonly<Usage> {
   requireProof(usage, "unknown-check-cursor");
   return Object.freeze({ ...usage });
 }
+/** checkUsage(cursor).workUnits without the frozen copy, for the per-event scheduler loop. */
+export function checkWorkUnits(cursor: object): number {
+  const usage = checkMeters.get(cursor);
+  requireProof(usage, "unknown-check-cursor");
+  return usage.workUnits;
+}
 const conditionalSteps = new WeakMap<CheckedStep, UniqueAuthority>();
 const authenticCertificates = new WeakSet<object>();
 const certificateAuthorities = new WeakMap<ProofNode, CheckedNodeAuthority>();
@@ -158,6 +164,41 @@ export function checkedWorkUnits(step: CheckedStep): number {
 }
 
 /**
+ * Peers of each cell through the declared all-different capabilities, in the
+ * order the scopes list them, computed once per (immutable) capability list
+ * instead of once per placement (spec M2.6 §4.2).
+ */
+const peerTables = new WeakMap<object, Map<number, readonly number[]>>();
+function capabilityPeers(
+  scopes: ReadView["assembly"]["allDifferent"],
+  cell: number,
+): readonly number[] {
+  let table = peerTables.get(scopes);
+  if (!table) {
+    table = new Map();
+    // Only an immutable capability list (and cell lists) can share a table.
+    if (
+      Object.isFrozen(scopes) &&
+      scopes.every((scope) => Object.isFrozen(scope) && Object.isFrozen(scope.cells))
+    )
+      peerTables.set(scopes, table);
+  }
+  let peers = table.get(cell);
+  if (!peers) {
+    peers = [
+      ...new Set(
+        scopes
+          .filter((scope) => scope.cells.includes(cell))
+          .flatMap((scope) => scope.cells)
+          .filter((other) => other !== cell),
+      ),
+    ];
+    table.set(cell, peers);
+  }
+  return peers;
+}
+
+/**
  * Reconstructs the complete candidate transaction from proved literal roots.
  * Placement peers must be explicit effects with their own proofs. Exact domain
  * roots close every edited cell, so calculated masks never manufacture facts.
@@ -209,13 +250,7 @@ export function checkedEffectState(
   for (const effect of effects)
     if (effect.kind === "place") {
       // Derive peers from declared capabilities, never trust an external peer list.
-      const peers = new Set(
-        view.assembly.allDifferent
-          .filter((scope) => scope.cells.includes(effect.cell))
-          .flatMap((scope) => scope.cells)
-          .filter((cell) => cell !== effect.cell),
-      );
-      for (const peer of peers) {
+      for (const peer of capabilityPeers(view.assembly.allDifferent, effect.cell)) {
         requireProof(values[peer] !== effect.symbol, "duplicate-placement");
         if ((view.state.domains[peer] & symbolMask(effect.symbol)) !== 0)
           requireProof(seen.has(`remove:${peer}:${effect.symbol}`), "missing-peer-effect");
@@ -255,8 +290,23 @@ function sameState(left: StateKey, right: StateKey): boolean {
  * exact JSON punctuation and UTF-8 keys avoids accepting oversize Unicode nodes
  * or silently narrowing the protocol's header allowance.
  */
+/**
+ * copyBounded(input, limit).bytes without the copy when the byte count is
+ * known: a previous copyBounded result, or an input frozen at every level, is
+ * immutable ordinary JSON, so its count cannot change. The checker re-measures
+ * every retained node per proposal (spec M2.6 §4.2); a copy is always fresh.
+ */
+function boundedBytes(input: unknown, limit: number): number {
+  if (typeof input === "object" && input !== null) {
+    const known = boundedCopies.get(input);
+    if (known !== undefined && known <= limit) return known;
+  }
+  return copyBounded(input, limit).bytes;
+}
 function copyBounded<T>(input: T, limit: number): { value: T; bytes: number } {
   let remaining = limit;
+  // Whether every object visited so far is frozen (the input's byte count is then stable).
+  const input_ = { frozen: true };
   const active = new WeakSet<object>();
   const charge = (bytes: number) => {
     remaining -= bytes;
@@ -281,6 +331,7 @@ function copyBounded<T>(input: T, limit: number): { value: T; bytes: number } {
     requireProof(typeof value === "object", "invalid-proof-json");
     requireProof(!active.has(value), "cyclic-proof-json");
     active.add(value);
+    if (!Object.isFrozen(value)) input_.frozen = false;
     const array = Array.isArray(value);
     requireProof(
       array ||
@@ -343,8 +394,15 @@ function copyBounded<T>(input: T, limit: number): { value: T; bytes: number } {
     return Object.freeze(result);
   };
   const value = visit(input, 0) as T;
-  return { value, bytes: limit - remaining };
+  const bytes = limit - remaining;
+  if (typeof value === "object" && value !== null) {
+    boundedCopies.set(value, bytes);
+    if (input_.frozen) boundedCopies.set(input as object, bytes);
+  }
+  return { value, bytes };
 }
+/** Byte counts of copyBounded results, keyed by the frozen result itself. */
+const boundedCopies = new WeakMap<object, number>();
 
 /** Bounded data capture for lifecycle transport. No proof or candidate authority is issued. */
 export function captureProofRecord<T>(
@@ -463,6 +521,30 @@ export class ProofChecker {
   }
 }
 
+/**
+ * The authority of an original root node: its fact is immutable, so the frozen
+ * record is built once per node instead of once per check (spec M2.6 §4.2).
+ */
+const originalAuthorities = new WeakMap<ProofNode, CheckedNodeAuthority>();
+function originalAuthority(node: ProofNode): CheckedNodeAuthority | undefined {
+  const known = originalAuthorities.get(node);
+  if (known) return known;
+  const original = originalFact(node);
+  if (!original) return undefined;
+  const authority: CheckedNodeAuthority = {
+    state: original.state,
+    premises: defined(originalPremises(node), "originalPremises"),
+    inference: Object.freeze({
+      conclusion: original.proposition,
+      openAssumptions: original.openAssumptions,
+      conditional: original.conditional,
+      rules: original.rules,
+    }),
+  };
+  originalAuthorities.set(node, authority);
+  return authority;
+}
+
 /** Captures a monotone checker stage without copying its entire prefix per node. */
 class ProofStage implements ReadonlyMap<number, ProofNode> {
   readonly #map: ReadonlyMap<number, ProofNode>;
@@ -571,8 +653,10 @@ function* verifyGraph(
     const deadline = performance.now() + limits.timeMs;
     let work = 0;
     const remainingWork = source.remainingWork;
+    // The clock is a safety stop: read it once per 64 ticks, not per tick.
+    let ticks = 0;
     const tick = (units = 1) => {
-      requireProof(performance.now() < deadline, "proof-time-limit");
+      if (ticks++ % 64 === 0) requireProof(performance.now() < deadline, "proof-time-limit");
       requireProof(
         work + units <= limits.workUnits && (!remainingWork || units <= remainingWork()),
         "proof-work-limit",
@@ -580,13 +664,30 @@ function* verifyGraph(
       work += units;
       if (meter) meter.workUnits = work;
     };
+    // Up to `wanted` units the caller would consume back to back and every
+    // per-unit tick would accept; 1 means take the ordinary one-unit path.
+    const batchUnits = source.batchUnits;
+    const batch = (wanted: number): number => {
+      if (!batchUnits || wanted < 2) return 1;
+      const units = Math.min(wanted, batchUnits());
+      return units >= 2 &&
+        work + units <= limits.workUnits &&
+        (!remainingWork || units <= remainingWork())
+        ? units
+        : 1;
+    };
     const suppliedRetained = source.retained;
     requireProof(suppliedRetained.size <= limits.runNodes, "proof-run-node-limit");
     const retained = new Map<number, ProofNode>();
-    for (const [id, node] of suppliedRetained) {
-      tick();
-      retained.set(id, node);
-      yield { kind: "work", units: 1 };
+    {
+      const entries = [...suppliedRetained];
+      for (let index = 0; index < entries.length;) {
+        const units = batch(entries.length - index);
+        tick(units);
+        for (const end = index + units; index < end; index++)
+          retained.set(entries[index][0], entries[index][1]);
+        yield { kind: "work", units };
+      }
     }
     const branchPrefix = admission === "branch" ? retainedProof(sourceView) : undefined;
     if (branchPrefix) {
@@ -597,11 +698,20 @@ function* verifyGraph(
     const firstRoot = retained.get(0);
     const rootCount = firstRoot && originalRootCount(firstRoot);
     requireProof(rootCount !== undefined && rootCount <= retained.size, "missing-original-roots");
-    for (let id = 0; id < rootCount; id++) {
-      tick();
-      yield { kind: "work", units: 1 };
-      const root = retained.get(id);
-      requireProof(root && originalRootCount(root) === rootCount, "missing-original-roots");
+    for (let id = 0; id < rootCount;) {
+      // A batch only covers roots that pass; a failing root is reached one
+      // unit at a time, after exactly the ticks it had before.
+      let units = batch(rootCount - id);
+      for (let offset = 0; offset < units; offset++) {
+        const root = retained.get(id + offset);
+        if (!root || originalRootCount(root) !== rootCount) units = 1;
+      }
+      tick(units);
+      yield { kind: "work", units };
+      for (const end = id + units; id < end; id++) {
+        const root = retained.get(id);
+        requireProof(root && originalRootCount(root) === rootCount, "missing-original-roots");
+      }
     }
     // Owned publications already contain the immutable canonical problem.
     // Standalone certificates still authenticate/capture their external input.
@@ -679,25 +789,13 @@ function* verifyGraph(
         // complete publication prefix without a second unbudgeted traversal.
         requireProof(branchPrefix.get(id) === node, "branch-prefix-mismatch");
       }
-      const original = originalFact(node);
       const checked =
         acceptedNodes.get(node) ??
         (admission === "branch" && ownsBranchNode(sourceView, node)
           ? branchNodes.get(node)
           : undefined) ??
         (admission === "certificate" ? certificateAuthorities.get(node) : undefined);
-      const authority: CheckedNodeAuthority | undefined = original
-        ? {
-            state: original.state,
-            premises: defined(originalPremises(node), "originalPremises"),
-            inference: Object.freeze({
-              conclusion: original.proposition,
-              openAssumptions: original.openAssumptions,
-              conditional: original.conditional,
-              rules: original.rules,
-            }),
-          }
-        : checked;
+      const authority: CheckedNodeAuthority | undefined = originalAuthority(node) ?? checked;
       requireProof(
         authority &&
           id === node.id &&
@@ -732,8 +830,7 @@ function* verifyGraph(
         yield { kind: "work", units: 1 };
       }
       reserve(captured.header.bytes + runBytes + NODE_BYTES);
-      const encoded = copyBounded(node, NODE_BYTES);
-      runBytes += encoded.bytes;
+      runBytes += boundedBytes(node, NODE_BYTES);
       requireProof(
         runBytes <= limits.proofBytes && runBytes <= limits.workspaceBytes,
         "proof-byte-limit",

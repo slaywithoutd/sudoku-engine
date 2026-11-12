@@ -116,11 +116,101 @@ spend their budget in rule propagation and the cheap tiers instead; at 16 M
 units, kropki, mixed, killer, thermometer and arrow cases reach the budget
 rather than a logical stop.
 
+## M2.6 refresh: the `@3` policies (2026-11-10/11)
+
+Spec [M2.6](../specs/2026-09-22-m26-engine-hardening.md) §5 T09 asks for this
+ablation to be re-run with `explain-fair@3` and `analyze-fair@3`, and for D101 to
+be revisited only if `@3` changes its conclusion. Run from `feat/m26-hardening`
+at `b9dfaf2` plus the T09 harness change (configurations 10–12 in
+`bench-ablate.test.ts`: `explain-fair@3`, `analyze-fair@1`, `analyze-fair@3`);
+`ablate.ts` and the corpus are unchanged since M2.5. Same held-out partition
+(310 cases), same budgets, every configuration run twice at both. 52 jobs, 11 at
+a time on 12 logical cores, 3 h 34 min of wall time (2026-11-10 23:01 to
+2026-11-11 02:35 -03:00), on mains (`BatteryStatus` 2 at the start and the end).
+Every run uses a fixed clock (`now: () => 0`) and ends at a logical stop or on its
+work cap, never on time, so the numbers do not depend on the machine.
+
+**The `@1` baseline is not the M2.5 one.** M2.6 T04 cut the units charged for
+source-index preparation (a basic step on the easy puzzle went from about 87k to
+about 7.5k units) without changing `@1`'s step order, so at the same
+budgets `@1` now goes much further: at 16M units it reaches a logical stop on
+195 of 310 cases (84 in M2.5) and ends `incomplete` on 115 (226). Only the rows
+below compare with each other; the M2.5 tables above are kept as they were.
+
+No run ended in `error` (4,960 runs: four policies, two budgets, 310 cases, each
+run twice). The first attempt on 2026-11-10 did, on five
+variant boards; that was the defect fixed in `b9dfaf2` (effect-free steps), and
+its outputs were discarded.
+
+### `explain-fair@3` against `explain-fair@1`, 310 held-out cases
+
+| Metric | `@1` | `@3` | Pass | Result |
+| --- | --- | --- | --- | --- |
+| A median work to a tier ≥ 3 step (16M) | 2,422,811 (198 states) | 1,165,523 (432 states) | ≥ 20 % | **51.9 %, passes** |
+| B mean work to logical stop (16M) | 2,696,400 | 2,376,632 | ≥ 10 % | **11.9 %, passes** (118 of 310 pairs censored) |
+| C `incomplete` rate at 2M | 0.768 | 0.752 | not higher | passes |
+| D accepted steps per family (16M) | — | worst ratio 0 (`c13@1`, 1 → 0) | ≥ 0.90 | **fails**: `c08@1` 16 → 12, `c13@1` 1 → 0, `c15@1` 19 → 13, `c19@1` 38 → 31 |
+| E determinism | identical | identical | identical | passes |
+| F tiers 0–2 prefix (16M) | — | 298/310 identical | identical | **fails** (12 cases) |
+
+At 2M, A gives 46.1 % (11 / 53 states), B 1.9 % (238 censored), D fails on
+`c13@1` alone and F has 271/310 identical.
+
+Where the steps moved at 16M: tier ≥ 3 steps rise from 198 to 432, and tier-5/6
+steps from 0 to 238 (`c32@1` 182, `c24@1` 25, `c22@1` 24, `c25@1` 5, `c20@1` 1,
+`c26@1` 1) on 40 cases. All 182 `c32@1` steps are effect-free guardian clauses
+(the steps `b9dfaf2` retains); 27 cases get a tier-5/6 step that removes
+candidates. Logical stops: 196 under `@3`, 195 under `@1`, by family the same
+except one more thermometer case. The losses in D are the intended effect of the
+tier cap: a tier-3/4 job that spends its 100,000 units on a state without a step
+is capped, Explain climbs, and the state is resolved by a step from a higher tier
+or a different tier-3/4 family (`c12@1` 1 → 9, `c18@1` 58 → 63). `c13@1` (Remote
+Pairs, tier 2) loses its only step (on `classic-312`) because that case's
+trajectory diverged earlier, at a `c06@1` step (see F).
+
+F's misses are not caused by the tier cap, which starts at tier 3. At 16M all 12
+diverge at a tier-2 step: in ten, `@3` takes a `c10@1` (single-digit pattern) step
+where `@1` takes a `c11@1` (wing) step; the other two differ at a `c06@1` and a
+`k02@1` step. The likely cause, consistent with these divergences but not
+isolated by an experiment: `@3`'s basic fish (C06) enumerates only admissible
+cover sets, which finds the same candidates for far less work (T05), so the
+tier-2 jobs are served in a different order and the first tier-2 step can come
+from another family. At 2M, 10 cases diverge the same way and 29 more are `@1` prefixes cut by
+the budget that `@3` extends because it spends less. T05's "tiers 0–2 identical
+to `@1`" holds on the golden fixtures, as its acceptance states, not on the
+whole held-out partition.
+
+### `analyze-fair@3` against `analyze-fair@1`
+
+`analyze-fair@1` accepts no technique step on any of the 310 cases at either
+budget (rule propagation only, 425 steps in all), the M2 defect M2.6 fixed under
+`@3`. A and B have nothing to compare (baseline 0 states, 310 pairs censored), D
+passes trivially and F does not apply, so the gate has no meaning for Analyze.
+What `analyze-fair@3` does on its own: 16,870 technique steps at 16M (9,998 at
+2M), at least one on 301 of 310 cases (the other 9 have none under `explain-fair@1`
+either), a logical stop on 185 cases (78 at 2M), `incomplete` rate 0.403 at 16M
+and 0.748 at 2M against 1.0. E passes at both budgets.
+
+### Conclusion for D101
+
+D101 compared `@2` with `@1` and kept `@2` disabled; nothing here concerns `@2`,
+and `@2` stays disabled. Measured against the same §3.12 gate, `explain-fair@3`
+passes A, B, C and E and **fails D and F**, so it would not pass the M2.5 gate.
+It is the `classic-run` default because D103 approved it for a different
+objective (reach the tier a puzzle needs within the time limit, spec §1), and
+the D failures are that objective at work. No default changes. The F result
+corrects the reading that `@3` keeps every tier-0–2 prefix of `@1`: it does on
+the golden fixtures and on 298 of 310 held-out cases at 16M.
+
+Reproduction: the commands of the section below, with `ABLATE_CONFIG` 0, 10, 11
+and 12, `ABLATE_CASES=full`, both budgets, each with and without
+`ABLATE_TAG=repeat`, four shards for 0, 10 and 12.
+
 ## Reproduction
 
 ```
 # one configuration, one budget, one shard of the held-out cases
-ABLATE=run ABLATE_CONFIG=<0..9> ABLATE_BUDGET=spec|stop ABLATE_CASES=grid|full \
+ABLATE=run ABLATE_CONFIG=<0..12> ABLATE_BUDGET=spec|stop ABLATE_CASES=grid|full \
   ABLATE_SHARD=i/n [ABLATE_TAG=repeat] CORPUS_OUT=<dir> \
   npx vitest run tests/unit/solver/bench-ablate.test.ts
 
