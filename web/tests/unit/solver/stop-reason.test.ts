@@ -4,6 +4,8 @@ import {
   solveClassic,
   type ClassicSolveEvent,
 } from "../../../src/solver/classic-run";
+import { coverageEntries } from "../../../src/solver/techniques/manifest";
+import { logicStop } from "../../../src/ui/solver-copy";
 import evalCorpus from "../../solver/bench/eval-corpus.json";
 
 /**
@@ -39,10 +41,18 @@ test("an interrupted lower job that stops @1 is reported as lower-interrupted", 
   expect(result.human).toBe("incomplete");
   expect(result.stopReason).toBe("lower-interrupted");
   expect(result.count).toBe("unique");
+  // The interrupted job is C33, served but unfinished, at the highest tier tried.
+  const c33 = coverageEntries.find((entry) => entry.id === "C33");
+  expect(result.coverage.capped).toContain(c33?.aliases[0]);
+  expect(result.coverage.highestTierTried).toBe(c33?.tier);
+  expect(logicStop(result.human, result.stopReason, result.coverage)).toMatch(
+    /^Logic: stopped at tier 5: a technique or basic rule was interrupted/,
+  );
 });
 
 test("under @3 the same job counts as settled, so the run climbs and stops on its budget", async () => {
   const result = await run("explain-fair@3");
-  expect(result.stopReason).not.toBe("lower-interrupted");
+  // As recorded by the S1 check 1 (docs/history/m27-progress.md).
+  expect(result.stopReason).toBe("tier-cap");
   expect(result.coverage.highestTierTried).toBe(6);
 });

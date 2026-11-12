@@ -134,8 +134,9 @@ export type StopReason =
   | "tier-cap"
   /**
    * A job of a lower tier (or a rule job) was interrupted by its own
-   * resource limit, so the selection could not serve the tiers above it
-   * (`incomplete-cheaper-tier`; M2.7, D105 item 8).
+   * resource limit (or, under a conditional profile, disabled), so the
+   * selection could not serve the tiers above it (`incomplete-cheaper-tier`;
+   * M2.7, D105 item 8). It used to be reported as a work limit or a tier cap.
    */
   | "lower-interrupted"
   | "contradiction"

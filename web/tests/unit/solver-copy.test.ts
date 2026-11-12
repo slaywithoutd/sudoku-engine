@@ -91,7 +91,14 @@ describe("solver copy for technique sets", () => {
   test("a stop by an interrupted lower job says so", () => {
     expect(
       logicStop("incomplete", "lower-interrupted", { highestTierTried: 6, notStarted: [] }),
-    ).toBe("Logic: stopped at tier 6: a simpler technique was interrupted by its resource limit");
+    ).toBe(
+      "Logic: stopped at tier 6: a technique or basic rule was interrupted by its resource limit, so higher tiers were not tried",
+    );
+    expect(
+      logicStop("incomplete", "lower-interrupted", { highestTierTried: -1, notStarted: [] }),
+    ).toBe(
+      "Logic: stopped before any technique: a basic rule was interrupted by its resource limit",
+    );
   });
   test("an empty set names no tier; the step note is one sentence", () => {
     expect(
