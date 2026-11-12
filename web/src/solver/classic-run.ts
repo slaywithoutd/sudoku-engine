@@ -132,6 +132,12 @@ export type StopReason =
   | "work-limit"
   | "time-limit"
   | "tier-cap"
+  /**
+   * A job of a lower tier (or a rule job) was interrupted by its own
+   * resource limit, so the selection could not serve the tiers above it
+   * (`incomplete-cheaper-tier`; M2.7, D105 item 8).
+   */
+  | "lower-interrupted"
   | "contradiction"
   | "not-started";
 export interface Coverage {
@@ -193,9 +199,11 @@ export function coverageOf(
  * final ledger (spec §4.5); the result's `outcome` says how the whole run
  * ended (an exact phase that timed out afterwards is a "timeout" outcome).
  * Order: not started, solved, contradiction (also a logical path the count
- * invalidated), the time safety stop, then a tier cap whenever a technique
- * is capped (explain-fair@3 reopens capped jobs until the work runs out),
- * then a stall, then any other work or resource limit.
+ * invalidated), the time safety stop, then an interrupted lower job that
+ * ended the phase (it is the cause even when another job is capped), then a
+ * tier cap whenever a technique is capped (explain-fair@3 reopens capped jobs
+ * until the work runs out), then a stall, then any other work or resource
+ * limit.
  */
 export function stopReasonOf(
   human: HumanStatus,
@@ -206,6 +214,7 @@ export function stopReasonOf(
   if (human === "solved") return "solved";
   if (human === "contradiction" || human === "invalidated") return "contradiction";
   if (logicalStop === "time-limit") return "time-limit";
+  if (logicalStop === "incomplete-cheaper-tier") return "lower-interrupted";
   // Capped now, or reopened after a cap on this state (reason kept).
   if (ledger?.some((row) => row.status === "capped" || row.reason === "tier-work-cap"))
     return "tier-cap";

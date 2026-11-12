@@ -55,6 +55,8 @@ const stopLabels: Record<string, string> = {
   "work-limit": "work limit",
   "time-limit": "time limit",
 };
+/** Why a phase that a lower interrupted job stopped has no higher steps (D105 item 8). */
+const LOWER_INTERRUPTED = "a simpler technique was interrupted by its resource limit";
 /** Where and why the logical phase stopped; empty when it never ran. */
 export function logicStop(
   human: string,
@@ -81,6 +83,8 @@ export function logicStop(
   if (stopReason === "profile-stall" || stopReason === "tier-cap")
     return `Logic: stalled at tier ${Math.max(0, tier)} (${stopLabels[stopReason]})${tail}`;
   const where = tier < 0 ? "before any technique" : `at tier ${tier}`;
+  if (stopReason === "lower-interrupted")
+    return `Logic: stopped ${where}: ${LOWER_INTERRUPTED}${tail}`;
   return `Logic: stopped ${where} by the ${stopLabels[stopReason] ?? "limit"}${tail}`;
 }
 /** Shown on steps found while a simpler technique was cut by a budget. */

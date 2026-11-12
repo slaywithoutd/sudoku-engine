@@ -39,10 +39,17 @@ export interface HumanOptions extends SelectionOptions {
 
 /**
  * The budget behind an incomplete stop: the deterministic work cut or the
- * time safety stop (spec M2.6 §4.3), anything else a generic logical budget.
+ * time safety stop (spec M2.6 §4.3); a lower job that was interrupted before
+ * it settled, so the selection could not climb past it
+ * (`incomplete-cheaper-tier`, kept so the result can say so: M2.7, D105 item
+ * 8); anything else a generic logical budget.
  */
-function budgetReason(reason: string): "work-limit" | "time-limit" | "logical-budget" {
-  return reason === "work-limit" || reason === "time-limit" ? reason : "logical-budget";
+function budgetReason(
+  reason: string,
+): "work-limit" | "time-limit" | "incomplete-cheaper-tier" | "logical-budget" {
+  return reason === "work-limit" || reason === "time-limit" || reason === "incomplete-cheaper-tier"
+    ? reason
+    : "logical-budget";
 }
 
 /**

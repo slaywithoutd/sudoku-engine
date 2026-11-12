@@ -10,7 +10,7 @@ Record kept during the milestone. Spec: [proposal](../specs/2026-10-22-technique
 | S3 selector | done | `e7af297`, review fix `efebe52` | `tests/e2e/solver-techniques.spec.ts`; below. |
 | S4 one Solve view | done | `eddae59`, review fix (next commit) | `tests/e2e/solver-view.spec.ts`; below. |
 | S5 corpus stall case | done | (next commit) | `tests/unit/solver/stall-case.test.ts`; below. |
-| Stop reason for an interrupted lower job | pending | | |
+| Stop reason for an interrupted lower job | done | (next commit) | `tests/unit/solver/stop-reason.test.ts`; below. |
 
 ## S1 §7 checks (2026-11-12, mains)
 
@@ -78,3 +78,7 @@ Power and speed: the laptop went onto battery during S4 and, back on mains, stay
 The proposal's §2 puzzle is AI Escargot, already the evaluation corpus case `escargot` (count `1`, its solution checked against the reference DFS and the Algorithm X oracle by `exact-reference.test.ts`). Adding it again would run every corpus-driven test on it twice and change the 131-case count that several records cite, so no case is added: `tests/unit/solver/stall-case.test.ts` pins that the proposal's string is `escargot` and the only corpus case with that grid, that the oracle finds exactly one solution equal to the stored one, and that the classic run ends `incomplete` or `stalled-within-profile` with count `unique` and that solution, asserting no solving technique. The duplicate "stall" case was removed from table 3 of `technique-sets.test.ts` and its pinned outcomes. `npx vitest run tests/unit/solver/stall-case.test.ts tests/unit/solver/technique-sets.test.ts`: 3 and 37 passed (mains, slow state).
 
 Deviation from the proposal's S5 row ("add the §2 puzzle to the evaluation corpus"): the puzzle was already there under another name; its acceptance (count unique, stored solution matching the Algorithm X oracle) is met by the existing case and pinned by the new test.
+
+## Stop reason for an interrupted lower job (D105 item 8, 2026-11-12)
+
+`humanSteps` keeps the selection's `incomplete-cheaper-tier` instead of rewriting it to `logical-budget`, and `stopReasonOf` reports it as the new `StopReason` `lower-interrupted`, after `time-limit` and ahead of `tier-cap` (the interruption is what ended the phase). The Solve screen says "Logic: stopped at tier n: a simpler technique was interrupted by its resource limit". Acceptance: `npx vitest run tests/unit/solver/stop-reason.test.ts tests/unit/solver/result-contract.test.ts tests/unit/solver/human.test.ts tests/unit/solver/run.test.ts tests/unit/solver-copy.test.ts tests/unit/solver/golden-traces.test.ts`: 31 passed (268 s, mains, slow state). The end-to-end case is S1 check 1: Escargot under `explain-fair@1` with C01–C03, C22–C28 and C33 stops with C33 interrupted and now reports `lower-interrupted`; under `@3` it climbs to tier 6. Golden traces are unchanged (they record `human`, which stays `incomplete`).

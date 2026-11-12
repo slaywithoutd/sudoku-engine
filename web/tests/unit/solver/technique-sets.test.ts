@@ -286,6 +286,7 @@ const consistent: Record<Result["stopReason"], readonly Result["human"][]> = {
   contradiction: ["contradiction", "invalidated"],
   "profile-stall": ["stalled-within-profile"],
   "tier-cap": ["stalled-within-profile", "incomplete"],
+  "lower-interrupted": ["incomplete"],
   "work-limit": ["incomplete"],
   "time-limit": ["incomplete"],
 };
