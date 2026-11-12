@@ -16,7 +16,7 @@ Everything runs in your browser. There is no account, no server and no tracking;
 
 | Play | Solve |
 | --- | --- |
-| ![Play screen: a partially solved board with corner and center notes, a running timer and the keypad](docs/media/play.png) | ![Solve screen: step 2 of 14, a Naked Single highlighted on the board with the eliminated candidate struck through](docs/media/explain.png) |
+| ![Play screen: a partially solved board with corner and center notes, a running timer and the keypad](docs/media/play.png) | ![Solve screen: step 2 of 14, a Naked Single highlighted on the board with the eliminated candidate struck through, under a one-line summary: unique solution, solved by logic](docs/media/explain.png) |
 
 ## Features
 
