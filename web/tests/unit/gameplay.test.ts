@@ -132,7 +132,7 @@ test("version 1 libraries load with defaults; new layers, timer and settings val
   delete v1.sessions.p.timer;
   v1.sessions.p.editor.selected = 0;
   const loaded = validateLibrary(v1);
-  expect(loaded.formatVersion).toBe(2);
+  expect(loaded.formatVersion).toBe(3);
   expect(loaded.settings).toEqual({
     ...defaultSettings(),
     showConflicts: true,

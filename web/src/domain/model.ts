@@ -153,9 +153,24 @@ export interface Settings {
   solverHideBasic: boolean;
   solverAutoplayMs: (typeof AUTOPLAY_SPEEDS)[number];
   solverTimeLimitS: (typeof SOLVER_TIME_LIMITS)[number];
+  /**
+   * The Solve screen's technique set (M2.7, D105): a current preset id
+   * (`TECHNIQUE_PRESET_IDS`) or "custom", which uses `solverTechniquesOff`.
+   */
+  solverTechniquePreset: string;
+  /**
+   * Coverage ids switched off in the custom set, strictly ascending. Kept when
+   * a preset is chosen, so the custom set is not lost; a family the list does
+   * not name is on (D105 item 4).
+   */
+  solverTechniquesOff: string[];
 }
+/**
+ * Version 3 (M2.7, D105) adds the two technique-set settings; versions 1 and
+ * 2 load with their defaults (the full set). See docs/specs/2026-11-10-technique-set-semantics.md §5.6.
+ */
 export interface LibraryData {
-  formatVersion: 2;
+  formatVersion: 3;
   revision: number;
   drafts: Record<string, Draft>;
   puzzles: Record<string, Puzzle>;

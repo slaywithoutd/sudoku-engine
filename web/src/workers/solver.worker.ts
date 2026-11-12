@@ -6,6 +6,7 @@ import {
   type ClassicSolveEvent,
   type ClassicMode,
 } from "../solver/classic-run";
+import type { TechniqueSelection } from "../solver/techniques/technique-sets";
 
 type WorkerRequest =
   | { readonly kind: "test-long" | "stop" }
@@ -15,6 +16,12 @@ type WorkerRequest =
       readonly givens: readonly number[];
       readonly mode?: ClassicMode;
       readonly timeLimitMs?: number;
+      /**
+       * A preset or a custom set's switched-off ids (M2.7, D105). Untrusted:
+       * `solveProblem` shape-checks it and answers a malformed one with an
+       * `error` result, never with a run of the full set.
+       */
+      readonly techniques?: unknown;
     }
   | { readonly kind: "count-classic"; readonly givens: readonly number[] };
 type WorkerEvent =
@@ -53,6 +60,9 @@ self.onmessage = (event: MessageEvent<WorkerRequest | null | undefined>) => {
         requestId: request.requestId,
         // The work budget scales with the preset (spec M2.6 T08).
         limits: classicLimitsFor(timeMs),
+        ...(request.techniques === undefined
+          ? {}
+          : { techniqueSelection: request.techniques as TechniqueSelection }),
       },
       {
         clock: { now: () => performance.now() },

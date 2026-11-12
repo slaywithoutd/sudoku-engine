@@ -4,7 +4,7 @@ import { defaultSettings } from "./settings";
 import { lookup } from "./invariants";
 export function emptyLibrary(): LibraryData {
   return {
-    formatVersion: 2,
+    formatVersion: 3,
     revision: 0,
     drafts: {},
     puzzles: {},

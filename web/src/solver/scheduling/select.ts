@@ -48,6 +48,13 @@ export type SelectionEvent =
       readonly step: CheckedStep;
       readonly bundleId: number;
       readonly budgetLimited: boolean;
+      /**
+       * Every lower job of the run's registry is exhausted or excluded. Under a
+       * restricted technique set (M2.7, D105) the registry holds the enabled
+       * families only, so the claim is "nothing simpler among the selected
+       * techniques"; a consumer that needs the catalogue-wide claim combines
+       * it with the step's `setLimited` mark (S1 note §5.2).
+       */
       readonly canClaimSimplerExhausted: boolean;
     }
   | {

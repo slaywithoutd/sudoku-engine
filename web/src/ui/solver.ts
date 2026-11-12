@@ -94,7 +94,7 @@ export function classicSolverController(services: ScreenServices): SolverControl
         const { requestId, input, options } = request as {
           requestId: string;
           input: { givens: number[] };
-          options: { timeLimitMs?: number } | null;
+          options: { timeLimitMs?: number; techniques?: unknown } | null;
         };
         // Engine Analyze stays disabled (docs/decisions.md D063): every run uses
         // Explain, and the Analyze/Explain switch only changes the presentation.
@@ -105,6 +105,7 @@ export function classicSolverController(services: ScreenServices): SolverControl
             givens: input.givens,
             mode: "explain",
             timeLimitMs: options?.timeLimitMs,
+            ...(options?.techniques === undefined ? {} : { techniques: options.techniques }),
           },
           { onEvent: handlers.onEvent, onError: handlers.onError },
         );
