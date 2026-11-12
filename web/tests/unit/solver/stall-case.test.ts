@@ -48,6 +48,8 @@ test("the classic run stalls or stops: human is incomplete or stalled-within-pro
   );
   const result = events.at(-1);
   if (result?.kind !== "result") throw new Error("no result");
+  // The run itself completes; only its logical phase stops short of a solution.
+  expect(result.outcome).toBe("complete");
   expect(["incomplete", "stalled-within-profile"]).toContain(result.human);
   expect(result.count).toBe("unique");
   expect(result.solution?.join("")).toBe(entry?.solution);
