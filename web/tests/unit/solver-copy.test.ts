@@ -6,6 +6,7 @@ import {
   logicStop,
   SET_LIMITED_NOTE,
   setLimitedSummary,
+  stepNoteText,
   techniqueSetLine,
 } from "../../src/ui/solver-copy";
 
@@ -85,6 +86,22 @@ describe("solver copy for technique sets", () => {
     );
     expect(coverageLine({ exhausted: [], capped: [], notStarted: ["x"] })).toBe(
       "Coverage: 0 exhausted, 0 capped, 1 not started",
+    );
+  });
+  test("an empty set names no tier; the step note is one sentence", () => {
+    expect(
+      logicStop(
+        "stalled-within-profile",
+        "profile-stall",
+        { highestTierTried: -1, notStarted: [] },
+        true,
+      ),
+    ).toBe("Logic: no step with the selected techniques");
+    expect(stepNoteText({})).toBe("");
+    expect(stepNoteText({ setLimited: true })).toBe(SET_LIMITED_NOTE);
+    expect(stepNoteText({ budgetLimited: true })).toMatch(/stopped at its limit\.$/);
+    expect(stepNoteText({ budgetLimited: true, setLimited: true })).toBe(
+      "A simpler step may exist: a simpler technique stopped at its limit or is switched off.",
     );
   });
 });

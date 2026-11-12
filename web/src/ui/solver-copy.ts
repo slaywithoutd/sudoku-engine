@@ -73,6 +73,9 @@ export function logicStop(
   const tier = coverage.highestTierTried;
   // A stall: no technique applies, or the capped ones still could (spec §4.5);
   // a budget stop: the phase was cut wherever it was.
+  // An empty set tries no technique at all: no tier to name.
+  if (stopReason === "profile-stall" && restricted && tier < 0)
+    return `Logic: no step with the selected techniques${tail}`;
   if (stopReason === "profile-stall" && restricted)
     return `Logic: stalled at tier ${Math.max(0, tier)} (no step with the selected techniques)${tail}`;
   if (stopReason === "profile-stall" || stopReason === "tier-cap")
@@ -85,6 +88,15 @@ export const BUDGET_LIMITED_NOTE =
   "A simpler step may exist: a simpler technique stopped at its limit.";
 /** Shown on steps found while a simpler technique is switched off (M2.7, D105 item 2). */
 export const SET_LIMITED_NOTE = "A simpler step may exist: a simpler technique is switched off.";
+/** The note under a step: one sentence even when a budget and the set both apply. */
+export function stepNoteText(step: {
+  readonly budgetLimited?: boolean;
+  readonly setLimited?: boolean;
+}): string {
+  if (step.budgetLimited && step.setLimited)
+    return "A simpler step may exist: a simpler technique stopped at its limit or is switched off.";
+  return step.budgetLimited ? BUDGET_LIMITED_NOTE : step.setLimited ? SET_LIMITED_NOTE : "";
+}
 /** The header line counting set-limited steps (D105 item 2); empty when none. */
 export function setLimitedSummary(count: number): string {
   if (!count) return "";

@@ -31,7 +31,22 @@ async function solveAndRead(page: Page) {
     coverage: await page.getByTestId("technique-coverage").textContent(),
     set: await page.getByTestId("technique-set").textContent(),
     techniques: await page.locator(".technique-list li span:first-child").allTextContents(),
+    // Absent for a full set; read without waiting for it.
+    notSelected: (
+      await page.getByTestId("coverage-lists").locator("dd.not-selected").allTextContents()
+    )
+      .join(", ")
+      .split(", ")
+      .filter(Boolean),
   };
+}
+/** The coverage line's counts: exhausted, capped, not started, not selected. */
+function counts(line: string | null): number[] {
+  const match = /(\d+) exhausted, (\d+) capped, (\d+) not started(?:, (\d+) not selected)?/.exec(
+    line ?? "",
+  );
+  if (!match) throw new Error(`no coverage line: ${line}`);
+  return match.slice(1).map((value) => Number(value ?? 0));
 }
 
 test("switching No fish on the stall puzzle changes the technique coverage shown, not the count", async ({
@@ -50,6 +65,10 @@ test("switching No fish on the stall puzzle changes the technique coverage shown
   expect(all.heading).toBe("Unique solution");
   expect(all.set).toBe("Techniques: All");
   expect(all.coverage).not.toContain("not selected");
+  // The three lists partition the 33 families of the full set.
+  const [exhausted, capped, notStarted] = counts(all.coverage);
+  expect(exhausted + capped + notStarted).toBe(33);
+  expect(all.notSelected).toEqual([]);
 
   await page.getByRole("button", { name: "Edit puzzle", exact: true }).click();
   await techniques(page).getByRole("radio", { name: "No fish" }).click();
@@ -59,10 +78,15 @@ test("switching No fish on the stall puzzle changes the technique coverage shown
   expect(noFish.heading).toBe(all.heading);
   expect(noFish.count).toBe(all.count);
   expect(noFish.set).toBe("Techniques: No fish (28 of 33)");
-  expect(noFish.coverage).toContain("5 not selected");
-  expect(noFish.coverage).not.toBe(all.coverage);
-  for (const fish of ["X-Wing", "Finned X-Wing", "Franken X-Wing", "Kraken Fish"])
-    expect(noFish.techniques).not.toContain(fish);
+  // Under No fish they partition the 28 enabled families; the 5 fish are listed apart.
+  const fishCounts = counts(noFish.coverage);
+  expect(fishCounts[0] + fishCounts[1] + fishCounts[2]).toBe(28);
+  expect(fishCounts[3]).toBe(5);
+  expect([...noFish.notSelected].sort()).toEqual(
+    ["Endo-fin fish", "Finned fish", "Franken fish", "Kraken Fish", "X-Wing"].sort(),
+  );
+  // No step of the No fish run comes from a switched-off family.
+  for (const fish of noFish.notSelected) expect(noFish.techniques).not.toContain(fish);
 });
 
 test("a custom set is chosen family by family and survives a reload", async ({ page }) => {

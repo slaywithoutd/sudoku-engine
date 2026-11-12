@@ -16,26 +16,17 @@ import { startWorker } from "../app/solver-worker";
 import { formatDuration } from "../app/play-clock";
 import { mountBoard, type BoardOverlay, type BoardView } from "./board";
 import {
-  BUDGET_LIMITED_NOTE,
   cellName,
   countSummary,
   countVerification,
   coverageLine,
   logicalSummary,
   logicStop,
-  SET_LIMITED_NOTE,
   setLimitedSummary,
   solverStatus,
-  techniqueSetLine,
+  stepNoteText,
 } from "./solver-copy";
-import { CUSTOM_TECHNIQUE_SET } from "../domain/settings";
-import {
-  DEFAULT_TECHNIQUE_PRESET,
-  profileRowIds,
-  resolveTechniqueSet,
-  TECHNIQUE_PRESETS,
-  type TechniqueSelection,
-} from "../solver/techniques/technique-sets";
+import { techniqueSelectionOf, techniqueSetText } from "./technique-selection";
 import { el, button } from "./dom";
 import { icon } from "./icons";
 import {
@@ -133,36 +124,6 @@ export function classicSolverController(services: ScreenServices): SolverControl
       },
     },
   });
-}
-
-/** The families the Solve screen offers: the classic profile's rows. */
-const CLASSIC_ROWS = profileRowIds("classic-expanded@1");
-/**
- * The run's technique selection from settings (M2.7, D105): nothing for "All",
- * so a default run sends the same request as before; the stored switched-off
- * ids for "Custom".
- */
-export function techniqueSelectionOf(
-  settings: Pick<Settings, "solverTechniquePreset" | "solverTechniquesOff">,
-): TechniqueSelection | undefined {
-  if (settings.solverTechniquePreset === CUSTOM_TECHNIQUE_SET)
-    return { off: [...settings.solverTechniquesOff] };
-  return settings.solverTechniquePreset === DEFAULT_TECHNIQUE_PRESET
-    ? undefined
-    : { preset: settings.solverTechniquePreset };
-}
-/** "Techniques: No fish (28 of 33)" for the current settings. */
-function techniqueSetText(
-  settings: Pick<Settings, "solverTechniquePreset" | "solverTechniquesOff">,
-): string {
-  const selection = techniqueSelectionOf(settings),
-    enabled = resolveTechniqueSet("classic-expanded@1", selection) ?? CLASSIC_ROWS;
-  const label =
-    settings.solverTechniquePreset === CUSTOM_TECHNIQUE_SET
-      ? "Custom"
-      : (TECHNIQUE_PRESETS.find((preset) => preset.id === settings.solverTechniquePreset)?.label ??
-        settings.solverTechniquePreset);
-  return techniqueSetLine(label, enabled.length, CLASSIC_ROWS.length);
 }
 
 /** Human description of one deduction, e.g. "B4 = 5" or "Removes 7 from B3, B4". */
@@ -568,7 +529,12 @@ export function mountSolver(
     const stats = el("dl", undefined, "stats");
     stat(stats, "Clues", String(clues.filter(Boolean).length));
     stat(stats, "Logical steps", String(steps.length));
-    stat(stats, "Solved by logic", result.human === "solved" ? "Yes" : "No");
+    // A restricted run says nothing about the full catalogue (S1 note §5.2).
+    stat(
+      stats,
+      restricted ? "Solved with the selected techniques" : "Solved by logic",
+      result.human === "solved" ? "Yes" : "No",
+    );
     stat(stats, "Time", `${((finishedAt - startedAt) / 1000).toFixed(1)} s`);
     // The collapsed line: the count's verdict and where the logic ended.
     const line = el(
@@ -617,7 +583,11 @@ export function mountSolver(
       ["Not started", result.coverage?.notStarted],
       ["Not selected", result.techniqueSet?.notSelected],
     ] as const)
-      if (names?.length) lists.append(el("dt", label), el("dd", names.join(", ")));
+      if (names?.length)
+        lists.append(
+          el("dt", label),
+          el("dd", names.join(", "), label === "Not selected" ? "not-selected" : undefined),
+        );
     const solutionToggle = labeledButton(
       "eye",
       showSolution ? "Show steps" : "Show solution",
@@ -707,12 +677,7 @@ export function mountSolver(
     play.setAttribute("aria-label", autoplay ? "Pause steps" : "Play steps");
     stepName.textContent = step.name;
     stepText.textContent = describeStep(step);
-    stepNote.textContent = [
-      step.budgetLimited ? BUDGET_LIMITED_NOTE : "",
-      step.setLimited ? SET_LIMITED_NOTE : "",
-    ]
-      .filter(Boolean)
-      .join(" ");
+    stepNote.textContent = stepNoteText(step);
     stepNote.hidden = !stepNote.textContent;
     // Board shows the grid *before* the step, with its reasoning highlighted.
     const before = order === 0 ? clues : steps[order - 1].values;

@@ -9,7 +9,8 @@ import {
   type ShortcutAction,
 } from "../domain/model";
 import { CUSTOM_TECHNIQUE_SET, DEFAULT_SHORTCUTS } from "../domain/settings";
-import { compareIds, TECHNIQUE_PRESETS, TECHNIQUE_ROWS } from "../solver/techniques/technique-sets";
+import { TECHNIQUE_PRESETS, TECHNIQUE_ROWS } from "../solver/techniques/technique-sets";
+import { switchAllTechniques, switchTechnique } from "./technique-selection";
 import { parsePuzzleString } from "../domain/classic";
 import { el, button } from "./dom";
 import { comboLabel, iconButton, segmented, switchField } from "./components";
@@ -419,15 +420,20 @@ function customTechniques(services: ScreenServices, refreshers: Refresher[]): HT
   const settings = () => services.controller.snapshot().settings;
   const node = el("fieldset", undefined, "technique-custom");
   node.append(el("legend", "Custom set", "field-label"));
-  const write = (off: Iterable<string>) =>
-    updateSetting(services, "solverTechniquesOff", [...new Set(off)].sort(compareIds));
-  const shown = new Set(SELECTABLE_ROWS.map((row) => row.id));
-  const hiddenOff = () => settings().solverTechniquesOff.filter((id) => !shown.has(id));
+  const write = (off: string[]) => updateSetting(services, "solverTechniquesOff", off);
   const boxes = new Map<string, HTMLInputElement>();
   const quick = el("div", undefined, "technique-quick");
   quick.append(
-    button("Switch all on", () => write(hiddenOff()), "ghost"),
-    button("Switch all off", () => write([...hiddenOff(), ...shown]), "ghost"),
+    button(
+      "Switch all on",
+      () => write(switchAllTechniques(settings().solverTechniquesOff, true)),
+      "ghost",
+    ),
+    button(
+      "Switch all off",
+      () => write(switchAllTechniques(settings().solverTechniquesOff, false)),
+      "ghost",
+    ),
   );
   node.append(quick);
   for (const tier of [...new Set(SELECTABLE_ROWS.map((row) => row.tier))].sort()) {
@@ -442,12 +448,9 @@ function customTechniques(services: ScreenServices, refreshers: Refresher[]): HT
         box = el("input");
       box.type = "checkbox";
       box.dataset.technique = row.id;
-      box.addEventListener("change", () => {
-        const off = new Set(settings().solverTechniquesOff);
-        if (box.checked) off.delete(row.id);
-        else off.add(row.id);
-        write(off);
-      });
+      box.addEventListener("change", () =>
+        write(switchTechnique(settings().solverTechniquesOff, row.id, box.checked)),
+      );
       option.append(box, el("span", row.label));
       boxes.set(row.id, box);
       group.append(option);
