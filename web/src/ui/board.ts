@@ -1,6 +1,7 @@
 import type { Digit, EditorContext, EditorState, Settings } from "../domain/model";
 import type { BoardAction } from "../domain/editor";
 import { selectionOf } from "../domain/editor";
+import { concaveCorners, mergedSides, selectionOutlinePath } from "./selection-outline";
 import { conflictingCells, effectiveValues, noteConflicts, peersOf } from "../domain/classic";
 import { el } from "./dom";
 
@@ -147,7 +148,22 @@ export function mountBoard(container: HTMLElement, options: BoardOptions): Board
       (i % 3 === 0 ? thick : thin).append(line);
     }
   lines.append(thin, thick);
-  grid.append(lines);
+  // Selected cells fuse into one shape: one overlay fills every merged
+  // region below the cells, another outlines it above the grid lines.
+  const selectionLayer = (name: string) => {
+    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    svg.classList.add(name);
+    svg.setAttribute("viewBox", "0 0 9 9");
+    svg.setAttribute("aria-hidden", "true");
+    const path = document.createElementNS(svg.namespaceURI, "path");
+    path.setAttribute("vector-effect", "non-scaling-stroke");
+    svg.append(path);
+    return { svg, path };
+  };
+  const fill = selectionLayer("selection-fill"),
+    outline = selectionLayer("selection-outline");
+  grid.prepend(fill.svg);
+  grid.append(lines, outline.svg);
   container.append(node);
 
   const noteSpans = (
@@ -193,6 +209,9 @@ export function mountBoard(container: HTMLElement, options: BoardOptions): Board
       // not just the primary one.
       peers = new Set(display.highlightPeers ? [...selection].flatMap((i) => [...peersOf(i)]) : []),
       selectedDigit = selected >= 0 ? values[selected] : 0;
+    const outlineData = selectionOutlinePath(selection);
+    fill.path.setAttribute("d", outlineData);
+    outline.path.setAttribute("d", outlineData);
     cells.forEach(({ cell, value, corner, center }, i) => {
       const cellState = state.cells[i],
         given = !!options.context.givens[i] && options.context.mode === "play",
@@ -206,6 +225,16 @@ export function mountBoard(container: HTMLElement, options: BoardOptions): Board
       cell.classList.toggle("conflict", conflicts.has(i));
       cell.classList.toggle("peer", peers.has(i) && !isSelected);
       cell.classList.toggle("primary-selected", i === selected && selection.size > 1);
+      const merged = isSelected ? mergedSides(i, selection) : undefined;
+      cell.classList.toggle("merged-up", !!merged?.up);
+      cell.classList.toggle("merged-right", !!merged?.right);
+      cell.classList.toggle("merged-down", !!merged?.down);
+      cell.classList.toggle("merged-left", !!merged?.left);
+      const notch = isSelected ? concaveCorners(i, selection) : undefined;
+      cell.classList.toggle("notch-tl", !!notch?.topLeft);
+      cell.classList.toggle("notch-tr", !!notch?.topRight);
+      cell.classList.toggle("notch-br", !!notch?.bottomRight);
+      cell.classList.toggle("notch-bl", !!notch?.bottomLeft);
       cell.classList.toggle(
         "same-digit",
         !!selectedDigit && !isSelected && display.highlightSameDigit && values[i] === selectedDigit,
