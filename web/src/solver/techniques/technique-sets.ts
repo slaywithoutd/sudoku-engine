@@ -142,7 +142,8 @@ export const TECHNIQUE_PRESET_IDS: readonly string[] = Object.freeze(
 /**
  * Preset ids of earlier versions, mapped to the current version of the same
  * name (D105 item 5: a stored choice follows its name). None exists yet; a
- * future `no-fish@2` adds `"no-fish@1": "no-fish@2"` here.
+ * future `no-fish@2` adds `"no-fish@1": "no-fish@2"` here. The mapping is one
+ * hop: when `no-fish@3` follows, every older entry must point at `@3`.
  */
 export const RETIRED_TECHNIQUE_PRESETS: Readonly<Record<string, string>> = Object.freeze({});
 

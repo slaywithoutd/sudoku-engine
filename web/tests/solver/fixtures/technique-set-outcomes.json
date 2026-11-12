@@ -1,0 +1,688 @@
+{
+  "explain-fair@3 all@1 on easy": {
+    "human": "solved",
+    "stopReason": "solved",
+    "steps": 78,
+    "setLimitedSteps": 0,
+    "highestTierTried": 0
+  },
+  "explain-fair@3 all@1 on hidden-singles": {
+    "human": "solved",
+    "stopReason": "solved",
+    "steps": 82,
+    "setLimitedSteps": 0,
+    "highestTierTried": 0
+  },
+  "explain-fair@3 all@1 on seventeen": {
+    "human": "solved",
+    "stopReason": "solved",
+    "steps": 90,
+    "setLimitedSteps": 0,
+    "highestTierTried": 0
+  },
+  "explain-fair@3 all@1 on escargot": {
+    "human": "incomplete",
+    "stopReason": "work-limit",
+    "steps": 27,
+    "setLimitedSteps": 0,
+    "highestTierTried": 4
+  },
+  "explain-fair@3 all@1 on inkala-2012": {
+    "human": "incomplete",
+    "stopReason": "work-limit",
+    "steps": 27,
+    "setLimitedSteps": 0,
+    "highestTierTried": 4
+  },
+  "explain-fair@3 all@1 on golden-nugget": {
+    "human": "incomplete",
+    "stopReason": "work-limit",
+    "steps": 27,
+    "setLimitedSteps": 0,
+    "highestTierTried": 4
+  },
+  "explain-fair@3 all@1 on stall": {
+    "human": "incomplete",
+    "stopReason": "work-limit",
+    "steps": 27,
+    "setLimitedSteps": 0,
+    "highestTierTried": 4
+  },
+  "explain-fair@3 singles@1 on easy": {
+    "human": "solved",
+    "stopReason": "solved",
+    "steps": 78,
+    "setLimitedSteps": 0,
+    "highestTierTried": 0
+  },
+  "explain-fair@3 singles@1 on hidden-singles": {
+    "human": "solved",
+    "stopReason": "solved",
+    "steps": 82,
+    "setLimitedSteps": 0,
+    "highestTierTried": 0
+  },
+  "explain-fair@3 singles@1 on seventeen": {
+    "human": "solved",
+    "stopReason": "solved",
+    "steps": 90,
+    "setLimitedSteps": 0,
+    "highestTierTried": 0
+  },
+  "explain-fair@3 singles@1 on escargot": {
+    "human": "stalled-within-profile",
+    "stopReason": "profile-stall",
+    "steps": 27,
+    "setLimitedSteps": 0,
+    "highestTierTried": 0
+  },
+  "explain-fair@3 singles@1 on inkala-2012": {
+    "human": "stalled-within-profile",
+    "stopReason": "profile-stall",
+    "steps": 27,
+    "setLimitedSteps": 0,
+    "highestTierTried": 0
+  },
+  "explain-fair@3 singles@1 on golden-nugget": {
+    "human": "stalled-within-profile",
+    "stopReason": "profile-stall",
+    "steps": 27,
+    "setLimitedSteps": 0,
+    "highestTierTried": 0
+  },
+  "explain-fair@3 singles@1 on stall": {
+    "human": "stalled-within-profile",
+    "stopReason": "profile-stall",
+    "steps": 27,
+    "setLimitedSteps": 0,
+    "highestTierTried": 0
+  },
+  "explain-fair@3 up-to-subsets@1 on easy": {
+    "human": "solved",
+    "stopReason": "solved",
+    "steps": 78,
+    "setLimitedSteps": 0,
+    "highestTierTried": 0
+  },
+  "explain-fair@3 up-to-subsets@1 on hidden-singles": {
+    "human": "solved",
+    "stopReason": "solved",
+    "steps": 82,
+    "setLimitedSteps": 0,
+    "highestTierTried": 0
+  },
+  "explain-fair@3 up-to-subsets@1 on seventeen": {
+    "human": "solved",
+    "stopReason": "solved",
+    "steps": 90,
+    "setLimitedSteps": 0,
+    "highestTierTried": 0
+  },
+  "explain-fair@3 up-to-subsets@1 on escargot": {
+    "human": "stalled-within-profile",
+    "stopReason": "profile-stall",
+    "steps": 27,
+    "setLimitedSteps": 0,
+    "highestTierTried": 1
+  },
+  "explain-fair@3 up-to-subsets@1 on inkala-2012": {
+    "human": "stalled-within-profile",
+    "stopReason": "profile-stall",
+    "steps": 27,
+    "setLimitedSteps": 0,
+    "highestTierTried": 1
+  },
+  "explain-fair@3 up-to-subsets@1 on golden-nugget": {
+    "human": "stalled-within-profile",
+    "stopReason": "profile-stall",
+    "steps": 27,
+    "setLimitedSteps": 0,
+    "highestTierTried": 1
+  },
+  "explain-fair@3 up-to-subsets@1 on stall": {
+    "human": "stalled-within-profile",
+    "stopReason": "profile-stall",
+    "steps": 27,
+    "setLimitedSteps": 0,
+    "highestTierTried": 1
+  },
+  "explain-fair@3 up-to-wings-fish@1 on easy": {
+    "human": "solved",
+    "stopReason": "solved",
+    "steps": 78,
+    "setLimitedSteps": 0,
+    "highestTierTried": 0
+  },
+  "explain-fair@3 up-to-wings-fish@1 on hidden-singles": {
+    "human": "solved",
+    "stopReason": "solved",
+    "steps": 82,
+    "setLimitedSteps": 0,
+    "highestTierTried": 0
+  },
+  "explain-fair@3 up-to-wings-fish@1 on seventeen": {
+    "human": "solved",
+    "stopReason": "solved",
+    "steps": 90,
+    "setLimitedSteps": 0,
+    "highestTierTried": 0
+  },
+  "explain-fair@3 up-to-wings-fish@1 on escargot": {
+    "human": "stalled-within-profile",
+    "stopReason": "profile-stall",
+    "steps": 27,
+    "setLimitedSteps": 0,
+    "highestTierTried": 2
+  },
+  "explain-fair@3 up-to-wings-fish@1 on inkala-2012": {
+    "human": "stalled-within-profile",
+    "stopReason": "profile-stall",
+    "steps": 27,
+    "setLimitedSteps": 0,
+    "highestTierTried": 2
+  },
+  "explain-fair@3 up-to-wings-fish@1 on golden-nugget": {
+    "human": "stalled-within-profile",
+    "stopReason": "profile-stall",
+    "steps": 27,
+    "setLimitedSteps": 0,
+    "highestTierTried": 2
+  },
+  "explain-fair@3 up-to-wings-fish@1 on stall": {
+    "human": "stalled-within-profile",
+    "stopReason": "profile-stall",
+    "steps": 27,
+    "setLimitedSteps": 0,
+    "highestTierTried": 2
+  },
+  "explain-fair@3 no-fish@1 on easy": {
+    "human": "solved",
+    "stopReason": "solved",
+    "steps": 78,
+    "setLimitedSteps": 0,
+    "highestTierTried": 0
+  },
+  "explain-fair@3 no-fish@1 on hidden-singles": {
+    "human": "solved",
+    "stopReason": "solved",
+    "steps": 82,
+    "setLimitedSteps": 0,
+    "highestTierTried": 0
+  },
+  "explain-fair@3 no-fish@1 on seventeen": {
+    "human": "solved",
+    "stopReason": "solved",
+    "steps": 90,
+    "setLimitedSteps": 0,
+    "highestTierTried": 0
+  },
+  "explain-fair@3 no-fish@1 on escargot": {
+    "human": "incomplete",
+    "stopReason": "work-limit",
+    "steps": 27,
+    "setLimitedSteps": 0,
+    "highestTierTried": 4
+  },
+  "explain-fair@3 no-fish@1 on inkala-2012": {
+    "human": "incomplete",
+    "stopReason": "work-limit",
+    "steps": 27,
+    "setLimitedSteps": 0,
+    "highestTierTried": 4
+  },
+  "explain-fair@3 no-fish@1 on golden-nugget": {
+    "human": "incomplete",
+    "stopReason": "work-limit",
+    "steps": 27,
+    "setLimitedSteps": 0,
+    "highestTierTried": 4
+  },
+  "explain-fair@3 no-fish@1 on stall": {
+    "human": "incomplete",
+    "stopReason": "work-limit",
+    "steps": 27,
+    "setLimitedSteps": 0,
+    "highestTierTried": 4
+  },
+  "explain-fair@3 empty on easy": {
+    "human": "stalled-within-profile",
+    "stopReason": "profile-stall",
+    "steps": 27,
+    "setLimitedSteps": 0,
+    "highestTierTried": -1
+  },
+  "explain-fair@3 empty on hidden-singles": {
+    "human": "stalled-within-profile",
+    "stopReason": "profile-stall",
+    "steps": 27,
+    "setLimitedSteps": 0,
+    "highestTierTried": -1
+  },
+  "explain-fair@3 empty on seventeen": {
+    "human": "stalled-within-profile",
+    "stopReason": "profile-stall",
+    "steps": 26,
+    "setLimitedSteps": 0,
+    "highestTierTried": -1
+  },
+  "explain-fair@3 empty on escargot": {
+    "human": "stalled-within-profile",
+    "stopReason": "profile-stall",
+    "steps": 26,
+    "setLimitedSteps": 0,
+    "highestTierTried": -1
+  },
+  "explain-fair@3 empty on inkala-2012": {
+    "human": "stalled-within-profile",
+    "stopReason": "profile-stall",
+    "steps": 27,
+    "setLimitedSteps": 0,
+    "highestTierTried": -1
+  },
+  "explain-fair@3 empty on golden-nugget": {
+    "human": "stalled-within-profile",
+    "stopReason": "profile-stall",
+    "steps": 27,
+    "setLimitedSteps": 0,
+    "highestTierTried": -1
+  },
+  "explain-fair@3 empty on stall": {
+    "human": "stalled-within-profile",
+    "stopReason": "profile-stall",
+    "steps": 26,
+    "setLimitedSteps": 0,
+    "highestTierTried": -1
+  },
+  "explain-fair@3 C01,C02,C22 on easy": {
+    "human": "solved",
+    "stopReason": "solved",
+    "steps": 78,
+    "setLimitedSteps": 0,
+    "highestTierTried": 0
+  },
+  "explain-fair@3 C01,C02,C22 on hidden-singles": {
+    "human": "solved",
+    "stopReason": "solved",
+    "steps": 82,
+    "setLimitedSteps": 0,
+    "highestTierTried": 0
+  },
+  "explain-fair@3 C01,C02,C22 on seventeen": {
+    "human": "solved",
+    "stopReason": "solved",
+    "steps": 90,
+    "setLimitedSteps": 0,
+    "highestTierTried": 0
+  },
+  "explain-fair@3 C01,C02,C22 on escargot": {
+    "human": "incomplete",
+    "stopReason": "work-limit",
+    "steps": 27,
+    "setLimitedSteps": 0,
+    "highestTierTried": 6
+  },
+  "explain-fair@3 C01,C02,C22 on inkala-2012": {
+    "human": "incomplete",
+    "stopReason": "work-limit",
+    "steps": 27,
+    "setLimitedSteps": 0,
+    "highestTierTried": 6
+  },
+  "explain-fair@3 C01,C02,C22 on golden-nugget": {
+    "human": "incomplete",
+    "stopReason": "work-limit",
+    "steps": 27,
+    "setLimitedSteps": 0,
+    "highestTierTried": 6
+  },
+  "explain-fair@3 C01,C02,C22 on stall": {
+    "human": "incomplete",
+    "stopReason": "work-limit",
+    "steps": 27,
+    "setLimitedSteps": 0,
+    "highestTierTried": 6
+  },
+  "explain-fair@3 no tier 3 on easy": {
+    "human": "solved",
+    "stopReason": "solved",
+    "steps": 78,
+    "setLimitedSteps": 0,
+    "highestTierTried": 0
+  },
+  "explain-fair@3 no tier 3 on hidden-singles": {
+    "human": "solved",
+    "stopReason": "solved",
+    "steps": 82,
+    "setLimitedSteps": 0,
+    "highestTierTried": 0
+  },
+  "explain-fair@3 no tier 3 on seventeen": {
+    "human": "solved",
+    "stopReason": "solved",
+    "steps": 90,
+    "setLimitedSteps": 0,
+    "highestTierTried": 0
+  },
+  "explain-fair@3 no tier 3 on escargot": {
+    "human": "incomplete",
+    "stopReason": "work-limit",
+    "steps": 27,
+    "setLimitedSteps": 0,
+    "highestTierTried": 4
+  },
+  "explain-fair@3 no tier 3 on inkala-2012": {
+    "human": "incomplete",
+    "stopReason": "work-limit",
+    "steps": 27,
+    "setLimitedSteps": 0,
+    "highestTierTried": 4
+  },
+  "explain-fair@3 no tier 3 on golden-nugget": {
+    "human": "incomplete",
+    "stopReason": "work-limit",
+    "steps": 27,
+    "setLimitedSteps": 0,
+    "highestTierTried": 4
+  },
+  "explain-fair@3 no tier 3 on stall": {
+    "human": "incomplete",
+    "stopReason": "work-limit",
+    "steps": 27,
+    "setLimitedSteps": 0,
+    "highestTierTried": 4
+  },
+  "explain-fair@3 no hidden single on easy": {
+    "human": "solved",
+    "stopReason": "solved",
+    "steps": 78,
+    "setLimitedSteps": 0,
+    "highestTierTried": 0
+  },
+  "explain-fair@3 no hidden single on hidden-singles": {
+    "human": "solved",
+    "stopReason": "solved",
+    "steps": 83,
+    "setLimitedSteps": 0,
+    "highestTierTried": 0
+  },
+  "explain-fair@3 no hidden single on seventeen": {
+    "human": "incomplete",
+    "stopReason": "work-limit",
+    "steps": 97,
+    "setLimitedSteps": 6,
+    "highestTierTried": 1
+  },
+  "explain-fair@3 no hidden single on escargot": {
+    "human": "incomplete",
+    "stopReason": "work-limit",
+    "steps": 27,
+    "setLimitedSteps": 0,
+    "highestTierTried": 4
+  },
+  "explain-fair@3 no hidden single on inkala-2012": {
+    "human": "incomplete",
+    "stopReason": "work-limit",
+    "steps": 27,
+    "setLimitedSteps": 0,
+    "highestTierTried": 4
+  },
+  "explain-fair@3 no hidden single on golden-nugget": {
+    "human": "incomplete",
+    "stopReason": "work-limit",
+    "steps": 27,
+    "setLimitedSteps": 0,
+    "highestTierTried": 4
+  },
+  "explain-fair@3 no hidden single on stall": {
+    "human": "incomplete",
+    "stopReason": "work-limit",
+    "steps": 27,
+    "setLimitedSteps": 0,
+    "highestTierTried": 4
+  },
+  "explain-fair@1 all@1 on easy": {
+    "human": "solved",
+    "stopReason": "solved",
+    "steps": 78,
+    "setLimitedSteps": 0,
+    "highestTierTried": 0
+  },
+  "explain-fair@1 all@1 on hidden-singles": {
+    "human": "solved",
+    "stopReason": "solved",
+    "steps": 82,
+    "setLimitedSteps": 0,
+    "highestTierTried": 0
+  },
+  "explain-fair@1 all@1 on seventeen": {
+    "human": "solved",
+    "stopReason": "solved",
+    "steps": 90,
+    "setLimitedSteps": 0,
+    "highestTierTried": 0
+  },
+  "explain-fair@1 all@1 on escargot": {
+    "human": "incomplete",
+    "stopReason": "work-limit",
+    "steps": 27,
+    "setLimitedSteps": 0,
+    "highestTierTried": 2
+  },
+  "explain-fair@1 all@1 on inkala-2012": {
+    "human": "incomplete",
+    "stopReason": "work-limit",
+    "steps": 27,
+    "setLimitedSteps": 0,
+    "highestTierTried": 2
+  },
+  "explain-fair@1 all@1 on golden-nugget": {
+    "human": "incomplete",
+    "stopReason": "work-limit",
+    "steps": 27,
+    "setLimitedSteps": 0,
+    "highestTierTried": 2
+  },
+  "explain-fair@1 all@1 on stall": {
+    "human": "incomplete",
+    "stopReason": "work-limit",
+    "steps": 27,
+    "setLimitedSteps": 0,
+    "highestTierTried": 2
+  },
+  "explain-fair@1 singles@1 on easy": {
+    "human": "solved",
+    "stopReason": "solved",
+    "steps": 78,
+    "setLimitedSteps": 0,
+    "highestTierTried": 0
+  },
+  "explain-fair@1 singles@1 on hidden-singles": {
+    "human": "solved",
+    "stopReason": "solved",
+    "steps": 82,
+    "setLimitedSteps": 0,
+    "highestTierTried": 0
+  },
+  "explain-fair@1 singles@1 on seventeen": {
+    "human": "solved",
+    "stopReason": "solved",
+    "steps": 90,
+    "setLimitedSteps": 0,
+    "highestTierTried": 0
+  },
+  "explain-fair@1 singles@1 on escargot": {
+    "human": "stalled-within-profile",
+    "stopReason": "profile-stall",
+    "steps": 27,
+    "setLimitedSteps": 0,
+    "highestTierTried": 0
+  },
+  "explain-fair@1 singles@1 on inkala-2012": {
+    "human": "stalled-within-profile",
+    "stopReason": "profile-stall",
+    "steps": 27,
+    "setLimitedSteps": 0,
+    "highestTierTried": 0
+  },
+  "explain-fair@1 singles@1 on golden-nugget": {
+    "human": "stalled-within-profile",
+    "stopReason": "profile-stall",
+    "steps": 27,
+    "setLimitedSteps": 0,
+    "highestTierTried": 0
+  },
+  "explain-fair@1 singles@1 on stall": {
+    "human": "stalled-within-profile",
+    "stopReason": "profile-stall",
+    "steps": 27,
+    "setLimitedSteps": 0,
+    "highestTierTried": 0
+  },
+  "explain-fair@1 up-to-subsets@1 on easy": {
+    "human": "solved",
+    "stopReason": "solved",
+    "steps": 78,
+    "setLimitedSteps": 0,
+    "highestTierTried": 0
+  },
+  "explain-fair@1 up-to-subsets@1 on hidden-singles": {
+    "human": "solved",
+    "stopReason": "solved",
+    "steps": 82,
+    "setLimitedSteps": 0,
+    "highestTierTried": 0
+  },
+  "explain-fair@1 up-to-subsets@1 on seventeen": {
+    "human": "solved",
+    "stopReason": "solved",
+    "steps": 90,
+    "setLimitedSteps": 0,
+    "highestTierTried": 0
+  },
+  "explain-fair@1 up-to-subsets@1 on escargot": {
+    "human": "stalled-within-profile",
+    "stopReason": "profile-stall",
+    "steps": 27,
+    "setLimitedSteps": 0,
+    "highestTierTried": 1
+  },
+  "explain-fair@1 up-to-subsets@1 on inkala-2012": {
+    "human": "stalled-within-profile",
+    "stopReason": "profile-stall",
+    "steps": 27,
+    "setLimitedSteps": 0,
+    "highestTierTried": 1
+  },
+  "explain-fair@1 up-to-subsets@1 on golden-nugget": {
+    "human": "stalled-within-profile",
+    "stopReason": "profile-stall",
+    "steps": 27,
+    "setLimitedSteps": 0,
+    "highestTierTried": 1
+  },
+  "explain-fair@1 up-to-subsets@1 on stall": {
+    "human": "stalled-within-profile",
+    "stopReason": "profile-stall",
+    "steps": 27,
+    "setLimitedSteps": 0,
+    "highestTierTried": 1
+  },
+  "explain-fair@1 up-to-wings-fish@1 on easy": {
+    "human": "solved",
+    "stopReason": "solved",
+    "steps": 78,
+    "setLimitedSteps": 0,
+    "highestTierTried": 0
+  },
+  "explain-fair@1 up-to-wings-fish@1 on hidden-singles": {
+    "human": "solved",
+    "stopReason": "solved",
+    "steps": 82,
+    "setLimitedSteps": 0,
+    "highestTierTried": 0
+  },
+  "explain-fair@1 up-to-wings-fish@1 on seventeen": {
+    "human": "solved",
+    "stopReason": "solved",
+    "steps": 90,
+    "setLimitedSteps": 0,
+    "highestTierTried": 0
+  },
+  "explain-fair@1 up-to-wings-fish@1 on escargot": {
+    "human": "incomplete",
+    "stopReason": "work-limit",
+    "steps": 27,
+    "setLimitedSteps": 0,
+    "highestTierTried": 2
+  },
+  "explain-fair@1 up-to-wings-fish@1 on inkala-2012": {
+    "human": "incomplete",
+    "stopReason": "work-limit",
+    "steps": 27,
+    "setLimitedSteps": 0,
+    "highestTierTried": 2
+  },
+  "explain-fair@1 up-to-wings-fish@1 on golden-nugget": {
+    "human": "incomplete",
+    "stopReason": "work-limit",
+    "steps": 27,
+    "setLimitedSteps": 0,
+    "highestTierTried": 2
+  },
+  "explain-fair@1 up-to-wings-fish@1 on stall": {
+    "human": "incomplete",
+    "stopReason": "work-limit",
+    "steps": 27,
+    "setLimitedSteps": 0,
+    "highestTierTried": 2
+  },
+  "explain-fair@1 no-fish@1 on easy": {
+    "human": "solved",
+    "stopReason": "solved",
+    "steps": 78,
+    "setLimitedSteps": 0,
+    "highestTierTried": 0
+  },
+  "explain-fair@1 no-fish@1 on hidden-singles": {
+    "human": "solved",
+    "stopReason": "solved",
+    "steps": 82,
+    "setLimitedSteps": 0,
+    "highestTierTried": 0
+  },
+  "explain-fair@1 no-fish@1 on seventeen": {
+    "human": "solved",
+    "stopReason": "solved",
+    "steps": 90,
+    "setLimitedSteps": 0,
+    "highestTierTried": 0
+  },
+  "explain-fair@1 no-fish@1 on escargot": {
+    "human": "incomplete",
+    "stopReason": "work-limit",
+    "steps": 27,
+    "setLimitedSteps": 0,
+    "highestTierTried": 4
+  },
+  "explain-fair@1 no-fish@1 on inkala-2012": {
+    "human": "incomplete",
+    "stopReason": "work-limit",
+    "steps": 27,
+    "setLimitedSteps": 0,
+    "highestTierTried": 4
+  },
+  "explain-fair@1 no-fish@1 on golden-nugget": {
+    "human": "incomplete",
+    "stopReason": "work-limit",
+    "steps": 27,
+    "setLimitedSteps": 0,
+    "highestTierTried": 4
+  },
+  "explain-fair@1 no-fish@1 on stall": {
+    "human": "incomplete",
+    "stopReason": "work-limit",
+    "steps": 27,
+    "setLimitedSteps": 0,
+    "highestTierTried": 4
+  }
+}

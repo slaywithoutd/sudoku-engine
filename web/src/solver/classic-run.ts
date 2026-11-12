@@ -16,7 +16,7 @@ import {
   canonicalOptionsKey,
   SCHEDULER_VERSION,
 } from "./scheduling/work";
-import { assembleTechniqueJobs } from "./techniques/registry";
+import { assembleRunJobs } from "./techniques/registry";
 import { EXACT_METHOD, exactSteps } from "./exact";
 import { runSolver } from "./run";
 import { coverageEntries, variantEntries } from "./techniques/manifest";
@@ -27,7 +27,6 @@ import {
   profileRowIds,
   resolveTechniqueSet,
   TechniqueSetError,
-  type TechniqueSelection,
 } from "./techniques/technique-sets";
 
 const techniqueTiers = new Map<string, number>(
@@ -265,9 +264,11 @@ export interface ClassicSolveInput {
    * A technique set (M2.7, D105): a preset id or a custom set's switched-off
    * coverage ids. Untrusted: an unknown preset or id ends the run with an
    * `error` result (`invalid-technique-set`, `unknown-technique`), never with
-   * the full set. Absent means every technique of the profile.
+   * the full set. Absent means every technique of the profile. Typed
+   * `unknown` because it crosses the worker boundary unchecked; its shape is
+   * a `TechniqueSelection`.
    */
-  readonly techniqueSelection?: TechniqueSelection;
+  readonly techniqueSelection?: unknown;
 }
 export interface ClassicSolvePorts {
   readonly clock: { now(): number };
@@ -493,7 +494,7 @@ export async function solveProblem(
     budgetLimitedSteps = 0,
     setLimitedSteps = 0,
     countVerifiedMs: number | undefined;
-  const registry = assembleTechniqueJobs(assembly, PROFILE, options.techniques);
+  const registry = assembleRunJobs(assembly, options);
   // A step above the lowest switched-off tier is set-limited (S1 note §5.2).
   const lowestOff = lowestTierOff(PROFILE, options.techniques);
   const techniqueSetOf = (): TechniqueSetSummary | undefined => {

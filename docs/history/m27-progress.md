@@ -6,7 +6,7 @@ Record kept during the milestone. Spec: [proposal](../specs/2026-10-22-technique
 | --- | --- | --- | --- |
 | Approval | done | `251be06`, merge `77856f7` | D105, roadmap row, README line; `docs/technique-set-semantics` merged and its worktree removed. |
 | S1 §7 checks | done | (this record) | Below: all seven agree with the note's reading. |
-| S2 engine, settings, backup | pending | | |
+| S2 engine, settings, backup | done | `4773fce`, review fix (next commit) | S1 §6 tables 1–5; below. |
 | S3 selector | pending | | |
 | S4 one Solve view | pending | | |
 | S5 corpus stall case | pending | | |
@@ -39,3 +39,18 @@ As §2.5 inferred: under `@1`, `incomplete-cheaper-tier` appears exactly when an
 **Check 6 — detectors that use another family's code.** By reading, no file under `techniques/` other than the registry names the registry or the ledger, and a detector receives only `(view, context)`. By run: on the three production Kraken fixtures (`C24-kraken-basic`, `-franken`, `-mutant`), the `c24@1` descriptor's first 20 proposals are identical before and after the `c06@1`–`c09@1` detectors run on the same view in the same process. On the initial states of Escargot and the §2 puzzle, Kraken found no proposal within 3M units either time.
 
 **Check 7 — interruptions below tier 3 under `@3`.** The ten unique corpus cases on the full set: the seven easy ones are solved; Escargot, Inkala 2012 and Golden Nugget end on `tier-cap` with `c33@1` (tier 5) interrupted, and the last two also `c28@1` (tier 6, `workspace-byte-limit`). No run had an interrupted row at tiers 0–2 or on a rule job, so none ends `incomplete-cheaper-tier` today.
+
+## S2 (2026-11-12, mains)
+
+Engine, settings and backup as the S1 note §5 (D105). Acceptance, each command from `web/`:
+
+- `npx vitest run tests/unit/solver/technique-sets.test.ts`: tables 1 (ten default keys byte-identical to literals recorded from `master`; full set in any order omitted from the key; identical descriptors; a run with no selection and with `all@1` emit identical events), 2 (pinned preset lists, key canonicalisation, error codes, the `techniques` field between `rollout` and `tierCap`), 3 (nine sets × seven cases under `explain-fair@3`, the five presets under `explain-fair@1`, assertions 3.1–3.4, 3.7 and 3.8 each, every outcome pinned in `tests/solver/fixtures/technique-set-outcomes.json`; 3.5 and 3.6 at the selection level), 5.5. 37 passed.
+- `npx vitest run tests/unit/solver/technique-sets-corpus.test.ts`: table 4 on all 131 corpus cases under `all@1`, `singles@1`, `no-fish@1` and the empty set: identical count and solution equal to the label, one exact phase per run, no step contradicts the solution, solved runs end on it. 131 passed.
+- `npx vitest run tests/unit/backup.test.ts tests/unit/solver/solve-request.test.ts`: table 5.1–5.4 and the worker request.
+- Unchanged and passing: `golden-traces`, `result-contract`, `policies-v3`, `count-first`, `policies`, `classic-run`, `scheduling`, `protocol`, `solver-copy`, `library`, `tests/storage` (81 passed, 4 env-gated skips, 707 s).
+
+Budgets in table 3: the singles cases need about 650k logical units even on the full set (Easy: 78 steps), so they run at 1.2M; the hard cases at 600k, enough for the count, the basic eliminations (≈ 200k) and a climb to the enabled tiers. Within those budgets no hard case takes a technique step above tier 0, so a set-limited step needs a gap at tier 0: "no hidden single" (C02 off) gives 6 on `seventeen`.
+
+Review (independent subagent): no bug found. Fixed: the worker request now uses one field name (`techniqueSelection`) end to end and rejects any unknown key (`invalid-solve-request`), so a misspelt selection cannot run the full set (`workers/solve-request.ts`, unit-tested); `assembleRunJobs` takes the profile and the set from the normalised options; table 3 runs every assertion under both policies with the outcomes pinned; 3.5 now requires the interrupted job to be below the blocked tier; the corpus test is one test per case with `all@1` explicit; the architecture and scheduling docs and the note's §5.6 point at the D105 version bump. Not changed: `sameRun` stays private (two different `optionsKey`s make it false by its definition, `evidence.ts:194`); `Settings.solverTechniquePreset` stays `string` so a later preset needs no type change.
+
+Open risk, accepted by D105: the build writes `formatVersion` 3 on its first commit even if the user never touches technique sets, so after a rollback an older build refuses the library with "Unsupported data version." until the newer build is restored.

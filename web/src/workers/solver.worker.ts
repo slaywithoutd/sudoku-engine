@@ -1,12 +1,10 @@
 import {
   solveClassic,
   countClassic,
-  CLASSIC_SOLVE_LIMITS,
-  classicLimitsFor,
   type ClassicSolveEvent,
   type ClassicMode,
 } from "../solver/classic-run";
-import type { TechniqueSelection } from "../solver/techniques/technique-sets";
+import { solveInputOf } from "./solve-request";
 
 type WorkerRequest =
   | { readonly kind: "test-long" | "stop" }
@@ -21,7 +19,7 @@ type WorkerRequest =
        * `solveProblem` shape-checks it and answers a malformed one with an
        * `error` result, never with a run of the full set.
        */
-      readonly techniques?: unknown;
+      readonly techniqueSelection?: unknown;
     }
   | { readonly kind: "count-classic"; readonly givens: readonly number[] };
 type WorkerEvent =
@@ -45,39 +43,24 @@ self.onmessage = (event: MessageEvent<WorkerRequest | null | undefined>) => {
   }
   if (request?.kind === "solve-classic") {
     // One run per worker: the controller terminates the worker to cancel.
-    const { timeLimitMs } = request;
-    const timeMs =
-      timeLimitMs !== undefined &&
-      Number.isSafeInteger(timeLimitMs) &&
-      timeLimitMs >= 1000 &&
-      timeLimitMs <= 600_000
-        ? timeLimitMs
-        : CLASSIC_SOLVE_LIMITS.timeMs;
-    solveClassic(
-      {
-        givens: request.givens,
-        mode: request.mode,
-        requestId: request.requestId,
-        // The work budget scales with the preset (spec M2.6 T08).
-        limits: classicLimitsFor(timeMs),
-        ...(request.techniques === undefined
-          ? {}
-          : { techniqueSelection: request.techniques as TechniqueSelection }),
+    const input = solveInputOf(request as unknown as Record<string, unknown>);
+    if ("error" in input) {
+      post({ kind: "terminal", outcome: "error", result: { code: input.error } });
+      return;
+    }
+    solveClassic(input, {
+      clock: { now: () => performance.now() },
+      emit: (solveEvent) => {
+        if (solveEvent.kind === "result")
+          post({
+            kind: "terminal",
+            outcome: solveEvent.outcome,
+            revision: solveEvent.steps,
+            result: solveEvent,
+          });
+        else post(solveEvent);
       },
-      {
-        clock: { now: () => performance.now() },
-        emit: (solveEvent) => {
-          if (solveEvent.kind === "result")
-            post({
-              kind: "terminal",
-              outcome: solveEvent.outcome,
-              revision: solveEvent.steps,
-              result: solveEvent,
-            });
-          else post(solveEvent);
-        },
-      },
-    ).catch((error: unknown) =>
+    }).catch((error: unknown) =>
       post({
         kind: "terminal",
         outcome: "error",

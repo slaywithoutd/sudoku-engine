@@ -203,6 +203,18 @@ const coverageIdOf = new Map<string, string>(
   [...coverageEntries, ...variantEntries].map((entry) => [entry.version, entry.id] as const),
 );
 /**
+ * The registry of a run from its normalised options: the profile and the
+ * technique set come from the same object as the options key, so the key and
+ * the registry cannot disagree (M2.7 S2 review). Callers that build options
+ * with a technique set should use this rather than `assembleTechniqueJobs`.
+ */
+export function assembleRunJobs(
+  assembly: Assembly,
+  options: { readonly profile: VersionId; readonly techniques?: readonly string[] },
+) {
+  return assembleTechniqueJobs(assembly, options.profile, options.techniques);
+}
+/**
  * One cursor per rule and family; never materialize combinatorial scope jobs.
  * `enabled` is the canonical `techniques` option (M2.7, D105): a switched-off
  * family is removed before assembly, so it has no ledger row and no gate

@@ -20,9 +20,11 @@ names a policy (M2.6, D103; see below).
 `fixed-scan@1` and `event-fixed@1` are canonical scan baselines; the former restarts
 all records after acceptance and the latter preserves sound exhausted/excluded
 watches. Registry input is the result of `assembleTechniqueJobs(assembly,profile)`
-(optionally filtered to a technique set, see below).
-It admits actual original rules and the complete profile, at most 256 combined
-jobs. A job owns one resumable cursor, not one cursor per combinatorial scope.
+(optionally filtered to a technique set, see below; `assembleRunJobs` takes both
+from the normalised options so the key and the registry cannot disagree).
+It admits actual original rules and the profile's families (all of them, or the
+enabled set), at most 256 combined jobs; readiness is still checked for the whole
+profile. A job owns one resumable cursor, not one cursor per combinatorial scope.
 
 `FairPolicy` implements `SchedulerPolicy.next(ledger,view)` and `choose(checked)`.
 It drains original rules first. Explain considers the lowest active tier and

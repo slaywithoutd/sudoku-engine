@@ -21,8 +21,8 @@ vi.mock("../../../src/solver/exact", async (importOriginal) => {
 });
 const exactSteps = vi.mocked(exact.exactSteps);
 
-const SETS: Record<string, TechniqueSelection | undefined> = {
-  "all@1": undefined,
+const SETS: Record<string, TechniqueSelection> = {
+  "all@1": { preset: "all@1" },
   "singles@1": { preset: "singles@1" },
   "no-fish@1": { preset: "no-fish@1" },
   // The empty set: every primary row switched off.
@@ -36,9 +36,10 @@ const unitsFor = (count: string) => (count === "1" ? 1_200_000 : CLASSIC_SOLVE_L
 const label = (count: string) => (count === "1" ? "unique" : count === "0" ? "zero" : "multiple");
 
 describe("table 4: count and checker results are identical across sets", () => {
-  test("4.1–4.4 on all 131 corpus cases", async () => {
-    expect(evalCorpus.cases).toHaveLength(131);
-    for (const entry of evalCorpus.cases) {
+  // One test per case, so no single test runs 131 x 4 solves under one timeout.
+  test.for(evalCorpus.cases.map((entry) => [entry.id, entry] as const))(
+    "4.1–4.4 on %s",
+    async ([, entry]) => {
       const results: Extract<ClassicSolveEvent, { kind: "result" }>[] = [];
       for (const [name, selection] of Object.entries(SETS)) {
         const events: ClassicSolveEvent[] = [];
@@ -52,7 +53,7 @@ describe("table 4: count and checker results are identical across sets", () => {
               timeMs: 3_600_000,
               workUnits: unitsFor(entry.count),
             },
-            ...(selection ? { techniqueSelection: selection } : {}),
+            techniqueSelection: selection,
           },
           { clock: { now: () => 0 }, emit: (event) => events.push(event) },
         );
@@ -83,6 +84,6 @@ describe("table 4: count and checker results are identical across sets", () => {
         if (result.human === "solved") expect(result.logicalValues, id).toEqual(solution);
       }
       expect(new Set(results.map((result) => result.count)).size, entry.id).toBe(1);
-    }
-  });
+    },
+  );
 });
