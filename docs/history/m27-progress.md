@@ -9,7 +9,7 @@ Record kept during the milestone. Spec: [proposal](../specs/2026-10-22-technique
 | S2 engine, settings, backup | done | `4773fce`, review fix (next commit) | S1 §6 tables 1–5; below. |
 | S3 selector | done | `e7af297`, review fix `efebe52` | `tests/e2e/solver-techniques.spec.ts`; below. |
 | S4 one Solve view | done | `eddae59`, review fix (next commit) | `tests/e2e/solver-view.spec.ts`; below. |
-| S5 corpus stall case | pending | | |
+| S5 corpus stall case | done | (next commit) | `tests/unit/solver/stall-case.test.ts`; below. |
 | Stop reason for an interrupted lower job | pending | | |
 
 ## S1 §7 checks (2026-11-12, mains)
@@ -72,3 +72,9 @@ Found while doing S4: the step list kept the live steps array as its cache key, 
 Review (independent subagent): fixed in the review commit: the Show solution toggle is created once (keeps focus, `aria-pressed` carries the state), sits under the step card, and shows the grid where the logic stopped when there is no solution; each run's header starts collapsed; the step list appends during a run instead of rebuilding; "Highest tier used" only with steps; phrasing content in `<summary>`; the error text in the collapsed row; stale Analyze/Explain wording in help, home, README and roadmap. Found by screenshots: the nowrap header row widened the whole side panel past the viewport (fixed with `min-width: 0`), and the six preset buttons wrapped unevenly (now an even grid).
 
 Power and speed: the laptop went onto battery during S4 and, back on mains, stayed in its slow state (CPU at 1.6 GHz; the engine alone ran Escargot's 1.8M-unit budget in 24–33 s, against about 9 s earlier in the day; `master`'s code measured the same, with the identical result). The solver-screen test "Escargot at the 15 s preset … reports where logic stalled" then hits the 15 s time safety stop ("stopped at tier 4 by the time limit") instead of the tier cap. It passed on mains in the fast state at S3 (`e7af297`) and is re-run in the final gate.
+
+## S5 (2026-11-12)
+
+The proposal's §2 puzzle is AI Escargot, already the evaluation corpus case `escargot` (count `1`, its solution checked against the reference DFS and the Algorithm X oracle by `exact-reference.test.ts`). Adding it again would run every corpus-driven test on it twice and change the 131-case count that several records cite, so no case is added: `tests/unit/solver/stall-case.test.ts` pins that the proposal's string is `escargot` and the only corpus case with that grid, that the oracle finds exactly one solution equal to the stored one, and that the classic run ends `incomplete` or `stalled-within-profile` with count `unique` and that solution, asserting no solving technique. The duplicate "stall" case was removed from table 3 of `technique-sets.test.ts` and its pinned outcomes. `npx vitest run tests/unit/solver/stall-case.test.ts tests/unit/solver/technique-sets.test.ts`: 3 and 37 passed (mains, slow state).
+
+Deviation from the proposal's S5 row ("add the §2 puzzle to the evaluation corpus"): the puzzle was already there under another name; its acceptance (count unique, stored solution matching the Algorithm X oracle) is met by the existing case and pinned by the new test.

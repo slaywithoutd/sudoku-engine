@@ -41,13 +41,6 @@
     "setLimitedSteps": 0,
     "highestTierTried": 4
   },
-  "explain-fair@3 all@1 on stall": {
-    "human": "incomplete",
-    "stopReason": "work-limit",
-    "steps": 27,
-    "setLimitedSteps": 0,
-    "highestTierTried": 4
-  },
   "explain-fair@3 singles@1 on easy": {
     "human": "solved",
     "stopReason": "solved",
@@ -84,13 +77,6 @@
     "highestTierTried": 0
   },
   "explain-fair@3 singles@1 on golden-nugget": {
-    "human": "stalled-within-profile",
-    "stopReason": "profile-stall",
-    "steps": 27,
-    "setLimitedSteps": 0,
-    "highestTierTried": 0
-  },
-  "explain-fair@3 singles@1 on stall": {
     "human": "stalled-within-profile",
     "stopReason": "profile-stall",
     "steps": 27,
@@ -139,13 +125,6 @@
     "setLimitedSteps": 0,
     "highestTierTried": 1
   },
-  "explain-fair@3 up-to-subsets@1 on stall": {
-    "human": "stalled-within-profile",
-    "stopReason": "profile-stall",
-    "steps": 27,
-    "setLimitedSteps": 0,
-    "highestTierTried": 1
-  },
   "explain-fair@3 up-to-wings-fish@1 on easy": {
     "human": "solved",
     "stopReason": "solved",
@@ -182,13 +161,6 @@
     "highestTierTried": 2
   },
   "explain-fair@3 up-to-wings-fish@1 on golden-nugget": {
-    "human": "stalled-within-profile",
-    "stopReason": "profile-stall",
-    "steps": 27,
-    "setLimitedSteps": 0,
-    "highestTierTried": 2
-  },
-  "explain-fair@3 up-to-wings-fish@1 on stall": {
     "human": "stalled-within-profile",
     "stopReason": "profile-stall",
     "steps": 27,
@@ -237,13 +209,6 @@
     "setLimitedSteps": 0,
     "highestTierTried": 4
   },
-  "explain-fair@3 no-fish@1 on stall": {
-    "human": "incomplete",
-    "stopReason": "work-limit",
-    "steps": 27,
-    "setLimitedSteps": 0,
-    "highestTierTried": 4
-  },
   "explain-fair@3 empty on easy": {
     "human": "stalled-within-profile",
     "stopReason": "profile-stall",
@@ -286,13 +251,6 @@
     "setLimitedSteps": 0,
     "highestTierTried": -1
   },
-  "explain-fair@3 empty on stall": {
-    "human": "stalled-within-profile",
-    "stopReason": "profile-stall",
-    "steps": 26,
-    "setLimitedSteps": 0,
-    "highestTierTried": -1
-  },
   "explain-fair@3 C01,C02,C22 on easy": {
     "human": "solved",
     "stopReason": "solved",
@@ -329,13 +287,6 @@
     "highestTierTried": 6
   },
   "explain-fair@3 C01,C02,C22 on golden-nugget": {
-    "human": "incomplete",
-    "stopReason": "work-limit",
-    "steps": 27,
-    "setLimitedSteps": 0,
-    "highestTierTried": 6
-  },
-  "explain-fair@3 C01,C02,C22 on stall": {
     "human": "incomplete",
     "stopReason": "work-limit",
     "steps": 27,
@@ -384,13 +335,6 @@
     "setLimitedSteps": 0,
     "highestTierTried": 4
   },
-  "explain-fair@3 no tier 3 on stall": {
-    "human": "incomplete",
-    "stopReason": "work-limit",
-    "steps": 27,
-    "setLimitedSteps": 0,
-    "highestTierTried": 4
-  },
   "explain-fair@3 no hidden single on easy": {
     "human": "solved",
     "stopReason": "solved",
@@ -427,13 +371,6 @@
     "highestTierTried": 4
   },
   "explain-fair@3 no hidden single on golden-nugget": {
-    "human": "incomplete",
-    "stopReason": "work-limit",
-    "steps": 27,
-    "setLimitedSteps": 0,
-    "highestTierTried": 4
-  },
-  "explain-fair@3 no hidden single on stall": {
     "human": "incomplete",
     "stopReason": "work-limit",
     "steps": 27,
@@ -482,13 +419,6 @@
     "setLimitedSteps": 0,
     "highestTierTried": 2
   },
-  "explain-fair@1 all@1 on stall": {
-    "human": "incomplete",
-    "stopReason": "work-limit",
-    "steps": 27,
-    "setLimitedSteps": 0,
-    "highestTierTried": 2
-  },
   "explain-fair@1 singles@1 on easy": {
     "human": "solved",
     "stopReason": "solved",
@@ -525,13 +455,6 @@
     "highestTierTried": 0
   },
   "explain-fair@1 singles@1 on golden-nugget": {
-    "human": "stalled-within-profile",
-    "stopReason": "profile-stall",
-    "steps": 27,
-    "setLimitedSteps": 0,
-    "highestTierTried": 0
-  },
-  "explain-fair@1 singles@1 on stall": {
     "human": "stalled-within-profile",
     "stopReason": "profile-stall",
     "steps": 27,
@@ -580,13 +503,6 @@
     "setLimitedSteps": 0,
     "highestTierTried": 1
   },
-  "explain-fair@1 up-to-subsets@1 on stall": {
-    "human": "stalled-within-profile",
-    "stopReason": "profile-stall",
-    "steps": 27,
-    "setLimitedSteps": 0,
-    "highestTierTried": 1
-  },
   "explain-fair@1 up-to-wings-fish@1 on easy": {
     "human": "solved",
     "stopReason": "solved",
@@ -629,13 +545,6 @@
     "setLimitedSteps": 0,
     "highestTierTried": 2
   },
-  "explain-fair@1 up-to-wings-fish@1 on stall": {
-    "human": "incomplete",
-    "stopReason": "work-limit",
-    "steps": 27,
-    "setLimitedSteps": 0,
-    "highestTierTried": 2
-  },
   "explain-fair@1 no-fish@1 on easy": {
     "human": "solved",
     "stopReason": "solved",
@@ -672,13 +581,6 @@
     "highestTierTried": 4
   },
   "explain-fair@1 no-fish@1 on golden-nugget": {
-    "human": "incomplete",
-    "stopReason": "work-limit",
-    "steps": 27,
-    "setLimitedSteps": 0,
-    "highestTierTried": 4
-  },
-  "explain-fair@1 no-fish@1 on stall": {
     "human": "incomplete",
     "stopReason": "work-limit",
     "steps": 27,

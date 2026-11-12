@@ -99,12 +99,11 @@ const puzzle = (id: string) => {
   if (!entry) throw new Error(id);
   return entry.puzzle;
 };
-/** The proposal's §2 stall puzzle (docs/specs/2026-10-22-technique-selection-and-solve-views.md). */
-const STALL =
-  "1....7.9..3..2...8..96..5....53..9...1..8...26....4...3......1..4......7..7...3..".replace(
-    /\./g,
-    "0",
-  );
+/**
+ * The proposal's §2 stall puzzle (docs/specs/2026-10-22-technique-selection-and-solve-views.md)
+ * is AI Escargot, the corpus case `escargot` (stall-case.test.ts pins this).
+ */
+const STALL = puzzle("escargot");
 const assembled = (givens: string) => {
   const problem = normalizeClassic({
     kind: "classic",
@@ -304,7 +303,6 @@ const CASES: Record<string, string> = {
       (id) => [id, puzzle(id)],
     ),
   ),
-  stall: STALL,
 };
 // The singles cases need about 650k logical units on any set that holds C01
 // and C02 (Easy: 78 steps), so they get 1.2M; the hard cases end on a 600k
