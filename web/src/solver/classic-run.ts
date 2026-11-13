@@ -330,6 +330,17 @@ function classicHouseCells(id: unknown): number[] {
         : (Math.floor(index / 3) * 3 + Math.floor(k / 3)) * 9 + (index % 3) * 3 + (k % 3),
   );
 }
+/** A fish's base houses: their cells that still hold the fish digit in `domains`. */
+function addFishBaseCells(
+  record: Record<string, unknown>,
+  domains: readonly number[],
+  found: Set<number>,
+): void {
+  if (!Array.isArray(record.bases) || !Number.isInteger(record.symbol)) return;
+  const bit = 1 << ((record.symbol as number) - 1);
+  for (const id of record.bases)
+    for (const cell of classicHouseCells(id)) if ((domains[cell] ?? 0) & bit) found.add(cell);
+}
 /** Pattern keys whose value is a cell or a (nested) list of cells. */
 const CELL_KEYS = new Set([
   "cell",
@@ -367,11 +378,7 @@ export function patternCells(pattern: unknown, domains?: readonly number[]): num
       return;
     }
     const record = x as Record<string, unknown>;
-    if (domains && Array.isArray(record.bases) && Number.isInteger(record.symbol)) {
-      const bit = 1 << ((record.symbol as number) - 1);
-      for (const id of record.bases)
-        for (const cell of classicHouseCells(id)) if ((domains[cell] ?? 0) & bit) found.add(cell);
-    }
+    if (domains) addFishBaseCells(record, domains, found);
     for (const [key, value] of Object.entries(record)) {
       if (CELL_KEYS.has(key)) cellsOf(value, 0, depth);
       else walk(value, depth + 1);

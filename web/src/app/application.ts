@@ -1,7 +1,7 @@
 import type { Repository } from "../storage/repository";
 import type { LibraryData } from "../domain/model";
 import { createController, type ScreenServices } from "./controller";
-import { parseRoute, routeHash } from "./router";
+import { parseRoute, routeHash, type Route } from "./router";
 import { mountHome } from "../ui/home";
 import { mountLibrary } from "../ui/library";
 import { mountCreator } from "../ui/creator";
@@ -146,58 +146,13 @@ export function mountApplication(
     document.querySelectorAll("dialog").forEach((d) => d.remove());
     main.replaceChildren();
     const r = parseRoute(location.hash);
-    const game =
-      r.screen === "create" ||
-      r.screen === "play" ||
-      r.screen === "solve" ||
-      r.screen === "train-run" ||
-      r.screen === "train-timed" ||
-      r.screen === "train-study";
-    main.classList.toggle("editor-screen", game);
+    main.classList.toggle("editor-screen", GAME_SCREENS.has(r.screen));
     for (const item of navItems) {
-      if (
-        item.screen === r.screen ||
-        (item.screen === "train" &&
-          (r.screen === "train-run" || r.screen === "train-timed" || r.screen === "train-study"))
-      )
+      if (item.screen === r.screen || (item.screen === "train" && TRAIN_SCREENS.has(r.screen)))
         item.control.setAttribute("aria-current", "page");
       else item.control.removeAttribute("aria-current");
     }
-    switch (r.screen) {
-      case "home":
-        dispose = mountHome(main, services);
-        break;
-      case "library":
-        dispose = mountLibrary(main, services, r.tab);
-        break;
-      case "create":
-        dispose = mountCreator(main, services, r.id);
-        break;
-      case "play":
-        dispose = mountPlayer(main, services, r.id);
-        break;
-      case "settings":
-        dispose = mountSettings(main, services);
-        break;
-      case "solve":
-        dispose = mountSolver(main, services, r.source);
-        break;
-      case "help":
-        dispose = mountHelp(main, services);
-        break;
-      case "train":
-        dispose = mountTrainHub(main, services);
-        break;
-      case "train-run":
-        dispose = mountTrainRun(main, services);
-        break;
-      case "train-timed":
-        dispose = mountTrainRun(main, services, "timed");
-        break;
-      case "train-study":
-        dispose = mountTrainStudy(main, services, r.id);
-        break;
-    }
+    dispose = mountScreen(r, main, services);
   };
   const beforeUnload = (event: BeforeUnloadEvent) => {
     if (controller.status().kind !== "saved") {
@@ -219,6 +174,38 @@ export function mountApplication(
     document.removeEventListener("keydown", onKey);
     repository.close();
   };
+}
+
+/** Screens that belong to Train for the sidebar's current entry. */
+const TRAIN_SCREENS: ReadonlySet<string> = new Set(["train-run", "train-timed", "train-study"]);
+/** Screens laid out as a game (board and side panel). */
+const GAME_SCREENS: ReadonlySet<string> = new Set(["create", "play", "solve", ...TRAIN_SCREENS]);
+
+function mountScreen(route: Route, main: HTMLElement, services: ScreenServices): () => void {
+  switch (route.screen) {
+    case "home":
+      return mountHome(main, services);
+    case "library":
+      return mountLibrary(main, services, route.tab);
+    case "create":
+      return mountCreator(main, services, route.id);
+    case "play":
+      return mountPlayer(main, services, route.id);
+    case "settings":
+      return mountSettings(main, services);
+    case "solve":
+      return mountSolver(main, services, route.source);
+    case "help":
+      return mountHelp(main, services);
+    case "train":
+      return mountTrainHub(main, services);
+    case "train-run":
+      return mountTrainRun(main, services);
+    case "train-timed":
+      return mountTrainRun(main, services, "timed");
+    case "train-study":
+      return mountTrainStudy(main, services, route.id);
+  }
 }
 
 /** Mirrors appearance and accessibility settings onto <html> for CSS. */

@@ -24,6 +24,21 @@ const PAGE_SECTIONS: SectionId[] = [
   "train",
   "shortcuts",
 ];
+/**
+ * Train statistics are replaced only on request (D106), like settings, and
+ * never from a backup that has none.
+ */
+function trainingSwitch(included: boolean | undefined, onChange: () => void) {
+  const field = switchField({
+    label: "Replace training statistics with the backup's",
+    hint: included ? undefined : "This backup has no training statistics",
+    checked: false,
+    onChange,
+  });
+  field.input.disabled = !included;
+  return field;
+}
+
 /** Sections that matter mid-game; the full page keeps the rest. */
 const QUICK_SECTIONS: SectionId[] = ["board", "notes", "keypad", "timer", "completion"];
 
@@ -154,14 +169,7 @@ export function mountSettings(container: HTMLElement, services: ScreenServices):
         checked: false,
         onChange: () => refresh(),
       });
-      // Train statistics are replaced only on request (D106), like settings.
-      const restoreTraining = switchField({
-        label: "Replace training statistics with the backup's",
-        hint: incoming.trainingIncluded ? undefined : "This backup has no training statistics",
-        checked: false,
-        onChange: () => refresh(),
-      });
-      restoreTraining.input.disabled = !incoming.trainingIncluded;
+      const restoreTraining = trainingSwitch(incoming.trainingIncluded, () => refresh());
       const refresh = () => {
         captured = services.controller.snapshot();
         preview = previewRestore(
