@@ -56,6 +56,18 @@ The 10 vitest skips and the Playwright skip (`solver-m26-benchmark.spec.ts`, gat
 
 `master`'s code was run from an archive of `master` in the session scratchpad with the checkout's `node_modules` linked, not from a worktree. The same three tests passed at S3 (`e7af297`) on mains in the fast state (the first two in the full `settings`/`solver-screen` runs, 1.5–8 s). Measured cause for the third: the engine alone ran Escargot's 1.8M-unit budget in 24–33 s on mains in the slow state, against about 9 s earlier the same day, on `master`'s code as on the branch, with the identical result (`tier-cap`, 28 steps); the 15 s preset's time safety stop then comes first.
 
+### Re-run on mains (2026-11-13, after `561fd03`)
+
+Power on mains (`Win32_Battery.BatteryStatus` 2, read before and after), CPU still in the slow state (`CurrentClockSpeed` 1,600 MHz). Every run from `web/`, one at a time, `master` (`77856f7`) and the branch (`561fd03`) checked out in turn in the main checkout.
+
+| Run | Branch (`561fd03`) | `master` (`77856f7`) |
+| --- | --- | --- |
+| `appearance`, `persistence`, `solver-screen` spec files (08:28) | 9 passed, 2 failed: `appearance` "all ten appearances", Escargot 15 s; `persistence` passed | — |
+| `appearance.spec.ts:5 --repeat-each 3` | 2 passed, 1 failed | 1 passed, 2 failed |
+| Escargot at the 15 s preset (branch line 186, `master` line 170) | failed: "Logic: stopped at tier 4 by the time limit; 14 techniques not tried" | failed with the same text |
+
+`persistence` passes on mains. `appearance` is flaky against its 30 s test timeout on both sides in the slow state, and Escargot fails identically on both, so neither is a regression from M2.7. Both are expected to pass in the fast state, as they did at S3; that was not re-measured.
+
 ## Deviations
 
 - **Format version 3 (D105).** The library `formatVersion` and the backup `version` go to 3, against the S1 note §5.6 (which kept 2); versions 1 and 2 load with the defaults. An older build refuses a version-3 library ("Unsupported data version."). The next format change (training puzzles) bumps it again.
@@ -65,7 +77,7 @@ The 10 vitest skips and the Playwright skip (`solver-m26-benchmark.spec.ts`, gat
 
 ## Open risks
 
-- The three Playwright tests above are confirmed environmental by A/B but not re-run on mains in the fast state after the last commit.
+- The three Playwright tests above are confirmed environmental by A/B on battery and again on mains in the slow state (2026-11-13); `persistence` passes on mains; `appearance` and Escargot were not re-run in the fast state after the last commit.
 - After a rollback to a pre-M2.7 build, a library written by this build is refused until the newer build returns (format version 3).
 - The table-3 test file takes 90 s in the fast state and about 320 s in the slow state; the whole suite took 76 min here against 20–32 min in earlier gates.
 - `docs/media/explain.png` was recaptured on this build; `docs/media/play.png` is unchanged.
