@@ -2436,11 +2436,27 @@ dialog .actions .ghost:first-child {
 }
 @media (max-width: 700px) {
   .train-history-item {
-    grid-template-columns: 1fr auto;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "result time"
+      "category category"
+      "when study";
+    row-gap: 0.15rem;
   }
-  .train-history-item .category,
+  .train-history-item .result {
+    grid-area: result;
+  }
+  .train-history-item .time {
+    grid-area: time;
+  }
+  .train-history-item .category {
+    grid-area: category;
+  }
   .train-history-item .when {
-    grid-column: 1 / -1;
+    grid-area: when;
+  }
+  .train-history-item button {
+    grid-area: study;
   }
 }
 

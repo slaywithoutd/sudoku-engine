@@ -54,8 +54,11 @@ export function mountTrainHub(container: HTMLElement, services: ScreenServices):
   const categoryList = el("div", undefined, "train-category-list");
   categories.append(categoryList);
   const statsSection = el("section", undefined, "train-section");
-  statsSection.append(el("h2", "By category"));
+  const statsHeading = el("h2", "By category");
+  statsHeading.id = "train-stats-heading";
+  statsSection.append(statsHeading);
   const statsTable = el("table", undefined, "train-stats");
+  statsTable.setAttribute("aria-labelledby", statsHeading.id);
   statsTable.dataset.testid = "train-stats";
   const statsEmpty = el("p", "No attempts yet.", "empty-note");
   statsSection.append(statsTable, statsEmpty);
@@ -93,10 +96,14 @@ export function mountTrainHub(container: HTMLElement, services: ScreenServices):
           updateSetting(services, "trainCategoriesOff", [...next].sort());
         });
         checkboxes.set(category, input);
+        const count = String(total.get(category) ?? 0),
+          shown = el("span", count, "count");
+        shown.setAttribute("aria-hidden", "true");
         label.append(
           input,
           el("span", categoryLabel(category)),
-          el("span", String(total.get(category) ?? 0), "count"),
+          shown,
+          el("span", ` (${count} positions)`, "sr-only"),
         );
         return label;
       }),
@@ -155,21 +162,28 @@ export function mountTrainHub(container: HTMLElement, services: ScreenServices):
     history.replaceChildren(
       ...recent.map((attempt) => {
         const item = el("li", undefined, `train-history-item ${attempt.result}`);
-        const when = new Date(attempt.at);
+        const result = attempt.result === "correct" ? "Correct" : "Missed",
+          when = new Date(attempt.at).toLocaleString("en", {
+            dateStyle: "medium",
+            timeStyle: "short",
+          }),
+          time = el("time", when, "when");
+        time.dateTime = attempt.at;
+        const study = button(
+          "Study",
+          () => services.navigate({ screen: "train-study", id: attempt.position }),
+          "ghost",
+        );
+        study.setAttribute(
+          "aria-label",
+          `Study: ${result}, ${categoryLabel(attempt.category)}, ${formatSeconds(attempt.ms)}, ${when}`,
+        );
         item.append(
-          el("span", attempt.result === "correct" ? "Correct" : "Missed", "result"),
+          el("span", result, "result"),
           el("span", categoryLabel(attempt.category), "category"),
           el("span", formatSeconds(attempt.ms), "time"),
-          el(
-            "time",
-            when.toLocaleString("en", { dateStyle: "medium", timeStyle: "short" }),
-            "when",
-          ),
-          button(
-            "Study",
-            () => services.navigate({ screen: "train-study", id: attempt.position }),
-            "ghost",
-          ),
+          time,
+          study,
         );
         return item;
       }),
@@ -182,7 +196,9 @@ export function mountTrainHub(container: HTMLElement, services: ScreenServices):
       buildCategories();
       render();
     })
-    .catch(() => {});
+    .catch((error: Error) => {
+      if (!disposed) categoryList.replaceChildren(el("p", error.message, "error"));
+    });
   render();
   const off = services.controller.subscribe(render);
   return () => {

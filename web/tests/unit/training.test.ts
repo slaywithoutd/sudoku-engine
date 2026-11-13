@@ -243,7 +243,10 @@ describe("position choice", () => {
     let data = recordAttempt(emptyTraining(), attempt(hex(2), "miss"), 10);
     data = recordAttempt(data, attempt(hex(99), "miss"), 10);
     expect(overallStats(data).missedWaiting).toBe(2);
-    expect(overallStats(data, new Set(pack.map((p) => p.id))).missedWaiting).toBe(1);
+    expect(overallStats(data, new Set(pack.map((p) => p.id)))).toMatchObject({
+      missedWaiting: 1,
+      positionsSeen: 1,
+    });
   });
   test("every category of the committed pack is a valid settings id", () => {
     const committed = JSON.parse(

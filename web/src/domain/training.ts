@@ -199,14 +199,17 @@ export interface OverallStats {
   readonly missedWaiting: number;
 }
 /**
- * `known`: the ids of the current pack. A queued miss whose position a later
- * pack no longer holds can never come back, so it is not counted as waiting.
+ * `known`: the ids of the current pack. A position a later pack no longer
+ * holds is counted neither as seen nor, if queued, as waiting (it can never
+ * come back).
  */
 export function overallStats(data: TrainingData, known?: ReadonlySet<string>): OverallStats {
   return {
     streak: data.streak,
     longestStreak: data.longestStreak,
-    positionsSeen: Object.keys(data.positions).length,
+    positionsSeen: known
+      ? Object.keys(data.positions).filter((id) => known.has(id)).length
+      : Object.keys(data.positions).length,
     missedWaiting: known
       ? data.missed.filter((entry) => known.has(entry.position)).length
       : data.missed.length,
