@@ -1,6 +1,6 @@
 # Training puzzles: timed next-digit positions — proposal
 
-Status: **approved 2026-11-13 under [D106](../decisions.md)** by the implementing agent on the user's delegation; every §7 question takes its recommended answer (§7). Implementation on `feat/train`, one reviewed commit per task. Drafted 2026-11-10 from a user idea of the same day: "a puzzle as in chess: a half-filled Sudoku position, a timer, place the next number as fast as possible, with streaks and a history of best times".
+Status: **approved 2026-11-13 under [D106](../decisions.md)** by the implementing agent on the user's delegation; every §7 question takes its recommended answer (§7). **Merged** on 2026-11-13: T1–T6 ([verification](../history/train-verification.md)). Drafted 2026-11-10 from a user idea of the same day: "a puzzle as in chess: a half-filled Sudoku position, a timer, place the next number as fast as possible, with streaks and a history of best times".
 
 Related: [M2.6 engine hardening](2026-09-22-m26-engine-hardening.md) (D103), [technique selection and a single Solve view](2026-10-22-technique-selection-and-solve-views.md), [roadmap](../roadmap.md) (M6 gameplay hints), [parked ideas](../ideas.md) §2, [decisions](../decisions.md) D055, D094, D101.
 

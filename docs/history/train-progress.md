@@ -5,12 +5,12 @@ Record kept during the milestone. Spec: [training puzzles](../specs/2026-11-10-t
 | Task | State | Commit | Evidence |
 | --- | --- | --- | --- |
 | Approval | done | `b3d81c3`, merge `92d5d89` | D106, roadmap row, README line; `docs/training-puzzles` merged. |
-| T1 pack | done | see git log (`feat(train): T1`) | 500 positions; 502 independent checks pass; full rebuild byte-identical (`TRAIN_PACK=check`, 956 s). Review fixes are in the task commit: they changed the pack, which had to be rebuilt. |
-| T2 domain and storage | done | see git log (`feat(train): T2`) | Unit tests for every transition; v1–3 → empty training; v4 round trip; ring bound; review fixes folded in. |
-| T3 run screen | done | see git log (`feat(ui): T3`) | Playwright `train.spec.ts`: 4 passed. |
-| T4 hub and statistics | done | see git log (`feat(ui): T4`) | Playwright `train-hub.spec.ts`: 2 passed; unit tests for the median and category assignment in T2. |
-| T5 explanation | done | see git log (`feat(ui): T5`) | Playwright `train-explain.spec.ts`: 4 passed (light, dark, miss/study, removals in target cells). |
-| T6 timed run | done | see git log (`feat(ui): T6`) | Playwright `train-timed.spec.ts`: 5 passed; unit tests for runs in `training.test.ts`. |
+| T1 pack | done | `76ed94e` | 500 positions; 502 independent checks pass; full rebuild byte-identical (`TRAIN_PACK=check`, 956 s). Review fixes are in the task commit: they changed the pack, which had to be rebuilt. |
+| T2 domain and storage | done | `321db1f` | Unit tests for every transition; v1–3 → empty training; v4 round trip; ring bound; review fixes folded in. |
+| T3 run screen | done | `efa57af`, review `789a3f3` | Playwright `train.spec.ts`: 4 passed. |
+| T4 hub and statistics | done | `21d80c1`, review `9685b46` | Playwright `train-hub.spec.ts`: 2 passed; unit tests for the median and category assignment in T2. |
+| T5 explanation | done | `d896424`, review `a1ede29` | Playwright `train-explain.spec.ts`: 4 passed (light, dark, miss/study, removals in target cells). |
+| T6 timed run | done | `eedb1f4`, review `849515a` | Playwright `train-timed.spec.ts`: 5 passed; unit tests for runs in `training.test.ts`. |
 
 ## T1 pack (2026-11-13)
 
@@ -59,3 +59,8 @@ Done because T1–T5 had passed their acceptance and reviews; the whole-suite ga
 - Found by the tests: after the third miss the sprint result panel also showed (the last answer was not cleared); after an auto-advance the previous cell stayed selected through the keyboard-focus handoff, which would make a click on that cell deselect it. Both fixed.
 - `npx playwright test tests/e2e/train-timed.spec.ts`: 3 passed (third miss ends and records once, nothing more after it; three active minutes end the run with ms 180000 and a five-minute pause does not count; a second run left early is not recorded; nothing selected after an answer). All Train specs: 14 passed. `training.test.ts`: 46 passed.
 - Independent review: no double-record path. Fixed: a version 4 library saved before T6 (no `runs`) was refused on load, which would lock the whole library; it now loads with no runs (unit and browser tests). A run that never showed a position (every category off, reachable by URL) was recorded; it is not, and the screen says "No category selected". "Run again" handed focus to the board after a mouse click (the T4 trap); only a keyboard press does now. An answer past 0:00 before the next tick counted; it now ends the run. Validation requires best 0 without runs. The timed screen no longer builds the hidden step panel per answer. The time-limit test now checks the run is still on at about 179 s of active time. Noted, not changed: after an auto-advance nothing is selected, so an arrow key starts at A1. `train-timed.spec.ts`: 5 passed; all Train specs: 16 passed; `training.test.ts`: 48 passed.
+
+## Lint pass and final gate (2026-11-13)
+
+- Lint over the branch's files: 169 findings on added lines (11 `no-unnecessary-condition` errors, 121 short identifiers, 15 long functions, 10 non-null assertions, 7 long lines, 4 complexity) fixed without behaviour change (`40041d0`): record lookups through `lookup()`, descriptive names, long functions split into named helpers (the run screen into module-level functions over one screen object; `harvestSeed` into board, scan and technique steps). An independent review found no behaviour difference; a full `TRAIN_PACK=check` rebuild after it was byte-identical (748 s). The full lint then showed 4 warnings more than `master`, on unchanged first lines of functions this branch grew; fixed in `d0324d7`. Lint: 0 errors, 3,342 warnings, equal to `master`.
+- Gate: see the [verification record](train-verification.md). `npm test` 2,949 passed / 11 skipped / 0 failed (one out-of-memory worker crash in an unchanged solver file, passed on re-run); typecheck clean; Playwright: two test findings fixed in `59f7d8a`, then 72 passed / 1 skipped / 1 known environmental failure, A/B'd against `master`.
