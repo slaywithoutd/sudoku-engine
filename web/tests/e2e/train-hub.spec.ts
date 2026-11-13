@@ -70,6 +70,10 @@ test("the hub statistics match a scripted sequence of attempts", async ({ page }
   await only(page, category);
   await saved(page);
   await page.getByRole("button", { name: "Start sprint", exact: true }).click();
+  // The clock starts with the position: wait for it, then stop real time from
+  // flowing so each attempt lasts exactly its scripted time.
+  await expect(page.getByRole("grid", { name: "Training position" })).toBeVisible();
+  await page.clock.pauseAt((await page.evaluate(() => Date.now())) + 50);
   const script = [
     { ms: 3_000, correct: true },
     { ms: 2_000, correct: true },
@@ -80,11 +84,12 @@ test("the hub statistics match a scripted sequence of attempts", async ({ page }
   await saved(page);
   const recorded = (await stored(page)).training.attempts as { ms: number; position: string }[];
   expect(recorded.map((entry) => entry.position)).toEqual(positions.map((position) => position.id));
-  // The installed clock keeps flowing between steps: each time is the scripted
-  // duration plus a little real time, and the table must show the stored times.
+  // The paused clock moves only by the scripted time; the first attempt also
+  // holds the real time between the position appearing and the pause. The
+  // table must show these stored times.
   for (const [i, step] of script.entries()) {
     expect(recorded[i].ms).toBeGreaterThanOrEqual(step.ms - 50);
-    expect(recorded[i].ms).toBeLessThan(step.ms + 1_000);
+    expect(recorded[i].ms).toBeLessThan(step.ms + (i === 0 ? 2_000 : 300));
   }
   await page.getByRole("button", { name: "Back to Train", exact: true }).click();
   const overall = page.getByTestId("train-overall");
