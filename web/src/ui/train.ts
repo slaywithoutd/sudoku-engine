@@ -169,7 +169,8 @@ export function mountTrainRun(
     const summaryTitle = el("h2"),
       summaryText = el("p"),
       summaryBest = el("p");
-    const again = button("", () => restart(), "primary with-icon");
+    // As Next: only a keyboard press hands focus to the board.
+    const again = button("", (event) => restart(event.detail === 0), "primary with-icon");
     again.append(icon("reset"), el("span", "Run again"));
     const summaryActions = el("div", undefined, "actions");
     summaryActions.append(
@@ -242,17 +243,19 @@ export function mountTrainRun(
       answer = undefined;
       givens.fill(0);
       editor = emptyEditor();
-      // Recorded exactly once: `ended` guards every later call.
+      // Recorded exactly once: `ended` guards every later call. A run that never
+      // showed a position (every category off) is not a run.
       const record = { at: services.now(), solved, misses, ms };
-      services.controller.update((data) => ({
-        ...data,
-        training: recordRun(data.training, record),
-      }));
+      if (reason !== "exhausted" || run.shown.size > 0)
+        services.controller.update((data) => ({
+          ...data,
+          training: recordRun(data.training, record),
+        }));
       announce.textContent = `Run over: ${solved} solved, ${misses} missed.`;
       render();
       setTimeout(() => again.isConnected && again.focus());
     }
-    function restart() {
+    function restart(fromKeyboard: boolean) {
       run.shown.clear();
       run.previous = undefined;
       solved = 0;
@@ -260,10 +263,16 @@ export function mountTrainRun(
       ended = undefined;
       flash.hidden = true;
       runClock.reset(0);
-      advance(true);
+      advance(fromKeyboard);
     }
     function submit(cell: number, digit: number) {
       if (!position) return;
+      // An answer after the time limit, before the next tick, does not count.
+      runClock.sync();
+      if (timed && runClock.elapsed() >= TIMED_RUN_MS) {
+        finish("time");
+        return;
+      }
       clock.sync();
       const ms = Math.round(clock.elapsed()),
         correct = isCorrect(position, cell, digit);
@@ -354,13 +363,17 @@ export function mountTrainRun(
       score.textContent = `Solved ${solved} · Misses ${misses}/${TIMED_RUN_MISSES}`;
       summary.hidden = !ended;
       if (ended) {
-        summaryTitle.textContent =
-          ended === "time"
+        const empty = ended === "exhausted" && run.shown.size === 0;
+        summaryTitle.textContent = empty
+          ? "No category selected"
+          : ended === "time"
             ? "Time is up"
             : ended === "misses"
               ? "Three misses"
               : "No positions left";
-        summaryText.textContent = `Solved ${solved} · Misses ${misses}`;
+        summaryText.textContent = empty
+          ? "Choose at least one category in Train."
+          : `Solved ${solved} · Misses ${misses}`;
         summaryBest.textContent = `Best run: ${data.training.runs.best} solved`;
         flash.hidden = true;
       }
@@ -385,8 +398,9 @@ export function mountTrainRun(
           position.kind === "scan"
             ? "Scan: place any digit you can find from the placed digits."
             : "Technique: the notes are the candidates. Place any digit you can find.";
-      result.hidden = !answer;
-      if (answer && position) {
+      // A timed run shows no step between positions.
+      result.hidden = !answer || timed;
+      if (answer && position && !timed) {
         resultTitle.textContent = answer.correct ? "Correct" : "Not this time";
         result.dataset.result = answer.correct ? "correct" : "miss";
         resultText.textContent = answer.correct
@@ -400,7 +414,7 @@ export function mountTrainRun(
         }
       }
       if (!position) surface.render(undefined);
-      else if (!answer) surface.render(positionOverlay(position));
+      else if (!answer || timed) surface.render(positionOverlay(position));
       else {
         // After the answer: the engine's key step, drawn as the Solve screen draws a step.
         // The player's correct digit is drawn as a placement, never written to the board.

@@ -412,6 +412,14 @@ describe("timed runs (T6)", () => {
     // Recording attempts keeps the runs.
     expect(recordAttempt(data, attempt(hex(1), "miss"), 10).runs).toBe(data.runs);
   });
+  test("a version 4 library saved before timed runs loads with none", () => {
+    const data = structuredClone({ ...emptyLibrary(), training: played(3) }) as unknown as Record<
+      string,
+      any
+    >;
+    delete data.training.runs;
+    expect(validateLibrary(data).training.runs).toEqual({ count: 0, best: 0, recent: [] });
+  });
   test("the run ring keeps the newest runs and validates", () => {
     let data = played(40);
     for (let i = 0; i < RUN_RING + 5; i++) data = recordRun(data, run(i % 9, 0));
@@ -424,6 +432,7 @@ describe("timed runs (T6)", () => {
     ["more misses than allowed", (r) => (r.recent[0].misses = 4)],
     ["a best below a recorded run", (r) => (r.best = 1)],
     ["runs without a count", (r) => (r.count = 0)],
+    ["a best without any run", (r) => ((r.count = 0), (r.recent = []))],
   ])("rejects %s", (_name, mutate) => {
     const library = { ...emptyLibrary(), training: recordRun(played(10), run(5, 0)) };
     const data = structuredClone(library) as unknown as Record<string, any>;

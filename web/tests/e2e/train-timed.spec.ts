@@ -71,7 +71,11 @@ test("the run ends at three minutes of active time; a run left early is not reco
   await page.clock.runFor(300_000);
   await expect(page.getByTestId("train-run-summary")).toBeHidden();
   await page.getByRole("button", { name: "Resume", exact: true }).first().click();
-  await page.clock.runFor(125_000);
+  // About 179 s of active time: still running; past 180 s: over.
+  await page.clock.runFor(115_000);
+  await expect(page.getByTestId("train-run-summary")).toBeHidden();
+  await expect(page.getByRole("timer", { name: "Time left" })).toHaveText(/^0:0\d$/);
+  await page.clock.runFor(10_000);
   const summary = page.getByTestId("train-run-summary");
   await expect(summary.getByRole("heading")).toHaveText("Time is up");
   await expect(summary).toContainText("Solved 2 · Misses 0");
@@ -98,4 +102,52 @@ test("after an answer the next position starts with nothing selected", async ({ 
   // Clicking any cell of the new position selects it, even the one answered before.
   await cell(page, probe(pack.positions[0]).open).click();
   await expect(page.locator('[aria-selected="true"]')).toHaveCount(1);
+});
+
+test("with every category off a timed run records nothing", async ({ page }) => {
+  await page.goto("/#/train");
+  await expect(page.getByRole("checkbox").first()).toBeVisible();
+  for (const box of await page.getByRole("checkbox").all()) await box.uncheck();
+  await expect(page.getByRole("button", { name: "Timed run", exact: true })).toBeDisabled();
+  await saved(page);
+  await page.goto("/#/train/timed");
+  const summary = page.getByTestId("train-run-summary");
+  await expect(summary.getByRole("heading")).toHaveText("No category selected");
+  await page.getByRole("button", { name: "Run again", exact: true }).click();
+  await saved(page);
+  expect((await runs(page)).count).toBe(0);
+});
+
+test("a version 4 library saved before timed runs still loads", async ({ page }) => {
+  // Store a library once (a setting change commits it), then drop its runs.
+  await page.goto("/#/train");
+  const box = page.getByRole("checkbox").first();
+  await box.uncheck();
+  await box.check();
+  await saved(page);
+  await page.evaluate(
+    () =>
+      new Promise<void>((resolve, reject) => {
+        const request = indexedDB.open("sudoku-engine", 1);
+        request.onsuccess = () => {
+          const store = request.result.transaction("library", "readwrite").objectStore("library");
+          const get = store.get("current");
+          get.onsuccess = () => {
+            const data = get.result;
+            delete data.training.runs;
+            const put = store.put(data, "current");
+            put.onsuccess = () => {
+              request.result.close();
+              resolve();
+            };
+            put.onerror = () => reject(put.error);
+          };
+        };
+      }),
+  );
+  await page.reload();
+  await page.goto("/#/train");
+  await expect(
+    page.getByTestId("train-overall").locator("div", { hasText: "Best timed run" }).locator("dd"),
+  ).toHaveText("0");
 });

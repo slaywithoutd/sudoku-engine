@@ -249,7 +249,8 @@ function training(x: unknown, version: number): TrainingData {
     };
   });
   requireValid(attempts.length <= Math.min(ATTEMPT_RING, attemptCount));
-  const r = object(t.runs),
+  // A version 4 library saved before timed runs existed has no `runs` yet.
+  const r = t.runs === undefined ? { count: 0, best: 0, recent: [] } : object(t.runs),
     count = integer(r.count, 0, Number.MAX_SAFE_INTEGER),
     recent: TimedRun[] = array(r.recent).map((raw) => {
       const run = object(raw),
@@ -265,7 +266,7 @@ function training(x: unknown, version: number): TrainingData {
   requireValid(
     recent.length <= Math.min(count, RUN_RING) &&
       (count === 0) === (recent.length === 0) &&
-      // A run also ends early when the selected categories run out of positions.
+      (count > 0 || best === 0) &&
       recent.every((run) => run.solved <= best),
   );
   const runs = { count, best, recent };
