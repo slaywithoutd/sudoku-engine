@@ -9,7 +9,7 @@ Record kept during the milestone. Spec: [training puzzles](../specs/2026-11-10-t
 | T2 domain and storage | done | see git log (`feat(train): T2`) | Unit tests for every transition; v1–3 → empty training; v4 round trip; ring bound; review fixes folded in. |
 | T3 run screen | done | see git log (`feat(ui): T3`) | Playwright `train.spec.ts`: 4 passed. |
 | T4 hub and statistics | done | see git log (`feat(ui): T4`) | Playwright `train-hub.spec.ts`: 2 passed; unit tests for the median and category assignment in T2. |
-| T5 explanation | pending | | |
+| T5 explanation | done, in review | see git log (`feat(ui): T5`) | Playwright `train-explain.spec.ts`: 3 passed (light, dark, miss/study). |
 | T6 timed run | optional | | |
 
 ## T1 pack (2026-11-13)
@@ -44,3 +44,8 @@ Power: mains (`BatteryStatus` 2), CPU 1.6 GHz (slow state).
 - Found while testing: after Next, focusing the board's tab-stop cell selected it, so a mouse click on that same cell deselected it and the digit went nowhere. Focus now moves to the board only when Next is pressed from the keyboard.
 - `npx playwright test tests/e2e/train-hub.spec.ts`: 2 passed (statistics against a scripted correct/miss/correct sequence, checked against the stored times; history order; Study; the category filter persists and limits the sprint). `train.spec.ts` still 5 passed.
 - Independent review: no correctness bug; both Playwright tests could pass without proving their claim. The filter test unchecked Scanning while the pack's first position is already a technique position; it now switches off the first position's category, checks the board is the first position of another category, and checks Start is disabled with every category off. The statistics test used one attempt per category (best = median, streak = longest); it now scripts correct, correct, miss, correct in one category (streak 1, longest 2, accuracy 75%, best ≈ 2 s ≠ median ≈ 3 s, one table row). Also fixed: each Study button is named after its attempt; checkbox names carry "(N positions)"; the table is labelled by its heading; `<time datetime>`; a pack load error is shown on the hub; phone layout of history rows; positions a later pack drops are not counted as seen. `train-hub.spec.ts`: 2 passed; `training.test.ts` passed.
+
+## T5 explanation after the answer (2026-11-13)
+
+- After every answer (correct or missed), the result panel says "Found with" the technique (the category name for a technique position, since the engine names the whole C04 family "Naked Pair"; the single's name for a scan position), the removals and the placements they leave, with the Solve screen's legend. The board draws the key step as Solve does: pattern cells as reasoning, removed candidates struck through, resulting placements; the player's peer and same-digit highlights are off while it shows. The study view shows the same step on "Show the answer". Never "requires".
+- `npx playwright test tests/e2e/train-explain.spec.ts`: 3 passed. In light and in dark mode: heading "Found with …", no "requires", every pattern cell has the reasoning class, every removed candidate is visible and struck through (`text-decoration-line: line-through`), text contrast of the panel ≥ 4.5:1; screenshots in the test output. A miss and the study view show the same step text. All Train specs: 10 passed.

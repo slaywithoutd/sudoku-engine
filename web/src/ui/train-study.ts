@@ -1,27 +1,13 @@
 import type { ScreenServices } from "../app/controller";
-import { emptyEditor, type Digit, type Value } from "../domain/model";
+import { emptyEditor, type Value } from "../domain/model";
 import { digitsOf, loadTrainingPack, type TrainingPosition } from "../domain/training-pack";
 import { categoryLabel, categoryOf } from "../domain/training";
 import { el, button } from "./dom";
 import { gameShell } from "./game";
-import { mountBoard, type BoardOverlay } from "./board";
+import { mountBoard } from "./board";
+import { explanationPanel, positionOverlay, stepOverlay } from "./train-explain";
 import { cellName } from "./solver-copy";
 import { formatSeconds } from "./train-hub";
-
-export function candidateDigits(mask: number): Digit[] {
-  const result: Digit[] = [];
-  for (let d = 1; d <= 9; d++) if (mask & (1 << (d - 1))) result.push(d as Digit);
-  return result;
-}
-/** The position as the run screen shows it: placed digits, and candidates on a technique position. */
-export function positionOverlay(position: TrainingPosition): BoardOverlay {
-  const values = digitsOf(position.values),
-    masks = position.candidates;
-  return {
-    candidates: masks ? values.map((v, i) => (v ? null : candidateDigits(masks[i]))) : undefined,
-    derived: new Set(values.flatMap((v, i) => (v && position.givens[i] === "0" ? [i] : []))),
-  };
-}
 
 /**
  * A past position reopened from the history (spec §4.3): no clock, nothing
@@ -87,6 +73,8 @@ export function mountTrainStudy(
       "train-intended",
     );
     intended.hidden = true;
+    const explanation = explanationPanel(position);
+    explanation.hidden = true;
     let revealed = false;
     const reveal = button("Show the answer", () => {
       revealed = !revealed;
@@ -95,15 +83,16 @@ export function mountTrainStudy(
     const back = button("Back to Train", () => services.navigate({ screen: "train" }));
     const actions = el("div", undefined, "actions");
     actions.append(reveal, back);
-    panel.append(details, intended, actions);
+    panel.append(details, intended, explanation, actions);
     shell.side.append(panel);
     const render = () => {
       intended.hidden = !revealed;
+      explanation.hidden = !revealed;
       reveal.textContent = revealed ? "Hide the answer" : "Show the answer";
       reveal.setAttribute("aria-pressed", String(revealed));
       board.update(editor, undefined, {
         ...positionOverlay(position),
-        ...(revealed ? { placed: new Map(position.targets.map(([c, d]) => [c, d])) } : {}),
+        ...(revealed ? stepOverlay(position) : {}),
       });
     };
     render();

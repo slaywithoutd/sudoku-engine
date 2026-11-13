@@ -12,7 +12,7 @@ test("a correct digit raises the streak and records the time", async ({ page }) 
   await page.keyboard.press(String(right));
   const result = page.getByTestId("train-result");
   await expect(result).toBeVisible();
-  await expect(result.getByRole("heading")).toHaveText("Correct");
+  await expect(result.getByRole("heading", { level: 2 })).toHaveText("Correct");
   await expect(page.getByTestId("train-streak")).toHaveText("Streak 1");
   await saved(page);
   const data = await stored(page);
@@ -42,7 +42,7 @@ test("a wrong digit ends the attempt, resets the streak and shows the intended p
   await cell(page, miss.open).click();
   await page.keyboard.press(String(miss.wrong));
   const result = page.getByTestId("train-result");
-  await expect(result.getByRole("heading")).toHaveText("Not this time");
+  await expect(result.getByRole("heading", { level: 2 })).toHaveText("Not this time");
   await expect(page.getByTestId("train-streak")).toHaveText("Streak 0");
   await expect(result.locator(".train-intended")).toContainText("Intended placement:");
   // Every target is drawn on the board as a placement.
@@ -95,7 +95,9 @@ test("losing focus covers the board and stops the clock", async ({ page }) => {
   expect(await seconds(page)).toBeLessThanOrEqual(before + 3);
   // The cell is still selected from before the blur.
   await page.keyboard.press(String(right));
-  await expect(page.getByTestId("train-result").getByRole("heading")).toHaveText("Correct");
+  await expect(page.getByTestId("train-result").getByRole("heading", { level: 2 })).toHaveText(
+    "Correct",
+  );
 });
 
 test("a note modifier never answers, and Next returns focus to the board", async ({ page }) => {
@@ -107,7 +109,9 @@ test("a note modifier never answers, and Next returns focus to the board", async
   await expect(page.getByTestId("train-result")).toBeHidden();
   await expect(page.getByTestId("train-streak")).toHaveText("Streak 0");
   await page.keyboard.press(String(right));
-  await expect(page.getByTestId("train-result").getByRole("heading")).toHaveText("Correct");
+  await expect(page.getByTestId("train-result").getByRole("heading", { level: 2 })).toHaveText(
+    "Correct",
+  );
   await expect(page.getByRole("status").filter({ hasText: "Correct:" })).toHaveCount(1);
   await page.keyboard.press("Enter");
   await expect(page.getByTestId("train-result")).toBeHidden();

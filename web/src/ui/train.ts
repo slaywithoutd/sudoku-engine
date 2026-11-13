@@ -2,7 +2,7 @@ import type { ScreenServices } from "../app/controller";
 import { createPlayClock, formatDuration } from "../app/play-clock";
 import type { BoardAction } from "../domain/editor";
 import { reduceEditor } from "../domain/editor";
-import { emptyEditor, type Digit, type EditorState, type Value } from "../domain/model";
+import { emptyEditor, type EditorState, type Value } from "../domain/model";
 import { loadTrainingPack, digitsOf, type TrainingPosition } from "../domain/training-pack";
 import {
   categoryOf,
@@ -15,10 +15,10 @@ import { el, button } from "./dom";
 import { icon } from "./icons";
 import { iconButton } from "./components";
 import { gameShell } from "./game";
+import { cellName } from "./solver-copy";
 import { mountPuzzleSurface } from "./puzzle-editor";
+import { explanationPanel, positionOverlay, stepOverlay } from "./train-explain";
 
-const ROWS = "ABCDEFGHI";
-export const cellName = (cell: number) => `${ROWS[Math.floor(cell / 9)]}${(cell % 9) + 1}`;
 const placements = (list: readonly (readonly [number, number])[]) =>
   list.map(([cell, digit]) => `${cellName(cell)} = ${digit}`).join(", ");
 
@@ -37,11 +37,6 @@ function editorFor(position: TrainingPosition): EditorState {
   const editor = emptyEditor();
   editor.cells = digitsOf(position.values).map((value) => ({ value: value as Value, notes: [] }));
   return editor;
-}
-function candidateDigits(mask: number): Digit[] {
-  const result: Digit[] = [];
-  for (let d = 1; d <= 9; d++) if (mask & (1 << (d - 1))) result.push(d as Digit);
-  return result;
 }
 
 type Answer = {
@@ -120,7 +115,10 @@ export function mountTrainRun(container: HTMLElement, services: ScreenServices):
     const back = button("Back to Train", () => services.navigate({ screen: "train" }));
     const actions = el("div", undefined, "actions");
     actions.append(next, back);
-    result.append(resultTitle, resultText, intended, actions);
+    // The key step (spec §4.1 step 5, T5), rebuilt once per answered position.
+    const explanation = el("div", undefined, "train-explanation-host");
+    let explained: TrainingPosition | undefined;
+    result.append(resultTitle, resultText, intended, explanation, actions);
     result.hidden = true;
     const kind = el("p", undefined, "train-kind");
     shell.side.prepend(result);
@@ -165,6 +163,8 @@ export function mountTrainRun(container: HTMLElement, services: ScreenServices):
       state: () => editor,
       dispatch,
       editable: () => !!position && !answer && !paused,
+      // While the key step is shown, only its own highlights (as on the Solve screen).
+      display: () => (answer ? { highlightPeers: false, highlightSameDigit: false } : {}),
       command: (action) => {
         if (action === "pause") {
           setPaused(!paused);
@@ -281,36 +281,27 @@ export function mountTrainRun(container: HTMLElement, services: ScreenServices):
         resultTitle.textContent = answer.correct ? "Correct" : "Not this time";
         result.dataset.result = answer.correct ? "correct" : "miss";
         resultText.textContent = answer.correct
-          ? `${cellName(answer.cell)} = ${answer.digit} in ${formatDuration(answer.ms)} (${(answer.ms / 1000).toFixed(1)} s).`
+          ? `${cellName(answer.cell)} = ${answer.digit} in ${(answer.ms / 1000).toFixed(1)} s.`
           : `${cellName(answer.cell)} = ${answer.digit} is not the solution's digit. The streak starts again.`;
         intended.textContent = `Intended placement: ${placements(position.targets)}.`;
         intended.hidden = answer.correct;
+        if (explained !== position) {
+          explained = position;
+          explanation.replaceChildren(explanationPanel(position));
+        }
       }
-      const shownCandidates = position?.candidates;
-      surface.render(
-        position
-          ? {
-              candidates: shownCandidates
-                ? digitsOf(position.values).map((v, i) =>
-                    v ? null : candidateDigits(shownCandidates[i]),
-                  )
-                : undefined,
-              derived: new Set(
-                digitsOf(position.values).flatMap((v, i) =>
-                  v && position && position.givens[i] === "0" ? [i] : [],
-                ),
-              ),
-              correct: answer?.correct ? new Set([answer.cell]) : undefined,
-              placed:
-                answer && !answer.correct
-                  ? new Map(position.targets.map(([c, d]) => [c, d]))
-                  : undefined,
-              focus: answer
-                ? new Set([answer.cell, ...position.targets.map(([c]) => c)])
-                : undefined,
-            }
-          : undefined,
-      );
+      if (!position) surface.render(undefined);
+      else if (!answer) surface.render(positionOverlay(position));
+      else {
+        // After the answer: the engine's key step, drawn as the Solve screen draws a step.
+        const step = stepOverlay(position);
+        surface.render({
+          ...positionOverlay(position),
+          ...step,
+          correct: answer.correct ? new Set([answer.cell]) : undefined,
+          focus: new Set([...(step.focus ?? []), answer.cell]),
+        });
+      }
       timerText.textContent = formatDuration(answer ? answer.ms : clock.elapsed());
     };
 

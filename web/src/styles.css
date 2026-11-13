@@ -2317,6 +2317,18 @@ dialog .actions .ghost:first-child {
 .train-result button:not(.primary) {
   background: var(--surface);
 }
+.train-explanation {
+  display: grid;
+  gap: 0.35rem;
+  margin: 0.25rem 0 0.5rem;
+}
+.train-explanation h3 {
+  margin: 0;
+  font-size: 1.05rem;
+}
+.train-explanation p {
+  margin: 0;
+}
 .train-page {
   display: grid;
   gap: 1.25rem;
