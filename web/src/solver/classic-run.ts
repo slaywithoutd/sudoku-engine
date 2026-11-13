@@ -16,12 +16,18 @@ import {
   canonicalOptionsKey,
   SCHEDULER_VERSION,
 } from "./scheduling/work";
-import { assembleTechniqueJobs } from "./techniques/registry";
+import { assembleRunJobs } from "./techniques/registry";
 import { EXACT_METHOD, exactSteps } from "./exact";
 import { runSolver } from "./run";
 import { coverageEntries, variantEntries } from "./techniques/manifest";
 import { defined } from "./invariants";
 import type { Ledger } from "./techniques/types";
+import {
+  lowestTierOff,
+  profileRowIds,
+  resolveTechniqueSet,
+  TechniqueSetError,
+} from "./techniques/technique-sets";
 
 const techniqueTiers = new Map<string, number>(
   [...coverageEntries, ...variantEntries].map((entry) => [entry.version, entry.tier] as const),
@@ -35,6 +41,9 @@ function difficultyOf(tiers: readonly number[]): Difficulty {
   for (const tier of tiers) stepsByTier[tier + 1] += 1;
   return { schema: "difficulty@0", maxTier: Math.max(-1, ...tiers), stepsByTier };
 }
+const versionOfRow = new Map<string, string>(
+  [...coverageEntries, ...variantEntries].map((entry) => [entry.id, entry.version] as const),
+);
 const techniqueNames = new Map<string, string>([
   ["rule-propagation@1", "Basic elimination"],
   ["rule-relation@1", "Relation propagation"],
@@ -67,6 +76,11 @@ export type ClassicSolveEvent =
       readonly workUnits: number;
       /** A simpler step may exist: the selection was cut by a budget (spec M2.6 §4.5). */
       readonly budgetLimited: boolean;
+      /**
+       * A simpler step may exist: a family of a lower tier than this step is
+       * switched off (M2.7, D105; S1 note §5.2). Present only when set.
+       */
+      readonly setLimited?: true;
     }
   | { readonly kind: "precount"; readonly solution: readonly number[] }
   | { readonly kind: "progress"; readonly phase: "human" | "exact"; readonly workUnits: number }
@@ -97,7 +111,20 @@ export type ClassicSolveEvent =
       readonly coverage: Coverage;
       /** Accepted steps a budget may have kept from being the simplest. */
       readonly budgetLimitedSteps: number;
+      /** Present only for a restricted technique set (M2.7, D105; S1 note §5.5). */
+      readonly techniqueSet?: TechniqueSetSummary;
     };
+
+export interface TechniqueSetSummary {
+  /** The enabled coverage ids, as in the options key. */
+  readonly enabled: readonly string[];
+  /** Display names of the profile's rows outside the set. */
+  readonly notSelected: readonly string[];
+  /** Lowest catalogue tier among them. */
+  readonly lowestTierNotSelected: number;
+  /** Accepted steps above that tier (set-limited). */
+  readonly setLimitedSteps: number;
+}
 
 export type StopReason =
   | "solved"
@@ -105,6 +132,13 @@ export type StopReason =
   | "work-limit"
   | "time-limit"
   | "tier-cap"
+  /**
+   * A job of a lower tier (or a rule job) was interrupted by its own
+   * resource limit (or, under a conditional profile, disabled), so the
+   * selection could not serve the tiers above it (`incomplete-cheaper-tier`;
+   * M2.7, D105 item 8). It used to be reported as a work limit or a tier cap.
+   */
+  | "lower-interrupted"
   | "contradiction"
   | "not-started";
 export interface Coverage {
@@ -166,9 +200,11 @@ export function coverageOf(
  * final ledger (spec §4.5); the result's `outcome` says how the whole run
  * ended (an exact phase that timed out afterwards is a "timeout" outcome).
  * Order: not started, solved, contradiction (also a logical path the count
- * invalidated), the time safety stop, then a tier cap whenever a technique
- * is capped (explain-fair@3 reopens capped jobs until the work runs out),
- * then a stall, then any other work or resource limit.
+ * invalidated), the time safety stop, then an interrupted lower job that
+ * ended the phase (it is the cause even when another job is capped), then a
+ * tier cap whenever a technique is capped (explain-fair@3 reopens capped jobs
+ * until the work runs out), then a stall, then any other work or resource
+ * limit.
  */
 export function stopReasonOf(
   human: HumanStatus,
@@ -179,6 +215,7 @@ export function stopReasonOf(
   if (human === "solved") return "solved";
   if (human === "contradiction" || human === "invalidated") return "contradiction";
   if (logicalStop === "time-limit") return "time-limit";
+  if (logicalStop === "incomplete-cheaper-tier") return "lower-interrupted";
   // Capped now, or reopened after a cap on this state (reason kept).
   if (ledger?.some((row) => row.status === "capped" || row.reason === "tier-work-cap"))
     return "tier-cap";
@@ -233,6 +270,15 @@ export interface ClassicSolveInput {
   readonly policyParameters?: PolicyParameters;
   /** Engine-side override of the explain-fair@3 tier cap (benchmarks, T08). */
   readonly tierCap?: TierCap;
+  /**
+   * A technique set (M2.7, D105): a preset id or a custom set's switched-off
+   * coverage ids. Untrusted: an unknown preset or id ends the run with an
+   * `error` result (`invalid-technique-set`, `unknown-technique`), never with
+   * the full set. Absent means every technique of the profile. Typed
+   * `unknown` because it crosses the worker boundary unchecked; its shape is
+   * a `TechniqueSelection`.
+   */
+  readonly techniqueSelection?: unknown;
 }
 export interface ClassicSolvePorts {
   readonly clock: { now(): number };
@@ -398,16 +444,28 @@ export async function solveProblem(
     empty("profile-incomplete");
     return;
   }
-  const options = schedulingOptions({
-    limits,
-    mode,
-    profile: PROFILE,
-    // The M2.6 policies are the defaults (D103); @1/@2 stay selectable and
-    // keep their traces (D094).
-    policy: input.policy ?? (mode === "explain" ? "explain-fair@3" : "analyze-fair@3"),
-    ...(input.policyParameters ? { policyParameters: input.policyParameters } : {}),
-    ...(input.tierCap ? { tierCap: input.tierCap } : {}),
-  });
+  let options: ReturnType<typeof schedulingOptions>;
+  try {
+    // Resolved next to the profile; the registry reads the normalised field below.
+    const enabled = resolveTechniqueSet(PROFILE, input.techniqueSelection);
+    options = schedulingOptions({
+      limits,
+      mode,
+      profile: PROFILE,
+      // The M2.6 policies are the defaults (D103); @1/@2 stay selectable and
+      // keep their traces (D094).
+      policy: input.policy ?? (mode === "explain" ? "explain-fair@3" : "analyze-fair@3"),
+      ...(input.policyParameters ? { policyParameters: input.policyParameters } : {}),
+      ...(input.tierCap ? { tierCap: input.tierCap } : {}),
+      ...(enabled ? { techniques: enabled } : {}),
+    });
+  } catch (error) {
+    if (error instanceof TechniqueSetError) {
+      empty(error.code);
+      return;
+    }
+    throw error;
+  }
   const run: RunKey = {
     requestId,
     snapshotId: snapshot.snapshotId,
@@ -439,12 +497,31 @@ export async function solveProblem(
         cells: readonly number[];
         workUnits: number;
         budgetLimited: boolean;
+        setLimited: boolean;
       }
     | undefined;
   let ledger: Ledger | undefined,
     budgetLimitedSteps = 0,
+    setLimitedSteps = 0,
     countVerifiedMs: number | undefined;
-  const registry = assembleTechniqueJobs(assembly, PROFILE);
+  const registry = assembleRunJobs(assembly, options);
+  // A step above the lowest switched-off tier is set-limited (S1 note §5.2).
+  const lowestOff = lowestTierOff(PROFILE, options.techniques);
+  const techniqueSetOf = (): TechniqueSetSummary | undefined => {
+    if (!options.techniques || lowestOff === undefined) return undefined;
+    const on = new Set(options.techniques);
+    return {
+      enabled: options.techniques,
+      notSelected: profileRowIds(PROFILE)
+        .filter((id) => !on.has(id))
+        .map((id) => {
+          const version = versionOfRow.get(id) ?? id;
+          return techniqueNames.get(version) ?? version;
+        }),
+      lowestTierNotSelected: lowestOff,
+      setLimitedSteps,
+    };
+  };
   const noteCount = (count: CountEvidence | undefined) => {
     if (countVerifiedMs === undefined && count && count.kind !== "unknown")
       countVerifiedMs = Math.max(0, Math.round(ports.clock.now() - started));
@@ -461,6 +538,7 @@ export async function solveProblem(
       cells: step.cells,
       workUnits: step.workUnits,
       budgetLimited: step.budgetLimited,
+      ...(step.setLimited ? { setLimited: true as const } : {}),
     });
   await runSolver(
     {
@@ -526,7 +604,10 @@ export async function solveProblem(
           if (pending) emitStep(pending);
           steps++;
           if (event.budgetLimited) budgetLimitedSteps++;
-          tiersSeen.push(techniqueTiers.get(event.step.proposal.technique) ?? -1);
+          const tier = techniqueTiers.get(event.step.proposal.technique) ?? -1,
+            setLimited = lowestOff !== undefined && tier > lowestOff;
+          if (setLimited) setLimitedSteps++;
+          tiersSeen.push(tier);
           pending = {
             technique: event.step.proposal.technique,
             effects: event.step.proposal.effects,
@@ -534,6 +615,7 @@ export async function solveProblem(
             cells: patternCells(event.step.proposal.pattern),
             workUnits: logicalWork,
             budgetLimited: !!event.budgetLimited,
+            setLimited,
           };
         } else if (event.kind === "terminal") {
           if (pending) {
@@ -543,7 +625,8 @@ export async function solveProblem(
           const count = defined(event.count, "count"),
             human = event.human ?? "not-started",
             // An error during the logical phase leaves its status unset.
-            logicalHuman = human === "not-started" && steps > 0 ? "incomplete" : human;
+            logicalHuman = human === "not-started" && steps > 0 ? "incomplete" : human,
+            techniqueSet = techniqueSetOf();
           ports.emit({
             kind: "result",
             outcome: event.outcome ?? "error",
@@ -562,6 +645,7 @@ export async function solveProblem(
               human === "solved",
             ),
             budgetLimitedSteps,
+            ...(techniqueSet ? { techniqueSet } : {}),
           });
         }
       },

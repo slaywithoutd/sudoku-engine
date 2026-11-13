@@ -19,7 +19,8 @@ import { safeId } from "./library";
 import { conflictingCells } from "./classic";
 export interface BackupEnvelope {
   format: "sudoku-engine-backup";
-  version: 2;
+  /** 3 since M2.7 (D105); versions 1 and 2 are read and migrated. */
+  version: 3;
   exportedAt: string;
   data: LibraryData;
 }
@@ -154,7 +155,11 @@ function editor(
 }
 export function validateLibrary(input: unknown): LibraryData {
   const x = object(input);
-  requireValid(x.formatVersion === 1 || x.formatVersion === 2, "Unsupported data version.");
+  // Older versions migrate by giving missing settings their defaults.
+  requireValid(
+    x.formatVersion === 1 || x.formatVersion === 2 || x.formatVersion === 3,
+    "Unsupported data version.",
+  );
   const revision = integer(x.revision, 0, Number.MAX_SAFE_INTEGER - 1),
     puzzles: Record<string, Puzzle> = {},
     drafts: Record<string, Draft> = {},
@@ -224,7 +229,7 @@ export function validateLibrary(input: unknown): LibraryData {
     throw new Error("Invalid backup data.");
   });
   return {
-    formatVersion: 2,
+    formatVersion: 3,
     revision,
     drafts,
     puzzles,
@@ -235,12 +240,12 @@ export function validateLibrary(input: unknown): LibraryData {
 export function parseBackup(text: string): BackupEnvelope {
   const x = object(JSON.parse(text));
   requireValid(
-    x.format === "sudoku-engine-backup" && (x.version === 1 || x.version === 2),
+    x.format === "sudoku-engine-backup" && (x.version === 1 || x.version === 2 || x.version === 3),
     "Backup format or version is not supported.",
   );
   return {
     format: "sudoku-engine-backup",
-    version: 2,
+    version: 3,
     exportedAt: date(x.exportedAt),
     data: validateLibrary(x.data),
   };
@@ -249,7 +254,7 @@ export function exportBackup(data: LibraryData, now: string): string {
   return JSON.stringify(
     {
       format: "sudoku-engine-backup",
-      version: 2,
+      version: 3,
       exportedAt: date(now),
       data: validateLibrary(data),
     },

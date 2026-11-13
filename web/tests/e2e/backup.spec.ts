@@ -34,7 +34,7 @@ test("download and restore skip identical records, copy conflicts, reject invali
   await upload(page, data);
   await page.getByRole("button", { name: "Apply import", exact: true }).click();
   await expect(page.getByTestId("save-status")).toHaveText("Saved");
-  data.version = 3;
+  data.version = 4;
   await upload(page, data);
   await expect(page.getByRole("alert")).toContainText("not supported");
   await openLibrary(page);

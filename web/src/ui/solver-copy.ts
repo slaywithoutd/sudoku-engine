@@ -19,10 +19,16 @@ export function countSummary(count: string): string {
   };
   return labels[count] ?? labels.unknown;
 }
-export function logicalSummary(human: string, steps: number): string {
+/**
+ * `restricted`: the run used a technique set (M2.7, D105). Its stall says
+ * nothing about the puzzle, only about the selected techniques (S1 note §5.2).
+ */
+export function logicalSummary(human: string, steps: number, restricted = false): string {
   const labels: Record<string, string> = {
     solved: `Solved logically in ${steps} explained steps.`,
-    "stalled-within-profile": `Logical techniques stalled after ${steps} steps.`,
+    "stalled-within-profile": restricted
+      ? `No step with the selected techniques after ${steps} steps.`
+      : `Logical techniques stalled after ${steps} steps.`,
     incomplete: `The logical explanation stopped at its limit after ${steps} steps.`,
     contradiction: "Logical analysis found a contradiction.",
     "not-started": "No logical explanation was attempted.",
@@ -49,12 +55,22 @@ const stopLabels: Record<string, string> = {
   "work-limit": "work limit",
   "time-limit": "time limit",
 };
+/**
+ * The interrupted job is at or below the tier named, or a basic rule, so the
+ * copy claims neither "simpler" nor which one (D105 item 8, review).
+ */
+const LOWER_INTERRUPTED =
+  "a technique or basic rule was interrupted by its resource limit, so higher tiers were not tried";
+const RULE_INTERRUPTED = "a basic rule was interrupted by its resource limit";
+/** A restricted run's stall: about the selected techniques, never the puzzle. */
+const SELECTED_STALL = "no step with the selected techniques";
 /** Where and why the logical phase stopped; empty when it never ran. */
 export function logicStop(
   human: string,
   stopReason: string | undefined,
   coverage:
     { readonly notStarted: readonly string[]; readonly highestTierTried: number } | undefined,
+  restricted = false,
 ): string {
   if (human === "solved") return "Logic: solved";
   if (human === "contradiction") return "Logic: found a contradiction";
@@ -66,14 +82,64 @@ export function logicStop(
   const tier = coverage.highestTierTried;
   // A stall: no technique applies, or the capped ones still could (spec §4.5);
   // a budget stop: the phase was cut wherever it was.
+  // An empty set tries no technique at all: no tier to name.
+  if (stopReason === "profile-stall" && restricted && tier < 0)
+    return `Logic: no step with the selected techniques${tail}`;
+  if (stopReason === "profile-stall" && restricted)
+    return `Logic: stalled at tier ${Math.max(0, tier)} (${SELECTED_STALL})${tail}`;
   if (stopReason === "profile-stall" || stopReason === "tier-cap")
     return `Logic: stalled at tier ${Math.max(0, tier)} (${stopLabels[stopReason]})${tail}`;
   const where = tier < 0 ? "before any technique" : `at tier ${tier}`;
+  if (stopReason === "lower-interrupted")
+    return tier < 0
+      ? `Logic: stopped before any technique: ${RULE_INTERRUPTED}${tail}`
+      : `Logic: stopped ${where}: ${LOWER_INTERRUPTED}${tail}`;
   return `Logic: stopped ${where} by the ${stopLabels[stopReason] ?? "limit"}${tail}`;
 }
-/** Shown on Explain steps found while a simpler technique was cut by a budget. */
+/** Shown on steps found while a simpler technique was cut by a budget. */
 export const BUDGET_LIMITED_NOTE =
   "A simpler step may exist: a simpler technique stopped at its limit.";
+/** Shown on steps found while a simpler technique is switched off (M2.7, D105 item 2). */
+export const SET_LIMITED_NOTE = "A simpler step may exist: a simpler technique is switched off.";
+/** The note under a step: one sentence even when a budget and the set both apply. */
+export function stepNoteText(step: {
+  readonly budgetLimited?: boolean;
+  readonly setLimited?: boolean;
+}): string {
+  if (step.budgetLimited && step.setLimited)
+    return "A simpler step may exist: a simpler technique stopped at its limit or is switched off.";
+  return step.budgetLimited ? BUDGET_LIMITED_NOTE : step.setLimited ? SET_LIMITED_NOTE : "";
+}
+/** The header line counting set-limited steps (D105 item 2); empty when none. */
+export function setLimitedSummary(count: number): string {
+  if (!count) return "";
+  return count === 1
+    ? "1 step may have a simpler explanation: a simpler technique is switched off."
+    : `${count} steps may have a simpler explanation: a simpler technique is switched off.`;
+}
+/** What the technique set of a run left out, e.g. "Techniques: No fish (28 of 33)". */
+export function techniqueSetLine(label: string, enabled: number, total: number): string {
+  return enabled === total
+    ? `Techniques: ${label}`
+    : `Techniques: ${label} (${enabled} of ${total})`;
+}
+/** One line of technique coverage (spec M2.6 §4.5), with the switched-off families. */
+export function coverageLine(
+  coverage: {
+    readonly exhausted: readonly string[];
+    readonly capped: readonly string[];
+    readonly notStarted: readonly string[];
+  },
+  notSelected = 0,
+): string {
+  const parts = [
+    `${coverage.exhausted.length} exhausted`,
+    `${coverage.capped.length} capped`,
+    `${coverage.notStarted.length} not started`,
+  ];
+  if (notSelected) parts.push(`${notSelected} not selected`);
+  return `Coverage: ${parts.join(", ")}`;
+}
 /** Matches the board labels: rows A–I, columns 1–9. */
 export function cellName(cell: number): string {
   return `${"ABCDEFGHI"[Math.floor(cell / 9)]}${(cell % 9) + 1}`;

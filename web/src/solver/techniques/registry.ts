@@ -199,9 +199,39 @@ export function profileReadiness(profile: VersionId): {
   return Object.freeze({ ready: missing.length === 0, missing: Object.freeze(missing) });
 }
 
-/** One cursor per rule and family; never materialize combinatorial scope jobs. */
-export function assembleTechniqueJobs(assembly: Assembly, profile: VersionId) {
-  const techniques = getTechniques(profile);
+const coverageIdOf = new Map<string, string>(
+  [...coverageEntries, ...variantEntries].map((entry) => [entry.version, entry.id] as const),
+);
+/**
+ * The registry of a run from its normalised options: the profile and the
+ * technique set come from the same object as the options key, so the key and
+ * the registry cannot disagree (M2.7 S2 review). Callers that build options
+ * with a technique set should use this rather than `assembleTechniqueJobs`.
+ */
+export function assembleRunJobs(
+  assembly: Assembly,
+  options: { readonly profile: VersionId; readonly techniques?: readonly string[] },
+) {
+  return assembleTechniqueJobs(assembly, options.profile, options.techniques);
+}
+/**
+ * One cursor per rule and family; never materialize combinatorial scope jobs.
+ * `enabled` is the canonical `techniques` option (M2.7, D105): a switched-off
+ * family is removed before assembly, so it has no ledger row and no gate
+ * waits for it (S1 note §5.1). Without it the profile's list is unchanged.
+ * Pass the normalised options' field, never raw input, so the key and the
+ * registry cannot disagree.
+ */
+export function assembleTechniqueJobs(
+  assembly: Assembly,
+  profile: VersionId,
+  enabled?: readonly string[],
+) {
+  const all = getTechniques(profile),
+    on = enabled && new Set(enabled);
+  const techniques = on
+    ? Object.freeze(all.filter((descriptor) => on.has(coverageIdOf.get(descriptor.id) ?? "")))
+    : all;
   if (assembly.problem.constraints.length + techniques.length > 256)
     throw Error("profile-job-limit");
   if (!profileReadiness(profile).ready) throw Error("profile-incomplete");

@@ -156,8 +156,8 @@ test("settings remain local unless requested; revision remains local", () => {
   ).toBe(true);
 });
 test.each([
-  (x: any) => (x.version = 3),
-  (x: any) => (x.data.formatVersion = 3),
+  (x: any) => (x.version = 4),
+  (x: any) => (x.data.formatVersion = 4),
   (x: any) => x.data.drafts.d.editor.cells.pop(),
   (x: any) => (x.data.drafts.d.editor.cells[0].notes = [2]),
   (x: any) => (x.data.sessions.p.editor.cells[0].notes = [2, 2]),
@@ -205,4 +205,93 @@ test("rejects inconsistent past/future and given edits even in hidden history", 
     },
   ];
   expect(() => validateLibrary(d)).toThrow();
+});
+
+// M2.7 (D105), S1 note §6 table 5: the technique-set settings and format version 3.
+test("5.1 version 1 and 2 libraries and backups load with the full set", () => {
+  for (const version of [1, 2]) {
+    const data = structuredClone(fixture()) as unknown as Record<string, any>;
+    data.formatVersion = version;
+    delete data.settings.solverTechniquePreset;
+    delete data.settings.solverTechniquesOff;
+    const loaded = validateLibrary(data);
+    expect(loaded.formatVersion).toBe(3);
+    expect(loaded.settings.solverTechniquePreset).toBe("all@1");
+    expect(loaded.settings.solverTechniquesOff).toEqual([]);
+    const imported = parseBackup(
+      JSON.stringify({ format: "sudoku-engine-backup", version, exportedAt: NOW, data }),
+    );
+    expect(imported.version).toBe(3);
+    expect(imported.data.settings.solverTechniquePreset).toBe("all@1");
+  }
+});
+test("5.2 export and parse keep a custom set; the custom list survives a preset choice", () => {
+  const data = fixture();
+  data.settings.solverTechniquePreset = "custom";
+  data.settings.solverTechniquesOff = ["C06", "C07", "C24"];
+  const text = exportBackup(data, NOW);
+  expect(JSON.parse(text).version).toBe(3);
+  expect(JSON.parse(text).data.formatVersion).toBe(3);
+  expect(parseBackup(text).data.settings).toMatchObject({
+    solverTechniquePreset: "custom",
+    solverTechniquesOff: ["C06", "C07", "C24"],
+  });
+  data.settings.solverTechniquePreset = "no-fish@1";
+  expect(parseBackup(exportBackup(data, NOW)).data.settings.solverTechniquesOff).toEqual([
+    "C06",
+    "C07",
+    "C24",
+  ]);
+  // Catalogue rows outside the classic profile are valid entries (they are on a later profile).
+  data.settings.solverTechniquesOff = ["C24", "K01", "U01"];
+  expect(parseBackup(exportBackup(data, NOW)).data.settings.solverTechniquesOff).toEqual([
+    "C24",
+    "K01",
+    "U01",
+  ]);
+});
+test.each<[string, unknown]>([
+  ["unsorted", ["C07", "C06"]],
+  ["duplicated", ["C06", "C06"]],
+  ["unknown id", ["C06", "X99"]],
+  ["lower-case id", ["c06"]],
+  ["not an array", "C06"],
+  ["not strings", [6]],
+  ["null", null],
+])("5.3 a %s solverTechniquesOff is rejected", (_name, off) => {
+  const data = structuredClone(fixture()) as unknown as Record<string, any>;
+  data.settings.solverTechniquesOff = off;
+  expect(() => validateLibrary(data)).toThrow("Invalid backup data.");
+});
+test.each<unknown>(["no-fish@9", "All", "", null, 1])(
+  "5.4 an unknown preset %j is rejected",
+  (preset) => {
+    const data = structuredClone(fixture()) as unknown as Record<string, any>;
+    data.settings.solverTechniquePreset = preset;
+    expect(() => validateLibrary(data)).toThrow("Invalid backup data.");
+  },
+);
+test("5.4 every current preset and custom are accepted", () => {
+  for (const preset of [
+    "all@1",
+    "singles@1",
+    "up-to-subsets@1",
+    "up-to-wings-fish@1",
+    "no-fish@1",
+    "custom",
+  ]) {
+    const data = fixture();
+    data.settings.solverTechniquePreset = preset;
+    expect(validateLibrary(data).settings.solverTechniquePreset).toBe(preset);
+  }
+});
+
+test("a library or backup that still has the removed solverView setting loads without it", () => {
+  const data = structuredClone(fixture()) as unknown as Record<string, any>;
+  data.settings.solverView = "analyze";
+  expect("solverView" in validateLibrary(data).settings).toBe(false);
+  const imported = parseBackup(
+    JSON.stringify({ format: "sudoku-engine-backup", version: 2, exportedAt: NOW, data }),
+  );
+  expect("solverView" in imported.data.settings).toBe(false);
 });

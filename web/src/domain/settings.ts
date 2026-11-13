@@ -6,12 +6,21 @@ import {
   SCALES,
   SHORTCUT_ACTIONS,
   SOLVER_TIME_LIMITS,
-  SOLVER_VIEWS,
   THEMES,
   TIMER_STARTS,
   type Settings,
   type ShortcutAction,
 } from "./model";
+import {
+  compareIds,
+  currentPresetId,
+  DEFAULT_TECHNIQUE_PRESET,
+  TECHNIQUE_PRESET_IDS,
+  techniqueRow,
+} from "../solver/techniques/technique-sets";
+
+/** The preset value that selects the custom set (`solverTechniquesOff`). */
+export const CUSTOM_TECHNIQUE_SET = "custom";
 
 export const DEFAULT_SHORTCUTS: Readonly<Record<ShortcutAction, string>> = Object.freeze({
   toolValue: "Z",
@@ -59,11 +68,12 @@ export function defaultSettings(): Settings {
     highContrast: false,
     colorPatterns: false,
     reduceMotion: false,
-    solverView: "explain",
     solverCandidates: true,
     solverHideBasic: false,
     solverAutoplayMs: 0,
     solverTimeLimitS: 60,
+    solverTechniquePreset: DEFAULT_TECHNIQUE_PRESET,
+    solverTechniquesOff: [],
   };
 }
 
@@ -76,7 +86,6 @@ const CHOICES: { [K in keyof Settings]?: readonly unknown[] } = {
   textScale: SCALES,
   digitScale: SCALES,
   palette: PALETTES,
-  solverView: SOLVER_VIEWS,
   solverAutoplayMs: AUTOPLAY_SPEEDS,
   solverTimeLimitS: SOLVER_TIME_LIMITS,
 };
@@ -87,7 +96,9 @@ export const SHORTCUT_PATTERN =
 
 /**
  * Missing fields belong to older libraries and take defaults; explicit invalid
- * values are rejected so corrupted backups never import silently.
+ * values are rejected so corrupted backups never import silently. Fields a
+ * build no longer knows are dropped: `solverView` (the Analyze/Explain switch,
+ * removed by M2.7 S4, D105) is ignored when an older library still has it.
  */
 export function normalizeSettings(
   raw: Record<string, unknown>,
@@ -98,7 +109,13 @@ export function normalizeSettings(
   const settings = defaultSettings();
   const target = settings as unknown as Record<string, unknown>;
   for (const key of Object.keys(settings) as (keyof Settings)[]) {
-    if (key === "language" || key === "shortcuts") continue;
+    if (
+      key === "language" ||
+      key === "shortcuts" ||
+      key === "solverTechniquePreset" ||
+      key === "solverTechniquesOff"
+    )
+      continue;
     const value = raw[key];
     if (value === undefined) continue;
     const choices = CHOICES[key];
@@ -114,6 +131,35 @@ export function normalizeSettings(
       if (typeof combo !== "string" || !SHORTCUT_PATTERN.test(combo)) invalid();
       settings.shortcuts[action] = combo;
     }
+  }
+  // Technique set (M2.7, D105). A retired preset id follows its name to the
+  // current version (item 5); an unknown one is rejected like every other
+  // explicit invalid value (item 9).
+  if (raw.solverTechniquePreset !== undefined) {
+    const preset =
+      typeof raw.solverTechniquePreset === "string"
+        ? currentPresetId(raw.solverTechniquePreset)
+        : undefined;
+    if (
+      preset === undefined ||
+      (preset !== CUSTOM_TECHNIQUE_SET && !TECHNIQUE_PRESET_IDS.includes(preset))
+    )
+      invalid();
+    settings.solverTechniquePreset = preset;
+  }
+  if (raw.solverTechniquesOff !== undefined) {
+    const off = raw.solverTechniquesOff;
+    if (
+      !Array.isArray(off) ||
+      !off.every(
+        (id, i) =>
+          typeof id === "string" &&
+          techniqueRow(id) !== undefined &&
+          (i === 0 || compareIds(off[i - 1] as string, id) < 0),
+      )
+    )
+      invalid();
+    settings.solverTechniquesOff = [...(off as string[])];
   }
   return settings;
 }

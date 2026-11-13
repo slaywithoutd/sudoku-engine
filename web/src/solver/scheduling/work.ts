@@ -1,4 +1,5 @@
-import { PROFILES } from "../techniques/profiles";
+import { PROFILES, type ProfileId } from "../techniques/profiles";
+import { canonicalTechniques } from "../techniques/technique-sets";
 import type { Limits } from "../limits";
 import type { VersionId } from "../problem";
 
@@ -146,6 +147,13 @@ export interface SchedulingOptions {
   readonly policyParameters?: PolicyParameters;
   /** Present exactly for explain-fair@3. */
   readonly tierCap?: TierCap;
+  /**
+   * The enabled coverage ids of a restricted technique set (M2.7, D105; S1
+   * note §5.3), sorted by code unit. Absent for the full set, so the default
+   * key is unchanged; the empty list is kept. The run's registry is the
+   * profile's descriptors filtered to it (`assembleTechniqueJobs`).
+   */
+  readonly techniques?: readonly string[];
 }
 /** Logical options only: task slices do not enter deterministic decisions. */
 export function schedulingOptions(
@@ -212,6 +220,10 @@ export function schedulingOptions(
   if (typeof options.rollout !== "boolean") throw Error("invalid-rollout-option");
   if (options.rollout && (mode !== "analyze" || options.profile !== "classic-expanded@1"))
     throw Error("rollout-requires-analyze-primary");
+  // Every key passes through here: an id outside the profile is rejected, the
+  // list is sorted, and the full set is omitted (S1 note §5.3).
+  const techniques = canonicalTechniques(options.profile as ProfileId, input.techniques);
+  if (techniques && options.rollout) throw Error("rollout-requires-full-set");
   for (const value of [
     ...Object.values(options.limits),
     options.phaseWorkUnits,
@@ -223,7 +235,7 @@ export function schedulingOptions(
     options.phaseTimeMs > options.limits.timeMs
   )
     throw Error("invalid-phase-limit");
-  return Object.freeze(options);
+  return Object.freeze(techniques ? { ...options, techniques } : options);
 }
 /** One canonical encoder shared with worker/controller identity construction. */
 export function canonicalOptionsKey(input: SchedulingOptions): string {

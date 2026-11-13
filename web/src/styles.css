@@ -2340,11 +2340,76 @@ dialog .actions .ghost:first-child {
   border-radius: var(--radius-lg);
   corner-shape: squircle;
 }
-.view-switch {
-  display: flex;
+/* One Solve view (M2.7 S4): the run's summary, collapsed to one line above the steps. */
+.solve-summary {
+  /* A grid item's automatic minimum is its min-content: the nowrap line would widen the panel. */
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  corner-shape: squircle;
+  padding: 0.5rem 0.75rem;
 }
-.view-switch .segment {
+.solve-summary[hidden] {
+  display: none;
+}
+.solve-summary > summary {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  cursor: pointer;
+  list-style: none;
+}
+.solve-summary > summary::-webkit-details-marker {
+  display: none;
+}
+.solve-summary > summary::after {
+  content: "";
+  margin-left: auto;
+  width: 0.45rem;
+  height: 0.45rem;
+  border-right: 2px solid var(--muted);
+  border-bottom: 2px solid var(--muted);
+  transform: rotate(45deg);
+  transition: transform 0.15s;
+}
+.solve-summary[open] > summary::after {
+  transform: rotate(-135deg);
+}
+/* One line: the full status is inside the header and in the line's title. */
+.solve-summary .summary-line {
   flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+.solve-summary .result-headline {
+  flex: none;
+}
+.solve-summary .result-headline h2 {
+  font-size: 1rem;
+  white-space: nowrap;
+}
+.solve-summary .solver-analysis {
+  margin-top: 0.6rem;
+}
+.coverage-lists {
+  display: grid;
+  gap: 0.15rem;
+  margin: 0;
+  font-size: 0.8rem;
+}
+.coverage-lists dt {
+  color: var(--muted);
+  font-weight: 600;
+}
+.coverage-lists dd {
+  margin: 0 0 0.3rem;
+}
+.solution-toggle {
+  justify-self: start;
 }
 .solver-actions {
   display: flex;
@@ -2644,6 +2709,58 @@ dialog .actions .ghost:first-child {
 }
 .solver-options .setting-row .segment {
   flex: 1;
+}
+
+/* Technique set (M2.7, D105): the presets as an even grid, the custom set's families by tier. */
+.segmented.technique-presets {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(7rem, 1fr));
+}
+.technique-custom {
+  display: grid;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0.5rem 0 0.75rem;
+  border: 0;
+  min-width: 0;
+}
+.technique-custom[hidden] {
+  display: none;
+}
+.technique-custom legend {
+  padding: 0;
+}
+.technique-quick {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+.technique-tier {
+  display: grid;
+  gap: 0.2rem;
+}
+.technique-tier-label {
+  margin: 0.25rem 0 0;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+}
+.technique-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+.technique-option input {
+  margin: 0.15rem 0 0;
+  accent-color: var(--accent);
+}
+.technique-set {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--muted);
 }
 
 /* ==========================================================================

@@ -86,6 +86,7 @@ const consistent: Record<Result["stopReason"], readonly Result["human"][]> = {
   contradiction: ["contradiction", "invalidated"],
   "profile-stall": ["stalled-within-profile"],
   "tier-cap": ["stalled-within-profile", "incomplete"],
+  "lower-interrupted": ["incomplete"],
   "work-limit": ["incomplete"],
   "time-limit": ["incomplete"],
 };
@@ -170,6 +171,11 @@ describe("coverageOf and stopReasonOf", () => {
     expect(stopReasonOf("incomplete", "logical-budget", [row("c04@1", "interrupted", 1)])).toBe(
       "work-limit",
     );
+    // An interrupted lower job ended the phase (M2.7, D105 item 8): its own
+    // reason, ahead of a capped job, behind the time safety stop.
+    expect(stopReasonOf("incomplete", "incomplete-cheaper-tier", ledger)).toBe("lower-interrupted");
+    expect(stopReasonOf("incomplete", "incomplete-cheaper-tier", [])).toBe("lower-interrupted");
+    expect(stopReasonOf("solved", "incomplete-cheaper-tier", [])).toBe("solved");
     expect(stopReasonOf("not-started", undefined, undefined)).toBe("not-started");
     expect(stopReasonOf("invalidated", "solved", undefined)).toBe("contradiction");
   });

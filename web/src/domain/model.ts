@@ -91,7 +91,6 @@ export type Theme = (typeof THEMES)[number];
 export const TIMER_STARTS = ["immediately", "first-move"] as const;
 export const SCALES = [100, 115, 130] as const;
 export const PALETTES = ["default", "colorblind"] as const;
-export const SOLVER_VIEWS = ["analyze", "explain"] as const;
 export const AUTOPLAY_SPEEDS = [0, 1500, 800, 350] as const;
 export const SOLVER_TIME_LIMITS = [15, 60, 180] as const;
 export const NOTE_MODIFIERS = ["Shift", "Control", "Alt", "None"] as const;
@@ -147,15 +146,30 @@ export interface Settings {
   highContrast: boolean;
   colorPatterns: boolean;
   reduceMotion: boolean;
-  solverView: (typeof SOLVER_VIEWS)[number];
   solverCandidates: boolean;
-  /** Explain skips "Basic elimination" steps (their effects still apply). */
+  /** The step list skips "Basic elimination" steps (their effects still apply). */
   solverHideBasic: boolean;
   solverAutoplayMs: (typeof AUTOPLAY_SPEEDS)[number];
   solverTimeLimitS: (typeof SOLVER_TIME_LIMITS)[number];
+  /**
+   * The Solve screen's technique set (M2.7, D105): a current preset id
+   * (`TECHNIQUE_PRESET_IDS`) or "custom", which uses `solverTechniquesOff`.
+   */
+  solverTechniquePreset: string;
+  /**
+   * Coverage ids switched off in the custom set, strictly ascending. Kept when
+   * a preset is chosen, so the custom set is not lost; a family the list does
+   * not name is on (D105 item 4).
+   */
+  solverTechniquesOff: string[];
 }
+/**
+ * Version 3 (M2.7, D105) adds the two technique-set settings; versions 1 and
+ * 2 load with their defaults (the full set). See §5.6 of
+ * docs/specs/2026-11-10-technique-set-semantics.md.
+ */
 export interface LibraryData {
-  formatVersion: 2;
+  formatVersion: 3;
   revision: number;
   drafts: Record<string, Draft>;
   puzzles: Record<string, Puzzle>;

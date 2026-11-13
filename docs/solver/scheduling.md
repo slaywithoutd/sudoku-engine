@@ -19,9 +19,12 @@ Solve screen uses, passes `explain-fair@3` or `analyze-fair@3` unless the caller
 names a policy (M2.6, D103; see below).
 `fixed-scan@1` and `event-fixed@1` are canonical scan baselines; the former restarts
 all records after acceptance and the latter preserves sound exhausted/excluded
-watches. Registry input is the result of `assembleTechniqueJobs(assembly,profile)`.
-It admits actual original rules and the complete profile, at most 256 combined
-jobs. A job owns one resumable cursor, not one cursor per combinatorial scope.
+watches. Registry input is the result of `assembleTechniqueJobs(assembly,profile)`
+(optionally filtered to a technique set, see below; `assembleRunJobs` takes both
+from the normalised options so the key and the registry cannot disagree).
+It admits actual original rules and the profile's families (all of them, or the
+enabled set), at most 256 combined jobs; readiness is still checked for the whole
+profile. A job owns one resumable cursor, not one cursor per combinatorial scope.
 
 `FairPolicy` implements `SchedulerPolicy.next(ledger,view)` and `choose(checked)`.
 It drains original rules first. Explain considers the lowest active tier and
@@ -88,6 +91,29 @@ one alias per naked single, and `analyze-fair@3` sizes its selection window from
 the selection's rule pass instead of the fixed 4,096 units. The full rules are in
 the [architecture](architecture.md) M2.6 section. `@1` and `@2` keep their
 behaviour and traces (D094).
+
+## Technique sets (M2.7)
+
+A run may use a subset of its profile's families (D105,
+[S1 note](../specs/2026-11-10-technique-set-semantics.md)). The optional option
+`techniques` lists the enabled coverage ids (`C01`…, `U01`…, `K01`…).
+`schedulingOptions()` rejects an id outside the profile (`unknown-technique`) and
+a malformed list (`invalid-technique-set`), sorts the list by code unit, and
+omits it when it holds every row of the profile, so the default key and every
+golden trace are unchanged; the empty list is kept. With `rollout: true` a
+restricted set is rejected (`rollout-requires-full-set`), because rollout
+continuations always use C01–C05. `RunKey` gains no field: the set travels in
+`optionsKey`.
+
+`assembleTechniqueJobs(assembly, profile, options.techniques)` removes a
+switched-off family before assembly, so it has no ledger row and every rule above
+applies unchanged to the remaining registry: a gap never produces
+`incomplete-cheaper-tier`, `stalled-within-profile` means no step with the
+selected techniques, and `canClaimSimplerExhausted` means nothing simpler among
+them. Presets and the resolution of a preset id or a switched-off list live in
+`techniques/technique-sets.ts`, which has no runtime imports. The classic run
+marks a step `setLimited` when a switched-off family has a lower tier, and its
+result carries `techniqueSet` only for a restricted set.
 
 ## Selection ownership and acceptance
 
