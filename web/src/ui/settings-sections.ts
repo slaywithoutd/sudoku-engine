@@ -465,9 +465,9 @@ function customTechniques(services: ScreenServices, refreshers: Refresher[]): HT
     }
     node.append(group);
   }
-  refreshers.push((s) => {
-    node.hidden = s.solverTechniquePreset !== CUSTOM_TECHNIQUE_SET;
-    const off = new Set(s.solverTechniquesOff);
+  refreshers.push((next) => {
+    node.hidden = next.solverTechniquePreset !== CUSTOM_TECHNIQUE_SET;
+    const off = new Set(next.solverTechniquesOff);
     for (const [id, box] of boxes) box.checked = !off.has(id);
   });
   return node;

@@ -165,7 +165,8 @@ export interface Settings {
 }
 /**
  * Version 3 (M2.7, D105) adds the two technique-set settings; versions 1 and
- * 2 load with their defaults (the full set). See docs/specs/2026-11-10-technique-set-semantics.md §5.6.
+ * 2 load with their defaults (the full set). See §5.6 of
+ * docs/specs/2026-11-10-technique-set-semantics.md.
  */
 export interface LibraryData {
   formatVersion: 3;

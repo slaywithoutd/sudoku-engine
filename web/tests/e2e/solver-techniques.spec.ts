@@ -2,7 +2,7 @@ import { expect, test, type Page } from "@playwright/test";
 
 // M2.7 S3 (D105): the technique selector on the Solve screen.
 
-/** The technique selection proposal's §2 puzzle (it is AI Escargot): unique, and the logic stalls. */
+/** The technique selection proposal's §2 puzzle (AI Escargot): unique, and the logic stalls. */
 const stall = "1....7.9..3..2...8..96..5....53..9...1..8...26....4...3......1..4......7..7...3..";
 
 async function importPuzzle(page: Page, puzzle: string) {
@@ -46,7 +46,8 @@ function counts(line: string | null): number[] {
     line ?? "",
   );
   if (!match) throw new Error(`no coverage line: ${line}`);
-  return match.slice(1).map((value) => Number(value ?? 0));
+  // The "not selected" group is absent for a full set.
+  return match.slice(1).map((value: string | undefined) => Number(value ?? 0));
 }
 
 test("switching No fish on the stall puzzle changes the technique coverage shown, not the count", async ({

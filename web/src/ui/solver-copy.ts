@@ -61,6 +61,9 @@ const stopLabels: Record<string, string> = {
  */
 const LOWER_INTERRUPTED =
   "a technique or basic rule was interrupted by its resource limit, so higher tiers were not tried";
+const RULE_INTERRUPTED = "a basic rule was interrupted by its resource limit";
+/** A restricted run's stall: about the selected techniques, never the puzzle. */
+const SELECTED_STALL = "no step with the selected techniques";
 /** Where and why the logical phase stopped; empty when it never ran. */
 export function logicStop(
   human: string,
@@ -83,13 +86,13 @@ export function logicStop(
   if (stopReason === "profile-stall" && restricted && tier < 0)
     return `Logic: no step with the selected techniques${tail}`;
   if (stopReason === "profile-stall" && restricted)
-    return `Logic: stalled at tier ${Math.max(0, tier)} (no step with the selected techniques)${tail}`;
+    return `Logic: stalled at tier ${Math.max(0, tier)} (${SELECTED_STALL})${tail}`;
   if (stopReason === "profile-stall" || stopReason === "tier-cap")
     return `Logic: stalled at tier ${Math.max(0, tier)} (${stopLabels[stopReason]})${tail}`;
   const where = tier < 0 ? "before any technique" : `at tier ${tier}`;
   if (stopReason === "lower-interrupted")
     return tier < 0
-      ? `Logic: stopped before any technique: a basic rule was interrupted by its resource limit${tail}`
+      ? `Logic: stopped before any technique: ${RULE_INTERRUPTED}${tail}`
       : `Logic: stopped ${where}: ${LOWER_INTERRUPTED}${tail}`;
   return `Logic: stopped ${where} by the ${stopLabels[stopReason] ?? "limit"}${tail}`;
 }

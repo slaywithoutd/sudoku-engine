@@ -72,6 +72,9 @@ describe("solver copy for technique sets", () => {
       "Logic: stalled at tier 2 (work cap)",
     );
   });
+});
+
+describe("solver copy for technique sets: notes and lines", () => {
   test("set-limited notes, the set line and the coverage line", () => {
     expect(SET_LIMITED_NOTE).toBe("A simpler step may exist: a simpler technique is switched off.");
     expect(setLimitedSummary(0)).toBe("");

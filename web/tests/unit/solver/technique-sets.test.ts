@@ -126,7 +126,7 @@ describe("table 1: identity of the default set", () => {
   });
   test("1.2 the full list, in any order, is the default key", () => {
     const shuffled = [...FULL].sort(
-      (a, b) => ((a.charCodeAt(2) * 7) % 11) - ((b.charCodeAt(2) * 7) % 11),
+      (left, right) => ((left.charCodeAt(2) * 7) % 11) - ((right.charCodeAt(2) * 7) % 11),
     );
     for (const [policy, mode] of POLICY_MODES)
       for (const techniques of [FULL, [...FULL].reverse(), shuffled]) {
@@ -337,80 +337,105 @@ const pinned: Record<string, Outcome> = writing
   : (JSON.parse(readFileSync(outcomesPath, "utf8")) as Record<string, Outcome>);
 const recorded: Record<string, Outcome> = {};
 
+type Run = Awaited<ReturnType<typeof run>>;
+interface SetCase {
+  readonly label: string;
+  readonly setName: string;
+  readonly caseId: string;
+  readonly enabled: ReadonlySet<string>;
+  readonly lowest: number | undefined;
+}
+
+/** 3.1 and 3.2: a consistent status, and every step from the set or a rule job. */
+function checkStatus({ label, enabled }: SetCase, { result, steps }: Run) {
+  expect(consistent[result.stopReason], label).toContain(result.human);
+  expect(result.outcome, label).not.toBe("error");
+  for (const step of steps)
+    expect(
+      step.technique.startsWith("rule-") || enabled.has(rowOf.get(step.technique) ?? ""),
+      `${label}: ${step.technique}`,
+    ).toBe(true);
+}
+
+/** 3.3 and 3.4: the coverage lists and notSelected partition the profile's rows. */
+function checkCoverage({ label, enabled }: SetCase, { result }: Run) {
+  const { exhausted, capped, notStarted } = result.coverage;
+  const notSelected = result.techniqueSet?.notSelected ?? [];
+  const listed = [...exhausted, ...capped, ...notStarted, ...notSelected];
+  expect(new Set(listed).size, label).toBe(listed.length);
+  expect(new Set(listed), label).toEqual(new Set(FULL.map((id) => nameOf.get(id))));
+  expect(new Set(notSelected), label).toEqual(
+    new Set(FULL.filter((id) => !enabled.has(id)).map((id) => nameOf.get(id))),
+  );
+  if (result.human === "stalled-within-profile") {
+    expect(capped, label).toEqual([]);
+    expect(notStarted, label).toEqual([]);
+  }
+}
+
+/** 3.7: setLimited exactly above the lowest switched-off tier; returns their count. */
+function checkSetLimited({ label, setName, enabled, lowest }: SetCase, { result, steps }: Run) {
+  for (const step of steps) {
+    const tier = tiers.get(step.technique) ?? -1;
+    expect(step.setLimited === true, `${label}: step ${step.index}`).toBe(
+      lowest !== undefined && tier > lowest,
+    );
+  }
+  const setLimitedSteps = steps.filter((step) => step.setLimited).length;
+  if (enabled.size === FULL.length) expect(result.techniqueSet, label).toBeUndefined();
+  else {
+    expect(result.techniqueSet?.enabled, label).toEqual([...enabled].sort());
+    expect(result.techniqueSet?.lowestTierNotSelected, label).toBe(lowest);
+    expect(result.techniqueSet?.setLimitedSteps, label).toBe(setLimitedSteps);
+  }
+  if (["singles@1", "up-to-subsets@1", "up-to-wings-fish@1"].includes(setName))
+    expect(setLimitedSteps, label).toBe(0);
+  return setLimitedSteps;
+}
+
+/** The named outcomes of the S1 note §6. */
+function checkNamed({ label, setName, caseId }: SetCase, { result, steps }: Run) {
+  if (setName === "singles@1" && SINGLES_CASES.includes(caseId))
+    expect(result.human, label).toBe("solved");
+  if (setName === "empty" && result.human !== "solved") {
+    expect(result.human, label).toBe("stalled-within-profile");
+    expect(result.coverage.highestTierTried, label).toBe(-1);
+    expect(
+      steps.every((step) => step.technique.startsWith("rule-")),
+      label,
+    ).toBe(true);
+  }
+  if (setName === "up-to-subsets@1" && caseId === "escargot")
+    expect(`${result.human}/${result.stopReason}`, label).toBe(
+      "stalled-within-profile/profile-stall",
+    );
+  if (setName === "C01,C02,C22" && caseId === "escargot")
+    expect(result.coverage.highestTierTried, label).toBe(6);
+}
+
 /** S1 note §6 table 3, assertions 3.1–3.4, 3.7 and 3.8, for one set on every case. */
 async function checkSet(policy: PolicyId, setName: string, selection: TechniqueSelection) {
   const enabled = new Set(resolveTechniqueSet(CLASSIC, selection));
   const lowest = lowestTierOff(CLASSIC, [...enabled]);
   for (const [caseId, givens] of Object.entries(CASES)) {
     const label = `${policy} ${setName} on ${caseId}`;
-    const first = await run(givens, selection, unitsFor(caseId), policy),
-      { result, steps } = first;
-    // 3.1
-    expect(consistent[result.stopReason], label).toContain(result.human);
-    expect(result.outcome, label).not.toBe("error");
-    // 3.2
-    for (const step of steps)
-      expect(
-        step.technique.startsWith("rule-") || enabled.has(rowOf.get(step.technique) ?? ""),
-        `${label}: ${step.technique}`,
-      ).toBe(true);
-    // 3.3 the coverage lists and notSelected partition the profile's rows.
-    const { exhausted, capped, notStarted } = result.coverage;
-    const notSelected = result.techniqueSet?.notSelected ?? [];
-    const listed = [...exhausted, ...capped, ...notStarted, ...notSelected];
-    expect(new Set(listed).size, label).toBe(listed.length);
-    expect(new Set(listed), label).toEqual(new Set(FULL.map((id) => nameOf.get(id))));
-    expect(new Set(notSelected), label).toEqual(
-      new Set(FULL.filter((id) => !enabled.has(id)).map((id) => nameOf.get(id))),
-    );
-    // 3.4
-    if (result.human === "stalled-within-profile") {
-      expect(capped, label).toEqual([]);
-      expect(notStarted, label).toEqual([]);
-    }
-    // 3.7
-    for (const step of steps) {
-      const tier = tiers.get(step.technique) ?? -1;
-      expect(step.setLimited === true, `${label}: step ${step.index}`).toBe(
-        lowest !== undefined && tier > lowest,
-      );
-    }
-    const setLimitedSteps = steps.filter((step) => step.setLimited).length;
-    if (enabled.size === FULL.length) expect(result.techniqueSet, label).toBeUndefined();
-    else {
-      expect(result.techniqueSet?.enabled, label).toEqual([...enabled].sort());
-      expect(result.techniqueSet?.lowestTierNotSelected, label).toBe(lowest);
-      expect(result.techniqueSet?.setLimitedSteps, label).toBe(setLimitedSteps);
-    }
-    if (["singles@1", "up-to-subsets@1", "up-to-wings-fish@1"].includes(setName))
-      expect(setLimitedSteps, label).toBe(0);
+    const setCase: SetCase = { label, setName, caseId, enabled, lowest };
+    const first = await run(givens, selection, unitsFor(caseId), policy);
+    checkStatus(setCase, first);
+    checkCoverage(setCase, first);
+    const setLimitedSteps = checkSetLimited(setCase, first);
     // 3.8
     expect((await run(givens, selection, unitsFor(caseId), policy)).events, label).toEqual(
       first.events,
     );
-    // Named outcomes of the S1 note §6, then the pinned record of every pair.
-    if (setName === "singles@1" && SINGLES_CASES.includes(caseId))
-      expect(result.human, label).toBe("solved");
-    if (setName === "empty" && result.human !== "solved") {
-      expect(result.human, label).toBe("stalled-within-profile");
-      expect(result.coverage.highestTierTried, label).toBe(-1);
-      expect(
-        steps.every((step) => step.technique.startsWith("rule-")),
-        label,
-      ).toBe(true);
-    }
-    if (setName === "up-to-subsets@1" && caseId === "escargot")
-      expect(`${result.human}/${result.stopReason}`, label).toBe(
-        "stalled-within-profile/profile-stall",
-      );
-    if (setName === "C01,C02,C22" && caseId === "escargot")
-      expect(result.coverage.highestTierTried, label).toBe(6);
+    checkNamed(setCase, first);
+    // The pinned record of every pair.
     const outcome: Outcome = {
-      human: result.human,
-      stopReason: result.stopReason,
-      steps: result.steps,
+      human: first.result.human,
+      stopReason: first.result.stopReason,
+      steps: first.result.steps,
       setLimitedSteps,
-      highestTierTried: result.coverage.highestTierTried,
+      highestTierTried: first.result.coverage.highestTierTried,
     };
     recorded[label] = outcome;
     if (!writing) expect(outcome, label).toEqual(pinned[label]);
@@ -434,15 +459,15 @@ describe("table 3: each set terminates with a status consistent with its set", (
   });
 });
 
-/** Drives the selection directly, as policies-v3.test.ts does (3.5, 3.6). */
-function selectionSteps(
+/** A selection over a restricted registry, as policies-v3.test.ts builds it. */
+function restrictedSelection(
   givens: string,
   enabled: readonly string[],
   policy: PolicyId,
   units: number,
 ) {
   const assembly = assembled(givens);
-  let view = initialize(assembly, "primary");
+  const view = initialize(assembly, "primary");
   const selectionLimits = { ...CLASSIC_SOLVE_LIMITS, timeMs: 3_600_000, workUnits: units };
   const options = schedulingOptions({
     limits: selectionLimits,
@@ -462,6 +487,43 @@ function selectionSteps(
       clock: { now: () => 0 },
     },
   );
+  return { selection, view };
+}
+
+type Selection = ReturnType<typeof restrictedSelection>["selection"];
+type Checked = { step: Parameters<typeof commitChecked>[1]; claim: boolean };
+
+/** One selection pass; 3.5: a gap never stops the climb, only an interrupted or disabled job. */
+function selectOnce(selection: Selection): { checked?: Checked; stop?: string } {
+  let checked: Checked | undefined;
+  let stop: string | undefined;
+  for (const event of selection.select()) {
+    if (event.kind === "checked-step")
+      checked = { step: event.step, claim: event.canClaimSimplerExhausted };
+    if (event.kind === "logical-stop") stop = event.reason;
+  }
+  if (stop === "incomplete-cheaper-tier") {
+    // Explain serves the lowest active tier: that is the job the gate blocked.
+    const blocked = Math.min(...selection.ledger.active.map((job) => job.tier));
+    expect(
+      selection.ledger.jobs.some(
+        (job) => job.tier < blocked && (job.status === "interrupted" || job.status === "disabled"),
+      ),
+    ).toBe(true);
+  }
+  return { checked, stop };
+}
+
+/** Drives the selection directly, as policies-v3.test.ts does (3.5, 3.6). */
+function selectionSteps(
+  givens: string,
+  enabled: readonly string[],
+  policy: PolicyId,
+  units: number,
+) {
+  const built = restrictedSelection(givens, enabled, policy, units);
+  const { selection } = built;
+  let view = built.view;
   const off = new Set(
     FULL.filter((id) => !enabled.includes(id)).map(
       (id) => coverageEntries.find((entry) => entry.id === id)?.version,
@@ -471,28 +533,11 @@ function selectionSteps(
   let stop: string | undefined;
   try {
     for (let n = 0; n < 200 && stop === undefined; n++) {
-      let checked: { step: Parameters<typeof commitChecked>[1]; claim: boolean } | undefined;
-      for (const event of selection.select()) {
-        if (event.kind === "checked-step")
-          checked = { step: event.step, claim: event.canClaimSimplerExhausted };
-        if (event.kind === "logical-stop") {
-          stop = event.reason;
-          // 3.5: a gap never stops the climb; only an interrupted or disabled
-          // enabled job (or rule job) does.
-          if (stop === "incomplete-cheaper-tier") {
-            // Explain serves the lowest active tier: that is the job the gate blocked.
-            const blocked = Math.min(...selection.ledger.active.map((job) => job.tier));
-            expect(
-              selection.ledger.jobs.some(
-                (job) =>
-                  job.tier < blocked && (job.status === "interrupted" || job.status === "disabled"),
-              ),
-            ).toBe(true);
-          }
-        }
-      }
+      const pass = selectOnce(selection);
+      stop = pass.stop;
       // No ledger row names a switched-off technique.
       expect(selection.ledger.jobs.some((job) => off.has(job.descriptor?.id))).toBe(false);
+      const { checked } = pass;
       if (!checked) break;
       const tier = tiers.get(checked.step.proposal.technique) ?? -1;
       // 3.6, independently of the ledger helpers.

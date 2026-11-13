@@ -559,11 +559,11 @@ export function mountSolver(
         ? result.error
         : result.human === "solved"
           ? "Solved by logic"
-          : stop.textContent?.replace(/^Logic: /, "") ||
+          : stop.textContent.replace(/^Logic: /, "") ||
             logicalSummary(result.human ?? "", result.steps ?? 0, restricted),
       "summary-line",
     );
-    line.title = line.textContent ?? "";
+    line.title = line.textContent;
     headerLine.append(headline, line);
     const difficulty = result.difficulty;
     const highest = el(
@@ -655,13 +655,13 @@ export function mountSolver(
       const numbers = new Map(steps.map((step, i) => [step, i + 1] as const));
       const itemOf = (step: SolveStep, i: number) => {
         const item = el("li");
-        const b = button("", () => go(i), "step-item");
-        b.append(
+        const entry = button("", () => go(i), "step-item");
+        entry.append(
           el("span", String(numbers.get(step)), "step-number"),
           el("span", step.name, "step-name"),
           el("span", describeStep(step), "step-effects"),
         );
-        item.append(b);
+        item.append(entry);
         return item;
       };
       // During a run the list only grows: append the new steps instead of
