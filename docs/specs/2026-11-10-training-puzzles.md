@@ -1,6 +1,6 @@
 # Training puzzles: timed next-digit positions — proposal
 
-Status: **proposed, not approved.** No decision number is assigned; see §9. Drafted 2026-11-10 from a user idea of the same day: "a puzzle as in chess: a half-filled Sudoku position, a timer, place the next number as fast as possible, with streaks and a history of best times".
+Status: **approved 2026-11-13 under [D106](../decisions.md)** by the implementing agent on the user's delegation; every §7 question takes its recommended answer (§7). Implementation on `feat/train`, one reviewed commit per task. Drafted 2026-11-10 from a user idea of the same day: "a puzzle as in chess: a half-filled Sudoku position, a timer, place the next number as fast as possible, with streaks and a history of best times".
 
 Related: [M2.6 engine hardening](2026-09-22-m26-engine-hardening.md) (D103), [technique selection and a single Solve view](2026-10-22-technique-selection-and-solve-views.md), [roadmap](../roadmap.md) (M6 gameplay hints), [parked ideas](../ideas.md) §2, [decisions](../decisions.md) D055, D094, D101.
 
@@ -36,7 +36,7 @@ The notes are required for the second kind because the step event's `candidates`
 | Techniques have tiers 0–6. | `web/src/solver/techniques/manifest.ts` | Categories for statistics come from the catalogue, not from a new scale. |
 | The play clock counts only active time and drops sleep gaps. | `web/src/app/play-clock.ts` | Reused as is. |
 | The play screen already covers the board while paused. | `web/src/ui/player.ts:120` (`pause-cover`) | The same cover prevents thinking with the clock stopped. |
-| The whole library is one IndexedDB record, rewritten on every commit; `LibraryData.formatVersion` is 2 and the backup `version` is 2. | `web/src/storage/repository.ts`, `web/src/domain/model.ts:157`, `web/src/domain/backup.ts:22` | Attempt history must be bounded, or it needs its own object store (§5.4). |
+| The whole library is one IndexedDB record, rewritten on every commit; `LibraryData.formatVersion` is 2 and the backup `version` is 2 (3 for both since M2.7, D105). | `web/src/storage/repository.ts`, `web/src/domain/model.ts:157`, `web/src/domain/backup.ts:22` | Attempt history must be bounded, or it needs its own object store (§5.4). |
 | There is no production puzzle generator. The only generator is test code that imports the test oracles. | `web/tests/solver/bench/generate.ts` | Positions are built offline and shipped as a data pack (§5.2). |
 | Routes are `home`, `solve`, `library`, `create`, `play`, `settings`, `help`; Home has three cards; the interface language is English. | `web/src/app/router.ts`, `web/src/ui/home.ts`, `Settings.language` | One new route and one new card. |
 
@@ -110,9 +110,9 @@ Expected limit: the generated corpus is mostly easy (D101: 94 states of tier ≥
 
 ### 5.4 Storage
 
-A `training` section in the library data: per-category aggregates, per-position last result and best time (bounded by the pack size), the missed queue, and a ring of the last 500 attempts. This keeps the single-record repository and the backup format, at the cost of dropping attempts older than the ring. `formatVersion` and the backup `version` go up by one; a version 2 library or backup loads with an empty `training` section.
+A `training` section in the library data: per-category aggregates, per-position last result and best time (bounded by the pack size), the missed queue, and a ring of the last 500 attempts. This keeps the single-record repository and the backup format, at the cost of dropping attempts older than the ring. `formatVersion` and the backup `version` go up by one: M2.7 (D105) moved both to 3, so Train takes **4**; a version 1, 2 or 3 library or backup loads with an empty `training` section.
 
-The [M4 proposal](2026-11-10-m4-variants-create-play.md), written in parallel, also changes the stored format. The two must not claim the same version number: the one that merges second takes the next one.
+The [M4 proposal](2026-11-10-m4-variants-create-play.md), written in parallel, also changes the stored format. The two must not claim the same version number: the one that merges second takes the next one. Train merges first, so M4 takes 5.
 
 Alternative, not recommended for the first version: a separate object store with one record per attempt (unbounded history, but a database upgrade, a second write path and a larger backup).
 
@@ -125,13 +125,16 @@ Depends on M2.6 being on `master` (`budgetLimited`, work-unit budgets, an Explai
 | Task | Deliverable | Acceptance |
 | --- | --- | --- |
 | T1 | Pack schema, build script, first pack. | Same seeds give a byte-identical pack. For every entry, checked by code that imports nothing from `src/solver`: `solution` equals the Algorithm X oracle's unique solution; every candidate mask contains the solution digit; a `scan` entry has a single from the placed digits alone; a `technique` entry has no single in the shown candidates and at least one after applying `removed`; `targets` agree with the solution. |
-| T2 | Domain: attempts, streak, aggregates, missed queue, ring; format and backup migration. | Unit tests for every transition; a version 2 backup restores with empty training data; round-trip of a version 3 backup; the ring never exceeds its bound. |
+| T2 | Domain: attempts, streak, aggregates, missed queue, ring; format and backup migration. | Unit tests for every transition; a version 1, 2 or 3 backup restores with empty training data; round-trip of a version 4 backup; the ring never exceeds its bound. |
 | T3 | Run screen: display, clock, answer check, feedback, next. | Playwright with a fixed position: correct digit → streak 1 and a recorded time; wrong digit → streak 0, a miss, the intended placement shown; losing focus covers the board and stops the clock; reload during an attempt records nothing. |
 | T4 | Hub and statistics: category filter, bests, median, history, reopening a past position. | Playwright: statistics match a scripted sequence of attempts; unit tests for the median and for category assignment. |
 | T5 | Explanation after the answer (if §7.2 is approved). | The explanation shows the key step's name, cells and removed candidates; visual test in both colour modes. |
 | T6 | Timed run. | Ends at three minutes or the third miss; the result is recorded once. |
 
 ## 7. Decisions for the user
+
+Decided 2026-11-13 by the agent on the user's delegation: every row takes its recommended answer (7.1 any matching digit; 7.2 yes, so T5 is in scope; 7.3 sequenced now, after M2.6 and M2.7; 7.4 a wrong digit ends the attempt; 7.5 about 500 positions, tiers 0–2; 7.6 "Train"). T6 is done only if T1–T5 are green, otherwise it is a follow-up. See D106.
+
 
 | # | Question | Recommended | Alternative |
 | --- | --- | --- | --- |
@@ -153,6 +156,8 @@ Depends on M2.6 being on `master` (`budgetLimited`, work-unit budgets, an Explai
 - Out of scope: ratings, daily sets, positions generated at run time from the player's library, answers that are eliminations rather than placements, variants. See [ideas](../ideas.md) §2.
 
 ## 9. Entries to apply on approval
+
+Applied 2026-11-13: D106, the roadmap row after M2.7 and the README index line.
 
 No `D` number is assigned in this draft. Per the git workflow, the next free number is read from `docs/decisions.md` on `master` at merge time.
 
