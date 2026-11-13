@@ -7,6 +7,7 @@ import {
   SHORTCUT_ACTIONS,
   SOLVER_TIME_LIMITS,
   THEMES,
+  TRAIN_REPEAT_GAPS,
   TIMER_STARTS,
   type Settings,
   type ShortcutAction,
@@ -18,6 +19,7 @@ import {
   TECHNIQUE_PRESET_IDS,
   techniqueRow,
 } from "../solver/techniques/technique-sets";
+import { TRAIN_CATEGORY_PATTERN } from "./training";
 
 /** The preset value that selects the custom set (`solverTechniquesOff`). */
 export const CUSTOM_TECHNIQUE_SET = "custom";
@@ -74,6 +76,9 @@ export function defaultSettings(): Settings {
     solverTimeLimitS: 60,
     solverTechniquePreset: DEFAULT_TECHNIQUE_PRESET,
     solverTechniquesOff: [],
+    trainShowClock: true,
+    trainCategoriesOff: [],
+    trainRepeatGap: 10,
   };
 }
 
@@ -88,6 +93,7 @@ const CHOICES: { [K in keyof Settings]?: readonly unknown[] } = {
   palette: PALETTES,
   solverAutoplayMs: AUTOPLAY_SPEEDS,
   solverTimeLimitS: SOLVER_TIME_LIMITS,
+  trainRepeatGap: TRAIN_REPEAT_GAPS,
 };
 
 /** Normalized combo such as "Ctrl+Shift+Z"; the empty string means unbound. */
@@ -113,7 +119,8 @@ export function normalizeSettings(
       key === "language" ||
       key === "shortcuts" ||
       key === "solverTechniquePreset" ||
-      key === "solverTechniquesOff"
+      key === "solverTechniquesOff" ||
+      key === "trainCategoriesOff"
     )
       continue;
     const value = raw[key];
@@ -160,6 +167,20 @@ export function normalizeSettings(
     )
       invalid();
     settings.solverTechniquesOff = [...(off as string[])];
+  }
+  if (raw.trainCategoriesOff !== undefined) {
+    const off = raw.trainCategoriesOff;
+    if (
+      !Array.isArray(off) ||
+      !off.every(
+        (id, i) =>
+          typeof id === "string" &&
+          TRAIN_CATEGORY_PATTERN.test(id) &&
+          (i === 0 || (off[i - 1] as string) < id),
+      )
+    )
+      invalid();
+    settings.trainCategoriesOff = [...(off as string[])];
   }
   return settings;
 }

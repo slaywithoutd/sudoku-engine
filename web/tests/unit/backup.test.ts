@@ -156,8 +156,8 @@ test("settings remain local unless requested; revision remains local", () => {
   ).toBe(true);
 });
 test.each([
-  (x: any) => (x.version = 4),
-  (x: any) => (x.data.formatVersion = 4),
+  (x: any) => (x.version = 5),
+  (x: any) => (x.data.formatVersion = 5),
   (x: any) => x.data.drafts.d.editor.cells.pop(),
   (x: any) => (x.data.drafts.d.editor.cells[0].notes = [2]),
   (x: any) => (x.data.sessions.p.editor.cells[0].notes = [2, 2]),
@@ -215,13 +215,13 @@ test("5.1 version 1 and 2 libraries and backups load with the full set", () => {
     delete data.settings.solverTechniquePreset;
     delete data.settings.solverTechniquesOff;
     const loaded = validateLibrary(data);
-    expect(loaded.formatVersion).toBe(3);
+    expect(loaded.formatVersion).toBe(4);
     expect(loaded.settings.solverTechniquePreset).toBe("all@1");
     expect(loaded.settings.solverTechniquesOff).toEqual([]);
     const imported = parseBackup(
       JSON.stringify({ format: "sudoku-engine-backup", version, exportedAt: NOW, data }),
     );
-    expect(imported.version).toBe(3);
+    expect(imported.version).toBe(4);
     expect(imported.data.settings.solverTechniquePreset).toBe("all@1");
   }
 });
@@ -230,8 +230,8 @@ test("5.2 export and parse keep a custom set; the custom list survives a preset 
   data.settings.solverTechniquePreset = "custom";
   data.settings.solverTechniquesOff = ["C06", "C07", "C24"];
   const text = exportBackup(data, NOW);
-  expect(JSON.parse(text).version).toBe(3);
-  expect(JSON.parse(text).data.formatVersion).toBe(3);
+  expect(JSON.parse(text).version).toBe(4);
+  expect(JSON.parse(text).data.formatVersion).toBe(4);
   expect(parseBackup(text).data.settings).toMatchObject({
     solverTechniquePreset: "custom",
     solverTechniquesOff: ["C06", "C07", "C24"],

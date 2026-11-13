@@ -2,14 +2,16 @@ import { emptyEditor, newTimer, type CellState, type LibraryData, type Value } f
 import { conflictingCells } from "./classic";
 import { defaultSettings } from "./settings";
 import { lookup } from "./invariants";
+import { emptyTraining } from "./training";
 export function emptyLibrary(): LibraryData {
   return {
-    formatVersion: 3,
+    formatVersion: 4,
     revision: 0,
     drafts: {},
     puzzles: {},
     sessions: {},
     settings: defaultSettings(),
+    training: emptyTraining(),
   };
 }
 /**

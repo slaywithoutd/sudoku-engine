@@ -21,6 +21,7 @@ const PAGE_SECTIONS: SectionId[] = [
   "timer",
   "completion",
   "solver",
+  "train",
   "shortcuts",
 ];
 /** Sections that matter mid-game; the full page keeps the rest. */
@@ -153,12 +154,26 @@ export function mountSettings(container: HTMLElement, services: ScreenServices):
         checked: false,
         onChange: () => refresh(),
       });
+      // Train statistics are replaced only on request (D106), like settings.
+      const restoreTraining = switchField({
+        label: "Replace training statistics with the backup's",
+        hint: incoming.trainingIncluded ? undefined : "This backup has no training statistics",
+        checked: false,
+        onChange: () => refresh(),
+      });
+      restoreTraining.input.disabled = !incoming.trainingIncluded;
       const refresh = () => {
         captured = services.controller.snapshot();
-        preview = previewRestore(captured, incoming, services.newId, restore.input.checked);
+        preview = previewRestore(
+          captured,
+          incoming,
+          services.newId,
+          restore.input.checked,
+          restoreTraining.input.checked,
+        );
         summary.textContent = `New: ${preview.added} · Copies: ${preview.copied} · Skipped: ${preview.skipped}`;
       };
-      d.body.append(summary, restore.node, notice);
+      d.body.append(summary, restore.node, restoreTraining.node, notice);
       refresh();
       d.actions.append(
         button("Cancel", d.close),
