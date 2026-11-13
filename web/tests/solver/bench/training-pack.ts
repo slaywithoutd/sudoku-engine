@@ -180,7 +180,8 @@ export async function harvestSeed(seed: number): Promise<SeedHarvest> {
     before = step.values;
     // The event's values are the board after the step: the board before plus its placements.
     const expected = [...values];
-    for (const effect of step.effects) if (effect.kind === "place") expected[effect.cell] = effect.symbol;
+    for (const effect of step.effects)
+      if (effect.kind === "place") expected[effect.cell] = effect.symbol;
     if (expected.join("") !== before.join(""))
       throw new Error(`seed ${seed} step ${index}: values are not the board after the step`);
     const tier = tierOf.get(step.technique);
@@ -244,7 +245,8 @@ export async function harvestSeed(seed: number): Promise<SeedHarvest> {
     });
   }
   const byRank = (a: Candidate, b: Candidate) => {
-    for (let i = 0; i < a.rank.length; i++) if (a.rank[i] !== b.rank[i]) return a.rank[i] - b.rank[i];
+    for (let i = 0; i < a.rank.length; i++)
+      if (a.rank[i] !== b.rank[i]) return a.rank[i] - b.rank[i];
     return 0;
   };
   return {

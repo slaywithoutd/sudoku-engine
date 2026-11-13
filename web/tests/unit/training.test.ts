@@ -29,7 +29,8 @@ import { NOW } from "../fixtures";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 
-const SOLUTION = "534678912672195348198342567859761423426853791713924856961537284287419635345286179";
+const SOLUTION =
+  "534678912672195348198342567859761423426853791713924856961537284287419635345286179";
 function position(id: string, kind: "scan" | "technique", technique = "c02@1"): TrainingPosition {
   return {
     id,
@@ -70,8 +71,18 @@ describe("training transitions", () => {
   test("a correct answer raises the streak, the category and the position record", () => {
     const data = recordAttempt(emptyTraining(), attempt(hex(1), "correct", 4200), 10);
     expect(data).toMatchObject({ attemptCount: 1, streak: 1, longestStreak: 1, missed: [] });
-    expect(data.categories.scan).toEqual({ attempts: 1, correct: 1, bestMs: 4200, recentMs: [4200] });
-    expect(data.positions[hex(1)]).toEqual({ attempts: 1, correct: 1, last: "correct", bestMs: 4200 });
+    expect(data.categories.scan).toEqual({
+      attempts: 1,
+      correct: 1,
+      bestMs: 4200,
+      recentMs: [4200],
+    });
+    expect(data.positions[hex(1)]).toEqual({
+      attempts: 1,
+      correct: 1,
+      last: "correct",
+      bestMs: 4200,
+    });
     expect(data.attempts).toHaveLength(1);
   });
   test("a miss resets the streak, keeps the longest, records the miss and queues it", () => {
@@ -109,7 +120,12 @@ describe("training transitions", () => {
     let data = recordAttempt(emptyTraining(), attempt(hex(1), "correct", 1000, "scan"), 10);
     data = recordAttempt(data, attempt(hex(2), "miss", 1000, "c04@1"), 10);
     expect(Object.keys(data.categories).sort()).toEqual(["c04@1", "scan"]);
-    expect(data.categories["c04@1"]).toEqual({ attempts: 1, correct: 0, bestMs: null, recentMs: [] });
+    expect(data.categories["c04@1"]).toEqual({
+      attempts: 1,
+      correct: 0,
+      bestMs: null,
+      recentMs: [],
+    });
   });
   test("the ring never exceeds its bound and keeps the newest attempts", () => {
     let data: TrainingData = emptyTraining();
@@ -141,7 +157,8 @@ describe("statistics", () => {
   });
   test("the median covers only the last 20 correct answers", () => {
     let data = emptyTraining();
-    for (let i = 1; i <= 25; i++) data = recordAttempt(data, attempt(hex(i), "correct", i * 100), 10);
+    for (let i = 1; i <= 25; i++)
+      data = recordAttempt(data, attempt(hex(i), "correct", i * 100), 10);
     // Times 600..2500 remain: median of 20 values = (1500 + 1600) / 2.
     expect(categoryStats(data)[0]).toMatchObject({ medianMs: 1550, bestMs: 100, accuracy: 1 });
   });
@@ -153,13 +170,24 @@ describe("statistics", () => {
     expect(categoryLabel("c99@1")).toBe("c99@1");
     expect(foundWith(position(hex(1), "scan"))).toBe("Hidden Single");
     expect(foundWith(position(hex(1), "technique", "c04@1"))).toBe("Naked and hidden subsets");
-    expect(packCategories([position(hex(2), "technique", "c06@1"), position(hex(1), "scan"), position(hex(3), "technique", "c04@1")])).toEqual(["scan", "c04@1", "c06@1"]);
+    expect(
+      packCategories([
+        position(hex(2), "technique", "c06@1"),
+        position(hex(1), "scan"),
+        position(hex(3), "technique", "c04@1"),
+      ]),
+    ).toEqual(["scan", "c04@1", "c06@1"]);
   });
   test("overall statistics and accuracy", () => {
     let data = recordAttempt(emptyTraining(), attempt(hex(1), "correct"), 10);
     data = recordAttempt(data, attempt(hex(2), "miss"), 10);
     data = recordAttempt(data, attempt(hex(1), "correct"), 10);
-    expect(overallStats(data)).toEqual({ streak: 1, longestStreak: 1, positionsSeen: 2, missedWaiting: 1 });
+    expect(overallStats(data)).toEqual({
+      streak: 1,
+      longestStreak: 1,
+      positionsSeen: 2,
+      missedWaiting: 1,
+    });
     expect(categoryStats(data)[0].accuracy).toBeCloseTo(2 / 3);
   });
   test("any digit equal to the solution is correct", () => {
@@ -177,7 +205,12 @@ describe("position choice", () => {
     position(hex(3), "technique", "c04@1"),
   ];
   const pick = (data: TrainingData, shown: string[], off: string[] = [], previous?: string) =>
-    nextPosition(pack, data, { categoriesOff: off, shown: new Set(shown), random: () => 0, previous })?.id;
+    nextPosition(pack, data, {
+      categoriesOff: off,
+      shown: new Set(shown),
+      random: () => 0,
+      previous,
+    })?.id;
   test("random within the selected categories, never repeating in a session", () => {
     expect(pick(emptyTraining(), [])).toBe(hex(1));
     expect(pick(emptyTraining(), [hex(1)])).toBe(hex(2));
@@ -198,7 +231,12 @@ describe("position choice", () => {
     expect(pick(data, [hex(1), hex(3)], ["scan"])).toBeUndefined();
     // Not once the setting is "Never", even though it was queued before.
     expect(
-      nextPosition(pack, data, { categoriesOff: [], shown: new Set([hex(1), hex(2), hex(3)]), random: () => 0, repeatGap: 0 }),
+      nextPosition(pack, data, {
+        categoriesOff: [],
+        shown: new Set([hex(1), hex(2), hex(3)]),
+        random: () => 0,
+        repeatGap: 0,
+      }),
     ).toBeUndefined();
   });
   test("a queued miss outside the current pack is not counted as waiting", () => {
@@ -209,7 +247,10 @@ describe("position choice", () => {
   });
   test("every category of the committed pack is a valid settings id", () => {
     const committed = JSON.parse(
-      readFileSync(fileURLToPath(new URL("../../src/assets/training-pack.json", import.meta.url)), "utf8"),
+      readFileSync(
+        fileURLToPath(new URL("../../src/assets/training-pack.json", import.meta.url)),
+        "utf8",
+      ),
     ) as { positions: TrainingPosition[] };
     for (const category of packCategories(committed.positions))
       expect(category).toMatch(TRAIN_CATEGORY_PATTERN);
@@ -229,35 +270,49 @@ describe("storage (format version 4)", () => {
     data.settings.trainShowClock = false;
     return data;
   };
-  test.each([1, 2, 3])("a version %i library and backup load with empty training data", (version) => {
-    const data = structuredClone(library()) as unknown as Record<string, any>;
-    data.formatVersion = version;
-    delete data.training;
-    for (const key of ["trainShowClock", "trainCategoriesOff", "trainRepeatGap"]) delete data.settings[key];
-    const loaded = validateLibrary(data);
-    expect(loaded.formatVersion).toBe(4);
-    expect(loaded.training).toEqual(emptyTraining());
-    expect(loaded.settings).toMatchObject({ trainShowClock: true, trainCategoriesOff: [], trainRepeatGap: 10 });
-    const restored = parseBackup(
-      JSON.stringify({ format: "sudoku-engine-backup", version, exportedAt: NOW, data }),
-    );
-    expect(restored.version).toBe(4);
-    expect(restored.data.training).toEqual(emptyTraining());
-  });
+  test.each([1, 2, 3])(
+    "a version %i library and backup load with empty training data",
+    (version) => {
+      const data = structuredClone(library()) as unknown as Record<string, any>;
+      data.formatVersion = version;
+      delete data.training;
+      for (const key of ["trainShowClock", "trainCategoriesOff", "trainRepeatGap"])
+        delete data.settings[key];
+      const loaded = validateLibrary(data);
+      expect(loaded.formatVersion).toBe(4);
+      expect(loaded.training).toEqual(emptyTraining());
+      expect(loaded.settings).toMatchObject({
+        trainShowClock: true,
+        trainCategoriesOff: [],
+        trainRepeatGap: 10,
+      });
+      const restored = parseBackup(
+        JSON.stringify({ format: "sudoku-engine-backup", version, exportedAt: NOW, data }),
+      );
+      expect(restored.version).toBe(4);
+      expect(restored.data.training).toEqual(emptyTraining());
+    },
+  );
   test("a version 4 backup round-trips training data and settings", () => {
     const data = trained(),
       text = exportBackup(data, NOW);
     expect(JSON.parse(text)).toMatchObject({ version: 4, data: { formatVersion: 4 } });
     const back = parseBackup(text).data;
     expect(back.training).toEqual(data.training);
-    expect(back.settings).toMatchObject({ trainCategoriesOff: ["c06@1", "scan"], trainRepeatGap: 5, trainShowClock: false });
+    expect(back.settings).toMatchObject({
+      trainCategoriesOff: ["c06@1", "scan"],
+      trainRepeatGap: 5,
+      trainShowClock: false,
+    });
     expect(parseBackup(exportBackup(back, NOW)).data).toEqual(back);
   });
   test("restore keeps local training unless asked to replace it", () => {
     const local = library(),
       source = trained(),
       incoming = parseBackup(exportBackup(source, NOW));
-    expect(previewRestore(local, incoming, () => "x", false).data.training).toEqual(emptyTraining());
+    expect(previewRestore(local, incoming, () => "x", false).data.training).toEqual(
+      emptyTraining(),
+    );
     expect(previewRestore(local, incoming, () => "x", false, true).data.training).toEqual(
       source.training,
     );

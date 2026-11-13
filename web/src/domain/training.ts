@@ -99,7 +99,11 @@ export function foundWith(position: Pick<TrainingPosition, "kind" | "technique" 
   return position.kind === "scan" ? position.name : categoryLabel(categoryOf(position));
 }
 
-export function isCorrect(position: Pick<TrainingPosition, "solution">, cell: number, digit: number) {
+export function isCorrect(
+  position: Pick<TrainingPosition, "solution">,
+  cell: number,
+  digit: number,
+) {
   return Number(position.solution[cell]) === digit;
 }
 
@@ -111,7 +115,8 @@ export function median(values: readonly number[]): number | null {
   return sorted.length % 2 ? sorted[middle] : (sorted[middle - 1] + sorted[middle]) / 2;
 }
 
-const best = (current: number | null, ms: number) => (current === null ? ms : Math.min(current, ms));
+const best = (current: number | null, ms: number) =>
+  current === null ? ms : Math.min(current, ms);
 
 /**
  * Records one answered attempt. `repeatGap` 0 never queues a miss; otherwise a
@@ -134,7 +139,8 @@ export function recordAttempt(
     },
     position = data.positions[attempt.position];
   const missed = data.missed.filter((entry) => entry.position !== attempt.position);
-  if (!correct && repeatGap > 0) missed.push({ position: attempt.position, due: attemptCount + repeatGap });
+  if (!correct && repeatGap > 0)
+    missed.push({ position: attempt.position, due: attemptCount + repeatGap });
   return {
     attemptCount,
     streak,
@@ -145,7 +151,9 @@ export function recordAttempt(
         attempts: category.attempts + 1,
         correct: category.correct + (correct ? 1 : 0),
         bestMs: correct ? best(category.bestMs, attempt.ms) : category.bestMs,
-        recentMs: correct ? [...category.recentMs, attempt.ms].slice(-RECENT_TIMES) : category.recentMs,
+        recentMs: correct
+          ? [...category.recentMs, attempt.ms].slice(-RECENT_TIMES)
+          : category.recentMs,
       },
     },
     positions: {

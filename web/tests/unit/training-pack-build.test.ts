@@ -1,12 +1,7 @@
 import { describe, expect, test } from "vitest";
 import { readFileSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import {
-  PACK_SEED_BASE,
-  buildPack,
-  serializePack,
-  traceSeed,
-} from "../solver/bench/training-pack";
+import { PACK_SEED_BASE, buildPack, serializePack, traceSeed } from "../solver/bench/training-pack";
 import type { TrainingPack } from "../../src/domain/training-pack";
 
 /**

@@ -331,7 +331,16 @@ function classicHouseCells(id: unknown): number[] {
   );
 }
 /** Pattern keys whose value is a cell or a (nested) list of cells. */
-const CELL_KEYS = new Set(["cell", "cells", "pivot", "wings", "endpoints", "bridge", "fins", "vertices"]);
+const CELL_KEYS = new Set([
+  "cell",
+  "cells",
+  "pivot",
+  "wings",
+  "endpoints",
+  "bridge",
+  "fins",
+  "vertices",
+]);
 /**
  * Presentation-only: cells named by a technique pattern (bounded walk). Cell
  * fields are `cell`/`cells` and the wing, short-path and fish fields above; a
