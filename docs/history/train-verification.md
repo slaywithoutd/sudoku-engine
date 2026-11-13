@@ -4,7 +4,7 @@ Updated: 2026-11-13. This record is the acceptance evidence for merging `feat/tr
 
 ## Result
 
-Every task's acceptance passes (T1–T5 and the optional T6), each task had an independent review whose findings were fixed, and the whole-suite gate passes: `npm test` with no failure (one worker crashed out of memory and its file passed on re-run), typecheck clean, lint at `master`'s baseline (0 errors, 3,342 warnings, none on a line this branch adds), and Playwright passes except the known environmental Escargot 15 s test, which fails only under full-suite load and passes on both this branch and `master` when run alone in the same minutes. Recommendation: merge.
+Every task's acceptance passes (T1–T5 and the optional T6), each task had an independent review whose findings were fixed, and the whole-suite gate passes: `npm test` with no failure (one worker crashed out of memory and its file passed on re-run), typecheck clean, lint at `master`'s baseline (0 errors, 3,342 warnings, none on a line this branch adds), and Playwright passes. The Escargot 15 s test failed on battery under full-suite load (it passes alone on both this branch and `master` in the same minutes) and passed in the full suite re-run on mains after the merge. Recommendation: merge.
 
 ## Commits
 
@@ -58,6 +58,7 @@ No position of C03, C05 or C13 appeared in the seeds harvested; harder categorie
 | `npm run lint` (after `d0324d7`) | mains, 1.6 GHz | 0 errors, 3,342 warnings (master's baseline); no warning on a line this branch adds |
 | `npm run test:e2e`, first run (12:46) | battery, 1.6 GHz | 71 passed, 1 skipped, 2 failed: `backup.spec.ts` still expected version 4 to be refused (fixed: now 5); the hub statistics test let the fake clock run before the position appeared (fixed in the test). Both fixed in `59f7d8a`. The two known environmental tests (`appearance`, Escargot at 15 s) passed. |
 | `npm run test:e2e`, second run (12:59, 7.3 min) | battery, 1.6 GHz | 72 passed, 1 skipped, 1 failed: `solver-screen.spec.ts` "Escargot at the 15 s preset…" reported "stopped at tier 4 by the time limit" instead of "stalled at tier n", the known environmental failure of this laptop's slow state (see the [M2.7 verification](m27-verification.md)). A/B in the same minutes (13:06–13:15, battery, 1.6 GHz), that test alone, alternating checkouts: `feat/train` passed (15.8 s, 15.4 s), `master` passed (14.3 s, 14.2 s, 17.9 s). Same outcome on both; the failure appears only under full-suite load. All 16 Train tests and the other 56 passed. |
+| `npm run test:e2e`, third run (13:20, 4.3 min, on `master` at `e06a6d6` after the merge) | **mains**, 1.6 GHz | **73 passed, 1 skipped, 0 failed**. Both known environmental tests passed, the Escargot 15 s test included. The first attempt that minute did not run: port 5174 was still held by a `test:serve` Vite process left from the 12:59 run (pid stopped, port freed, suite re-run). |
 
 ## Deviations from the spec
 
@@ -71,8 +72,7 @@ No position of C03, C05 or C13 appeared in the seeds harvested; harder categorie
 ## Open risks and what was not verified
 
 - The pack holds tiers 0–2 only; C03, C05 and C13 are absent from it.
-- Timing-sensitive Playwright runs were on battery in the slow state; the second Playwright run should be repeated on mains in the fast state.
 - A reload starts a new sprint, so positions seen before it can return.
 - After an auto-advance in a timed run nothing is selected, so an arrow key starts at A1.
 - Bundle (`npm run build`): the pack is its own chunk loaded only by the Train screens, 315,986 bytes (88.4 kB gzip), against 155,611 bytes (50.5 kB gzip) for the main bundle and 702,850 bytes for the solver worker. The spec expected it to stay well under the app bundle; it is about a third of the whole app. A denser encoding of the candidate masks would shrink it; not done in this milestone.
-- The Escargot 15 s Playwright test and the full Playwright suite were last run on battery in the slow state; re-run them on mains in the fast state.
+- The full Playwright suite was re-run on mains after the merge (third run above): all 73 tests passed, so nothing is left unconfirmed on power. No run was made in the CPU's fast state; every run of this milestone was at 1.6 GHz.
