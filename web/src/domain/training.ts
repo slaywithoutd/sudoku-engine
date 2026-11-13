@@ -94,9 +94,24 @@ export function compareCategories(a: string, b: string): number {
   return a < b ? -1 : 1;
 }
 
-/** The technique a position was found with, for "found with …" copy (never "requires"). */
-export function foundWith(position: Pick<TrainingPosition, "kind" | "technique" | "name">): string {
-  return position.kind === "scan" ? position.name : categoryLabel(categoryOf(position));
+const SUBSET_SIZES: Readonly<Record<number, string>> = { 2: "Pair", 3: "Triple", 4: "Quad" };
+/**
+ * The technique a position was found with, for "found with …" copy (never
+ * "requires"): the engine's step name, except for C04, which the engine names
+ * "Naked Pair" whatever the subset. There the pattern cells are the subset:
+ * removals outside them make it naked, removals inside them hidden.
+ */
+export function foundWith(
+  position: Pick<TrainingPosition, "kind" | "technique" | "name" | "cells" | "removed">,
+): string {
+  if (position.kind === "scan" || position.technique !== "c04@1") return position.name;
+  const subset = new Set(position.cells),
+    inside = position.removed.filter(([cell]) => subset.has(cell)).length,
+    size = SUBSET_SIZES[subset.size];
+  if (!size || !position.removed.length) return categoryLabel(categoryOf(position));
+  if (inside === 0) return `Naked ${size}`;
+  if (inside === position.removed.length) return `Hidden ${size}`;
+  return categoryLabel(categoryOf(position));
 }
 
 export function isCorrect(

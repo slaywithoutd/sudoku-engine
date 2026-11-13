@@ -1,6 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 import { cell, saved } from "./helpers";
-import { categoryOf, label, pack, probe, stored } from "./train-helpers";
+import { categoryOf, expectStep, label, pack, probe, stored } from "./train-helpers";
 
 // Train hub and statistics (spec §6 T4, D106). Math.random is pinned to 0, so a
 // sprint shows the selected categories' positions in pack order.
@@ -85,8 +85,7 @@ test("the hub statistics match a scripted sequence of attempts", async ({ page }
   await expect(page.getByRole("grid", { name: "Study position" })).toBeVisible();
   await expect(page.getByRole("timer")).toHaveCount(0);
   await page.getByRole("button", { name: "Show the answer", exact: true }).click();
-  for (const [target, digit] of positions[2].targets)
-    await expect(cell(page, target).locator("[data-value]")).toHaveText(String(digit));
+  await expectStep(page, positions[2]);
   await saved(page);
   expect((await stored(page)).training.attemptCount).toBe(4);
 });

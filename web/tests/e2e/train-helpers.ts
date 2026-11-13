@@ -65,3 +65,23 @@ export const label = (category: string) =>
     "c13@1": "Remote pairs",
   })[category] ?? category;
 export const categoryOf = (p: TrainingPosition) => (p.kind === "scan" ? "scan" : p.technique);
+
+/**
+ * The key step as drawn (T5): pattern cells as reasoning, every removed
+ * candidate visible and struck through, every target without a removal drawn
+ * as a placement (a target that also loses candidates keeps them visible).
+ */
+export async function expectStep(page: Page, position: TrainingPosition): Promise<void> {
+  const cellAt = (index: number) => page.locator(`[data-cell-index="${index}"]`);
+  for (const patternCell of position.cells)
+    await expect(cellAt(patternCell)).toHaveClass(/\barea\b/);
+  const removedCells = new Set(position.removed.map(([c]) => c));
+  for (const [removedCell, digit] of position.removed) {
+    const note = cellAt(removedCell).locator("[data-notes] .removed", { hasText: String(digit) });
+    await expect(note).toBeVisible();
+    expect(await note.evaluate((n) => getComputedStyle(n).textDecorationLine)).toBe("line-through");
+  }
+  for (const [target, digit] of position.targets)
+    if (!removedCells.has(target))
+      await expect(cellAt(target).locator("[data-value]")).toHaveText(String(digit));
+}

@@ -169,6 +169,31 @@ describe("statistics", () => {
     expect(categoryLabel("c06@1")).toBe("Fish");
     expect(categoryLabel("c99@1")).toBe("c99@1");
     expect(foundWith(position(hex(1), "scan"))).toBe("Hidden Single");
+    // The engine's name, except C04, named from where its removals fall.
+    expect(foundWith({ ...position(hex(1), "technique", "c11@1"), name: "XY-Wing" })).toBe(
+      "XY-Wing",
+    );
+    const subset = { ...position(hex(1), "technique", "c04@1"), cells: [3, 4] };
+    expect(foundWith({ ...subset, removed: [[5, 1]] })).toBe("Naked Pair");
+    expect(
+      foundWith({
+        ...subset,
+        removed: [
+          [3, 1],
+          [4, 2],
+        ],
+      }),
+    ).toBe("Hidden Pair");
+    expect(foundWith({ ...subset, cells: [3, 4, 5], removed: [[9, 1]] })).toBe("Naked Triple");
+    expect(
+      foundWith({
+        ...subset,
+        removed: [
+          [3, 1],
+          [9, 2],
+        ],
+      }),
+    ).toBe("Naked and hidden subsets");
     expect(foundWith(position(hex(1), "technique", "c04@1"))).toBe("Naked and hidden subsets");
     expect(
       packCategories([

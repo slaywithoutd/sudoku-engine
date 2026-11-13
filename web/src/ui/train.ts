@@ -6,6 +6,7 @@ import { emptyEditor, type EditorState, type Value } from "../domain/model";
 import { loadTrainingPack, digitsOf, type TrainingPosition } from "../domain/training-pack";
 import {
   categoryOf,
+  foundWith,
   isCorrect,
   nextPosition,
   packCategories,
@@ -17,7 +18,7 @@ import { iconButton } from "./components";
 import { gameShell } from "./game";
 import { cellName } from "./solver-copy";
 import { mountPuzzleSurface } from "./puzzle-editor";
-import { explanationPanel, positionOverlay, stepOverlay } from "./train-explain";
+import { explanationPanel, positionOverlay, stepOverlay, stepText } from "./train-explain";
 
 const placements = (list: readonly (readonly [number, number])[]) =>
   list.map(([cell, digit]) => `${cellName(cell)} = ${digit}`).join(", ");
@@ -204,14 +205,11 @@ export function mountTrainRun(container: HTMLElement, services: ScreenServices):
         ...data,
         training: recordAttempt(data.training, attempt, data.settings.trainRepeatGap),
       }));
-      if (correct)
-        editor = {
-          ...editor,
-          cells: editor.cells.map((c, i) => (i === cell ? { ...c, value: digit as Value } : c)),
-        };
-      announce.textContent = correct
-        ? `Correct: ${cellName(cell)} = ${digit} in ${(ms / 1000).toFixed(1)} seconds.`
-        : `Not this time: ${cellName(cell)} = ${digit} is wrong. Intended placement: ${placements(position.targets)}.`;
+      announce.textContent = `${
+        correct
+          ? `Correct: ${cellName(cell)} = ${digit} in ${(ms / 1000).toFixed(1)} seconds.`
+          : `Not this time: ${cellName(cell)} = ${digit} is wrong. Intended placement: ${placements(position.targets)}.`
+      } Found with ${foundWith(position)}. ${stepText(position)}`;
       render();
       // After the surface has refocused the cell it dispatched from.
       setTimeout(() => {
@@ -294,7 +292,11 @@ export function mountTrainRun(container: HTMLElement, services: ScreenServices):
       else if (!answer) surface.render(positionOverlay(position));
       else {
         // After the answer: the engine's key step, drawn as the Solve screen draws a step.
-        const step = stepOverlay(position);
+        // The player's correct digit is drawn as a placement, never written to the board.
+        const step = stepOverlay(
+          position,
+          answer.correct ? [answer.cell, answer.digit] : undefined,
+        );
         surface.render({
           ...positionOverlay(position),
           ...step,

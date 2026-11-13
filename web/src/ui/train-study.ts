@@ -73,7 +73,7 @@ export function mountTrainStudy(
       "train-intended",
     );
     intended.hidden = true;
-    const explanation = explanationPanel(position);
+    const explanation = explanationPanel(position, 2);
     explanation.hidden = true;
     let revealed = false;
     const reveal = button("Show the answer", () => {

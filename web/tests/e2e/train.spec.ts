@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { cell, saved } from "./helpers";
-import { first, pack, probe, seconds, startSprint, stored } from "./train-helpers";
+import { expectStep, first, pack, probe, seconds, startSprint, stored } from "./train-helpers";
 
 // Train run screen (spec §6 T3, D106).
 test("a correct digit raises the streak and records the time", async ({ page }) => {
@@ -45,9 +45,8 @@ test("a wrong digit ends the attempt, resets the streak and shows the intended p
   await expect(result.getByRole("heading", { level: 2 })).toHaveText("Not this time");
   await expect(page.getByTestId("train-streak")).toHaveText("Streak 0");
   await expect(result.locator(".train-intended")).toContainText("Intended placement:");
-  // Every target is drawn on the board as a placement.
-  for (const [target, digit] of second.targets)
-    await expect(cell(page, target).locator("[data-value]")).toHaveText(String(digit));
+  // The key step is drawn: targets as placements, removed candidates struck through.
+  await expectStep(page, second);
   // Further digits are ignored once the attempt has ended.
   await page.keyboard.press(String(miss.right));
   await saved(page);
