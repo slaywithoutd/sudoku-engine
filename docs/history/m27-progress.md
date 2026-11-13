@@ -5,12 +5,12 @@ Record kept during the milestone. Spec: [proposal](../specs/2026-10-22-technique
 | Task | State | Commit | Evidence |
 | --- | --- | --- | --- |
 | Approval | done | `251be06`, merge `77856f7` | D105, roadmap row, README line; `docs/technique-set-semantics` merged and its worktree removed. |
-| S1 §7 checks | done | (this record) | Below: all seven agree with the note's reading. |
-| S2 engine, settings, backup | done | `4773fce`, review fix (next commit) | S1 §6 tables 1–5; below. |
+| S1 §7 checks | done | `227f64f` | Below: all seven agree with the note's reading. |
+| S2 engine, settings, backup | done | `4773fce`, review fix `be54ba8` | S1 §6 tables 1–5; below. |
 | S3 selector | done | `e7af297`, review fix `efebe52` | `tests/e2e/solver-techniques.spec.ts`; below. |
-| S4 one Solve view | done | `eddae59`, review fix (next commit) | `tests/e2e/solver-view.spec.ts`; below. |
-| S5 corpus stall case | done | (next commit) | `tests/unit/solver/stall-case.test.ts`; below. |
-| Stop reason for an interrupted lower job | done | (next commit) | `tests/unit/solver/stop-reason.test.ts`; below. |
+| S4 one Solve view | done | `eddae59`, review fix `88cfd06` | `tests/e2e/solver-view.spec.ts`; below. |
+| S5 corpus stall case | done | `e03ed82`, review fix `cab942a` | `tests/unit/solver/stall-case.test.ts`; below. |
+| Stop reason for an interrupted lower job | done | `06f2d9c`, review fix `9387934` | `tests/unit/solver/stop-reason.test.ts`; below. |
 
 ## S1 §7 checks (2026-11-12, mains)
 
@@ -84,3 +84,7 @@ Deviation from the proposal's S5 row ("add the §2 puzzle to the evaluation corp
 `humanSteps` keeps the selection's `incomplete-cheaper-tier` instead of rewriting it to `logical-budget`, and `stopReasonOf` reports it as the new `StopReason` `lower-interrupted`, after `time-limit` and ahead of `tier-cap` (the interruption is what ended the phase). The Solve screen says "Logic: stopped at tier n: a technique or basic rule was interrupted by its resource limit, so higher tiers were not tried" (wording after review). Acceptance: `npx vitest run tests/unit/solver/stop-reason.test.ts tests/unit/solver/result-contract.test.ts tests/unit/solver/human.test.ts tests/unit/solver/run.test.ts tests/unit/solver-copy.test.ts tests/unit/solver/golden-traces.test.ts`: 31 passed (268 s, mains, slow state). The end-to-end case is S1 check 1: Escargot under `explain-fair@1` with C01–C03, C22–C28 and C33 stops with C33 interrupted and now reports `lower-interrupted`; under `@3` it climbs to tier 6. Golden traces are unchanged (they record `human`, which stays `incomplete`).
 
 Review (independent subagent): no bug in the engine path. Fixed: the first copy said "a simpler technique was interrupted", which contradicted the real case (the interrupted job, C33, is at tier 5, the tier named); it now claims neither "simpler" nor which job, and says "a basic rule was interrupted" when no technique was served. The doc comment and architecture line mention `disabled` under conditional profiles and the old "work limit or tier cap" report. The tests assert C33 capped at tier 5, the composed line, and `tier-cap` under `@3`. Table 3's pinned outcomes still hold with the new reason (37 passed). The S1 note §2.4 describes the rewrite as it was before this task and is kept as written.
+
+## Final gate (2026-11-12)
+
+See the [verification record](m27-verification.md): `npm test` 2,390 passed / 10 skipped / 0 failed; lint 0 errors / 3,342 warnings after `0fd4e6f`; typecheck clean; Playwright 54 passed / 1 skipped / 3 failed, the three failing identically on `master`'s code at the same time (slow state, battery).

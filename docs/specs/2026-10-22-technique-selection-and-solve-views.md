@@ -1,6 +1,6 @@
 # Technique selection and a single Solve view — proposal
 
-Status: **approved under D105** (2026-11-12; the user delegated the approval and every product decision of this milestone to the implementing agent). Implemented as milestone M2.7. Drafted 2026-10-22 from a session that investigated a puzzle the Explain run could not finish, and from a user suggestion made while looking at HoDoKu.
+Status: **approved under D105** (2026-11-12; the user delegated the approval and every product decision of this milestone to the implementing agent). Implemented as milestone M2.7 and merged on 2026-11-12 ([verification](../history/m27-verification.md)). Drafted 2026-10-22 from a session that investigated a puzzle the Explain run could not finish, and from a user suggestion made while looking at HoDoKu.
 
 Related: [M2.6 engine hardening](2026-09-22-m26-engine-hardening.md) (D103), [engine architecture](../solver/architecture.md), [decisions](../decisions.md) D055, D063, D094, D099
 
