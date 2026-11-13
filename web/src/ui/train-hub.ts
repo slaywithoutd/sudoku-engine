@@ -35,8 +35,11 @@ export function mountTrainHub(container: HTMLElement, services: ScreenServices):
     "primary with-icon",
   );
   start.append(icon("play"), el("span", "Start sprint"));
+  // Three minutes of active time, three misses allowed (spec §4.2, T6).
+  const timedRun = button("", () => services.navigate({ screen: "train-timed" }), "with-icon");
+  timedRun.append(icon("train"), el("span", "Timed run"));
   const actions = el("div", undefined, "actions");
-  actions.append(start);
+  actions.append(timedRun, start);
   heading.append(el("h1", "Train"), actions);
   page.append(
     heading,
@@ -124,6 +127,7 @@ export function mountTrainHub(container: HTMLElement, services: ScreenServices):
           ["Longest streak", stats.longestStreak],
           ["Positions seen", stats.positionsSeen],
           ["Missed, waiting", stats.missedWaiting],
+          ["Best timed run", data.training.runs.best],
         ] as const
       ).flatMap(([term, value]) => {
         const item = el("div");
@@ -133,6 +137,7 @@ export function mountTrainHub(container: HTMLElement, services: ScreenServices):
     );
     for (const [category, input] of checkboxes) input.checked = !off.has(category);
     start.disabled = !positions.length || all.every((category) => off.has(category));
+    timedRun.disabled = start.disabled;
     // Statistics per category.
     const rows = categoryStats(data.training);
     statsEmpty.hidden = rows.length > 0;

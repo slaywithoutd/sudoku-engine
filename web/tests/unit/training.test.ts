@@ -13,6 +13,10 @@ import {
   overallStats,
   packCategories,
   recordAttempt,
+  recordRun,
+  RUN_RING,
+  TIMED_RUN_MISSES,
+  TIMED_RUN_MS,
   TRAIN_CATEGORY_PATTERN,
   type TrainingAttempt,
   type TrainingData,
@@ -385,6 +389,45 @@ describe("storage (format version 4)", () => {
   test("rejects a repeat gap outside its choices", () => {
     const data = structuredClone(library()) as unknown as Record<string, any>;
     data.settings.trainRepeatGap = 7;
+    expect(() => validateLibrary(data)).toThrow("Invalid backup data.");
+  });
+});
+
+describe("timed runs (T6)", () => {
+  const run = (solved: number, misses: number, ms = TIMED_RUN_MS) => ({
+    at: "2026-11-13T12:00:00.000Z",
+    solved,
+    misses,
+    ms,
+  });
+  const played = (n: number) => {
+    let data = emptyTraining();
+    for (let i = 0; i < n; i++) data = recordAttempt(data, attempt(hex(i), "correct"), 10);
+    return data;
+  };
+  test("a finished run is recorded once, with the best kept", () => {
+    let data = recordRun(played(12), run(7, 1));
+    data = recordRun(data, run(4, TIMED_RUN_MISSES, 61_000));
+    expect(data.runs).toEqual({ count: 2, best: 7, recent: [run(7, 1), run(4, 3, 61_000)] });
+    // Recording attempts keeps the runs.
+    expect(recordAttempt(data, attempt(hex(1), "miss"), 10).runs).toBe(data.runs);
+  });
+  test("the run ring keeps the newest runs and validates", () => {
+    let data = played(40);
+    for (let i = 0; i < RUN_RING + 5; i++) data = recordRun(data, run(i % 9, 0));
+    expect(data.runs.recent).toHaveLength(RUN_RING);
+    expect(data.runs.count).toBe(RUN_RING + 5);
+    expect(validateLibrary({ ...emptyLibrary(), training: data }).training).toEqual(data);
+  });
+  test.each<[string, (r: any) => void]>([
+    ["a run longer than the time limit", (r) => (r.recent[0].ms = TIMED_RUN_MS + 1)],
+    ["more misses than allowed", (r) => (r.recent[0].misses = 4)],
+    ["a best below a recorded run", (r) => (r.best = 1)],
+    ["runs without a count", (r) => (r.count = 0)],
+  ])("rejects %s", (_name, mutate) => {
+    const library = { ...emptyLibrary(), training: recordRun(played(10), run(5, 0)) };
+    const data = structuredClone(library) as unknown as Record<string, any>;
+    mutate(data.training.runs);
     expect(() => validateLibrary(data)).toThrow("Invalid backup data.");
   });
 });

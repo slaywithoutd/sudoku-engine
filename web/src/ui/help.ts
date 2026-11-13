@@ -106,6 +106,10 @@ export function mountHelp(container: HTMLElement, services: ScreenServices): () 
         "A scan position has a single you can see from the placed digits. A technique position shows the candidates as notes; the engine found its next step with the technique named after the answer.",
       ],
       [
+        "Timed run",
+        "Three minutes of positions, one after another, ending early at the third miss. Your best run is kept.",
+      ],
+      [
         "Pause",
         "Pausing, switching tabs or leaving the window covers the board and stops the clock. An attempt you leave before answering is not recorded.",
       ],

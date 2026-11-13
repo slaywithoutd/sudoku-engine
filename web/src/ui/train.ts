@@ -11,6 +11,9 @@ import {
   nextPosition,
   packCategories,
   recordAttempt,
+  recordRun,
+  TIMED_RUN_MISSES,
+  TIMED_RUN_MS,
 } from "../domain/training";
 import { el, button } from "./dom";
 import { icon } from "./icons";
@@ -52,12 +55,22 @@ type Answer = {
  * it, one answer. A correct digit anywhere ends the attempt as solved; a wrong
  * one ends it as a miss. Nothing is recorded until the answer, so leaving or
  * reloading during an attempt records nothing.
+ *
+ * `timed` (spec §4.2, T6): positions follow one another without the step in
+ * between; the run ends after TIMED_RUN_MS of active time or at the
+ * TIMED_RUN_MISSES-th miss, and is recorded once. A run left before its end
+ * is not recorded (its answered attempts are).
  */
-export function mountTrainRun(container: HTMLElement, services: ScreenServices): () => void {
+export function mountTrainRun(
+  container: HTMLElement,
+  services: ScreenServices,
+  mode: "sprint" | "timed" = "sprint",
+): () => void {
   const settings = () => services.controller.snapshot().settings;
-  const run = (sprint ??= { shown: new Set() });
+  const timed = mode === "timed";
+  const run: Sprint = timed ? { shown: new Set() } : (sprint ??= { shown: new Set() });
   const shell = gameShell(container, "train");
-  shell.title.append(el("h1", "Train", "game-name"));
+  shell.title.append(el("h1", timed ? "Timed run" : "Train", "game-name"));
   const loading = el("p", "Loading positions…", "empty-note");
   shell.stage.append(loading);
 
@@ -78,6 +91,10 @@ export function mountTrainRun(container: HTMLElement, services: ScreenServices):
       editor = emptyEditor(),
       answer: Answer | undefined,
       paused = false;
+    // Timed run state.
+    let solved = 0,
+      misses = 0,
+      ended: "time" | "misses" | "exhausted" | undefined;
 
     // The surface and the board read the givens by reference: refilled in place per position.
     const givens: Value[] = Array<Value>(81).fill(0);
@@ -87,15 +104,23 @@ export function mountTrainRun(container: HTMLElement, services: ScreenServices):
       now: () => performance.now(),
       pageActive,
     });
+    // The run's own clock: active time of the whole run.
+    const runClock = createPlayClock(0, () => timed && !ended && !!position && !paused, {
+      now: () => performance.now(),
+      pageActive,
+    });
     const timerText = el("span", "0:00", "timer-text");
     timerText.setAttribute("role", "timer");
-    timerText.setAttribute("aria-label", "Attempt time");
+    timerText.setAttribute("aria-label", timed ? "Time left" : "Attempt time");
     const pause = iconButton("pause", "Pause", () => setPaused(!paused), "timer-toggle");
     const timer = el("div", undefined, "timer");
     timer.append(timerText, pause);
     const streak = el("span", undefined, "train-streak");
     streak.dataset.testid = "train-streak";
-    shell.status.append(streak, timer);
+    const score = el("span", undefined, "train-streak");
+    score.dataset.testid = "train-score";
+    score.hidden = !timed;
+    shell.status.append(streak, score, timer);
 
     const cover = el("div", undefined, "pause-cover");
     const resume = button("", () => setPaused(false), "primary with-icon");
@@ -134,6 +159,26 @@ export function mountTrainRun(container: HTMLElement, services: ScreenServices):
       button("Back to Train", () => services.navigate({ screen: "train" }), "primary"),
     );
     shell.side.prepend(done);
+    // Timed run: the last answer, and the summary at the end.
+    const flash = el("p", undefined, "train-flash");
+    flash.dataset.testid = "train-flash";
+    flash.hidden = true;
+    const summary = el("section", undefined, "train-result");
+    summary.dataset.testid = "train-run-summary";
+    summary.hidden = true;
+    const summaryTitle = el("h2"),
+      summaryText = el("p"),
+      summaryBest = el("p");
+    const again = button("", () => restart(), "primary with-icon");
+    again.append(icon("reset"), el("span", "Run again"));
+    const summaryActions = el("div", undefined, "actions");
+    summaryActions.append(
+      again,
+      button("Back to Train", () => services.navigate({ screen: "train" })),
+    );
+    summary.append(summaryTitle, summaryText, summaryBest, summaryActions);
+    shell.side.prepend(flash);
+    shell.side.prepend(summary);
     // Always present, so screen readers announce the result when its text changes.
     const announce = el("p", undefined, "sr-only");
     announce.setAttribute("role", "status");
@@ -179,11 +224,43 @@ export function mountTrainRun(container: HTMLElement, services: ScreenServices):
     shell.root.querySelector('[role="grid"]')?.setAttribute("aria-label", "Training position");
 
     function setPaused(value: boolean) {
-      if (!position || answer) return;
+      if (!position || answer || ended) return;
       clock.sync();
+      runClock.sync();
       paused = value;
       clock.sync();
+      runClock.sync();
       render();
+    }
+    function finish(reason: NonNullable<typeof ended>) {
+      if (ended) return;
+      runClock.sync();
+      const ms =
+        reason === "time" ? TIMED_RUN_MS : Math.min(TIMED_RUN_MS, Math.round(runClock.elapsed()));
+      ended = reason;
+      position = undefined;
+      answer = undefined;
+      givens.fill(0);
+      editor = emptyEditor();
+      // Recorded exactly once: `ended` guards every later call.
+      const record = { at: services.now(), solved, misses, ms };
+      services.controller.update((data) => ({
+        ...data,
+        training: recordRun(data.training, record),
+      }));
+      announce.textContent = `Run over: ${solved} solved, ${misses} missed.`;
+      render();
+      setTimeout(() => again.isConnected && again.focus());
+    }
+    function restart() {
+      run.shown.clear();
+      run.previous = undefined;
+      solved = 0;
+      misses = 0;
+      ended = undefined;
+      flash.hidden = true;
+      runClock.reset(0);
+      advance(true);
     }
     function submit(cell: number, digit: number) {
       if (!position) return;
@@ -205,6 +282,21 @@ export function mountTrainRun(container: HTMLElement, services: ScreenServices):
         ...data,
         training: recordAttempt(data.training, attempt, data.settings.trainRepeatGap),
       }));
+      if (timed) {
+        // No step in between: on to the next position, or the end of the run.
+        if (correct) solved++;
+        else misses++;
+        flash.hidden = false;
+        flash.dataset.result = correct ? "correct" : "miss";
+        flash.textContent = correct
+          ? `Correct: ${cellName(cell)} = ${digit}.`
+          : `Missed: ${cellName(cell)} = ${digit}. Intended: ${placements(position.targets)}.`;
+        announce.textContent = flash.textContent;
+        // No focus handoff: a focused cell is selected, and a click on it would deselect it.
+        if (misses >= TIMED_RUN_MISSES) finish("misses");
+        else advance();
+        return;
+      }
       announce.textContent = `${
         correct
           ? `Correct: ${cellName(cell)} = ${digit} in ${(ms / 1000).toFixed(1)} seconds.`
@@ -235,9 +327,14 @@ export function mountTrainRun(container: HTMLElement, services: ScreenServices):
         // The sprint has shown every position: clear the board.
         givens.fill(0);
         editor = emptyEditor();
+        if (timed && !ended) {
+          finish("exhausted");
+          return;
+        }
       }
       clock.reset(0);
-      announce.textContent = "";
+      runClock.sync();
+      if (!timed) announce.textContent = "";
       render();
       // Mounted or advanced without focus: cover the board, as losing focus would.
       if (position && !pageActive()) setPaused(true);
@@ -251,15 +348,29 @@ export function mountTrainRun(container: HTMLElement, services: ScreenServices):
       clock.sync();
       const data = services.controller.snapshot();
       streak.textContent = `Streak ${data.training.streak}`;
-      timerText.hidden = !data.settings.trainShowClock && !answer;
+      // A timed run always shows its time left.
+      timerText.hidden = !timed && !data.settings.trainShowClock && !answer;
       pause.hidden = !position || !!answer;
+      score.textContent = `Solved ${solved} · Misses ${misses}/${TIMED_RUN_MISSES}`;
+      summary.hidden = !ended;
+      if (ended) {
+        summaryTitle.textContent =
+          ended === "time"
+            ? "Time is up"
+            : ended === "misses"
+              ? "Three misses"
+              : "No positions left";
+        summaryText.textContent = `Solved ${solved} · Misses ${misses}`;
+        summaryBest.textContent = `Best run: ${data.training.runs.best} solved`;
+        flash.hidden = true;
+      }
       pause.replaceChildren(icon(paused ? "play" : "pause"));
       pause.setAttribute("aria-label", paused ? "Resume" : "Pause");
       pause.setAttribute("aria-pressed", String(paused));
       shell.root.classList.toggle("paused", paused);
       cover.hidden = !paused;
-      done.hidden = !!position;
-      if (!position) {
+      done.hidden = !!position || timed;
+      if (!position && !timed) {
         const none = packCategories(positions).every((c) =>
           data.settings.trainCategoriesOff.includes(c),
         );
@@ -304,16 +415,24 @@ export function mountTrainRun(container: HTMLElement, services: ScreenServices):
           focus: new Set([...(step.focus ?? []), answer.cell]),
         });
       }
-      timerText.textContent = formatDuration(answer ? answer.ms : clock.elapsed());
+      timerText.textContent = timed
+        ? formatDuration(Math.max(0, TIMED_RUN_MS - runClock.elapsed()))
+        : formatDuration(answer ? answer.ms : clock.elapsed());
     };
 
     const tick = setInterval(() => {
       clock.sync();
-      if (!answer) timerText.textContent = formatDuration(clock.elapsed());
+      if (timed) {
+        runClock.sync();
+        if (!ended && runClock.elapsed() >= TIMED_RUN_MS) finish("time");
+        else if (!ended)
+          timerText.textContent = formatDuration(Math.max(0, TIMED_RUN_MS - runClock.elapsed()));
+      } else if (!answer) timerText.textContent = formatDuration(clock.elapsed());
     }, 250);
     // Losing focus or hiding the page pauses: the cover hides the board and the clock stops.
     const onActivity = () => {
       clock.sync();
+      runClock.sync();
       if (!pageActive() && position && !answer && !paused) setPaused(true);
     };
     document.addEventListener("visibilitychange", onActivity);

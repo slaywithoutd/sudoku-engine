@@ -8,6 +8,7 @@ export type Route =
   | { screen: "settings" }
   | { screen: "train" }
   | { screen: "train-run" }
+  | { screen: "train-timed" }
   | { screen: "train-study"; id: string }
   | { screen: "help" };
 function decode(value: string): string | undefined {
@@ -23,6 +24,7 @@ export function parseRoute(hash: string): Route {
   if (hash === "#/help") return { screen: "help" };
   if (hash === "#/train") return { screen: "train" };
   if (hash === "#/train/run") return { screen: "train-run" };
+  if (hash === "#/train/timed") return { screen: "train-timed" };
   if (hash === "#/library/drafts" || hash === "#/library/puzzles")
     return {
       screen: "library",
@@ -56,6 +58,8 @@ export function routeHash(route: Route): string {
       return "#/train";
     case "train-run":
       return "#/train/run";
+    case "train-timed":
+      return "#/train/timed";
     case "train-study":
       return `#/train/study/${route.id}`;
     case "solve":

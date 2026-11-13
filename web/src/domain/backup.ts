@@ -16,7 +16,11 @@ import { normalizeSettings } from "./settings";
 import {
   ATTEMPT_RING,
   RECENT_TIMES,
+  RUN_RING,
+  TIMED_RUN_MISSES,
+  TIMED_RUN_MS,
   TRAIN_CATEGORY_PATTERN,
+  type TimedRun,
   emptyTraining,
   type CategoryRecord,
   type MissedRecord,
@@ -245,7 +249,27 @@ function training(x: unknown, version: number): TrainingData {
     };
   });
   requireValid(attempts.length <= Math.min(ATTEMPT_RING, attemptCount));
-  return { attemptCount, streak, longestStreak, categories, positions, missed, attempts };
+  const r = object(t.runs),
+    count = integer(r.count, 0, Number.MAX_SAFE_INTEGER),
+    recent: TimedRun[] = array(r.recent).map((raw) => {
+      const run = object(raw),
+        misses = integer(run.misses, 0, TIMED_RUN_MISSES);
+      return {
+        at: date(run.at),
+        solved: integer(run.solved, 0, attemptCount),
+        misses,
+        ms: integer(run.ms, 0, TIMED_RUN_MS),
+      };
+    }),
+    best = integer(r.best, 0, attemptCount);
+  requireValid(
+    recent.length <= Math.min(count, RUN_RING) &&
+      (count === 0) === (recent.length === 0) &&
+      // A run also ends early when the selected categories run out of positions.
+      recent.every((run) => run.solved <= best),
+  );
+  const runs = { count, best, recent };
+  return { attemptCount, streak, longestStreak, categories, positions, missed, attempts, runs };
 }
 export function validateLibrary(input: unknown): LibraryData {
   const x = object(input);

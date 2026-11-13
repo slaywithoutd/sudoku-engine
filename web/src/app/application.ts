@@ -151,12 +151,14 @@ export function mountApplication(
       r.screen === "play" ||
       r.screen === "solve" ||
       r.screen === "train-run" ||
+      r.screen === "train-timed" ||
       r.screen === "train-study";
     main.classList.toggle("editor-screen", game);
     for (const item of navItems) {
       if (
         item.screen === r.screen ||
-        (item.screen === "train" && (r.screen === "train-run" || r.screen === "train-study"))
+        (item.screen === "train" &&
+          (r.screen === "train-run" || r.screen === "train-timed" || r.screen === "train-study"))
       )
         item.control.setAttribute("aria-current", "page");
       else item.control.removeAttribute("aria-current");
@@ -188,6 +190,9 @@ export function mountApplication(
         break;
       case "train-run":
         dispose = mountTrainRun(main, services);
+        break;
+      case "train-timed":
+        dispose = mountTrainRun(main, services, "timed");
         break;
       case "train-study":
         dispose = mountTrainStudy(main, services, r.id);

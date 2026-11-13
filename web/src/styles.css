@@ -2278,6 +2278,16 @@ dialog .actions .ghost:first-child {
   font-variant-numeric: tabular-nums;
   margin-right: 0.75rem;
 }
+.train-flash {
+  margin: 0;
+  font-weight: 600;
+}
+.train-flash[data-result="correct"] {
+  color: var(--good-ink);
+}
+.train-flash[data-result="miss"] {
+  color: var(--danger-ink);
+}
 .train-kind {
   margin: 0;
   color: var(--muted);

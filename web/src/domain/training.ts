@@ -54,6 +54,41 @@ export interface TrainingData {
   readonly missed: readonly MissedRecord[];
   /** Oldest first, at most ATTEMPT_RING. */
   readonly attempts: readonly TrainingAttempt[];
+  /** Timed runs (spec §4.2, T6). */
+  readonly runs: RunRecord;
+}
+
+/** A timed run: TIMED_RUN_MS of active time, ending early at the TIMED_RUN_MISSES-th miss. */
+export const TIMED_RUN_MS = 180_000;
+export const TIMED_RUN_MISSES = 3;
+/** The most recent finished runs kept. */
+export const RUN_RING = 20;
+export interface TimedRun {
+  readonly at: string;
+  /** Positions answered correctly. */
+  readonly solved: number;
+  readonly misses: number;
+  /** Active milliseconds the run lasted: TIMED_RUN_MS unless the misses or the positions ran out. */
+  readonly ms: number;
+}
+export interface RunRecord {
+  readonly count: number;
+  /** Most positions solved in one run, 0 before the first. */
+  readonly best: number;
+  /** Oldest first, at most RUN_RING. */
+  readonly recent: readonly TimedRun[];
+}
+
+/** Records one finished timed run; an abandoned run is never recorded. */
+export function recordRun(data: TrainingData, run: TimedRun): TrainingData {
+  return {
+    ...data,
+    runs: {
+      count: data.runs.count + 1,
+      best: Math.max(data.runs.best, run.solved),
+      recent: [...data.runs.recent, run].slice(-RUN_RING),
+    },
+  };
 }
 
 export function emptyTraining(): TrainingData {
@@ -65,6 +100,7 @@ export function emptyTraining(): TrainingData {
     positions: {},
     missed: [],
     attempts: [],
+    runs: { count: 0, best: 0, recent: [] },
   };
 }
 
@@ -157,6 +193,7 @@ export function recordAttempt(
   if (!correct && repeatGap > 0)
     missed.push({ position: attempt.position, due: attemptCount + repeatGap });
   return {
+    ...data,
     attemptCount,
     streak,
     longestStreak: Math.max(data.longestStreak, streak),
