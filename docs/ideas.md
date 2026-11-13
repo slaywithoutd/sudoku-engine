@@ -48,3 +48,28 @@ Kept separate from the difficulty-and-order study, but connected.
 ### Unlocks
 
 M2.6 merged; a larger hard-puzzle corpus with a verified licence (D101 notes none is available today); a decision on the determinism setting's default and wording.
+
+## 2. Timed next-digit training puzzles: extensions
+
+Noted 2026-11-10. Related: [training puzzles proposal](specs/2026-11-10-training-puzzles.md), roadmap M6 (gameplay hints), decisions D094, D101.
+
+### Idea
+
+The user's idea of 2026-11-10: a puzzle as in chess. The app shows a half-filled Sudoku position and starts a clock; the player places the next digit as fast as possible; streaks and a history of best times are kept. The core (positions harvested from checked Explain traces, a Sprint mode, statistics per technique category) is written up as a proposal. Parked here are the parts left out of it.
+
+| Extension | What it adds | What it needs first |
+| --- | --- | --- |
+| Rating | A rating for the player and one per position (Elo or Glicko style), so that positions are served at the player's level. | Enough attempts per position to rate it; a defence against guessing stronger than "a miss ends the streak". |
+| Daily set | The same few positions for everyone on a date, from a seed. | Nothing technical; it only matters once puzzles are shared (community branch). |
+| Run-time generation | Positions cut from the player's own library puzzles, or generated in a worker. | A production generator (M3 builds the pieces) and a budget for Explain in the background. |
+| Elimination answers | "Which candidate can be removed?" as the answer, for techniques whose step does not lead to a placement at once. | An input gesture for marking a candidate, and a rule for which eliminations count. |
+| Variant positions | Killer, thermometer and other variant positions. | M4 (definitions and drawing) and M5 (variant solving in the interface). |
+| Symmetry per presentation | Relabel digits and transform the grid each time a position is shown, so a repeated position is not recognised. | Nothing; a small task once the pack exists. |
+
+### Why parked
+
+The proposal is deliberately the smallest version that delivers the idea. Each extension either depends on a later milestone or needs data that only exists once the first version is in use.
+
+### Unlocks
+
+The proposal approved and its first version in use; for each row, the milestone named in its last column.

@@ -996,3 +996,20 @@ Record each answer here with its rationale and consequences. If an answer change
   - S5: the proposal's §2 puzzle is AI Escargot, already the corpus case `escargot`; no case was added and the stall is pinned by test.
   - Item 8: a phase stopped by an interrupted lower job reports `lower-interrupted`.
   - Gate: `npm test` 2,390 passed / 10 skipped / 0 failed; typecheck clean; lint 0 errors / 3,342 warnings (baseline); Playwright 54 passed / 1 skipped / 3 failed, the three failing identically on `master`'s code in the same minutes (the laptop was in its slow state and on battery). Found and fixed on the way: the Solve screen's step list never listed steps that arrived during a run once it had rendered mid-run (latent since M2).
+
+## D106 - Approve training puzzles ("Train")
+
+- Status: approved 2026-11-13 by the implementing agent on the user's delegation. The user asked for four items in strict sequence (M2.6, the merged selection outline, M2.7, then this milestone) and delegated every product decision; each choice below is "decided by the agent on the user's delegation".
+- Source: the [training puzzles proposal](specs/2026-11-10-training-puzzles.md) and the user idea of 2026-11-10 (a half-filled position, a timer, place the next digit as fast as possible, streaks and best times).
+- Decision: add training puzzles: timed next-digit positions harvested offline from checked Explain traces, with streaks and personal bests, sequenced after M2.6 and M2.7. Any digit matching the unique solution is correct. The engine's key step is shown after the answer (T5 in scope). Alternatives rejected: positions without notes for technique categories; run-time generation in the first version.
+- The six choices of the proposal §7, each decided by the agent on the user's delegation, all its recommended answers:
+  1. Any digit that matches the unique solution is correct, in any empty cell.
+  2. The engine's step is shown after the answer, in this milestone.
+  3. Sequenced now, after M2.6 and M2.7 (the proposal's "in parallel with M3" is moot: the user sequenced the work one session at a time).
+  4. A wrong digit ends the attempt.
+  5. The first pack holds about 500 positions of tiers 0–2.
+  6. The interface name is "Train".
+- Storage: the library `formatVersion` and the backup envelope `version` go from 3 to 4 (M2.7 took 3, D105); a version 1, 2 or 3 library or backup loads with an empty `training` section. The M4 proposal's format change takes the next number.
+- Label honesty: the pack never holds a position whose key step is `budgetLimited`, at most three positions come from one source puzzle, and the interface says a position was "found with" a technique, never that it "requires" one.
+- T6 (timed run) is done only if T1–T5 pass; otherwise it is recorded as a follow-up.
+- Consequence: the roadmap gains a Training puzzles row after M2.7. Implementation on `feat/train`, one reviewed commit per task (T1–T5, T6 if done).
