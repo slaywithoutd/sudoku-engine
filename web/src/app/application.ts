@@ -9,6 +9,7 @@ import { mountPlayer } from "../ui/player";
 import { mountSettings } from "../ui/settings";
 import { mountSolver } from "../ui/solver";
 import { mountHelp } from "../ui/help";
+import { mountTrainHub, mountTrainRun } from "../ui/train";
 import { el, button } from "../ui/dom";
 import { icon, type IconName } from "../ui/icons";
 import { fullscreenButton, isFullscreen, toggleFullscreen } from "../ui/game";
@@ -57,6 +58,7 @@ export function mountApplication(
         route: { screen: "library", tab: "puzzles" },
       },
       { label: "Solver", screen: "solve", icon: "solve", route: { screen: "solve" } },
+      { label: "Train", screen: "train", icon: "train", route: { screen: "train" } },
       { label: "Help", screen: "help", icon: "help", route: { screen: "help" } },
       { label: "Settings", screen: "settings", icon: "settings", route: { screen: "settings" } },
     ] as {
@@ -142,10 +144,15 @@ export function mountApplication(
     document.querySelectorAll("dialog").forEach((d) => d.remove());
     main.replaceChildren();
     const r = parseRoute(location.hash);
-    const game = r.screen === "create" || r.screen === "play" || r.screen === "solve";
+    const game =
+      r.screen === "create" ||
+      r.screen === "play" ||
+      r.screen === "solve" ||
+      r.screen === "train-run";
     main.classList.toggle("editor-screen", game);
     for (const item of navItems) {
-      if (item.screen === r.screen) item.control.setAttribute("aria-current", "page");
+      if (item.screen === r.screen || (item.screen === "train" && r.screen === "train-run"))
+        item.control.setAttribute("aria-current", "page");
       else item.control.removeAttribute("aria-current");
     }
     switch (r.screen) {
@@ -169,6 +176,12 @@ export function mountApplication(
         break;
       case "help":
         dispose = mountHelp(main, services);
+        break;
+      case "train":
+        dispose = mountTrainHub(main, services);
+        break;
+      case "train-run":
+        dispose = mountTrainRun(main, services);
         break;
     }
   };

@@ -15,14 +15,14 @@ for (const [width, height] of [
       .boundingBox();
     expect(navigation!.x).toBeLessThan(200);
     await expect(page.getByRole("button", { name: "Sudoku Engine", exact: true })).toBeVisible();
-    // Play, Create and Solve share equal dimensions on the home screen.
+    // Play, Create, Solve and Train share equal dimensions on the home screen.
     const cards = await page.locator(".home-card").evaluateAll((nodes) =>
       nodes.map((n) => {
         const r = n.getBoundingClientRect();
         return [Math.round(r.width), Math.round(r.height)].join("x");
       }),
     );
-    expect(cards).toHaveLength(3);
+    expect(cards).toHaveLength(4);
     expect(new Set(cards).size).toBe(1);
     await expect(page.getByText("Saved in this browser")).toHaveCount(0);
     await page.screenshot({

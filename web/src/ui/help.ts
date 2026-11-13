@@ -94,6 +94,24 @@ export function mountHelp(container: HTMLElement, services: ScreenServices): () 
     ]),
     "Solving happens in the background and does not change your saved puzzles.",
   );
+  section(
+    "Train",
+    list([
+      [
+        "Sprint",
+        "A partly solved position appears and the clock starts. Place one correct digit in any empty cell. A wrong digit ends the attempt and resets the streak.",
+      ],
+      [
+        "Scan and technique",
+        "A scan position has a single you can see from the placed digits. A technique position shows the candidates as notes; the engine found its next step with the technique named after the answer.",
+      ],
+      [
+        "Pause",
+        "Pausing, switching tabs or leaving the window covers the board and stops the clock. An attempt you leave before answering is not recorded.",
+      ],
+    ]),
+    "Times compare only within a category: your own history is the reference.",
+  );
   const table = el("table", undefined, "shortcut-table");
   const body = el("tbody");
   for (const action of SHORTCUT_ACTIONS) {

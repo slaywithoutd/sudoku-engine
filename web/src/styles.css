@@ -898,7 +898,7 @@ dialog .actions .ghost:first-child {
 }
 .home-cards {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 1.25rem;
   margin-top: 2.5rem;
 }
@@ -2265,6 +2265,66 @@ dialog .actions .ghost:first-child {
 }
 .completion button {
   background: var(--surface);
+}
+
+/* Train (D106) */
+/* One digit per attempt and read-only notes: no tools, edits or multi-select. */
+.game-train .tool-switch,
+.game-train .keypad-actions {
+  display: none;
+}
+.train-streak {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  margin-right: 0.75rem;
+}
+.train-kind {
+  margin: 0;
+  color: var(--muted);
+}
+.train-result,
+.train-done {
+  display: grid;
+  justify-items: start;
+  gap: 0.35rem;
+  padding: 1rem 1.1rem;
+  border-radius: var(--radius-lg);
+  corner-shape: squircle;
+  background: var(--surface);
+}
+.train-result[data-result="correct"] {
+  background: var(--good-surface);
+  color: var(--good-ink);
+}
+.train-result[data-result="miss"] {
+  background: var(--danger-surface);
+  color: var(--danger-ink);
+}
+.train-result h2,
+.train-done h2 {
+  margin: 0;
+  font-size: 1.2rem;
+}
+.train-result p,
+.train-done p {
+  margin: 0 0 0.35rem;
+}
+.train-result .actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.train-result button:not(.primary) {
+  background: var(--surface);
+}
+.train-page {
+  display: grid;
+  gap: 1.25rem;
+  max-width: 60rem;
+}
+.train-page .intro {
+  margin: 0;
+  color: var(--muted);
 }
 
 /* Import dialog */

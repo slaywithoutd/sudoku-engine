@@ -21,7 +21,10 @@ export interface GameShell {
   side: HTMLElement;
 }
 /** Board-first layout shared by Play, Create and Solve. */
-export function gameShell(container: HTMLElement, kind: "play" | "create" | "solve"): GameShell {
+export function gameShell(
+  container: HTMLElement,
+  kind: "play" | "create" | "solve" | "train",
+): GameShell {
   const root = el("div", undefined, `game game-${kind}`),
     bar = keepsSelection(el("header", undefined, "game-bar")),
     title = el("div", undefined, "game-title"),
