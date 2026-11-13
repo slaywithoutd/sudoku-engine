@@ -64,6 +64,8 @@ test("a wrong digit ends the attempt, resets the streak and shows the intended p
 test("losing focus covers the board and stops the clock", async ({ page }) => {
   await page.clock.install();
   await startSprint(page);
+  const { open, right } = probe(first);
+  await cell(page, open).click();
   await page.clock.runFor(5_000);
   const before = await seconds(page);
   expect(before).toBeGreaterThanOrEqual(4);
@@ -73,24 +75,43 @@ test("losing focus covers the board and stops the clock", async ({ page }) => {
   });
   await expect(page.locator(".pause-cover")).toBeVisible();
   await page.clock.runFor(60_000);
+  // A digit while covered does nothing, even with a cell selected.
+  await page.keyboard.press(String(right));
+  await expect(page.getByTestId("train-result")).toBeHidden();
   await page.evaluate(() => {
     document.hasFocus = () => true;
     window.dispatchEvent(new Event("focus"));
   });
-  // Still covered until the player resumes; the minute away never counted.
+  // Still covered until the player resumes, and the clock stays stopped meanwhile.
+  await page.clock.runFor(10_000);
   await expect(page.locator(".pause-cover")).toBeVisible();
   expect(await seconds(page)).toBeLessThanOrEqual(before + 1);
-  // Digits do nothing while covered.
-  const { open, right } = probe(first);
-  await page.keyboard.press(String(right));
+  await saved(page);
+  expect((await stored(page))?.training?.attemptCount ?? 0).toBe(0);
   await page.getByRole("button", { name: "Resume", exact: true }).first().click();
   await expect(page.locator(".pause-cover")).toBeHidden();
   await page.clock.runFor(2_000);
   expect(await seconds(page)).toBeGreaterThanOrEqual(before + 1);
   expect(await seconds(page)).toBeLessThanOrEqual(before + 3);
-  await cell(page, open).click();
+  // The cell is still selected from before the blur.
   await page.keyboard.press(String(right));
   await expect(page.getByTestId("train-result").getByRole("heading")).toHaveText("Correct");
+});
+
+test("a note modifier never answers, and Next returns focus to the board", async ({ page }) => {
+  await startSprint(page);
+  const { open, right } = probe(first);
+  await cell(page, open).click();
+  await page.keyboard.press(`Shift+Digit${right}`);
+  await page.keyboard.press(`Control+Digit${right}`);
+  await expect(page.getByTestId("train-result")).toBeHidden();
+  await expect(page.getByTestId("train-streak")).toHaveText("Streak 0");
+  await page.keyboard.press(String(right));
+  await expect(page.getByTestId("train-result").getByRole("heading")).toHaveText("Correct");
+  await expect(page.getByRole("status").filter({ hasText: "Correct:" })).toHaveCount(1);
+  await page.keyboard.press("Enter");
+  await expect(page.getByTestId("train-result")).toBeHidden();
+  await expect(page.locator(".cell:focus")).toHaveCount(1);
 });
 
 test("reloading during an attempt records nothing", async ({ page }) => {

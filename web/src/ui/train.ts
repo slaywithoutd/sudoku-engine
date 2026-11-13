@@ -4,7 +4,13 @@ import type { BoardAction } from "../domain/editor";
 import { reduceEditor } from "../domain/editor";
 import { emptyEditor, type Digit, type EditorState, type Value } from "../domain/model";
 import { loadTrainingPack, digitsOf, type TrainingPosition } from "../domain/training-pack";
-import { categoryOf, isCorrect, nextPosition, recordAttempt } from "../domain/training";
+import {
+  categoryOf,
+  isCorrect,
+  nextPosition,
+  packCategories,
+  recordAttempt,
+} from "../domain/training";
 import { el, button } from "./dom";
 import { icon } from "./icons";
 import { iconButton } from "./components";
@@ -103,12 +109,11 @@ export function mountTrainRun(container: HTMLElement, services: ScreenServices):
 
     // Result panel, shown after the answer.
     const result = el("section", undefined, "train-result");
-    result.setAttribute("role", "status");
     result.dataset.testid = "train-result";
     const resultTitle = el("h2"),
       resultText = el("p"),
       intended = el("p", undefined, "train-intended");
-    const next = button("", () => advance(), "primary with-icon");
+    const next = button("", () => advance(true), "primary with-icon");
     next.append(el("span", "Next"), icon("send"));
     const back = button("Back to Train", () => services.navigate({ screen: "train" }));
     const actions = el("div", undefined, "actions");
@@ -120,12 +125,18 @@ export function mountTrainRun(container: HTMLElement, services: ScreenServices):
     shell.side.prepend(kind);
     const done = el("section", undefined, "train-done");
     done.hidden = true;
+    const doneTitle = el("h2"),
+      doneText = el("p");
     done.append(
-      el("h2", "Sprint complete"),
-      el("p", "You have seen every position in the selected categories in this sprint."),
+      doneTitle,
+      doneText,
       button("Back to Train", () => services.navigate({ screen: "train" }), "primary"),
     );
     shell.side.prepend(done);
+    // Always present, so screen readers announce the result when its text changes.
+    const announce = el("p", undefined, "sr-only");
+    announce.setAttribute("role", "status");
+    shell.side.append(announce);
 
     const dispatch = (action: BoardAction) => {
       if (!position || answer || paused) {
@@ -134,7 +145,9 @@ export function mountTrainRun(container: HTMLElement, services: ScreenServices):
         render();
         return;
       }
+      // Only a digit answers; a note modifier (Shift or Ctrl with a digit) does nothing here.
       if (action.type === "digit") {
+        if (action.tool !== "value") return;
         const cell = editor.selected;
         if (cell >= 0 && !givens[cell]) submit(cell, action.digit);
         return;
@@ -194,10 +207,16 @@ export function mountTrainRun(container: HTMLElement, services: ScreenServices):
           ...editor,
           cells: editor.cells.map((c, i) => (i === cell ? { ...c, value: digit as Value } : c)),
         };
+      announce.textContent = correct
+        ? `Correct: ${cellName(cell)} = ${digit} in ${(ms / 1000).toFixed(1)} seconds.`
+        : `Not this time: ${cellName(cell)} = ${digit} is wrong. Intended placement: ${placements(position.targets)}.`;
       render();
-      next.focus();
+      // After the surface has refocused the cell it dispatched from.
+      setTimeout(() => {
+        if (answer && next.isConnected) next.focus();
+      });
     }
-    function advance() {
+    function advance(fromNext = false) {
       position = nextPosition(positions, services.controller.snapshot().training, {
         categoriesOff: settings().trainCategoriesOff,
         shown: run.shown,
@@ -218,7 +237,15 @@ export function mountTrainRun(container: HTMLElement, services: ScreenServices):
         editor = emptyEditor();
       }
       clock.reset(0);
+      announce.textContent = "";
       render();
+      // Mounted or advanced without focus: cover the board, as losing focus would.
+      if (position && !pageActive()) setPaused(true);
+      // Next disappears with the result: keep keyboard focus on the board.
+      if (fromNext)
+        shell.root
+          .querySelector<HTMLElement>('.cell[tabindex="0"]')
+          ?.focus({ preventScroll: true });
     }
     const render = () => {
       clock.sync();
@@ -232,6 +259,15 @@ export function mountTrainRun(container: HTMLElement, services: ScreenServices):
       shell.root.classList.toggle("paused", paused);
       cover.hidden = !paused;
       done.hidden = !!position;
+      if (!position) {
+        const none = packCategories(positions).every((c) =>
+          data.settings.trainCategoriesOff.includes(c),
+        );
+        doneTitle.textContent = none ? "No category selected" : "Sprint complete";
+        doneText.textContent = none
+          ? "Choose at least one category in Train."
+          : "You have seen every position in the selected categories in this sprint.";
+      }
       kind.hidden = !position;
       if (position)
         kind.textContent =

@@ -7,7 +7,7 @@ Record kept during the milestone. Spec: [training puzzles](../specs/2026-11-10-t
 | Approval | done | `b3d81c3`, merge `92d5d89` | D106, roadmap row, README line; `docs/training-puzzles` merged. |
 | T1 pack | done | see git log (`feat(train): T1`) | 500 positions; 502 independent checks pass; full rebuild byte-identical (`TRAIN_PACK=check`, 956 s). Review fixes are in the task commit: they changed the pack, which had to be rebuilt. |
 | T2 domain and storage | done | see git log (`feat(train): T2`) | Unit tests for every transition; v1–3 → empty training; v4 round trip; ring bound; review fixes folded in. |
-| T3 run screen | done, in review | see git log (`feat(ui): T3`) | Playwright `train.spec.ts`: 4 passed. |
+| T3 run screen | done | see git log (`feat(ui): T3`) | Playwright `train.spec.ts`: 4 passed. |
 | T4 hub and statistics | pending | | |
 | T5 explanation | pending | | |
 | T6 timed run | optional | | |
@@ -36,3 +36,4 @@ Power: mains (`BatteryStatus` 2), CPU 1.6 GHz (slow state).
 
 - Route `#/train/run`, sidebar entry and a fourth Home card ("Train"; Home cards now four across). The run screen reuses the puzzle surface (board, keypad, keyboard) with every placed digit as a given; a technique position shows the pack's candidates as read-only notes; the keypad's tools and edit actions are hidden. Any digit equal to the solution in any empty cell is correct; a wrong digit ends the attempt, draws the intended placements and resets the streak. The clock is the Play clock; pausing, hiding the page or leaving the window covers the board and stops it. Nothing is written before the answer.
 - `npx playwright test tests/e2e/train.spec.ts`: 4 passed (correct → streak 1 and a stored time ≥ 3.5 s of a 4 s fake clock; wrong → streak 0, a miss queued at due 12, every target drawn; blur → cover, a minute away not counted; reload → no attempt stored). Router unit tests: 10 passed.
+- Independent review: Shift or Ctrl with a digit (the note modifiers) submitted an answer; a test step passed without checking anything; a screen mounted without focus left the board uncovered while the clock was stopped. Fixed, with tests: only a plain digit answers; the blur test now presses a digit on a selected cell while covered and runs the clock after focus returns; an unfocused mount or advance pauses. Also: focus returns to the board after Next, the result is announced through an always-present live region, and "No category selected" replaces "Sprint complete" when every category is off. Noted, not changed: a reload starts a new sprint, so positions seen before it can come back. Home with four cards checked at 1150 px. `train.spec.ts`: 5 passed.
