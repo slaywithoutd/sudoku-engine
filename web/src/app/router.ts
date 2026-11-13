@@ -6,6 +6,10 @@ export type Route =
   | { screen: "create"; id: string }
   | { screen: "play"; id: string }
   | { screen: "settings" }
+  | { screen: "train" }
+  | { screen: "train-run" }
+  | { screen: "train-timed" }
+  | { screen: "train-study"; id: string }
   | { screen: "help" };
 function decode(value: string): string | undefined {
   try {
@@ -18,6 +22,9 @@ export function parseRoute(hash: string): Route {
   if (hash === "#/solve") return { screen: "solve" };
   if (hash === "#/settings") return { screen: "settings" };
   if (hash === "#/help") return { screen: "help" };
+  if (hash === "#/train") return { screen: "train" };
+  if (hash === "#/train/run") return { screen: "train-run" };
+  if (hash === "#/train/timed") return { screen: "train-timed" };
   if (hash === "#/library/drafts" || hash === "#/library/puzzles")
     return {
       screen: "library",
@@ -30,6 +37,8 @@ export function parseRoute(hash: string): Route {
       ? { screen: "solve", source: { kind: solve[1] as SolveSource["kind"], id } }
       : { screen: "solve" };
   }
+  const study = /^#\/train\/study\/([0-9a-f]{16})$/.exec(hash);
+  if (study) return { screen: "train-study", id: study[1] };
   const match = /^#\/(create|play)\/([^/]+)$/.exec(hash);
   if (match) {
     const id = decode(match[2]);
@@ -45,6 +54,14 @@ export function routeHash(route: Route): string {
       return "#/settings";
     case "help":
       return "#/help";
+    case "train":
+      return "#/train";
+    case "train-run":
+      return "#/train/run";
+    case "train-timed":
+      return "#/train/timed";
+    case "train-study":
+      return `#/train/study/${route.id}`;
     case "solve":
       return route.source
         ? `#/solve/${route.source.kind}/${encodeURIComponent(route.source.id)}`

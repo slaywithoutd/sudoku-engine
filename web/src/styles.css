@@ -898,7 +898,7 @@ dialog .actions .ghost:first-child {
 }
 .home-cards {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 1.25rem;
   margin-top: 2.5rem;
 }
@@ -2265,6 +2265,221 @@ dialog .actions .ghost:first-child {
 }
 .completion button {
   background: var(--surface);
+}
+
+/* Train (D106) */
+/* One digit per attempt and read-only notes: no tools, edits or multi-select. */
+.game-train .tool-switch,
+.game-train .keypad-actions {
+  display: none;
+}
+.train-streak {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  margin-right: 0.75rem;
+}
+.train-flash {
+  margin: 0;
+  font-weight: 600;
+}
+.train-flash[data-result="correct"] {
+  color: var(--good-ink);
+}
+.train-flash[data-result="miss"] {
+  color: var(--danger-ink);
+}
+.train-kind {
+  margin: 0;
+  color: var(--muted);
+}
+.train-result,
+.train-done {
+  display: grid;
+  justify-items: start;
+  gap: 0.35rem;
+  padding: 1rem 1.1rem;
+  border-radius: var(--radius-lg);
+  corner-shape: squircle;
+  background: var(--surface);
+}
+.train-result[data-result="correct"] {
+  background: var(--good-surface);
+  color: var(--good-ink);
+}
+.train-result[data-result="miss"] {
+  background: var(--danger-surface);
+  color: var(--danger-ink);
+}
+.train-result h2,
+.train-done h2 {
+  margin: 0;
+  font-size: 1.2rem;
+}
+.train-result p,
+.train-done p {
+  margin: 0 0 0.35rem;
+}
+.train-result .actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.train-result button:not(.primary) {
+  background: var(--surface);
+}
+.train-explanation {
+  display: grid;
+  gap: 0.35rem;
+  margin: 0.25rem 0 0.5rem;
+}
+.train-explanation h3 {
+  margin: 0;
+  font-size: 1.05rem;
+}
+.train-explanation p {
+  margin: 0;
+}
+.train-page {
+  display: grid;
+  gap: 1.25rem;
+  max-width: 60rem;
+}
+.train-page .intro {
+  margin: 0;
+  color: var(--muted);
+}
+.train-overall {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+  gap: 0.75rem;
+  margin: 0;
+}
+.train-overall > div {
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius-lg);
+  corner-shape: squircle;
+  background: var(--surface);
+}
+.train-overall dt {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+.train-overall dd {
+  margin: 0.15rem 0 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.train-categories {
+  border: 0;
+  margin: 0;
+  padding: 0;
+}
+.train-categories legend {
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+.train-category-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.25rem;
+}
+.train-category {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  cursor: pointer;
+}
+.train-category .count {
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.train-section h2 {
+  font-size: 1.15rem;
+  margin: 0 0 0.5rem;
+}
+.train-stats {
+  width: 100%;
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+}
+.train-stats th,
+.train-stats td {
+  text-align: left;
+  padding: 0.45rem 0.6rem;
+  border-bottom: 1px solid var(--line, color-mix(in srgb, currentColor 15%, transparent));
+}
+.train-stats thead th {
+  color: var(--muted);
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+.train-stats tbody th {
+  font-weight: 600;
+}
+.train-history {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.35rem;
+}
+.train-history-item {
+  display: grid;
+  grid-template-columns: 5.5rem minmax(0, 1fr) 4.5rem auto auto;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.35rem 0.6rem;
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  font-variant-numeric: tabular-nums;
+}
+.train-history-item .result {
+  font-weight: 600;
+}
+.train-history-item.correct .result {
+  color: var(--good-ink);
+}
+.train-history-item.miss .result {
+  color: var(--danger-ink);
+}
+.train-history-item .when {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+.train-study {
+  display: grid;
+  gap: 0.75rem;
+}
+.train-study .actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+@media (max-width: 700px) {
+  .train-history-item {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "result time"
+      "category category"
+      "when study";
+    row-gap: 0.15rem;
+  }
+  .train-history-item .result {
+    grid-area: result;
+  }
+  .train-history-item .time {
+    grid-area: time;
+  }
+  .train-history-item .category {
+    grid-area: category;
+  }
+  .train-history-item .when {
+    grid-area: when;
+  }
+  .train-history-item button {
+    grid-area: study;
+  }
 }
 
 /* Import dialog */

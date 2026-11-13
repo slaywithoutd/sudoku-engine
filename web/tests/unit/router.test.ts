@@ -1,9 +1,15 @@
 import { expect, test } from "vitest";
 import { parseRoute, routeHash, type Route } from "../../src/app/router";
-test.each(["", "garbage", "#/play/", "#/play/%xx", "#/library/nope", "#/play/a/b"])(
-  "bad route %s falls home",
-  (hash) => expect(parseRoute(hash)).toEqual({ screen: "home" }),
-);
+test.each([
+  "",
+  "garbage",
+  "#/play/",
+  "#/play/%xx",
+  "#/library/nope",
+  "#/play/a/b",
+  "#/train/x",
+  "#/train/run/1",
+])("bad route %s falls home", (hash) => expect(parseRoute(hash)).toEqual({ screen: "home" }));
 test("routes roundtrip encoded identifiers", () => {
   const routes: Route[] = [
     { screen: "home" },
@@ -13,6 +19,10 @@ test("routes roundtrip encoded identifiers", () => {
     { screen: "play", id: "id" },
     { screen: "settings" },
     { screen: "help" },
+    { screen: "train" },
+    { screen: "train-run" },
+    { screen: "train-timed" },
+    { screen: "train-study", id: "0123456789abcdef" },
     { screen: "solve", source: { kind: "puzzle", id: "x/y" } },
     { screen: "solve", source: { kind: "draft", id: "d" } },
   ];

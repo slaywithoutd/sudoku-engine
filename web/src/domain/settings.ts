@@ -7,6 +7,7 @@ import {
   SHORTCUT_ACTIONS,
   SOLVER_TIME_LIMITS,
   THEMES,
+  TRAIN_REPEAT_GAPS,
   TIMER_STARTS,
   type Settings,
   type ShortcutAction,
@@ -18,6 +19,7 @@ import {
   TECHNIQUE_PRESET_IDS,
   techniqueRow,
 } from "../solver/techniques/technique-sets";
+import { TRAIN_CATEGORY_PATTERN } from "./training";
 
 /** The preset value that selects the custom set (`solverTechniquesOff`). */
 export const CUSTOM_TECHNIQUE_SET = "custom";
@@ -74,6 +76,9 @@ export function defaultSettings(): Settings {
     solverTimeLimitS: 60,
     solverTechniquePreset: DEFAULT_TECHNIQUE_PRESET,
     solverTechniquesOff: [],
+    trainShowClock: true,
+    trainCategoriesOff: [],
+    trainRepeatGap: 10,
   };
 }
 
@@ -88,11 +93,36 @@ const CHOICES: { [K in keyof Settings]?: readonly unknown[] } = {
   palette: PALETTES,
   solverAutoplayMs: AUTOPLAY_SPEEDS,
   solverTimeLimitS: SOLVER_TIME_LIMITS,
+  trainRepeatGap: TRAIN_REPEAT_GAPS,
 };
 
 /** Normalized combo such as "Ctrl+Shift+Z"; the empty string means unbound. */
 export const SHORTCUT_PATTERN =
   /^(?:(?:Ctrl\+)?(?:Alt\+)?(?:Shift\+)?[A-Za-z0-9\-=[\];',./`\\]|(?:Ctrl\+)?(?:Alt\+)?(?:Shift\+)?(?:Escape|Delete|Backspace|Enter|Space|Tab|Home|End|PageUp|PageDown|F[1-9]|F1[0-2]))?$/;
+
+/** Settings checked by their own rules below rather than by CHOICES or as booleans. */
+const VALIDATED_APART: ReadonlySet<keyof Settings> = new Set<keyof Settings>([
+  "language",
+  "shortcuts",
+  "solverTechniquePreset",
+  "solverTechniquesOff",
+  "trainCategoriesOff",
+]);
+
+/** Train categories switched off (D106): known ids, strictly ascending. */
+function trainCategoriesOff(off: unknown, invalid: (message?: string) => never): string[] {
+  if (
+    !Array.isArray(off) ||
+    !off.every(
+      (id, i) =>
+        typeof id === "string" &&
+        TRAIN_CATEGORY_PATTERN.test(id) &&
+        (i === 0 || (off[i - 1] as string) < id),
+    )
+  )
+    invalid();
+  return [...(off as string[])];
+}
 
 /**
  * Missing fields belong to older libraries and take defaults; explicit invalid
@@ -109,13 +139,7 @@ export function normalizeSettings(
   const settings = defaultSettings();
   const target = settings as unknown as Record<string, unknown>;
   for (const key of Object.keys(settings) as (keyof Settings)[]) {
-    if (
-      key === "language" ||
-      key === "shortcuts" ||
-      key === "solverTechniquePreset" ||
-      key === "solverTechniquesOff"
-    )
-      continue;
+    if (VALIDATED_APART.has(key)) continue;
     const value = raw[key];
     if (value === undefined) continue;
     const choices = CHOICES[key];
@@ -161,5 +185,7 @@ export function normalizeSettings(
       invalid();
     settings.solverTechniquesOff = [...(off as string[])];
   }
+  if (raw.trainCategoriesOff !== undefined)
+    settings.trainCategoriesOff = trainCategoriesOff(raw.trainCategoriesOff, invalid);
   return settings;
 }

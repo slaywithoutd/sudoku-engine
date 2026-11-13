@@ -26,7 +26,8 @@ export type SectionId =
   | "timer"
   | "completion"
   | "shortcuts"
-  | "solver";
+  | "solver"
+  | "train";
 export const SECTION_TITLES: Record<SectionId, string> = {
   appearance: "Appearance",
   accessibility: "Accessibility",
@@ -37,6 +38,7 @@ export const SECTION_TITLES: Record<SectionId, string> = {
   completion: "Completion",
   shortcuts: "Keyboard shortcuts",
   solver: "Solver",
+  train: "Train",
 };
 export const SHORTCUT_LABELS: Record<ShortcutAction, string> = {
   toolValue: "Digit tool",
@@ -390,6 +392,24 @@ export function renderSettingsSections(
           { value: 180, label: "3 min" },
         ],
         "A safety stop behind the work budget: a run the budget ends gives the same result every time. Longer limits help very hard puzzles",
+      ),
+    ],
+    train: () => [
+      toggle(
+        "trainShowClock",
+        "Show the clock during an attempt",
+        "It always runs; the time is shown after the answer",
+      ),
+      choice(
+        "trainRepeatGap",
+        "Repeat missed positions",
+        [
+          { value: 0, label: "Never" },
+          { value: 5, label: "After 5" },
+          { value: 10, label: "After 10" },
+          { value: 20, label: "After 20" },
+        ],
+        "A missed position comes back first after this many other positions",
       ),
     ],
   };

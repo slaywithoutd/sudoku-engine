@@ -317,25 +317,70 @@ function exactPrecount(
   }
   return { kind: "inconclusive" };
 }
+/** Cells of a classic house id (`row:3`, `column:0`, `box:8`); empty for anything else. */
+function classicHouseCells(id: unknown): number[] {
+  const match = typeof id === "string" ? /^(row|column|box):([0-8])$/.exec(id) : null;
+  if (!match) return [];
+  const index = Number(match[2]);
+  return Array.from({ length: 9 }, (_, k) =>
+    match[1] === "row"
+      ? index * 9 + k
+      : match[1] === "column"
+        ? k * 9 + index
+        : (Math.floor(index / 3) * 3 + Math.floor(k / 3)) * 9 + (index % 3) * 3 + (k % 3),
+  );
+}
+/** A fish's base houses: their cells that still hold the fish digit in `domains`. */
+function addFishBaseCells(
+  record: Record<string, unknown>,
+  domains: readonly number[],
+  found: Set<number>,
+): void {
+  if (!Array.isArray(record.bases) || !Number.isInteger(record.symbol)) return;
+  const bit = 1 << ((record.symbol as number) - 1);
+  for (const id of record.bases)
+    for (const cell of classicHouseCells(id)) if ((domains[cell] ?? 0) & bit) found.add(cell);
+}
+/** Pattern keys whose value is a cell or a (nested) list of cells. */
+const CELL_KEYS = new Set([
+  "cell",
+  "cells",
+  "pivot",
+  "wings",
+  "endpoints",
+  "bridge",
+  "fins",
+  "vertices",
+]);
 /**
- * Presentation-only: cells named by a technique pattern (`cell`/`cells`
- * fields at any depth, bounded). Never used for proof or acceptance.
+ * Presentation-only: cells named by a technique pattern (bounded walk). Cell
+ * fields are `cell`/`cells` and the wing, short-path and fish fields above; a
+ * fish's base houses (`bases` with its `symbol`) contribute their cells that
+ * still hold the symbol in `domains`, the candidates before the step. Never
+ * used for proof or acceptance.
  */
-export function patternCells(pattern: unknown): number[] {
+export function patternCells(pattern: unknown, domains?: readonly number[]): number[] {
   const found = new Set<number>();
   let budget = 2000;
   const isCell = (n: unknown): n is number =>
     Number.isInteger(n) && (n as number) >= 0 && (n as number) < 81;
+  // A number under a cell key is a cell; an object there (a chain vertex) is walked as before.
+  const cellsOf = (x: unknown, nesting: number, depth: number) => {
+    if (nesting > 3 || budget-- <= 0) return;
+    if (isCell(x)) found.add(x);
+    else if (Array.isArray(x)) for (const item of x) cellsOf(item, nesting + 1, depth);
+    else if (x && typeof x === "object") walk(x, depth + 1);
+  };
   const walk = (x: unknown, depth: number) => {
     if (depth > 8 || budget-- <= 0 || !x || typeof x !== "object") return;
     if (Array.isArray(x)) {
       for (const item of x) walk(item, depth + 1);
       return;
     }
-    for (const [key, value] of Object.entries(x as Record<string, unknown>)) {
-      if (key === "cell" && isCell(value)) found.add(value);
-      else if (key === "cells" && Array.isArray(value))
-        value.forEach((item) => isCell(item) && found.add(item));
+    const record = x as Record<string, unknown>;
+    if (domains) addFishBaseCells(record, domains, found);
+    for (const [key, value] of Object.entries(record)) {
+      if (CELL_KEYS.has(key)) cellsOf(value, 0, depth);
       else walk(value, depth + 1);
     }
   };
@@ -612,7 +657,7 @@ export async function solveProblem(
             technique: event.step.proposal.technique,
             effects: event.step.proposal.effects,
             candidates: [...view.state.domains],
-            cells: patternCells(event.step.proposal.pattern),
+            cells: patternCells(event.step.proposal.pattern, view.state.domains),
             workUnits: logicalWork,
             budgetLimited: !!event.budgetLimited,
             setLimited,

@@ -45,6 +45,7 @@ import usersSvg from "lucide-static/icons/users.svg?raw";
 import boxSelectSvg from "lucide-static/icons/box-select.svg?raw";
 import panelLeftCloseSvg from "lucide-static/icons/panel-left-close.svg?raw";
 import panelLeftOpenSvg from "lucide-static/icons/panel-left-open.svg?raw";
+import timerSvg from "lucide-static/icons/timer.svg?raw";
 
 /** Custom, hand-drawn glyphs: no lucide icon depicts this app's own conventions. */
 const CUSTOM = {
@@ -93,6 +94,7 @@ const LUCIDE = {
   boxSelect: boxSelectSvg,
   sidebarClose: panelLeftCloseSvg,
   sidebarOpen: panelLeftOpenSvg,
+  train: timerSvg,
 } as const;
 export type IconName = keyof typeof CUSTOM | keyof typeof LUCIDE;
 

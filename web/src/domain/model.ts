@@ -1,3 +1,4 @@
+import type { TrainingData } from "./training";
 export type Digit = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
 export type Value = 0 | Digit;
 /** Input tools. "corner" and "center" edit notes; "color" paints the cell background. */
@@ -93,6 +94,8 @@ export const SCALES = [100, 115, 130] as const;
 export const PALETTES = ["default", "colorblind"] as const;
 export const AUTOPLAY_SPEEDS = [0, 1500, 800, 350] as const;
 export const SOLVER_TIME_LIMITS = [15, 60, 180] as const;
+/** Train: a missed position comes back after this many other attempts; 0 never (D106). */
+export const TRAIN_REPEAT_GAPS = [0, 5, 10, 20] as const;
 export const NOTE_MODIFIERS = ["Shift", "Control", "Alt", "None"] as const;
 export type NoteModifier = (typeof NOTE_MODIFIERS)[number];
 export const SHORTCUT_ACTIONS = [
@@ -162,19 +165,30 @@ export interface Settings {
    * not name is on (D105 item 4).
    */
   solverTechniquesOff: string[];
+  /** Train (D106): show the clock during an attempt (it always runs). */
+  trainShowClock: boolean;
+  /**
+   * Train categories switched off, strictly ascending (`scan` or a catalogue
+   * version such as `c04@1`); a category the list does not name is on.
+   */
+  trainCategoriesOff: string[];
+  trainRepeatGap: (typeof TRAIN_REPEAT_GAPS)[number];
 }
 /**
  * Version 3 (M2.7, D105) adds the two technique-set settings; versions 1 and
  * 2 load with their defaults (the full set). See §5.6 of
- * docs/specs/2026-11-10-technique-set-semantics.md.
+ * docs/specs/2026-11-10-technique-set-semantics.md. Version 4 (Train, D106)
+ * adds the `training` section and its settings; versions 1–3 load with an
+ * empty section and the defaults.
  */
 export interface LibraryData {
-  formatVersion: 3;
+  formatVersion: 4;
   revision: number;
   drafts: Record<string, Draft>;
   puzzles: Record<string, Puzzle>;
   sessions: Record<string, PlaySession>;
   settings: Settings;
+  training: TrainingData;
 }
 export function emptyCell(): CellState {
   return { value: 0, notes: [] };

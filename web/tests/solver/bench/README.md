@@ -26,6 +26,7 @@ Files, all test-only and free of production imports except where noted:
 | `train.ts` | Ridge fit to the fixed-point estimator model |
 | `ablate.ts` | Metrics A-F of spec §3.12 over held-out traces |
 | `eval-corpus.ts` | M2.6 evaluation corpus builder (classic only, no engine import) |
+| `training-pack.ts` | Train position pack builder (D106; imports the engine, output checked independently) |
 
 Runners live in `tests/unit/solver/build-corpus.test.ts`, `bench-sample.test.ts`
 and `bench-ablate.test.ts`; each validates the committed artefacts in the
@@ -69,3 +70,22 @@ solution equal the reference on every case. Cases marked `heavy` (Norvig
 `hard1` until T02; none since) run only with `M26_HEAVY=1`;
 `M26_BASELINE_RECORD=<file>` appends nodes and milliseconds per case for
 `docs/history/m26-baseline.md`.
+
+## Training pack
+
+`training-pack.ts` builds `src/assets/training-pack.json` (`training-pack@1`,
+spec [training puzzles](../../../../docs/specs/2026-11-10-training-puzzles.md)
+§5.2, D106): classic puzzles from `classicCase(0x7a1a0000 + i)` in seed order,
+Explain under `explain-fair@3` with the `up-to-wings-fish@1` set, a 4M-unit work
+budget and a clock that never moves. A position is the board before an accepted
+step of tier 0-2 that is neither `budgetLimited` nor `setLimited`: a `scan`
+position before a single the placed digits alone show, a `technique` position
+before a removal-only step of tier >= 1 that leaves a single where the shown
+candidates had none. At most three per source puzzle, 200 scan positions and
+120 per technique family, 500 in all, sorted by id, one per line.
+
+Rebuild with `TRAIN_PACK=write npx vitest run tests/unit/training-pack-build.test.ts`
+(about 15 minutes); `TRAIN_PACK=check` rebuilds and compares byte for byte. The
+normal suite replays the first four seeds. `tests/unit/training-pack.test.ts`
+checks every committed position with the Algorithm X oracle and its own singles
+code, importing nothing from `src/solver`.

@@ -30,6 +30,9 @@ export function mountHome(container: HTMLElement, services: ScreenServices): () 
     card("Solve", "solve", "Step through a puzzle's logic and check its solution.", () =>
       services.navigate({ screen: "solve" }),
     ),
+    card("Train", "train", "Find the next digit against the clock and keep a streak.", () =>
+      services.navigate({ screen: "train" }),
+    ),
   );
   hero.append(cards);
   container.append(hero);

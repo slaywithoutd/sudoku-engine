@@ -13,16 +13,37 @@ import {
   type Value,
 } from "./model";
 import { normalizeSettings } from "./settings";
+import {
+  ATTEMPT_RING,
+  RECENT_TIMES,
+  RUN_RING,
+  TIMED_RUN_MISSES,
+  TIMED_RUN_MS,
+  TRAIN_CATEGORY_PATTERN,
+  type TimedRun,
+  emptyTraining,
+  type CategoryRecord,
+  type MissedRecord,
+  type PositionRecord,
+  type TrainingAttempt,
+  type TrainingData,
+  type TrainingResult,
+} from "./training";
 import { sameCell } from "./editor";
 import { defined, lookup } from "./invariants";
 import { safeId } from "./library";
 import { conflictingCells } from "./classic";
 export interface BackupEnvelope {
   format: "sudoku-engine-backup";
-  /** 3 since M2.7 (D105); versions 1 and 2 are read and migrated. */
-  version: 3;
+  /** 4 since Train (D106); versions 1–3 are read and migrated. */
+  version: 4;
   exportedAt: string;
   data: LibraryData;
+  /**
+   * False for a version 1–3 backup: it had no training section, so restoring
+   * its (empty) training data would only erase the local statistics.
+   */
+  trainingIncluded?: boolean;
 }
 export interface RestorePreview {
   data: LibraryData;
@@ -153,11 +174,134 @@ function editor(
     future,
   };
 }
+const RESULTS: readonly TrainingResult[] = ["correct", "miss"];
+const POSITION_ID = /^[0-9a-f]{16}$/;
+function positionId(x: unknown): string {
+  const text = string(x);
+  requireValid(POSITION_ID.test(text));
+  return text;
+}
+function category(x: unknown): string {
+  const text = string(x);
+  requireValid(TRAIN_CATEGORY_PATTERN.test(text));
+  return text;
+}
+const ms = (x: unknown) => integer(x, 0, Number.MAX_SAFE_INTEGER);
+const bestMs = (x: unknown) => (x === null ? null : ms(x));
+function result(x: unknown): TrainingResult {
+  requireValid((RESULTS as readonly unknown[]).includes(x));
+  return x as TrainingResult;
+}
+function trainingCategories(x: unknown, attemptCount: number): Record<string, CategoryRecord> {
+  const categories: Record<string, CategoryRecord> = {};
+  for (const [key, raw] of Object.entries(object(x))) {
+    const record = object(raw),
+      attempts = integer(record.attempts, 1, attemptCount),
+      correct = integer(record.correct, 0, attempts),
+      recentMs = array(record.recentMs).map(ms),
+      best = bestMs(record.bestMs);
+    requireValid(
+      (best === null) === (correct === 0) &&
+        recentMs.length <= Math.min(correct, RECENT_TIMES) &&
+        (correct === 0 || recentMs.length > 0) &&
+        recentMs.every((time) => best !== null && time >= best),
+    );
+    categories[category(key)] = { attempts, correct, bestMs: best, recentMs };
+  }
+  return categories;
+}
+function trainingPositions(x: unknown, attemptCount: number): Record<string, PositionRecord> {
+  const positions: Record<string, PositionRecord> = {};
+  for (const [key, raw] of Object.entries(object(x))) {
+    const record = object(raw),
+      attempts = integer(record.attempts, 1, attemptCount),
+      correct = integer(record.correct, 0, attempts),
+      last = result(record.last),
+      best = bestMs(record.bestMs);
+    requireValid(
+      (best === null) === (correct === 0) &&
+        (last === "correct" ? correct > 0 : correct < attempts),
+    );
+    positions[positionId(key)] = { attempts, correct, last, bestMs: best };
+  }
+  return positions;
+}
+function trainingMissed(x: unknown, positions: Record<string, PositionRecord>): MissedRecord[] {
+  const missed: MissedRecord[] = array(x).map((raw) => {
+    const record = object(raw);
+    return {
+      position: positionId(record.position),
+      due: integer(record.due, 1, Number.MAX_SAFE_INTEGER),
+    };
+  });
+  requireValid(
+    new Set(missed.map((entry) => entry.position)).size === missed.length &&
+      missed.every((entry) => lookup(positions, entry.position)?.last === "miss"),
+  );
+  return missed;
+}
+function trainingAttempts(x: unknown, attemptCount: number): TrainingAttempt[] {
+  const attempts: TrainingAttempt[] = array(x).map((raw) => {
+    const record = object(raw);
+    return {
+      position: positionId(record.position),
+      category: category(record.category),
+      at: date(record.at),
+      ms: ms(record.ms),
+      result: result(record.result),
+      cell: integer(record.cell, 0, 80),
+      digit: integer(record.digit, 1, 9),
+    };
+  });
+  requireValid(attempts.length <= Math.min(ATTEMPT_RING, attemptCount));
+  return attempts;
+}
+function trainingRuns(x: unknown, attemptCount: number): TrainingData["runs"] {
+  // A version 4 library saved before timed runs existed has no `runs` yet.
+  const runs = x === undefined ? { count: 0, best: 0, recent: [] } : object(x),
+    count = integer(runs.count, 0, Number.MAX_SAFE_INTEGER),
+    recent: TimedRun[] = array(runs.recent).map((raw) => {
+      const run = object(raw),
+        misses = integer(run.misses, 0, TIMED_RUN_MISSES);
+      return {
+        at: date(run.at),
+        solved: integer(run.solved, 0, attemptCount),
+        misses,
+        ms: integer(run.ms, 0, TIMED_RUN_MS),
+      };
+    }),
+    best = integer(runs.best, 0, attemptCount);
+  requireValid(
+    recent.length <= Math.min(count, RUN_RING) &&
+      (count === 0) === (recent.length === 0) &&
+      (count > 0 || best === 0) &&
+      recent.every((run) => run.solved <= best),
+  );
+  return { count, best, recent };
+}
+/** The Train section (D106); a library before version 4 has none and starts empty. */
+function training(x: unknown, version: number): TrainingData {
+  // Older versions never wrote the section; anything there is ignored.
+  if (version < 4) return emptyTraining();
+  const section = object(x),
+    attemptCount = integer(section.attemptCount, 0, Number.MAX_SAFE_INTEGER),
+    streak = integer(section.streak, 0, attemptCount),
+    longestStreak = integer(section.longestStreak, streak, attemptCount);
+  const categories = trainingCategories(section.categories, attemptCount);
+  const positions = trainingPositions(section.positions, attemptCount);
+  const missed = trainingMissed(section.missed, positions);
+  const attempts = trainingAttempts(section.attempts, attemptCount);
+  const runs = trainingRuns(section.runs, attemptCount);
+  return { attemptCount, streak, longestStreak, categories, positions, missed, attempts, runs };
+}
 export function validateLibrary(input: unknown): LibraryData {
   const x = object(input);
   // Older versions migrate by giving missing settings their defaults.
   requireValid(
-    x.formatVersion === 1 || x.formatVersion === 2 || x.formatVersion === 3,
+    x.formatVersion === 1 ||
+      x.formatVersion === 2 ||
+      x.formatVersion === 3 ||
+      x.formatVersion === 4,
     "Unsupported data version.",
   );
   const revision = integer(x.revision, 0, Number.MAX_SAFE_INTEGER - 1),
@@ -229,32 +373,35 @@ export function validateLibrary(input: unknown): LibraryData {
     throw new Error("Invalid backup data.");
   });
   return {
-    formatVersion: 3,
+    formatVersion: 4,
     revision,
     drafts,
     puzzles,
     sessions,
     settings,
+    training: training(x.training, x.formatVersion as number),
   };
 }
 export function parseBackup(text: string): BackupEnvelope {
   const x = object(JSON.parse(text));
   requireValid(
-    x.format === "sudoku-engine-backup" && (x.version === 1 || x.version === 2 || x.version === 3),
+    x.format === "sudoku-engine-backup" &&
+      (x.version === 1 || x.version === 2 || x.version === 3 || x.version === 4),
     "Backup format or version is not supported.",
   );
   return {
     format: "sudoku-engine-backup",
-    version: 3,
+    version: 4,
     exportedAt: date(x.exportedAt),
     data: validateLibrary(x.data),
+    trainingIncluded: x.version === 4,
   };
 }
 export function exportBackup(data: LibraryData, now: string): string {
   return JSON.stringify(
     {
       format: "sudoku-engine-backup",
-      version: 3,
+      version: 4,
       exportedAt: date(now),
       data: validateLibrary(data),
     },
@@ -268,6 +415,8 @@ export function previewRestore(
   incoming: BackupEnvelope,
   nextId: () => string,
   restoreSettings: boolean,
+  /** Train (D106): replace the local training statistics with the backup's. */
+  restoreTraining = false,
 ): RestorePreview {
   const local = validateLibrary(current),
     source = validateLibrary(incoming.data);
@@ -341,6 +490,7 @@ export function previewRestore(
     }
   }
   if (restoreSettings) data.settings = source.settings;
+  if (restoreTraining && incoming.trainingIncluded !== false) data.training = source.training;
   result.data = validateLibrary(data);
   return result;
 }
