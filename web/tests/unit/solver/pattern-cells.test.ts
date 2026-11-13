@@ -4,13 +4,15 @@ import { patternCells } from "../../../src/solver/classic-run";
 // Presentation-only cells of a step (Train T1 review, D106): the Solve screen
 // and the training pack draw them as the step's reasoning.
 test("cell and cells fields at any depth, as before", () => {
-  expect(patternCells({ a: { cell: 7 }, b: [{ cells: [3, 1] }] })).toEqual([1, 3, 7]);
+  expect(patternCells({ outer: { cell: 7 }, list: [{ cells: [3, 1] }] })).toEqual([1, 3, 7]);
   expect(patternCells({ cell: 81, cells: [-1, 2.5, "4"] })).toEqual([]);
 });
 test("wing fields: pivot, wings, endpoints, bridge", () => {
-  expect(patternCells({ alias: "XY-Wing", pivot: 40, wings: [36, 44], x: 1, y: 2, z: 3 })).toEqual([
-    36, 40, 44,
-  ]);
+  // An XY-Wing pattern as the engine emits it: its digit fields x, y, z are not cells.
+  const xyWing: unknown = JSON.parse(
+    '{"alias":"XY-Wing","pivot":40,"wings":[36,44],"x":1,"y":2,"z":3}',
+  );
+  expect(patternCells(xyWing)).toEqual([36, 40, 44]);
   expect(
     patternCells({ alias: "W-Wing", endpoints: [0, 80], bridge: [9, 17], cover: "row:1" }),
   ).toEqual([0, 9, 17, 80]);

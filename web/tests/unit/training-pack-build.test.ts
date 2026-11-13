@@ -34,13 +34,16 @@ describe("training pack build", () => {
     const pack = JSON.parse(readFileSync(packPath, "utf8")) as TrainingPack;
     for (const seed of seeds(4)) {
       const trace = await traceSeed(seed);
-      for (const p of pack.positions.filter((entry) => entry.source.seed === seed)) {
-        const step = trace?.steps[p.source.step];
-        expect(step?.technique).toBe(p.technique);
+      for (const position of pack.positions.filter((entry) => entry.source.seed === seed)) {
+        const step = trace?.steps[position.source.step];
+        expect(step?.technique).toBe(position.technique);
         expect(step?.budgetLimited).toBe(false);
         expect(step?.setLimited).toBeUndefined();
-        const before = p.source.step === 0 ? trace?.givens : trace?.steps[p.source.step - 1].values;
-        expect(before?.join("")).toBe(p.values);
+        const before =
+          position.source.step === 0
+            ? trace?.givens
+            : trace?.steps[position.source.step - 1].values;
+        expect(before?.join("")).toBe(position.values);
       }
     }
   }, 300_000);

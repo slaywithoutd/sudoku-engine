@@ -177,14 +177,14 @@ function editor(
 const RESULTS: readonly TrainingResult[] = ["correct", "miss"];
 const POSITION_ID = /^[0-9a-f]{16}$/;
 function positionId(x: unknown): string {
-  const s = string(x);
-  requireValid(POSITION_ID.test(s));
-  return s;
+  const text = string(x);
+  requireValid(POSITION_ID.test(text));
+  return text;
 }
 function category(x: unknown): string {
-  const s = string(x);
-  requireValid(TRAIN_CATEGORY_PATTERN.test(s));
-  return s;
+  const text = string(x);
+  requireValid(TRAIN_CATEGORY_PATTERN.test(text));
+  return text;
 }
 const ms = (x: unknown) => integer(x, 0, Number.MAX_SAFE_INTEGER);
 const bestMs = (x: unknown) => (x === null ? null : ms(x));
@@ -192,21 +192,14 @@ function result(x: unknown): TrainingResult {
   requireValid((RESULTS as readonly unknown[]).includes(x));
   return x as TrainingResult;
 }
-/** The Train section (D106); a library before version 4 has none and starts empty. */
-function training(x: unknown, version: number): TrainingData {
-  // Older versions never wrote the section; anything there is ignored.
-  if (version < 4) return emptyTraining();
-  const t = object(x),
-    attemptCount = integer(t.attemptCount, 0, Number.MAX_SAFE_INTEGER),
-    streak = integer(t.streak, 0, attemptCount),
-    longestStreak = integer(t.longestStreak, streak, attemptCount);
+function trainingCategories(x: unknown, attemptCount: number): Record<string, CategoryRecord> {
   const categories: Record<string, CategoryRecord> = {};
-  for (const [key, raw] of Object.entries(object(t.categories))) {
-    const c = object(raw),
-      attempts = integer(c.attempts, 1, attemptCount),
-      correct = integer(c.correct, 0, attempts),
-      recentMs = array(c.recentMs).map(ms),
-      best = bestMs(c.bestMs);
+  for (const [key, raw] of Object.entries(object(x))) {
+    const record = object(raw),
+      attempts = integer(record.attempts, 1, attemptCount),
+      correct = integer(record.correct, 0, attempts),
+      recentMs = array(record.recentMs).map(ms),
+      best = bestMs(record.bestMs);
     requireValid(
       (best === null) === (correct === 0) &&
         recentMs.length <= Math.min(correct, RECENT_TIMES) &&
@@ -215,44 +208,59 @@ function training(x: unknown, version: number): TrainingData {
     );
     categories[category(key)] = { attempts, correct, bestMs: best, recentMs };
   }
+  return categories;
+}
+function trainingPositions(x: unknown, attemptCount: number): Record<string, PositionRecord> {
   const positions: Record<string, PositionRecord> = {};
-  for (const [key, raw] of Object.entries(object(t.positions))) {
-    const p = object(raw),
-      attempts = integer(p.attempts, 1, attemptCount),
-      correct = integer(p.correct, 0, attempts),
-      last = result(p.last),
-      best = bestMs(p.bestMs);
+  for (const [key, raw] of Object.entries(object(x))) {
+    const record = object(raw),
+      attempts = integer(record.attempts, 1, attemptCount),
+      correct = integer(record.correct, 0, attempts),
+      last = result(record.last),
+      best = bestMs(record.bestMs);
     requireValid(
       (best === null) === (correct === 0) &&
         (last === "correct" ? correct > 0 : correct < attempts),
     );
     positions[positionId(key)] = { attempts, correct, last, bestMs: best };
   }
-  const missed: MissedRecord[] = array(t.missed).map((raw) => {
-    const m = object(raw);
-    return { position: positionId(m.position), due: integer(m.due, 1, Number.MAX_SAFE_INTEGER) };
+  return positions;
+}
+function trainingMissed(x: unknown, positions: Record<string, PositionRecord>): MissedRecord[] {
+  const missed: MissedRecord[] = array(x).map((raw) => {
+    const record = object(raw);
+    return {
+      position: positionId(record.position),
+      due: integer(record.due, 1, Number.MAX_SAFE_INTEGER),
+    };
   });
   requireValid(
-    new Set(missed.map((m) => m.position)).size === missed.length &&
-      missed.every((m) => positions[m.position]?.last === "miss"),
+    new Set(missed.map((entry) => entry.position)).size === missed.length &&
+      missed.every((entry) => lookup(positions, entry.position)?.last === "miss"),
   );
-  const attempts: TrainingAttempt[] = array(t.attempts).map((raw) => {
-    const a = object(raw);
+  return missed;
+}
+function trainingAttempts(x: unknown, attemptCount: number): TrainingAttempt[] {
+  const attempts: TrainingAttempt[] = array(x).map((raw) => {
+    const record = object(raw);
     return {
-      position: positionId(a.position),
-      category: category(a.category),
-      at: date(a.at),
-      ms: ms(a.ms),
-      result: result(a.result),
-      cell: integer(a.cell, 0, 80),
-      digit: integer(a.digit, 1, 9),
+      position: positionId(record.position),
+      category: category(record.category),
+      at: date(record.at),
+      ms: ms(record.ms),
+      result: result(record.result),
+      cell: integer(record.cell, 0, 80),
+      digit: integer(record.digit, 1, 9),
     };
   });
   requireValid(attempts.length <= Math.min(ATTEMPT_RING, attemptCount));
+  return attempts;
+}
+function trainingRuns(x: unknown, attemptCount: number): TrainingData["runs"] {
   // A version 4 library saved before timed runs existed has no `runs` yet.
-  const r = t.runs === undefined ? { count: 0, best: 0, recent: [] } : object(t.runs),
-    count = integer(r.count, 0, Number.MAX_SAFE_INTEGER),
-    recent: TimedRun[] = array(r.recent).map((raw) => {
+  const runs = x === undefined ? { count: 0, best: 0, recent: [] } : object(x),
+    count = integer(runs.count, 0, Number.MAX_SAFE_INTEGER),
+    recent: TimedRun[] = array(runs.recent).map((raw) => {
       const run = object(raw),
         misses = integer(run.misses, 0, TIMED_RUN_MISSES);
       return {
@@ -262,14 +270,28 @@ function training(x: unknown, version: number): TrainingData {
         ms: integer(run.ms, 0, TIMED_RUN_MS),
       };
     }),
-    best = integer(r.best, 0, attemptCount);
+    best = integer(runs.best, 0, attemptCount);
   requireValid(
     recent.length <= Math.min(count, RUN_RING) &&
       (count === 0) === (recent.length === 0) &&
       (count > 0 || best === 0) &&
       recent.every((run) => run.solved <= best),
   );
-  const runs = { count, best, recent };
+  return { count, best, recent };
+}
+/** The Train section (D106); a library before version 4 has none and starts empty. */
+function training(x: unknown, version: number): TrainingData {
+  // Older versions never wrote the section; anything there is ignored.
+  if (version < 4) return emptyTraining();
+  const section = object(x),
+    attemptCount = integer(section.attemptCount, 0, Number.MAX_SAFE_INTEGER),
+    streak = integer(section.streak, 0, attemptCount),
+    longestStreak = integer(section.longestStreak, streak, attemptCount);
+  const categories = trainingCategories(section.categories, attemptCount);
+  const positions = trainingPositions(section.positions, attemptCount);
+  const missed = trainingMissed(section.missed, positions);
+  const attempts = trainingAttempts(section.attempts, attemptCount);
+  const runs = trainingRuns(section.runs, attemptCount);
   return { attemptCount, streak, longestStreak, categories, positions, missed, attempts, runs };
 }
 export function validateLibrary(input: unknown): LibraryData {

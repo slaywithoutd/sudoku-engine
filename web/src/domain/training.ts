@@ -3,6 +3,7 @@
  * aggregates, the missed queue and a bounded ring of recent attempts, all in
  * the library's `training` section. Pure functions; the screens own the clock.
  */
+import { lookup } from "./invariants";
 import type { TrainingPosition } from "./training-pack";
 
 /** The most recent attempts kept (spec §5.4); older ones are dropped. */
@@ -68,7 +69,10 @@ export interface TimedRun {
   /** Positions answered correctly. */
   readonly solved: number;
   readonly misses: number;
-  /** Active milliseconds the run lasted: TIMED_RUN_MS unless the misses or the positions ran out. */
+  /**
+   * Active milliseconds the run lasted: TIMED_RUN_MS unless the misses or the
+   * positions ran out.
+   */
   readonly ms: number;
 }
 export interface RunRecord {
@@ -123,11 +127,11 @@ export function categoryLabel(category: string): string {
   return FAMILY_LABELS[category] ?? category;
 }
 /** Categories sorted for display: scanning first, then by the catalogue id. */
-export function compareCategories(a: string, b: string): number {
-  if (a === b) return 0;
-  if (a === "scan") return -1;
-  if (b === "scan") return 1;
-  return a < b ? -1 : 1;
+export function compareCategories(left: string, right: string): number {
+  if (left === right) return 0;
+  if (left === "scan") return -1;
+  if (right === "scan") return 1;
+  return left < right ? -1 : 1;
 }
 
 const SUBSET_SIZES: Readonly<Record<number, string>> = { 2: "Pair", 3: "Triple", 4: "Quad" };
@@ -161,13 +165,40 @@ export function isCorrect(
 /** Median of a list (mean of the middle two for an even length); null when empty. */
 export function median(values: readonly number[]): number | null {
   if (!values.length) return null;
-  const sorted = [...values].sort((a, b) => a - b),
+  const sorted = [...values].sort((left, right) => left - right),
     middle = Math.floor(sorted.length / 2);
   return sorted.length % 2 ? sorted[middle] : (sorted[middle - 1] + sorted[middle]) / 2;
 }
 
 const best = (current: number | null, ms: number) =>
   current === null ? ms : Math.min(current, ms);
+
+const NO_CATEGORY: CategoryRecord = { attempts: 0, correct: 0, bestMs: null, recentMs: [] };
+function nextCategory(
+  category: CategoryRecord,
+  attempt: TrainingAttempt,
+  correct: boolean,
+): CategoryRecord {
+  return {
+    attempts: category.attempts + 1,
+    correct: category.correct + (correct ? 1 : 0),
+    bestMs: correct ? best(category.bestMs, attempt.ms) : category.bestMs,
+    recentMs: correct ? [...category.recentMs, attempt.ms].slice(-RECENT_TIMES) : category.recentMs,
+  };
+}
+function nextPositionRecord(
+  position: PositionRecord | undefined,
+  attempt: TrainingAttempt,
+  correct: boolean,
+): PositionRecord {
+  const bestMs = position ? position.bestMs : null;
+  return {
+    attempts: (position ? position.attempts : 0) + 1,
+    correct: (position ? position.correct : 0) + (correct ? 1 : 0),
+    last: attempt.result,
+    bestMs: correct ? best(bestMs, attempt.ms) : bestMs,
+  };
+}
 
 /**
  * Records one answered attempt. `repeatGap` 0 never queues a miss; otherwise a
@@ -182,13 +213,8 @@ export function recordAttempt(
   const correct = attempt.result === "correct",
     attemptCount = data.attemptCount + 1,
     streak = correct ? data.streak + 1 : 0;
-  const category = data.categories[attempt.category] ?? {
-      attempts: 0,
-      correct: 0,
-      bestMs: null,
-      recentMs: [],
-    },
-    position = data.positions[attempt.position];
+  const category = lookup(data.categories, attempt.category) ?? NO_CATEGORY,
+    position = lookup(data.positions, attempt.position);
   const missed = data.missed.filter((entry) => entry.position !== attempt.position);
   if (!correct && repeatGap > 0)
     missed.push({ position: attempt.position, due: attemptCount + repeatGap });
@@ -199,23 +225,11 @@ export function recordAttempt(
     longestStreak: Math.max(data.longestStreak, streak),
     categories: {
       ...data.categories,
-      [attempt.category]: {
-        attempts: category.attempts + 1,
-        correct: category.correct + (correct ? 1 : 0),
-        bestMs: correct ? best(category.bestMs, attempt.ms) : category.bestMs,
-        recentMs: correct
-          ? [...category.recentMs, attempt.ms].slice(-RECENT_TIMES)
-          : category.recentMs,
-      },
+      [attempt.category]: nextCategory(category, attempt, correct),
     },
     positions: {
       ...data.positions,
-      [attempt.position]: {
-        attempts: (position?.attempts ?? 0) + 1,
-        correct: (position?.correct ?? 0) + (correct ? 1 : 0),
-        last: attempt.result,
-        bestMs: correct ? best(position?.bestMs ?? null, attempt.ms) : (position?.bestMs ?? null),
-      },
+      [attempt.position]: nextPositionRecord(position, attempt, correct),
     },
     missed,
     attempts: [...data.attempts, attempt].slice(-ATTEMPT_RING),
@@ -241,7 +255,7 @@ export function categoryStats(data: TrainingData): CategoryStats[] {
       bestMs: record.bestMs,
       medianMs: median(record.recentMs),
     }))
-    .sort((a, b) => compareCategories(a.category, b.category));
+    .sort((left, right) => compareCategories(left.category, right.category));
 }
 
 export interface OverallStats {
@@ -288,15 +302,15 @@ export function nextPosition(
   },
 ): TrainingPosition | undefined {
   const off = new Set(options.categoriesOff),
-    eligible = positions.filter((p) => !off.has(categoryOf(p)));
-  const byId = new Map(eligible.map((p) => [p.id, p] as const));
+    eligible = positions.filter((position) => !off.has(categoryOf(position)));
+  const byId = new Map(eligible.map((position) => [position.id, position] as const));
   if (options.repeatGap !== 0)
     for (const entry of data.missed) {
       const position = byId.get(entry.position);
       if (position && entry.due <= data.attemptCount && position.id !== options.previous)
         return position;
     }
-  const fresh = eligible.filter((p) => !options.shown.has(p.id));
+  const fresh = eligible.filter((position) => !options.shown.has(position.id));
   if (!fresh.length) return undefined;
   return fresh[Math.min(fresh.length - 1, Math.floor(options.random() * fresh.length))];
 }

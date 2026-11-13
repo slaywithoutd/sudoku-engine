@@ -112,6 +112,9 @@ describe("training transitions", () => {
     const data = recordAttempt(emptyTraining(), attempt(hex(1), "miss"), 0);
     expect(data.missed).toEqual([]);
   });
+});
+
+describe("training queue, categories and ring", () => {
   test("a second miss re-queues once; a correct answer takes the position off", () => {
     let data = recordAttempt(emptyTraining(), attempt(hex(1), "miss"), 5);
     data = recordAttempt(data, attempt(hex(1), "miss"), 5);
@@ -166,6 +169,27 @@ describe("statistics", () => {
     // Times 600..2500 remain: median of 20 values = (1500 + 1600) / 2.
     expect(categoryStats(data)[0]).toMatchObject({ medianMs: 1550, bestMs: 100, accuracy: 1 });
   });
+  test("overall statistics and accuracy", () => {
+    let data = recordAttempt(emptyTraining(), attempt(hex(1), "correct"), 10);
+    data = recordAttempt(data, attempt(hex(2), "miss"), 10);
+    data = recordAttempt(data, attempt(hex(1), "correct"), 10);
+    expect(overallStats(data)).toEqual({
+      streak: 1,
+      longestStreak: 1,
+      positionsSeen: 2,
+      missedWaiting: 1,
+    });
+    expect(categoryStats(data)[0].accuracy).toBeCloseTo(2 / 3);
+  });
+  test("any digit equal to the solution is correct", () => {
+    const scanPosition = position(hex(1), "scan");
+    expect(isCorrect(scanPosition, 0, 5)).toBe(true);
+    expect(isCorrect(scanPosition, 80, 9)).toBe(true);
+    expect(isCorrect(scanPosition, 0, 4)).toBe(false);
+  });
+});
+
+describe("categories and labels", () => {
   test("category assignment and labels", () => {
     expect(categoryOf(position(hex(1), "scan", "c01@1"))).toBe("scan");
     expect(categoryOf(position(hex(1), "technique", "c04@1"))).toBe("c04@1");
@@ -206,24 +230,6 @@ describe("statistics", () => {
         position(hex(3), "technique", "c04@1"),
       ]),
     ).toEqual(["scan", "c04@1", "c06@1"]);
-  });
-  test("overall statistics and accuracy", () => {
-    let data = recordAttempt(emptyTraining(), attempt(hex(1), "correct"), 10);
-    data = recordAttempt(data, attempt(hex(2), "miss"), 10);
-    data = recordAttempt(data, attempt(hex(1), "correct"), 10);
-    expect(overallStats(data)).toEqual({
-      streak: 1,
-      longestStreak: 1,
-      positionsSeen: 2,
-      missedWaiting: 1,
-    });
-    expect(categoryStats(data)[0].accuracy).toBeCloseTo(2 / 3);
-  });
-  test("any digit equal to the solution is correct", () => {
-    const p = position(hex(1), "scan");
-    expect(isCorrect(p, 0, 5)).toBe(true);
-    expect(isCorrect(p, 80, 9)).toBe(true);
-    expect(isCorrect(p, 0, 4)).toBe(false);
   });
 });
 
@@ -272,7 +278,7 @@ describe("position choice", () => {
     let data = recordAttempt(emptyTraining(), attempt(hex(2), "miss"), 10);
     data = recordAttempt(data, attempt(hex(99), "miss"), 10);
     expect(overallStats(data).missedWaiting).toBe(2);
-    expect(overallStats(data, new Set(pack.map((p) => p.id)))).toMatchObject({
+    expect(overallStats(data, new Set(pack.map((entry) => entry.id)))).toMatchObject({
       missedWaiting: 1,
       positionsSeen: 1,
     });
@@ -289,23 +295,24 @@ describe("position choice", () => {
   });
 });
 
+const storedLibrary = () =>
+  startPlay(finishDraft(createDraft(emptyLibrary(), "d", NOW), "d", "p", NOW), "p", NOW);
+const trainedLibrary = () => {
+  let training = recordAttempt(emptyTraining(), attempt(hex(1), "correct", 2100), 10);
+  training = recordAttempt(training, attempt(hex(2), "miss", 800, "c04@1"), 10);
+  const data = storedLibrary();
+  data.training = training;
+  data.settings.trainCategoriesOff = ["c06@1", "scan"];
+  data.settings.trainRepeatGap = 5;
+  data.settings.trainShowClock = false;
+  return data;
+};
+
 describe("storage (format version 4)", () => {
-  const library = () =>
-    startPlay(finishDraft(createDraft(emptyLibrary(), "d", NOW), "d", "p", NOW), "p", NOW);
-  const trained = () => {
-    let training = recordAttempt(emptyTraining(), attempt(hex(1), "correct", 2100), 10);
-    training = recordAttempt(training, attempt(hex(2), "miss", 800, "c04@1"), 10);
-    const data = library();
-    data.training = training;
-    data.settings.trainCategoriesOff = ["c06@1", "scan"];
-    data.settings.trainRepeatGap = 5;
-    data.settings.trainShowClock = false;
-    return data;
-  };
   test.each([1, 2, 3])(
     "a version %i library and backup load with empty training data",
     (version) => {
-      const data = structuredClone(library()) as unknown as Record<string, any>;
+      const data = structuredClone(storedLibrary()) as unknown as Record<string, any>;
       data.formatVersion = version;
       delete data.training;
       for (const key of ["trainShowClock", "trainCategoriesOff", "trainRepeatGap"])
@@ -326,7 +333,7 @@ describe("storage (format version 4)", () => {
     },
   );
   test("a version 4 backup round-trips training data and settings", () => {
-    const data = trained(),
+    const data = trainedLibrary(),
       text = exportBackup(data, NOW);
     expect(JSON.parse(text)).toMatchObject({ version: 4, data: { formatVersion: 4 } });
     const back = parseBackup(text).data;
@@ -339,8 +346,8 @@ describe("storage (format version 4)", () => {
     expect(parseBackup(exportBackup(back, NOW)).data).toEqual(back);
   });
   test("restore keeps local training unless asked to replace it", () => {
-    const local = library(),
-      source = trained(),
+    const local = storedLibrary(),
+      source = trainedLibrary(),
       incoming = parseBackup(exportBackup(source, NOW));
     expect(previewRestore(local, incoming, () => "x", false).data.training).toEqual(
       emptyTraining(),
@@ -349,7 +356,7 @@ describe("storage (format version 4)", () => {
       source.training,
     );
     // A version 3 backup has no training section: it never erases local statistics.
-    const old = structuredClone(library()) as unknown as Record<string, any>;
+    const old = structuredClone(storedLibrary()) as unknown as Record<string, any>;
     old.formatVersion = 3;
     delete old.training;
     const v3 = parseBackup(
@@ -360,34 +367,49 @@ describe("storage (format version 4)", () => {
     const kept = { ...local, training: source.training };
     expect(previewRestore(kept, v3, () => "x", false, true).data.training).toEqual(source.training);
   });
-  test.each<[string, (t: any) => void]>([
-    ["a streak above the attempt count", (t) => (t.streak = 9)],
-    ["a longest streak below the streak", (t) => ((t.streak = 1), (t.longestStreak = 0))],
-    ["an unknown category", (t) => (t.categories.bogus = t.categories.scan)],
-    ["more correct than attempts", (t) => (t.categories.scan.correct = 5)],
-    ["a best time without a correct answer", (t) => (t.categories["c04@1"].bestMs = 5)],
-    ["a malformed position id", (t) => (t.positions.xyz = t.positions[hex(1)])],
-    ["a missed position never missed", (t) => t.missed.push({ position: hex(1), due: 4 })],
-    ["a duplicated missed entry", (t) => t.missed.push({ ...t.missed[0] })],
-    ["a wrong result", (t) => (t.attempts[0].result = "maybe")],
-    ["a digit out of range", (t) => (t.attempts[0].digit = 0)],
-    ["more attempts than recorded", (t) => (t.attemptCount = 1)],
-    ["a missing section", (t) => Object.keys(t).forEach((k) => delete t[k])],
+});
+
+describe("storage validation (format version 4)", () => {
+  test.each<[string, (training: any) => void]>([
+    ["a streak above the attempt count", (training) => (training.streak = 9)],
+    [
+      "a longest streak below the streak",
+      (training) => ((training.streak = 1), (training.longestStreak = 0)),
+    ],
+    ["an unknown category", (training) => (training.categories.bogus = training.categories.scan)],
+    ["more correct than attempts", (training) => (training.categories.scan.correct = 5)],
+    [
+      "a best time without a correct answer",
+      (training) => (training.categories["c04@1"].bestMs = 5),
+    ],
+    [
+      "a malformed position id",
+      (training) => (training.positions.xyz = training.positions[hex(1)]),
+    ],
+    [
+      "a missed position never missed",
+      (training) => training.missed.push({ position: hex(1), due: 4 }),
+    ],
+    ["a duplicated missed entry", (training) => training.missed.push({ ...training.missed[0] })],
+    ["a wrong result", (training) => (training.attempts[0].result = "maybe")],
+    ["a digit out of range", (training) => (training.attempts[0].digit = 0)],
+    ["more attempts than recorded", (training) => (training.attemptCount = 1)],
+    ["a missing section", (training) => Object.keys(training).forEach((k) => delete training[k])],
   ])("rejects %s", (_name, mutate) => {
-    const data = structuredClone(trained()) as unknown as Record<string, any>;
+    const data = structuredClone(trainedLibrary()) as unknown as Record<string, any>;
     mutate(data.training);
     expect(() => validateLibrary(data)).toThrow("Invalid backup data.");
   });
   test.each<unknown>([["scan", "scan"], ["c04@1", "c03@1"], ["Fish"], "scan", [1]])(
     "rejects trainCategoriesOff %j",
     (off) => {
-      const data = structuredClone(library()) as unknown as Record<string, any>;
+      const data = structuredClone(storedLibrary()) as unknown as Record<string, any>;
       data.settings.trainCategoriesOff = off;
       expect(() => validateLibrary(data)).toThrow("Invalid backup data.");
     },
   );
   test("rejects a repeat gap outside its choices", () => {
-    const data = structuredClone(library()) as unknown as Record<string, any>;
+    const data = structuredClone(storedLibrary()) as unknown as Record<string, any>;
     data.settings.trainRepeatGap = 7;
     expect(() => validateLibrary(data)).toThrow("Invalid backup data.");
   });
@@ -427,12 +449,12 @@ describe("timed runs (T6)", () => {
     expect(data.runs.count).toBe(RUN_RING + 5);
     expect(validateLibrary({ ...emptyLibrary(), training: data }).training).toEqual(data);
   });
-  test.each<[string, (r: any) => void]>([
-    ["a run longer than the time limit", (r) => (r.recent[0].ms = TIMED_RUN_MS + 1)],
-    ["more misses than allowed", (r) => (r.recent[0].misses = 4)],
-    ["a best below a recorded run", (r) => (r.best = 1)],
-    ["runs without a count", (r) => (r.count = 0)],
-    ["a best without any run", (r) => ((r.count = 0), (r.recent = []))],
+  test.each<[string, (runs: any) => void]>([
+    ["a run longer than the time limit", (runs) => (runs.recent[0].ms = TIMED_RUN_MS + 1)],
+    ["more misses than allowed", (runs) => (runs.recent[0].misses = 4)],
+    ["a best below a recorded run", (runs) => (runs.best = 1)],
+    ["runs without a count", (runs) => (runs.count = 0)],
+    ["a best without any run", (runs) => ((runs.count = 0), (runs.recent = []))],
   ])("rejects %s", (_name, mutate) => {
     const library = { ...emptyLibrary(), training: recordRun(played(10), run(5, 0)) };
     const data = structuredClone(library) as unknown as Record<string, any>;

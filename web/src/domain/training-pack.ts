@@ -51,10 +51,11 @@ let loading: Promise<TrainingPack> | undefined;
 /** The committed pack, fetched on first use as its own chunk. */
 export function loadTrainingPack(): Promise<TrainingPack> {
   loading ??= import("../assets/training-pack.json").then((module) => {
-    const pack = module.default as unknown as TrainingPack;
-    if (pack.schema !== TRAINING_PACK_SCHEMA || !Array.isArray(pack.positions))
+    // The chunk is plain JSON: check its shape before trusting the type.
+    const loose = module.default as { readonly schema?: unknown; readonly positions?: unknown };
+    if (loose.schema !== TRAINING_PACK_SCHEMA || !Array.isArray(loose.positions))
       throw new Error("The training pack could not be read.");
-    return pack;
+    return loose as unknown as TrainingPack;
   });
   loading.catch(() => (loading = undefined));
   return loading;

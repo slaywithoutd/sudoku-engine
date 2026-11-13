@@ -67,8 +67,8 @@ const tierOf = new Map(coverageEntries.map((entry) => [entry.version, entry.tier
 const HOUSES: readonly (readonly number[])[] = (() => {
   const houses: number[][] = [];
   for (let i = 0; i < 9; i++) {
-    houses.push(Array.from({ length: 9 }, (_, c) => i * 9 + c));
-    houses.push(Array.from({ length: 9 }, (_, r) => r * 9 + i));
+    houses.push(Array.from({ length: 9 }, (_, column) => i * 9 + column));
+    houses.push(Array.from({ length: 9 }, (_, row) => row * 9 + i));
     const br = Math.floor(i / 3) * 3,
       bc = (i % 3) * 3;
     houses.push(Array.from({ length: 9 }, (_, k) => (br + Math.floor(k / 3)) * 9 + bc + (k % 3)));
@@ -78,7 +78,7 @@ const HOUSES: readonly (readonly number[])[] = (() => {
 
 /** Candidates from the placed digits alone (rows, columns, boxes), 0 for a filled cell. */
 export function scanCandidates(values: readonly number[]): number[] {
-  const masks = values.map((v) => (v ? 0 : 511));
+  const masks = values.map((value) => (value ? 0 : 511));
   for (const house of HOUSES) {
     let used = 0;
     for (const cell of house) if (values[cell]) used |= 1 << (values[cell] - 1);
@@ -99,7 +99,7 @@ export function singlesOf(values: readonly number[], masks: readonly number[]): 
       const spots = house.filter((cell) => !values[cell] && masks[cell] & (1 << (digit - 1)));
       if (spots.length === 1) found.set(spots[0], digit);
     }
-  return [...found].sort((a, b) => a[0] - b[0]);
+  return [...found].sort((left, right) => left[0] - right[0]);
 }
 
 export function positionId(
@@ -161,94 +161,130 @@ export interface SeedHarvest {
   readonly scan?: TrainingPosition;
 }
 
+/** One step of a trace, with what harvesting it needs to know. */
+interface HarvestStep {
+  readonly seed: number;
+  readonly givens: readonly number[];
+  readonly solution: readonly number[];
+  readonly step: Step;
+  readonly index: number;
+  /** The board before the step. */
+  readonly values: readonly number[];
+  readonly tier: number;
+}
+
+function sourceOf({ seed, index }: HarvestStep) {
+  return {
+    seed,
+    step: index,
+    policy: PACK_POLICY,
+    method: EXACT_METHOD,
+  };
+}
+
+/** The event's values are the board after the step: the board before plus its placements. */
+function checkBoardAfter(seed: number, index: number, values: readonly number[], step: Step): void {
+  const expected = [...values];
+  for (const effect of step.effects)
+    if (effect.kind === "place") expected[effect.cell] = effect.symbol;
+  if (expected.join("") !== step.values.join(""))
+    throw new Error(`seed ${seed} step ${index}: values are not the board after the step`);
+}
+
+/** A tier 0 step whose placement is a single from the placed digits alone. */
+function scanCandidate(harvest: HarvestStep): Candidate | undefined {
+  const { givens, solution, step, index, values, tier } = harvest;
+  const empty = values.filter((value) => !value).length;
+  const placed = step.effects.find((effect) => effect.kind === "place");
+  if (!placed) return undefined;
+  const targets = singlesOf(values, scanCandidates(values));
+  if (!targets.some(([cell, digit]) => cell === placed.cell && digit === placed.symbol))
+    return undefined;
+  return {
+    position: {
+      id: positionId(givens, values, "scan"),
+      kind: "scan",
+      givens: grid(givens),
+      values: grid(values),
+      solution: grid(solution),
+      tier,
+      technique: step.technique,
+      name: step.name,
+      cells: [...step.cells].sort((left, right) => left - right),
+      removed: [],
+      targets,
+      source: sourceOf(harvest),
+    },
+    // Fewest singles to find, then the emptiest board, then the earliest state.
+    rank: [targets.length, -empty, index],
+  };
+}
+
+/** A removal-only step with no single before it and at least one after it. */
+function techniqueCandidate(harvest: HarvestStep): Candidate | undefined {
+  const { givens, solution, step, index, values, tier } = harvest;
+  if (!step.effects.length || step.effects.some((effect) => effect.kind !== "remove"))
+    return undefined;
+  const shown = step.candidates.map((mask, cell) => (values[cell] ? 0 : mask));
+  if (singlesOf(values, shown).length) return undefined;
+  const after = [...shown];
+  for (const effect of step.effects) after[effect.cell] &= ~(1 << (effect.symbol - 1));
+  const targets = singlesOf(values, after);
+  if (!targets.length) return undefined;
+  return {
+    position: {
+      id: positionId(givens, values, "technique"),
+      kind: "technique",
+      givens: grid(givens),
+      values: grid(values),
+      candidates: shown,
+      solution: grid(solution),
+      tier,
+      technique: step.technique,
+      name: step.name,
+      cells: [...step.cells].sort((left, right) => left - right),
+      removed: step.effects
+        .map((effect) => [effect.cell, effect.symbol] as [number, number])
+        .sort((left, right) => left[0] - right[0] || left[1] - right[1]),
+      targets,
+      source: sourceOf(harvest),
+    },
+    // Highest tier first, then the earliest state.
+    rank: [-tier, index],
+  };
+}
+
+function byRank(left: Candidate, right: Candidate): number {
+  for (let i = 0; i < left.rank.length; i++)
+    if (left.rank[i] !== right.rank[i]) return left.rank[i] - right.rank[i];
+  return 0;
+}
+
 /** Every eligible position of one source puzzle. */
 export async function harvestSeed(seed: number): Promise<SeedHarvest> {
   const trace = await traceSeed(seed);
   if (!trace) return { techniques: [] };
   const { givens, solution, steps } = trace;
-  const source = (step: number) => ({
-    seed,
-    step,
-    policy: PACK_POLICY,
-    method: EXACT_METHOD,
-  });
   const scans: Candidate[] = [],
     techniques: Candidate[] = [];
   let before: readonly number[] = givens;
   for (const [index, step] of steps.entries()) {
     const values = before;
     before = step.values;
-    // The event's values are the board after the step: the board before plus its placements.
-    const expected = [...values];
-    for (const effect of step.effects)
-      if (effect.kind === "place") expected[effect.cell] = effect.symbol;
-    if (expected.join("") !== before.join(""))
-      throw new Error(`seed ${seed} step ${index}: values are not the board after the step`);
+    checkBoardAfter(seed, index, values, step);
     const tier = tierOf.get(step.technique);
     // A simpler step may exist past a capped or switched-off job: never harvested.
     if (tier === undefined || tier > PACK_MAX_TIER || step.budgetLimited || step.setLimited)
       continue;
-    const empty = values.filter((v) => !v).length;
+    const harvest = { seed, givens, solution, step, index, values, tier };
     if (tier === 0) {
-      const placed = step.effects.find((effect) => effect.kind === "place");
-      if (!placed) continue;
-      const targets = singlesOf(values, scanCandidates(values));
-      if (!targets.some(([cell, digit]) => cell === placed.cell && digit === placed.symbol))
-        continue;
-      scans.push({
-        position: {
-          id: positionId(givens, values, "scan"),
-          kind: "scan",
-          givens: grid(givens),
-          values: grid(values),
-          solution: grid(solution),
-          tier,
-          technique: step.technique,
-          name: step.name,
-          cells: [...step.cells].sort((a, b) => a - b),
-          removed: [],
-          targets,
-          source: source(index),
-        },
-        // Fewest singles to find, then the emptiest board, then the earliest state.
-        rank: [targets.length, -empty, index],
-      });
+      const candidate = scanCandidate(harvest);
+      if (candidate) scans.push(candidate);
       continue;
     }
-    if (!step.effects.length || step.effects.some((effect) => effect.kind !== "remove")) continue;
-    const shown = step.candidates.map((mask, cell) => (values[cell] ? 0 : mask));
-    if (singlesOf(values, shown).length) continue;
-    const after = [...shown];
-    for (const effect of step.effects) after[effect.cell] &= ~(1 << (effect.symbol - 1));
-    const targets = singlesOf(values, after);
-    if (!targets.length) continue;
-    techniques.push({
-      position: {
-        id: positionId(givens, values, "technique"),
-        kind: "technique",
-        givens: grid(givens),
-        values: grid(values),
-        candidates: shown,
-        solution: grid(solution),
-        tier,
-        technique: step.technique,
-        name: step.name,
-        cells: [...step.cells].sort((a, b) => a - b),
-        removed: step.effects
-          .map((effect) => [effect.cell, effect.symbol] as [number, number])
-          .sort((a, b) => a[0] - b[0] || a[1] - b[1]),
-        targets,
-        source: source(index),
-      },
-      // Highest tier first, then the earliest state.
-      rank: [-tier, index],
-    });
+    const candidate = techniqueCandidate(harvest);
+    if (candidate) techniques.push(candidate);
   }
-  const byRank = (a: Candidate, b: Candidate) => {
-    for (let i = 0; i < a.rank.length; i++)
-      if (a.rank[i] !== b.rank[i]) return a.rank[i] - b.rank[i];
-    return 0;
-  };
   return {
     techniques: [...techniques].sort(byRank).map((candidate) => candidate.position),
     scan: [...scans].sort(byRank)[0]?.position,
@@ -312,7 +348,7 @@ export async function buildPack(
       positions.push(position);
     }
   }
-  positions.sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+  positions.sort((left, right) => (left.id < right.id ? -1 : left.id > right.id ? 1 : 0));
   return {
     schema: TRAINING_PACK_SCHEMA,
     generator: "tests/solver/bench/training-pack.ts",
@@ -331,5 +367,5 @@ export function* defaultSeeds(): Generator<number> {
 export function serializePack(pack: TrainingPack): string {
   const { positions, ...header } = pack;
   const head = JSON.stringify(header).slice(0, -1);
-  return `${head},"positions":[\n${positions.map((p) => JSON.stringify(p)).join(",\n")}\n]}\n`;
+  return `${head},"positions":[\n${positions.map((position) => JSON.stringify(position)).join(",\n")}\n]}\n`;
 }

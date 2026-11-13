@@ -7,16 +7,24 @@ import { cellName } from "./solver-copy";
 
 export function candidateDigits(mask: number): Digit[] {
   const result: Digit[] = [];
-  for (let d = 1; d <= 9; d++) if (mask & (1 << (d - 1))) result.push(d as Digit);
+  for (let digit = 1; digit <= 9; digit++)
+    if (mask & (1 << (digit - 1))) result.push(digit as Digit);
   return result;
 }
-/** The position as the run screen shows it: placed digits, and candidates on a technique position. */
+/**
+ * The position as the run screen shows it: placed digits, and candidates on a
+ * technique position.
+ */
 export function positionOverlay(position: TrainingPosition): BoardOverlay {
   const values = digitsOf(position.values),
     masks = position.candidates;
   return {
-    candidates: masks ? values.map((v, i) => (v ? null : candidateDigits(masks[i]))) : undefined,
-    derived: new Set(values.flatMap((v, i) => (v && position.givens[i] === "0" ? [i] : []))),
+    candidates: masks
+      ? values.map((value, i) => (value ? null : candidateDigits(masks[i])))
+      : undefined,
+    derived: new Set(
+      values.flatMap((value, i) => (value && position.givens[i] === "0" ? [i] : [])),
+    ),
   };
 }
 
@@ -47,7 +55,7 @@ export function removalText(position: Pick<TrainingPosition, "removed">): string
   for (const [cell, digit] of position.removed)
     byDigit.set(digit, [...(byDigit.get(digit) ?? []), cell]);
   return [...byDigit]
-    .sort((a, b) => a[0] - b[0])
+    .sort((left, right) => left[0] - right[0])
     .map(([digit, cells]) => `removes ${digit} from ${cells.map(cellName).join(", ")}`)
     .join("; ");
 }
