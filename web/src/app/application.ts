@@ -9,7 +9,9 @@ import { mountPlayer } from "../ui/player";
 import { mountSettings } from "../ui/settings";
 import { mountSolver } from "../ui/solver";
 import { mountHelp } from "../ui/help";
-import { mountTrainHub, mountTrainRun } from "../ui/train";
+import { mountTrainRun } from "../ui/train";
+import { mountTrainHub } from "../ui/train-hub";
+import { mountTrainStudy } from "../ui/train-study";
 import { el, button } from "../ui/dom";
 import { icon, type IconName } from "../ui/icons";
 import { fullscreenButton, isFullscreen, toggleFullscreen } from "../ui/game";
@@ -148,10 +150,14 @@ export function mountApplication(
       r.screen === "create" ||
       r.screen === "play" ||
       r.screen === "solve" ||
-      r.screen === "train-run";
+      r.screen === "train-run" ||
+      r.screen === "train-study";
     main.classList.toggle("editor-screen", game);
     for (const item of navItems) {
-      if (item.screen === r.screen || (item.screen === "train" && r.screen === "train-run"))
+      if (
+        item.screen === r.screen ||
+        (item.screen === "train" && (r.screen === "train-run" || r.screen === "train-study"))
+      )
         item.control.setAttribute("aria-current", "page");
       else item.control.removeAttribute("aria-current");
     }
@@ -182,6 +188,9 @@ export function mountApplication(
         break;
       case "train-run":
         dispose = mountTrainRun(main, services);
+        break;
+      case "train-study":
+        dispose = mountTrainStudy(main, services, r.id);
         break;
     }
   };

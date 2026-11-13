@@ -113,7 +113,9 @@ export function mountTrainRun(container: HTMLElement, services: ScreenServices):
     const resultTitle = el("h2"),
       resultText = el("p"),
       intended = el("p", undefined, "train-intended");
-    const next = button("", () => advance(true), "primary with-icon");
+    // A keyboard press of Next (click detail 0) keeps keyboard focus on the board;
+    // a mouse click leaves focus alone, so clicking the cell it would select still selects it.
+    const next = button("", (event) => advance(event.detail === 0), "primary with-icon");
     next.append(el("span", "Next"), icon("send"));
     const back = button("Back to Train", () => services.navigate({ screen: "train" }));
     const actions = el("div", undefined, "actions");
@@ -216,7 +218,7 @@ export function mountTrainRun(container: HTMLElement, services: ScreenServices):
         if (answer && next.isConnected) next.focus();
       });
     }
-    function advance(fromNext = false) {
+    function advance(fromKeyboard = false) {
       position = nextPosition(positions, services.controller.snapshot().training, {
         categoriesOff: settings().trainCategoriesOff,
         shown: run.shown,
@@ -241,8 +243,8 @@ export function mountTrainRun(container: HTMLElement, services: ScreenServices):
       render();
       // Mounted or advanced without focus: cover the board, as losing focus would.
       if (position && !pageActive()) setPaused(true);
-      // Next disappears with the result: keep keyboard focus on the board.
-      if (fromNext)
+      // Next disappears with the result: keep keyboard focus on the board (its focused cell is selected).
+      if (fromKeyboard)
         shell.root
           .querySelector<HTMLElement>('.cell[tabindex="0"]')
           ?.focus({ preventScroll: true });
@@ -340,32 +342,4 @@ export function mountTrainRun(container: HTMLElement, services: ScreenServices):
     disposed = true;
     teardown();
   };
-}
-
-/** The Train hub (spec §5.3): start a sprint. */
-export function mountTrainHub(container: HTMLElement, services: ScreenServices): () => void {
-  const page = el("div", undefined, "train-page");
-  const heading = el("div", undefined, "page-heading");
-  const start = button(
-    "",
-    () => {
-      startSprint();
-      services.navigate({ screen: "train-run" });
-    },
-    "primary with-icon",
-  );
-  start.append(icon("play"), el("span", "Start sprint"));
-  const actions = el("div", undefined, "actions");
-  actions.append(start);
-  heading.append(el("h1", "Train"), actions);
-  page.append(
-    heading,
-    el(
-      "p",
-      "Find one correct digit as fast as you can. A wrong digit ends the attempt and resets the streak. Positions come from the engine's checked explanations.",
-      "intro",
-    ),
-  );
-  container.append(page);
-  return () => {};
 }

@@ -2326,6 +2326,123 @@ dialog .actions .ghost:first-child {
   margin: 0;
   color: var(--muted);
 }
+.train-overall {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+  gap: 0.75rem;
+  margin: 0;
+}
+.train-overall > div {
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius-lg);
+  corner-shape: squircle;
+  background: var(--surface);
+}
+.train-overall dt {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+.train-overall dd {
+  margin: 0.15rem 0 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.train-categories {
+  border: 0;
+  margin: 0;
+  padding: 0;
+}
+.train-categories legend {
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+.train-category-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.25rem;
+}
+.train-category {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  cursor: pointer;
+}
+.train-category .count {
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.train-section h2 {
+  font-size: 1.15rem;
+  margin: 0 0 0.5rem;
+}
+.train-stats {
+  width: 100%;
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+}
+.train-stats th,
+.train-stats td {
+  text-align: left;
+  padding: 0.45rem 0.6rem;
+  border-bottom: 1px solid var(--line, color-mix(in srgb, currentColor 15%, transparent));
+}
+.train-stats thead th {
+  color: var(--muted);
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+.train-stats tbody th {
+  font-weight: 600;
+}
+.train-history {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.35rem;
+}
+.train-history-item {
+  display: grid;
+  grid-template-columns: 5.5rem minmax(0, 1fr) 4.5rem auto auto;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.35rem 0.6rem;
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  font-variant-numeric: tabular-nums;
+}
+.train-history-item .result {
+  font-weight: 600;
+}
+.train-history-item.correct .result {
+  color: var(--good-ink);
+}
+.train-history-item.miss .result {
+  color: var(--danger-ink);
+}
+.train-history-item .when {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+.train-study {
+  display: grid;
+  gap: 0.75rem;
+}
+.train-study .actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+@media (max-width: 700px) {
+  .train-history-item {
+    grid-template-columns: 1fr auto;
+  }
+  .train-history-item .category,
+  .train-history-item .when {
+    grid-column: 1 / -1;
+  }
+}
 
 /* Import dialog */
 .import-dialog {

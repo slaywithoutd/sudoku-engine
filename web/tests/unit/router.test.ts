@@ -21,6 +21,7 @@ test("routes roundtrip encoded identifiers", () => {
     { screen: "help" },
     { screen: "train" },
     { screen: "train-run" },
+    { screen: "train-study", id: "0123456789abcdef" },
     { screen: "solve", source: { kind: "puzzle", id: "x/y" } },
     { screen: "solve", source: { kind: "draft", id: "d" } },
   ];

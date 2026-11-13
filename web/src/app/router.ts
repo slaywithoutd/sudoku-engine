@@ -8,6 +8,7 @@ export type Route =
   | { screen: "settings" }
   | { screen: "train" }
   | { screen: "train-run" }
+  | { screen: "train-study"; id: string }
   | { screen: "help" };
 function decode(value: string): string | undefined {
   try {
@@ -34,6 +35,8 @@ export function parseRoute(hash: string): Route {
       ? { screen: "solve", source: { kind: solve[1] as SolveSource["kind"], id } }
       : { screen: "solve" };
   }
+  const study = /^#\/train\/study\/([0-9a-f]{16})$/.exec(hash);
+  if (study) return { screen: "train-study", id: study[1] };
   const match = /^#\/(create|play)\/([^/]+)$/.exec(hash);
   if (match) {
     const id = decode(match[2]);
@@ -53,6 +56,8 @@ export function routeHash(route: Route): string {
       return "#/train";
     case "train-run":
       return "#/train/run";
+    case "train-study":
+      return `#/train/study/${route.id}`;
     case "solve":
       return route.source
         ? `#/solve/${route.source.kind}/${encodeURIComponent(route.source.id)}`
